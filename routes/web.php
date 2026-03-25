@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Site;
 use Illuminate\Support\Facades\Route;
 
 // ── Guest ───────────────────────────────────────
@@ -13,11 +14,11 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     // Sites
     Route::get('/sites', fn () => view('dashboard.sites.index'))->name('sites.index');
     Route::get('/sites/create', fn () => view('dashboard.sites.create'))->name('sites.create');
-    Route::get('/sites/{site}', fn () => view('dashboard.sites.show'))->name('sites.show');
-    Route::get('/sites/{site}/settings', fn () => view('dashboard.sites.settings'))->name('sites.settings');
+    Route::get('/sites/{site}', fn (Site $site) => view('dashboard.sites.show', ['site' => $site]))->name('sites.show');
+    Route::get('/sites/{site}/settings', fn (Site $site) => view('dashboard.sites.settings', ['site' => $site]))->name('sites.settings');
 
     // Editor
-    Route::get('/sites/{site}/pages/{page}/edit', fn () => view('dashboard.editor.index'))->name('editor');
+    Route::get('/sites/{site}/pages/{page}/edit', fn (Site $site, $page) => view('dashboard.editor.index', ['site' => $site, 'pageId' => $page]))->name('editor');
 
     // Settings
     Route::get('/settings', fn () => view('dashboard.settings.index'))->name('settings');

@@ -1,58 +1,135 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# pixelkraft
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A self-hosted site operations platform for managing, editing, deploying, and monitoring AI-generated websites from a single dashboard.
 
-## About Laravel
+## What is pixelkraft?
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+If you build websites with AI tools and manage multiple sites, pixelkraft gives you one place to control everything: edit content visually, push changes to GitHub, deploy to your VPS, monitor uptime, track SEO, handle contact forms, and send newsletters — across 10, 20, or 25+ sites.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Layer | Technology |
+|-------|-----------|
+| Backend | Laravel 11 (PHP 8.3) |
+| Frontend | Livewire 3 + Alpine.js + Tailwind CSS |
+| Database | MariaDB |
+| Cache / Queue / Sessions | Redis |
+| Queue Dashboard | Laravel Horizon |
+| Media Storage | Cloudflare R2 (S3-compatible) |
+| Email | Resend |
+| Auth | Laravel Fortify (email/password + TOTP 2FA) |
+| API Tokens | Laravel Sanctum |
+| Headless Browser | Spatie Browsershot (Puppeteer) |
+| Web Server | Nginx |
+| OS | AlmaLinux 10 |
 
-## Learning Laravel
+## Features
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Core**
+- GitHub two-way sync (clone, pull, push, webhook listener)
+- Multi-strategy parser — handles static HTML, React, Vue, Svelte, Astro, Hugo, 11ty
+- Hybrid content detection (auto-detect + marker confirmation)
+- Visual page editor (click on elements) + code view toggle
+- Structured blog editor and product listing editor
+- Content templates and global components
+- Per-site configuration for heterogeneous projects
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**Deployment**
+- End-to-end pipeline: edit → commit → build → optimize → deploy
+- Domain, SSL (Let's Encrypt), and Nginx vhost management
+- Staging preview before going live
+- Rollback to previous deploys
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+**SEO**
+- Meta editor (title, description, keywords)
+- Open Graph / social sharing tags
+- JSON-LD structured data (Schema.org)
+- robots.txt editor, canonical URLs, 301 redirect manager
+- Auto-generated XML sitemaps
 
-## Agentic Development
+**Analytics & Monitoring**
+- Google Analytics + Cloudflare Analytics unified dashboard
+- Custom event tracking
+- Google Search Console integration (keywords, indexing)
+- Weekly Lighthouse audits with actionable suggestions
+- Uptime monitoring (5-min intervals)
+- Broken link checker
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+**Email**
+- Contact form API endpoint for any site
+- Newsletter system with templates, scheduling, and basic segmentation
+- Powered by Resend
+
+**Performance**
+- Image optimization + WebP conversion on deploy
+- Lazy loading injection
+- HTML/CSS/JS minification
+
+**Operations**
+- Deploy and error logs in dashboard
+- Public REST API with Sanctum tokens
+- Automated daily database backups to R2
+- Discord + in-dashboard notifications
+
+**Auth**
+- Email/password + TOTP two-factor authentication
+- Role-based access (admin/editor) for future team support
+- API token management
+
+## Architecture
+
+See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in a browser for a formatted, interactive view covering all 20 sections: tech stack, database schema, multi-strategy parser design, visual editor architecture, deployment pipeline, and 6 build phases.
+
+## Build Phases
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| 1 | Foundation + Auth + GitHub Sync | 🔨 In progress |
+| 2 | Multi-Strategy Parser + Region Detection | ⬜ Planned |
+| 3 | Visual Editor + Content Management | ⬜ Planned |
+| 4 | Deploy Pipeline + Domain/SSL Management | ⬜ Planned |
+| 5 | SEO + Analytics + Monitoring | ⬜ Planned |
+| 6 | Email + Operations + Polish | ⬜ Planned |
+
+### Phase 1 Progress
+
+- [x] 1.1 — Laravel scaffold + config (MariaDB, Redis, Horizon, Tailwind, Livewire)
+- [x] 1.2 — Database migrations (15 tables)
+- [x] 1.3 — Eloquent models (16 models with relationships)
+- [x] 1.4 — Auth with 2FA (Fortify views + routing)
+- [x] 1.5 — Dashboard layout + Site CRUD + Settings
+- [ ] 1.7 — GitSyncService + ProjectDetector
+- [ ] 1.8 — Webhook receiver
+
+## Requirements
+
+- PHP 8.3+
+- MariaDB 10.11+
+- Redis 7+
+- Node.js 20 LTS
+- Nginx
+- Chromium (for Browsershot)
+- Certbot (for SSL)
+- Supervisor (for queue workers)
+
+## Setup (Development)
 
 ```bash
-composer require laravel/boost --dev
+git clone https://github.com/agve95-hub/pixelkraft.git
+cd pixelkraft
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
 
-php artisan boost:install
+# Configure .env with your MariaDB, Redis, and service credentials
+
+php artisan migrate
+php artisan horizon  # Start queue workers
+npm run dev          # Start Vite dev server
+php artisan serve    # Start Laravel dev server
 ```
-
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Private — not open source.
