@@ -214,16 +214,70 @@ return [
 
     'environments' => [
         'production' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
+            // Default queue (notifications, emails, misc)
+            'supervisor-default' => [
+                'connection' => 'redis',
+                'queue' => ['default'],
+                'balance' => 'auto',
+                'maxProcesses' => 3,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
+                'tries' => 3,
+                'timeout' => 120,
+            ],
+
+            // Git operations (clone, pull, push)
+            'supervisor-git' => [
+                'connection' => 'redis',
+                'queue' => ['git'],
+                'balance' => 'auto',
+                'maxProcesses' => 2,
+                'tries' => 3,
+                'timeout' => 300,
+            ],
+
+            // Parsing & content analysis
+            'supervisor-parsing' => [
+                'connection' => 'redis',
+                'queue' => ['parsing'],
+                'balance' => 'auto',
+                'maxProcesses' => 2,
+                'tries' => 2,
+                'timeout' => 600,
+                'memory' => 512,
+            ],
+
+            // Deploy pipeline (build + deploy)
+            'supervisor-deploy' => [
+                'connection' => 'redis',
+                'queue' => ['deploy'],
+                'balance' => 'auto',
+                'maxProcesses' => 2,
+                'tries' => 1,
+                'timeout' => 600,
+                'memory' => 512,
+            ],
+
+            // Monitoring (uptime, lighthouse, broken links)
+            'supervisor-monitoring' => [
+                'connection' => 'redis',
+                'queue' => ['monitoring'],
+                'balance' => 'auto',
+                'maxProcesses' => 3,
+                'tries' => 2,
+                'timeout' => 300,
+                'memory' => 256,
             ],
         ],
 
         'local' => [
-            'supervisor-1' => [
+            'supervisor-default' => [
+                'connection' => 'redis',
+                'queue' => ['default', 'git', 'parsing', 'deploy', 'monitoring'],
+                'balance' => 'auto',
                 'maxProcesses' => 3,
+                'tries' => 1,
+                'timeout' => 300,
             ],
         ],
     ],

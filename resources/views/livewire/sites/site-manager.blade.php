@@ -41,6 +41,22 @@
             @error('branch') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
         </div>
 
+        <div>
+            <label for="githubToken" class="input-label">
+                GitHub Personal Access Token
+                <span class="text-zinc-600 font-normal">(required for private repos)</span>
+            </label>
+            <input
+                id="githubToken"
+                type="password"
+                wire:model="githubToken"
+                class="input-field mono text-sm"
+                placeholder="ghp_xxxxxxxxxxxx"
+            >
+            <p class="mt-1 text-xs text-zinc-600">Token is encrypted at rest. Needs <code class="text-zinc-500">repo</code> scope.</p>
+            @error('githubToken') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+        </div>
+
         <div class="flex items-center gap-3 pt-2">
             <button type="submit" class="btn-primary" wire:loading.attr="disabled">
                 <span wire:loading.remove wire:target="create">Add site</span>
