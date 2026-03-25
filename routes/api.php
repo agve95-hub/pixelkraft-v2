@@ -24,6 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sites', [SiteController::class, 'index'])->name('api.sites.index');
     Route::get('/sites/{site}', [SiteController::class, 'show'])->name('api.sites.show');
     Route::post('/sites/{site}/sync', [SiteController::class, 'sync'])->name('api.sites.sync');
+    Route::post('/sites/{site}/deploy', [SiteController::class, 'deploy'])->name('api.sites.deploy');
+    Route::post('/sites/{site}/rollback/{logId}', [SiteController::class, 'rollback'])->name('api.sites.rollback');
     Route::get('/sites/{site}/pages', [SiteController::class, 'pages'])->name('api.sites.pages');
     Route::get('/sites/{site}/deploys', [SiteController::class, 'deploys'])->name('api.sites.deploys');
 

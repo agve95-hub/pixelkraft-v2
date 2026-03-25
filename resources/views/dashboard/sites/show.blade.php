@@ -30,7 +30,6 @@
             </div>
             <div class="flex items-center gap-2">
                 <a href="{{ route('sites.settings', $site) }}" class="btn-secondary text-sm">Settings</a>
-                <button class="btn-primary text-sm" disabled>Deploy</button>
             </div>
         </div>
 
@@ -53,6 +52,9 @@
                 <p class="text-sm text-zinc-100 mt-2">{{ $site->last_synced_at?->diffForHumans() ?? 'Never' }}</p>
             </div>
         </div>
+
+        {{-- Deploy Controls --}}
+        @livewire('sites.deploy-controls', ['siteId' => $site->id])
 
         {{-- Content Navigation --}}
         <div class="flex flex-wrap gap-2">

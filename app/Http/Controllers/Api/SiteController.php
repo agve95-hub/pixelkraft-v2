@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\CloneRepoJob;
+use App\Jobs\DeploySiteJob;
 use App\Jobs\ParseSiteJob;
+use App\Models\DeployLog;
 use App\Models\Site;
+use App\Services\DeployService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -38,6 +41,33 @@ class SiteController extends Controller
         return response()->json([
             'status'  => 'dispatched',
             'message' => "Sync job dispatched for {$site->name}",
+        ]);
+    }
+
+    public function deploy(Site $site): JsonResponse
+    {
+        DeploySiteJob::dispatch($site, 'api');
+
+        return response()->json([
+            'status'  => 'dispatched',
+            'message' => "Deploy job dispatched for {$site->name}",
+        ]);
+    }
+
+    public function rollback(Site $site, string $logId): JsonResponse
+    {
+        $log = DeployLog::where('site_id', $site->id)->findOrFail($logId);
+
+        if (empty($log->snapshot_tag)) {
+            return response()->json(['error' => 'No snapshot available for this deploy'], 400);
+        }
+
+        $deployer = app(DeployService::class);
+        $result = $deployer->rollback($site, $log->snapshot_tag);
+
+        return response()->json([
+            'status'  => $result->status,
+            'message' => "Rollback to {$log->snapshot_tag}: {$result->status}",
         ]);
     }
 

@@ -87,8 +87,8 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 | 1 | Foundation + Auth + GitHub Sync | ✅ Complete |
 | 2 | Multi-Strategy Parser + Region Detection | ✅ Complete |
 | 3 | Visual Editor + Content Management | ✅ Complete |
-| 4 | Deploy Pipeline + Domain/SSL Management | ⬜ Next |
-| 5 | SEO + Analytics + Monitoring | ⬜ Planned |
+| 4 | Deploy Pipeline + Domain/SSL Management | ✅ Complete |
+| 5 | SEO + Analytics + Monitoring | ⬜ Next |
 | 6 | Email + Operations + Polish | ⬜ Planned |
 
 ### Phase 1 Progress
@@ -118,6 +118,17 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 - [x] 3.5 — BlogEditor (structured fields: title, body, tags, SEO, scheduling, templates)
 - [x] 3.6 — ProductEditor (name, price, images, attributes, output path)
 - [x] 3.7 — TemplateManager (create/edit reusable templates with {{placeholders}})
+
+### Phase 4 Progress
+
+- [x] 4.1 — DeployService (full pipeline: pull → install deps → build → optimize → deploy → nginx reload)
+- [x] 4.2 — NginxConfigService (vhost generation, symlinks, staging configs, security headers, gzip, WebP)
+- [x] 4.3 — SslService (Certbot provisioning, expiry checking, renewal)
+- [x] 4.4 — ImageOptimizer (jpegoptim, pngquant, svgo, WebP generation via cwebp)
+- [x] 4.5 — HtmlMinifier (HTML/CSS/JS minification, lazy loading injection)
+- [x] 4.6 — DeployControls Livewire (deploy button, domain setup, log viewer, rollback)
+- [x] 4.7 — Artisan commands (check-uptime, check-ssl, backup-database, publish-scheduled)
+- [x] 4.8 — Deploy + rollback API endpoints
 
 ## Requirements
 
