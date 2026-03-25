@@ -2,7 +2,9 @@
 
 namespace App\Jobs;
 
+use App\Models\Notification;
 use App\Models\Site;
+use App\Services\ParserService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -23,103 +25,74 @@ class ParseSiteJob implements ShouldQueue
         $this->onQueue('parsing');
     }
 
-    public function handle(): void
+    public function handle(ParserService $parser): void
     {
-        Log::info("ParseSiteJob started for [{$this->site->slug}] — full implementation in Phase 2");
+        Log::info("ParseSiteJob started for [{$this->site->slug}]");
 
-        // Phase 2 will implement:
-        // 1. Detect project type → select parser strategy
-        // 2. Discover all pages (HTML files, built output, or components)
-        // 3. For each page: extract title, meta tags, OG tags, content hash
-        // 4. Run RegionDetector to find editable vs static regions
-        // 5. Take screenshots via Browsershot
-        // 6. Store everything in pages + editable_regions tables
+        try {
+            $pageCount = $parser->parseSite($this->site);
 
-        // For now, just do basic HTML file discovery
-        $this->discoverHtmlPages();
-    }
+            Log::info("ParseSiteJob completed for [{$this->site->slug}]: {$pageCount} pages");
 
-    private function discoverHtmlPages(): void
-    {
-        $repoPath = $this->site->repo_path;
-        $outputDir = $this->site->build_output_dir;
+            // Compute SEO scores for all pages
+            $this->site->pages->each(function ($page) {
+                $page->update(['seo_score' => $this->computeSeoScore($page)]);
+            });
 
-        // Determine which directory to scan
-        $scanPath = $outputDir
-            ? "{$repoPath}/{$outputDir}"
-            : $repoPath;
+        } catch (\Throwable $e) {
+            Log::error("ParseSiteJob failed for [{$this->site->slug}]", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-        if (! is_dir($scanPath)) {
-            $scanPath = $repoPath;
-        }
-
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($scanPath, \FilesystemIterator::SKIP_DOTS),
-        );
-
-        $pageCount = 0;
-
-        foreach ($iterator as $file) {
-            if ($file->getExtension() !== 'html') {
-                continue;
-            }
-
-            $relativePath = str_replace($repoPath . '/', '', $file->getPathname());
-
-            // Skip node_modules, vendor, hidden dirs
-            if (preg_match('#(^|\/)(\.|node_modules|vendor)#', $relativePath)) {
-                continue;
-            }
-
-            // Extract basic info from HTML
-            $html = file_get_contents($file->getPathname());
-            $title = $this->extractTitle($html);
-            $urlPath = $this->filePathToUrlPath($relativePath, $outputDir);
-
-            $this->site->pages()->updateOrCreate(
-                ['file_path' => $relativePath],
-                [
-                    'url_path'     => $urlPath,
-                    'title'        => $title,
-                    'content_hash' => md5($html),
-                    'is_published' => true,
-                ]
+            Notification::createAlert(
+                type: 'deploy_failed',
+                title: "Parsing failed for {$this->site->name}",
+                body: $e->getMessage(),
+                siteId: $this->site->id,
             );
 
-            $pageCount++;
+            throw $e;
         }
-
-        Log::info("ParseSiteJob discovered {$pageCount} HTML pages for [{$this->site->slug}]");
     }
 
-    private function extractTitle(string $html): ?string
+    /**
+     * Compute a basic SEO score (0-100) for a page.
+     */
+    private function computeSeoScore($page): int
     {
-        if (preg_match('/<title[^>]*>([^<]+)<\/title>/i', $html, $matches)) {
-            return trim($matches[1]);
+        $score = 0;
+
+        // Title (25 points)
+        if ($page->title) {
+            $len = mb_strlen($page->title);
+            $score += ($len >= 10 && $len <= 70) ? 25 : 15;
         }
 
-        return null;
-    }
-
-    private function filePathToUrlPath(string $filePath, ?string $outputDir): string
-    {
-        $path = $filePath;
-
-        // Strip output directory prefix
-        if ($outputDir) {
-            $path = preg_replace('#^' . preg_quote($outputDir, '#') . '/?#', '', $path);
+        // Meta description (20 points)
+        if ($page->meta_description) {
+            $len = mb_strlen($page->meta_description);
+            $score += ($len >= 50 && $len <= 160) ? 20 : 10;
         }
 
-        // Convert index.html to /
-        $path = preg_replace('#/?index\.html$#', '', $path);
+        // Open Graph (15 points)
+        if ($page->og_title) $score += 5;
+        if ($page->og_description) $score += 5;
+        if ($page->og_image) $score += 5;
 
-        // Ensure leading slash
-        $path = '/' . ltrim($path, '/');
+        // Canonical URL (10 points)
+        if ($page->canonical_url) $score += 10;
 
-        // Remove .html extension
-        $path = preg_replace('#\.html$#', '', $path);
+        // Schema.org JSON-LD (10 points)
+        if ($page->schema_json) $score += 10;
 
-        return $path ?: '/';
+        // Content exists (10 points)
+        if ($page->content_hash) $score += 10;
+
+        // Has URL path (10 points)
+        if ($page->url_path && $page->url_path !== '/') $score += 10;
+
+        return min(100, $score);
     }
 
     public function tags(): array

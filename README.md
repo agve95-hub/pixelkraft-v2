@@ -85,8 +85,8 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 | Phase | Focus | Status |
 |-------|-------|--------|
 | 1 | Foundation + Auth + GitHub Sync | ✅ Complete |
-| 2 | Multi-Strategy Parser + Region Detection | 🔨 In progress |
-| 3 | Visual Editor + Content Management | ⬜ Planned |
+| 2 | Multi-Strategy Parser + Region Detection | ✅ Complete |
+| 3 | Visual Editor + Content Management | 🔨 Next |
 | 4 | Deploy Pipeline + Domain/SSL Management | ⬜ Planned |
 | 5 | SEO + Analytics + Monitoring | ⬜ Planned |
 | 6 | Email + Operations + Polish | ⬜ Planned |
@@ -100,6 +100,14 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 - [x] 1.5 — Dashboard layout + Site CRUD + Settings
 - [x] 1.7 — GitSyncService + ProjectDetector
 - [x] 1.8 — Webhook receiver + Public API + Notifications + Scheduled tasks
+
+### Phase 2 Progress
+
+- [x] 2.1 — ParserService orchestrator + StaticHtmlParser (DomCrawler)
+- [x] 2.2 — RegionDetector with heuristic scoring + cross-page refinement
+- [x] 2.3 — SsgOutputParser (Hugo, Astro, 11ty source-to-output mapping)
+- [x] 2.4 — SpaComponentParser (React JSX, Vue SFC, Svelte, Astro)
+- [x] 2.5 — ContentPatcher (edit mapping back to source files)
 
 ## Requirements
 
