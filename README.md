@@ -86,8 +86,8 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 |-------|-------|--------|
 | 1 | Foundation + Auth + GitHub Sync | ✅ Complete |
 | 2 | Multi-Strategy Parser + Region Detection | ✅ Complete |
-| 3 | Visual Editor + Content Management | 🔨 Next |
-| 4 | Deploy Pipeline + Domain/SSL Management | ⬜ Planned |
+| 3 | Visual Editor + Content Management | ✅ Complete |
+| 4 | Deploy Pipeline + Domain/SSL Management | ⬜ Next |
 | 5 | SEO + Analytics + Monitoring | ⬜ Planned |
 | 6 | Email + Operations + Polish | ⬜ Planned |
 
@@ -108,6 +108,16 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 - [x] 2.3 — SsgOutputParser (Hugo, Astro, 11ty source-to-output mapping)
 - [x] 2.4 — SpaComponentParser (React JSX, Vue SFC, Svelte, Astro)
 - [x] 2.5 — ContentPatcher (edit mapping back to source files)
+
+### Phase 3 Progress
+
+- [x] 3.1 — RegionPanel (review/confirm auto-detected regions with filtering + confidence bars)
+- [x] 3.2 — VisualEditor (iframe + injected overlay script + inline editing)
+- [x] 3.3 — Code editor mode (toggle between visual and code view)
+- [x] 3.4 — Editor toolbar (save → patch → commit → push flow with modal)
+- [x] 3.5 — BlogEditor (structured fields: title, body, tags, SEO, scheduling, templates)
+- [x] 3.6 — ProductEditor (name, price, images, attributes, output path)
+- [x] 3.7 — TemplateManager (create/edit reusable templates with {{placeholders}})
 
 ## Requirements
 
