@@ -88,8 +88,8 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 | 2 | Multi-Strategy Parser + Region Detection | ✅ Complete |
 | 3 | Visual Editor + Content Management | ✅ Complete |
 | 4 | Deploy Pipeline + Domain/SSL Management | ✅ Complete |
-| 5 | SEO + Analytics + Monitoring | ⬜ Next |
-| 6 | Email + Operations + Polish | ⬜ Planned |
+| 5 | SEO + Analytics + Monitoring | ✅ Complete |
+| 6 | Email + Operations + Polish | ⬜ Next |
 
 ### Phase 1 Progress
 
@@ -129,6 +129,20 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 - [x] 4.6 — DeployControls Livewire (deploy button, domain setup, log viewer, rollback)
 - [x] 4.7 — Artisan commands (check-uptime, check-ssl, backup-database, publish-scheduled)
 - [x] 4.8 — Deploy + rollback API endpoints
+
+### Phase 5 Progress
+
+- [x] 5.1 — SeoAnalyzer (score computation with per-check breakdown + actionable suggestions)
+- [x] 5.2 — MetaEditor Livewire (title, description, keywords, OG tags, canonical + Google/social preview)
+- [x] 5.3 — SchemaEditor (JSON-LD editor with presets: Article, Product, LocalBusiness, FAQ)
+- [x] 5.4 — RobotsTxtEditor (presets: allow all, block AI bots, block all)
+- [x] 5.5 — RedirectManager (301/302 CRUD, auto-regenerates Nginx config on change)
+- [x] 5.6 — SitemapGenerator (XML sitemap from pages + blog posts, writes to deploy + repo)
+- [x] 5.7 — AnalyticsAggregator (Cloudflare GraphQL API sync, GA4 placeholder, site/page stats)
+- [x] 5.8 — UnifiedDashboard Livewire (global + per-site views, uptime bars, traffic chart, top pages)
+- [x] 5.9 — BrokenLinkCrawler (internal 404s, external checks, redirect chain detection)
+- [x] 5.10 — RunLighthouse command (Lighthouse CLI + HTTP timing fallback)
+- [x] 5.11 — SyncAnalytics + CrawlLinks artisan commands
 
 ## Requirements
 

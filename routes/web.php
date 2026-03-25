@@ -26,6 +26,10 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     Route::get('/preview/{site}/{page}', [EditorPreviewController::class, 'show'])->name('editor.preview');
     Route::get('/preview/{site}/asset/{path}', [EditorPreviewController::class, 'asset'])->where('path', '.*')->name('editor.asset');
 
+    // SEO
+    Route::get('/sites/{site}/pages/{page}/seo', fn (Site $site, Page $page) => view('dashboard.seo.meta', ['site' => $site, 'page' => $page]))->name('seo.meta');
+    Route::get('/sites/{site}/redirects', fn (Site $site) => view('dashboard.seo.redirects', ['site' => $site]))->name('seo.redirects');
+
     // Content
     Route::get('/sites/{site}/blog', fn (Site $site) => view('dashboard.content.blog-index', ['site' => $site]))->name('blog.index');
     Route::get('/sites/{site}/blog/create', fn (Site $site) => view('dashboard.content.blog-create', ['site' => $site]))->name('blog.create');
@@ -33,6 +37,9 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     Route::get('/sites/{site}/products', fn (Site $site) => view('dashboard.content.product-index', ['site' => $site]))->name('products.index');
     Route::get('/sites/{site}/products/create', fn (Site $site) => view('dashboard.content.product-create', ['site' => $site]))->name('products.create');
     Route::get('/sites/{site}/templates', fn (Site $site) => view('dashboard.content.templates', ['site' => $site]))->name('templates.index');
+
+    // Analytics
+    Route::get('/analytics', fn () => view('dashboard.analytics.index'))->name('analytics');
 
     // Settings
     Route::get('/settings', fn () => view('dashboard.settings.index'))->name('settings');

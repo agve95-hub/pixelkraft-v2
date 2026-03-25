@@ -73,6 +73,9 @@
                             @endif
                         </td>
                         <td class="table-cell text-right">
+                            <a href="{{ route('seo.meta', ['site' => $page->site_id, 'page' => $page->id]) }}" class="btn-ghost text-xs !px-2 !py-1">
+                                SEO
+                            </a>
                             <a href="{{ route('editor', ['site' => $page->site_id, 'page' => $page->id]) }}" class="btn-ghost text-xs !px-2 !py-1">
                                 Edit
                             </a>
