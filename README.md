@@ -84,8 +84,8 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 
 | Phase | Focus | Status |
 |-------|-------|--------|
-| 1 | Foundation + Auth + GitHub Sync | 🔨 In progress |
-| 2 | Multi-Strategy Parser + Region Detection | ⬜ Planned |
+| 1 | Foundation + Auth + GitHub Sync | ✅ Complete |
+| 2 | Multi-Strategy Parser + Region Detection | 🔨 In progress |
 | 3 | Visual Editor + Content Management | ⬜ Planned |
 | 4 | Deploy Pipeline + Domain/SSL Management | ⬜ Planned |
 | 5 | SEO + Analytics + Monitoring | ⬜ Planned |
@@ -98,8 +98,8 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 - [x] 1.3 — Eloquent models (16 models with relationships)
 - [x] 1.4 — Auth with 2FA (Fortify views + routing)
 - [x] 1.5 — Dashboard layout + Site CRUD + Settings
-- [ ] 1.7 — GitSyncService + ProjectDetector
-- [ ] 1.8 — Webhook receiver
+- [x] 1.7 — GitSyncService + ProjectDetector
+- [x] 1.8 — Webhook receiver + Public API + Notifications + Scheduled tasks
 
 ## Requirements
 

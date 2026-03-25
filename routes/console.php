@@ -1,8 +1,57 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// ── Monitoring ──────────────────────────────────
+
+// Uptime checks every 5 minutes
+Schedule::command('pixelkraft:check-uptime')
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
+// Lighthouse audits weekly (Sunday 3am)
+Schedule::command('pixelkraft:run-lighthouse')
+    ->weeklyOn(0, '03:00')
+    ->withoutOverlapping();
+
+// Broken link crawler weekly (Sunday 5am)
+Schedule::command('pixelkraft:crawl-links')
+    ->weeklyOn(0, '05:00')
+    ->withoutOverlapping();
+
+// ── Analytics Sync ──────────────────────────────
+
+// Sync GA + Cloudflare analytics daily at 6am
+Schedule::command('pixelkraft:sync-analytics')
+    ->dailyAt('06:00')
+    ->withoutOverlapping();
+
+// ── SSL Monitoring ──────────────────────────────
+
+// Check SSL expiry weekly (Monday 8am)
+Schedule::command('pixelkraft:check-ssl')
+    ->weeklyOn(1, '08:00');
+
+// ── Backups ─────────────────────────────────────
+
+// Database backup daily at 2am
+Schedule::command('pixelkraft:backup-database')
+    ->dailyAt('02:00')
+    ->withoutOverlapping();
+
+// ── Content ─────────────────────────────────────
+
+// Publish scheduled blog posts every minute
+Schedule::command('pixelkraft:publish-scheduled')
+    ->everyMinute()
+    ->withoutOverlapping();
+
+// Send scheduled newsletter campaigns every minute
+Schedule::command('pixelkraft:send-campaigns')
+    ->everyMinute()
+    ->withoutOverlapping();
+
+// ── Horizon ─────────────────────────────────────
+
+Schedule::command('horizon:snapshot')
+    ->everyFiveMinutes();

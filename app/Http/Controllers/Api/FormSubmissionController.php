@@ -1,0 +1,96 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\FormSubmission;
+use App\Models\Notification;
+use App\Models\Site;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
+
+class FormSubmissionController extends Controller
+{
+    /**
+     * Receive a contact form submission (public endpoint).
+     */
+    public function store(Request $request, string $slug): JsonResponse
+    {
+        $site = Site::where('slug', $slug)->where('is_active', true)->first();
+
+        if (! $site) {
+            return response()->json(['error' => 'Site not found'], 404);
+        }
+
+        // Rate limit: 10 submissions per minute per IP
+        $key = 'form-submit:' . $request->ip() . ':' . $slug;
+
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            return response()->json(['error' => 'Too many submissions'], 429);
+        }
+
+        RateLimiter::hit($key, 60);
+
+        $data = $request->except(['_token', '_method']);
+
+        // Basic honeypot spam detection
+        $isSpam = $this->detectSpam($request, $data);
+
+        $submission = FormSubmission::create([
+            'site_id'    => $site->id,
+            'form_name'  => $request->input('_form_name', 'contact'),
+            'data'       => $data,
+            'ip_address' => $request->ip(),
+            'is_spam'    => $isSpam,
+            'created_at' => now(),
+        ]);
+
+        if (! $isSpam) {
+            Notification::createAlert(
+                type: 'form_received',
+                title: "New form submission on {$site->name}",
+                body: "From: " . ($data['email'] ?? $data['name'] ?? 'Anonymous'),
+                siteId: $site->id,
+                data: ['submission_id' => $submission->id],
+            );
+        }
+
+        Log::info("Form submission received for [{$slug}]", [
+            'form_name' => $submission->form_name,
+            'is_spam'   => $isSpam,
+        ]);
+
+        return response()->json([
+            'status'  => 'ok',
+            'message' => 'Submission received',
+        ], 201);
+    }
+
+    private function detectSpam(Request $request, array $data): bool
+    {
+        // Honeypot: if a hidden field named '_hp' has a value, it's a bot
+        if (! empty($data['_hp'])) {
+            return true;
+        }
+
+        // Check for common spam patterns in message body
+        $body = $data['message'] ?? $data['body'] ?? $data['content'] ?? '';
+
+        if (is_string($body)) {
+            $spamPatterns = [
+                '/\b(viagra|casino|crypto|click here|buy now|free money)\b/i',
+                '/(http[s]?:\/\/){3,}/i', // More than 2 URLs
+            ];
+
+            foreach ($spamPatterns as $pattern) {
+                if (preg_match($pattern, $body)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+}
