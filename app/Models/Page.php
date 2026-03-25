@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Page extends Model
+{
+    use HasFactory, HasUuids;
+
+    protected $fillable = [
+        'site_id',
+        'file_path',
+        'url_path',
+        'title',
+        'meta_description',
+        'meta_keywords',
+        'og_title',
+        'og_description',
+        'og_image',
+        'canonical_url',
+        'schema_json',
+        'seo_score',
+        'lighthouse_score',
+        'screenshot_url',
+        'content_hash',
+        'is_published',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'schema_json'      => 'array',
+            'lighthouse_score' => 'array',
+            'seo_score'        => 'integer',
+            'is_published'     => 'boolean',
+        ];
+    }
+
+    // ── Relationships ───────────────────────────
+
+    public function site()
+    {
+        return $this->belongsTo(Site::class);
+    }
+
+    public function editableRegions()
+    {
+        return $this->hasMany(EditableRegion::class);
+    }
+
+    public function dynamicRegions()
+    {
+        return $this->hasMany(EditableRegion::class)->where('is_static', false);
+    }
+
+    public function analyticsSnapshots()
+    {
+        return $this->hasMany(AnalyticsSnapshot::class);
+    }
+
+    // ── Helpers ──────────────────────────────────
+
+    public function totalVisitors(int $days = 30): int
+    {
+        return $this->analyticsSnapshots()
+            ->where('date', '>=', now()->subDays($days))
+            ->sum('visitors');
+    }
+}
