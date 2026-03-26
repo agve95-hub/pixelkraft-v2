@@ -89,7 +89,7 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 | 3 | Visual Editor + Content Management | ✅ Complete |
 | 4 | Deploy Pipeline + Domain/SSL Management | ✅ Complete |
 | 5 | SEO + Analytics + Monitoring | ✅ Complete |
-| 6 | Email + Operations + Polish | ⬜ Next |
+| 6 | Email + Operations + Polish | ✅ Complete |
 
 ### Phase 1 Progress
 
@@ -143,6 +143,16 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 - [x] 5.9 — BrokenLinkCrawler (internal 404s, external checks, redirect chain detection)
 - [x] 5.10 — RunLighthouse command (Lighthouse CLI + HTTP timing fallback)
 - [x] 5.11 — SyncAnalytics + CrawlLinks artisan commands
+
+### Phase 6 Progress
+
+- [x] 6.1 — FormInbox Livewire (view/read/spam/delete submissions, per-site filter, integration docs)
+- [x] 6.2 — SubscriberList Livewire (add/unsubscribe/delete, search, stats)
+- [x] 6.3 — CampaignEditor Livewire (compose, schedule, send newsletters)
+- [x] 6.4 — SendCampaigns command (Resend API integration, personalization, rate limiting)
+- [x] 6.5 — FileManager Livewire (browse, view, edit, upload, delete repo files)
+- [x] 6.6 — All sidebar links wired (Analytics, Uptime, Inbox, Subscribers, Newsletters)
+- [x] 6.7 — All routes finalized (45+ routes covering every feature)
 
 ## Requirements
 

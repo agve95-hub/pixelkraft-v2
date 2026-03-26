@@ -18,11 +18,12 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
     Route::get('/sites/create', fn () => view('dashboard.sites.create'))->name('sites.create');
     Route::get('/sites/{site}', fn (Site $site) => view('dashboard.sites.show', ['site' => $site]))->name('sites.show');
     Route::get('/sites/{site}/settings', fn (Site $site) => view('dashboard.sites.settings', ['site' => $site]))->name('sites.settings');
+    Route::get('/sites/{site}/files', fn (Site $site) => view('dashboard.sites.files', ['site' => $site]))->name('sites.files');
 
     // Editor
     Route::get('/sites/{site}/pages/{page}/edit', fn (Site $site, Page $page) => view('dashboard.editor.index', ['site' => $site, 'page' => $page]))->name('editor');
 
-    // Editor preview (serves page HTML in iframe)
+    // Editor preview
     Route::get('/preview/{site}/{page}', [EditorPreviewController::class, 'show'])->name('editor.preview');
     Route::get('/preview/{site}/asset/{path}', [EditorPreviewController::class, 'asset'])->where('path', '.*')->name('editor.asset');
 
@@ -40,6 +41,11 @@ Route::middleware(['auth'])->prefix('dashboard')->group(function () {
 
     // Analytics
     Route::get('/analytics', fn () => view('dashboard.analytics.index'))->name('analytics');
+
+    // Email
+    Route::get('/inbox', fn () => view('dashboard.email.inbox'))->name('inbox');
+    Route::get('/subscribers', fn () => view('dashboard.email.subscribers'))->name('subscribers');
+    Route::get('/newsletters', fn () => view('dashboard.email.campaigns'))->name('newsletters');
 
     // Settings
     Route::get('/settings', fn () => view('dashboard.settings.index'))->name('settings');
