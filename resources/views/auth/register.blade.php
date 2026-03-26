@@ -2,71 +2,36 @@
     <x-slot:title>Create account — pixelkraft</x-slot:title>
     <x-slot:subtitle>Create your account</x-slot:subtitle>
 
-    <form method="POST" action="{{ route('register') }}" class="space-y-5">
+    <form method="POST" action="{{ route('register') }}" class="space-y-6">
         @csrf
 
-        <div>
-            <label for="name" class="input-label">Name</label>
-            <input
-                id="name"
-                type="text"
-                name="name"
-                value="{{ old('name') }}"
-                required
-                autofocus
-                autocomplete="name"
-                class="input-field"
-                placeholder="Your name"
-            >
-        </div>
+        <flux:field>
+            <flux:label>Name</flux:label>
+            <flux:input name="name" value="{{ old('name') }}" required autofocus autocomplete="name" placeholder="Your name" />
+            <flux:error name="name" />
+        </flux:field>
 
-        <div>
-            <label for="email" class="input-label">Email</label>
-            <input
-                id="email"
-                type="email"
-                name="email"
-                value="{{ old('email') }}"
-                required
-                autocomplete="email"
-                class="input-field"
-                placeholder="you@domain.com"
-            >
-        </div>
+        <flux:field>
+            <flux:label>Email</flux:label>
+            <flux:input type="email" name="email" value="{{ old('email') }}" required autocomplete="email" placeholder="you@domain.com" />
+            <flux:error name="email" />
+        </flux:field>
 
-        <div>
-            <label for="password" class="input-label">Password</label>
-            <input
-                id="password"
-                type="password"
-                name="password"
-                required
-                autocomplete="new-password"
-                class="input-field"
-                placeholder="••••••••"
-            >
-        </div>
+        <flux:field>
+            <flux:label>Password</flux:label>
+            <flux:input type="password" name="password" required autocomplete="new-password" placeholder="••••••••" viewable />
+            <flux:error name="password" />
+        </flux:field>
 
-        <div>
-            <label for="password_confirmation" class="input-label">Confirm password</label>
-            <input
-                id="password_confirmation"
-                type="password"
-                name="password_confirmation"
-                required
-                autocomplete="new-password"
-                class="input-field"
-                placeholder="••••••••"
-            >
-        </div>
+        <flux:field>
+            <flux:label>Confirm password</flux:label>
+            <flux:input type="password" name="password_confirmation" required autocomplete="new-password" placeholder="••••••••" viewable />
+        </flux:field>
 
-        <button type="submit" class="btn-primary w-full">
-            Create account
-        </button>
+        <flux:button type="submit" variant="primary" class="w-full">Create account</flux:button>
     </form>
 
     <x-slot:footer>
-        Already have an account?
-        <a href="{{ route('login') }}" class="text-violet-400 hover:text-violet-300 ml-1">Sign in</a>
+        Already have an account? <flux:link href="{{ route('login') }}">Sign in</flux:link>
     </x-slot:footer>
 </x-layouts.auth>

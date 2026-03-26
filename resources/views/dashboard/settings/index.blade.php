@@ -2,86 +2,85 @@
     <x-slot:title>Settings</x-slot:title>
 
     <div class="max-w-2xl space-y-8">
+        <flux:heading size="xl">Settings</flux:heading>
+
         {{-- Profile --}}
-        <div class="card">
-            <h3 class="text-sm font-semibold text-zinc-200 mb-4">Profile</h3>
+        <flux:card>
+            <flux:heading size="sm" class="mb-4">Profile</flux:heading>
             <form method="POST" action="{{ route('user-profile-information.update') }}" class="space-y-4">
-                @csrf
-                @method('PUT')
+                @csrf @method('PUT')
 
-                <div>
-                    <label for="name" class="input-label">Name</label>
-                    <input id="name" type="text" name="name" value="{{ auth()->user()->name }}" class="input-field" required>
-                </div>
+                <flux:field>
+                    <flux:label>Name</flux:label>
+                    <flux:input name="name" value="{{ auth()->user()->name }}" required />
+                </flux:field>
 
-                <div>
-                    <label for="email" class="input-label">Email</label>
-                    <input id="email" type="email" name="email" value="{{ auth()->user()->email }}" class="input-field" required>
-                </div>
+                <flux:field>
+                    <flux:label>Email</flux:label>
+                    <flux:input type="email" name="email" value="{{ auth()->user()->email }}" required />
+                </flux:field>
 
-                <button type="submit" class="btn-primary">Save profile</button>
+                <flux:button type="submit" variant="primary" size="sm">Save profile</flux:button>
             </form>
-        </div>
+        </flux:card>
 
         {{-- Change Password --}}
-        <div class="card">
-            <h3 class="text-sm font-semibold text-zinc-200 mb-4">Change Password</h3>
+        <flux:card>
+            <flux:heading size="sm" class="mb-4">Change Password</flux:heading>
             <form method="POST" action="{{ route('user-password.update') }}" class="space-y-4">
-                @csrf
-                @method('PUT')
+                @csrf @method('PUT')
 
-                <div>
-                    <label for="current_password" class="input-label">Current password</label>
-                    <input id="current_password" type="password" name="current_password" class="input-field" required>
-                </div>
+                <flux:field>
+                    <flux:label>Current password</flux:label>
+                    <flux:input type="password" name="current_password" required viewable />
+                </flux:field>
 
-                <div>
-                    <label for="password" class="input-label">New password</label>
-                    <input id="password" type="password" name="password" class="input-field" required>
-                </div>
+                <flux:field>
+                    <flux:label>New password</flux:label>
+                    <flux:input type="password" name="password" required viewable />
+                </flux:field>
 
-                <div>
-                    <label for="password_confirmation" class="input-label">Confirm new password</label>
-                    <input id="password_confirmation" type="password" name="password_confirmation" class="input-field" required>
-                </div>
+                <flux:field>
+                    <flux:label>Confirm new password</flux:label>
+                    <flux:input type="password" name="password_confirmation" required viewable />
+                </flux:field>
 
-                <button type="submit" class="btn-primary">Update password</button>
+                <flux:button type="submit" variant="primary" size="sm">Update password</flux:button>
             </form>
-        </div>
+        </flux:card>
 
         {{-- Two-Factor --}}
-        <div class="card">
-            <h3 class="text-sm font-semibold text-zinc-200 mb-4">Two-Factor Authentication</h3>
+        <flux:card>
+            <flux:heading size="sm" class="mb-4">Two-Factor Authentication</flux:heading>
             @if (auth()->user()->two_factor_secret)
                 <div class="flex items-center gap-3 mb-4">
-                    <span class="badge-green">Enabled</span>
-                    <p class="text-sm text-zinc-400">2FA is active on your account.</p>
+                    <flux:badge color="lime">Enabled</flux:badge>
+                    <flux:text size="sm">2FA is active on your account.</flux:text>
                 </div>
                 <form method="POST" action="{{ url('/user/two-factor-authentication') }}">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn-danger text-sm">Disable 2FA</button>
+                    @csrf @method('DELETE')
+                    <flux:button type="submit" variant="danger" size="sm">Disable 2FA</flux:button>
                 </form>
             @else
-                <p class="text-sm text-zinc-400 mb-4">Add an extra layer of security to your account.</p>
+                <flux:subheading class="mb-4">Add an extra layer of security to your account.</flux:subheading>
                 <form method="POST" action="{{ url('/user/two-factor-authentication') }}">
                     @csrf
-                    <button type="submit" class="btn-primary text-sm">Enable 2FA</button>
+                    <flux:button type="submit" variant="primary" size="sm">Enable 2FA</flux:button>
                 </form>
             @endif
-        </div>
+        </flux:card>
 
-        {{-- Discord Webhook --}}
-        <div class="card">
-            <h3 class="text-sm font-semibold text-zinc-200 mb-4">Discord Notifications</h3>
+        {{-- Discord --}}
+        <flux:card>
+            <flux:heading size="sm" class="mb-4">Discord Notifications</flux:heading>
             @livewire('settings.discord-webhook')
-        </div>
+        </flux:card>
 
         {{-- API Tokens --}}
-        <div class="card">
-            <h3 class="text-sm font-semibold text-zinc-200 mb-4">API Tokens</h3>
-            <p class="text-sm text-zinc-500 mb-4">Generate tokens to access the pixelkraft API.</p>
+        <flux:card>
+            <flux:heading size="sm" class="mb-4">API Tokens</flux:heading>
+            <flux:subheading class="mb-4">Generate tokens to access the pixelkraft API.</flux:subheading>
             @livewire('settings.api-tokens')
-        </div>
+        </flux:card>
     </div>
 </x-layouts.app>

@@ -1,50 +1,48 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'pixelkraft' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @fluxAppearance
 </head>
-<body class="h-full bg-zinc-950 flex items-center justify-center px-4">
+<body class="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-800 px-4">
 
-    <div class="w-full max-w-md">
-        {{-- Logo --}}
+    <div class="w-full max-w-sm">
         <div class="text-center mb-8">
-            <h1 class="text-2xl font-bold tracking-tight text-zinc-100">pixelkraft</h1>
-            <p class="mt-1 text-sm text-zinc-500 mono">{{ $subtitle ?? 'Site operations platform' }}</p>
+            <flux:heading size="xl">pixelkraft</flux:heading>
+            <flux:subheading>{{ $subtitle ?? 'Site operations platform' }}</flux:subheading>
         </div>
 
-        {{-- Card --}}
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-8">
-            {{-- Status / Errors --}}
+        <flux:card>
             @if (session('status'))
-                <div class="mb-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-sm text-emerald-400">
-                    {{ session('status') }}
+                <div class="mb-6">
+                    <flux:callout variant="success" icon="check-circle">{{ session('status') }}</flux:callout>
                 </div>
             @endif
 
             @if ($errors->any())
-                <div class="mb-6 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
-                    <ul class="list-disc list-inside space-y-1">
+                <div class="mb-6">
+                    <flux:callout variant="danger" icon="exclamation-triangle">
                         @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
+                            <p>{{ $error }}</p>
                         @endforeach
-                    </ul>
+                    </flux:callout>
                 </div>
             @endif
 
             {{ $slot }}
-        </div>
+        </flux:card>
 
-        {{-- Footer --}}
         @if (isset($footer))
-            <div class="mt-6 text-center text-sm text-zinc-500">
-                {{ $footer }}
+            <div class="mt-6 text-center">
+                <flux:subheading>{{ $footer }}</flux:subheading>
             </div>
         @endif
     </div>
 
+    @fluxScripts
 </body>
 </html>

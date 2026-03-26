@@ -4,35 +4,36 @@
     <div class="max-w-4xl">
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <h2 class="text-lg font-semibold text-zinc-100">Product Listings</h2>
-                <p class="text-sm text-zinc-500">{{ $site->name }}</p>
+                <flux:heading size="xl">Product Listings</flux:heading>
+                <flux:subheading>{{ $site->name }}</flux:subheading>
             </div>
-            <a href="{{ route('products.create', $site) }}" class="btn-primary text-sm">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                New Product
-            </a>
+            <flux:button href="{{ route('products.create', $site) }}" variant="primary" icon="plus" size="sm">New Product</flux:button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             @forelse ($site->productListings()->latest()->get() as $product)
-                <div class="card-hover">
+                <flux:card>
                     @if (!empty($product->images))
-                        <div class="rounded-lg overflow-hidden mb-3 border border-zinc-800">
+                        <div class="rounded-lg overflow-hidden mb-3">
                             <img src="{{ $product->images[0] }}" alt="{{ $product->name }}" class="w-full h-32 object-cover">
                         </div>
                     @endif
-                    <h4 class="text-sm font-medium text-zinc-100">{{ $product->name }}</h4>
+                    <flux:heading size="sm">{{ $product->name }}</flux:heading>
                     <div class="flex items-center justify-between mt-2">
-                        <span class="mono text-sm text-zinc-300">{{ $product->formattedPrice() }}</span>
+                        <flux:text class="font-mono">{{ $product->formattedPrice() }}</flux:text>
                         @switch($product->status)
-                            @case('active') <span class="badge-green !text-[10px]">Active</span> @break
-                            @case('archived') <span class="badge bg-zinc-500/10 text-zinc-500 !text-[10px]">Archived</span> @break
-                            @default <span class="badge-amber !text-[10px]">Draft</span>
+                            @case('active') <flux:badge size="sm" color="lime">Active</flux:badge> @break
+                            @case('archived') <flux:badge size="sm" color="zinc">Archived</flux:badge> @break
+                            @default <flux:badge size="sm" color="yellow">Draft</flux:badge>
                         @endswitch
                     </div>
-                </div>
+                </flux:card>
             @empty
-                <div class="col-span-full card py-12 text-center text-sm text-zinc-500">No products yet.</div>
+                <div class="col-span-full">
+                    <flux:card class="py-12 text-center">
+                        <flux:subheading>No products yet.</flux:subheading>
+                    </flux:card>
+                </div>
             @endforelse
         </div>
     </div>

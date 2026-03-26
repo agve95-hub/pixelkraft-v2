@@ -16,13 +16,13 @@
 
         <div class="flex items-center gap-2">
             @if ($currentPath)
-                <button wire:click="goUp" class="btn-ghost text-xs !px-2 !py-1">
+                <button wire:click="goUp" class="flux-btn-ghost text-xs !px-2 !py-1">
                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>
                     Up
                 </button>
             @endif
 
-            <label class="btn-secondary text-xs cursor-pointer">
+            <label class="flux-btn-secondary text-xs cursor-pointer">
                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
                 Upload
                 <input type="file" wire:model="uploadFile" class="hidden" x-on:change="$wire.upload()">
@@ -84,7 +84,7 @@
                 <div class="flex items-center justify-between px-4 py-2 border-b border-zinc-800">
                     <span class="mono text-xs text-zinc-400 truncate">{{ $viewingFile }}</span>
                     <div class="flex items-center gap-2">
-                        <button wire:click="saveFile" class="btn-primary text-[10px] !px-2 !py-1">Save & Push</button>
+                        <button wire:click="saveFile" class="flux-btn-primary text-[10px] !px-2 !py-1">Save & Push</button>
                         <button wire:click="closeFile" class="text-zinc-600 hover:text-zinc-400">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                         </button>

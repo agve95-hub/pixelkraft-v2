@@ -14,6 +14,7 @@
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.32",
+        "livewire/flux": "^2.13",
         "livewire/livewire": "^4.2",
         "symfony/css-selector": "^7.4",
         "symfony/dom-crawler": "^7.4"
@@ -89,5 +90,10 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": [{
+        "name": "flux-pro",
+        "type": "path",
+        "url": "/home/claude/flux-extract/flux-pro/flux-pro"
+    }]
 }

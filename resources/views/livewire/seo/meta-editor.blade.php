@@ -95,12 +95,12 @@
         </div>
 
         {{-- Title --}}
-        <div class="card space-y-4">
+        <div class="flux-card space-y-4">
             <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Basic Meta</h3>
 
             <div>
-                <label class="input-label">Title Tag</label>
-                <input type="text" wire:model.live="title" class="input-field text-sm" placeholder="Page Title — Brand Name">
+                <label class="flux-label">Title Tag</label>
+                <input type="text" wire:model.live="title" class="flux-input text-sm" placeholder="Page Title — Brand Name">
                 <div class="flex justify-between mt-1">
                     <p class="text-[10px] text-zinc-600">Recommended: 30-60 characters</p>
                     <span @class([
@@ -113,8 +113,8 @@
             </div>
 
             <div>
-                <label class="input-label">Meta Description</label>
-                <textarea wire:model.live="metaDescription" rows="3" class="input-field text-sm resize-y" placeholder="A compelling description of this page..."></textarea>
+                <label class="flux-label">Meta Description</label>
+                <textarea wire:model.live="metaDescription" rows="3" class="flux-input text-sm resize-y" placeholder="A compelling description of this page..."></textarea>
                 <div class="flex justify-between mt-1">
                     <p class="text-[10px] text-zinc-600">Recommended: 120-155 characters</p>
                     <span @class([
@@ -127,41 +127,41 @@
             </div>
 
             <div>
-                <label class="input-label">Keywords <span class="text-zinc-600 font-normal">(comma separated)</span></label>
-                <input type="text" wire:model="metaKeywords" class="input-field text-sm" placeholder="keyword1, keyword2, keyword3">
+                <label class="flux-label">Keywords <span class="text-zinc-600 font-normal">(comma separated)</span></label>
+                <input type="text" wire:model="metaKeywords" class="flux-input text-sm" placeholder="keyword1, keyword2, keyword3">
             </div>
 
             <div>
-                <label class="input-label">Canonical URL</label>
-                <input type="url" wire:model="canonicalUrl" class="input-field text-sm mono" placeholder="https://example.com/page">
+                <label class="flux-label">Canonical URL</label>
+                <input type="url" wire:model="canonicalUrl" class="flux-input text-sm mono" placeholder="https://example.com/page">
             </div>
         </div>
 
         {{-- Open Graph --}}
-        <div class="card space-y-4">
+        <div class="flux-card space-y-4">
             <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Open Graph / Social</h3>
 
             <div>
-                <label class="input-label">OG Title</label>
-                <input type="text" wire:model.live="ogTitle" class="input-field text-sm" placeholder="{{ $title }}">
+                <label class="flux-label">OG Title</label>
+                <input type="text" wire:model.live="ogTitle" class="flux-input text-sm" placeholder="{{ $title }}">
                 <p class="text-[10px] text-zinc-600 mt-1">Leave empty to use the page title.</p>
             </div>
 
             <div>
-                <label class="input-label">OG Description</label>
-                <textarea wire:model.live="ogDescription" rows="2" class="input-field text-sm resize-y" placeholder="{{ $metaDescription }}"></textarea>
+                <label class="flux-label">OG Description</label>
+                <textarea wire:model.live="ogDescription" rows="2" class="flux-input text-sm resize-y" placeholder="{{ $metaDescription }}"></textarea>
             </div>
 
             <div>
-                <label class="input-label">OG Image URL</label>
-                <input type="url" wire:model.live="ogImage" class="input-field text-sm mono" placeholder="https://...">
+                <label class="flux-label">OG Image URL</label>
+                <input type="url" wire:model.live="ogImage" class="flux-input text-sm mono" placeholder="https://...">
                 <p class="text-[10px] text-zinc-600 mt-1">Recommended: 1200x630 pixels</p>
             </div>
         </div>
 
         <div class="flex items-center gap-3">
-            <button type="submit" class="btn-primary text-sm">Save & Push to GitHub</button>
-            <button type="button" wire:click="runAnalysis" class="btn-secondary text-sm">Re-analyze</button>
+            <button type="submit" class="flux-btn-primary text-sm">Save & Push to GitHub</button>
+            <button type="button" wire:click="runAnalysis" class="flux-btn-secondary text-sm">Re-analyze</button>
         </div>
     </form>
 </div>

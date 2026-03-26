@@ -50,15 +50,15 @@
                         <span class="mono text-[10px] text-zinc-600 truncate max-w-[120px]">{{ $region->selector }}</span>
 
                         @if ($region->is_static)
-                            <span class="badge bg-zinc-500/10 text-zinc-500 !text-[10px] !px-1.5 !py-0">static</span>
+                            <span class="flux-badge bg-zinc-500/10 text-zinc-500 !text-[10px] !px-1.5 !py-0">static</span>
                         @else
-                            <span class="badge-green !text-[10px] !px-1.5 !py-0">editable</span>
+                            <span class="flux-badge-green !text-[10px] !px-1.5 !py-0">editable</span>
                         @endif
 
                         @if ($region->detection_method === 'auto')
-                            <span class="badge-amber !text-[10px] !px-1.5 !py-0">auto</span>
+                            <span class="flux-badge-amber !text-[10px] !px-1.5 !py-0">auto</span>
                         @elseif ($region->detection_method === 'marker')
-                            <span class="badge-purple !text-[10px] !px-1.5 !py-0">marked</span>
+                            <span class="flux-badge-purple !text-[10px] !px-1.5 !py-0">marked</span>
                         @endif
                     </div>
 

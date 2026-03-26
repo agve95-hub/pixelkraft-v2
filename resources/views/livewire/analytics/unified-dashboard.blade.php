@@ -2,14 +2,14 @@
     {{-- Controls --}}
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <select wire:model.live="siteId" class="input-field text-sm w-auto">
+            <select wire:model.live="siteId" class="flux-input text-sm w-auto">
                 <option value="">All Sites</option>
                 @foreach ($sites as $site)
                     <option value="{{ $site->id }}">{{ $site->name }}</option>
                 @endforeach
             </select>
 
-            <select wire:model.live="days" class="input-field text-sm w-auto">
+            <select wire:model.live="days" class="flux-input text-sm w-auto">
                 <option value="7">Last 7 days</option>
                 <option value="30">Last 30 days</option>
                 <option value="90">Last 90 days</option>

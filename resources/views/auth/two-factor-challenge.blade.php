@@ -4,67 +4,42 @@
 
     <div x-data="{ recovery: false }">
         <div x-show="!recovery">
-            <p class="text-sm text-zinc-400 mb-5">
-                Enter the 6-digit code from your authenticator app.
-            </p>
+            <flux:subheading class="mb-4">Enter the 6-digit code from your authenticator app.</flux:subheading>
 
-            <form method="POST" action="{{ url('/two-factor-challenge') }}" class="space-y-5">
+            <form method="POST" action="{{ url('/two-factor-challenge') }}" class="space-y-6">
                 @csrf
 
-                <div>
-                    <label for="code" class="input-label">Authentication code</label>
-                    <input
-                        id="code"
-                        type="text"
-                        name="code"
-                        inputmode="numeric"
-                        autofocus
-                        autocomplete="one-time-code"
-                        class="input-field text-center tracking-[0.5em] mono text-lg"
-                        placeholder="000000"
-                        maxlength="6"
-                    >
-                </div>
+                <flux:field>
+                    <flux:label>Authentication code</flux:label>
+                    <flux:input name="code" inputmode="numeric" autofocus autocomplete="one-time-code" placeholder="000000" maxlength="6" class="text-center tracking-widest text-lg font-mono" />
+                    <flux:error name="code" />
+                </flux:field>
 
-                <button type="submit" class="btn-primary w-full">
-                    Verify
-                </button>
+                <flux:button type="submit" variant="primary" class="w-full">Verify</flux:button>
             </form>
         </div>
 
         <div x-show="recovery" x-cloak>
-            <p class="text-sm text-zinc-400 mb-5">
-                Enter one of your recovery codes.
-            </p>
+            <flux:subheading class="mb-4">Enter one of your recovery codes.</flux:subheading>
 
-            <form method="POST" action="{{ url('/two-factor-challenge') }}" class="space-y-5">
+            <form method="POST" action="{{ url('/two-factor-challenge') }}" class="space-y-6">
                 @csrf
 
-                <div>
-                    <label for="recovery_code" class="input-label">Recovery code</label>
-                    <input
-                        id="recovery_code"
-                        type="text"
-                        name="recovery_code"
-                        autofocus
-                        autocomplete="one-time-code"
-                        class="input-field mono"
-                    >
-                </div>
+                <flux:field>
+                    <flux:label>Recovery code</flux:label>
+                    <flux:input name="recovery_code" autofocus autocomplete="one-time-code" class="font-mono" />
+                    <flux:error name="recovery_code" />
+                </flux:field>
 
-                <button type="submit" class="btn-primary w-full">
-                    Verify
-                </button>
+                <flux:button type="submit" variant="primary" class="w-full">Verify</flux:button>
             </form>
         </div>
 
-        <button
-            type="button"
-            class="mt-4 w-full text-center text-sm text-zinc-500 hover:text-zinc-300 transition"
-            x-on:click="recovery = !recovery"
-        >
-            <span x-show="!recovery">Use a recovery code instead</span>
-            <span x-show="recovery" x-cloak>Use authenticator code instead</span>
-        </button>
+        <div class="mt-4 text-center">
+            <flux:button variant="ghost" size="sm" x-on:click="recovery = !recovery">
+                <span x-show="!recovery">Use a recovery code instead</span>
+                <span x-show="recovery" x-cloak>Use authenticator code instead</span>
+            </flux:button>
+        </div>
     </div>
 </x-layouts.auth>

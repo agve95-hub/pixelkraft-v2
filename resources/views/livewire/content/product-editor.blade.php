@@ -5,12 +5,12 @@
             <p class="text-sm text-zinc-500">Manage a product listing.</p>
         </div>
         <div class="flex items-center gap-2">
-            <select wire:model="status" class="input-field text-sm w-auto">
+            <select wire:model="status" class="flux-input text-sm w-auto">
                 <option value="draft">Draft</option>
                 <option value="active">Active</option>
                 <option value="archived">Archived</option>
             </select>
-            <button wire:click="save" class="btn-primary text-sm" wire:loading.attr="disabled">
+            <button wire:click="save" class="flux-btn-primary text-sm" wire:loading.attr="disabled">
                 {{ $productId ? 'Update' : 'Create' }}
             </button>
         </div>
@@ -18,28 +18,28 @@
 
     <div class="space-y-6">
         {{-- Basic Info --}}
-        <div class="card space-y-4">
+        <div class="flux-card space-y-4">
             <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Details</h3>
 
             <div>
-                <label class="input-label">Name</label>
-                <input type="text" wire:model="name" class="input-field" placeholder="Product name">
+                <label class="flux-label">Name</label>
+                <input type="text" wire:model="name" class="flux-input" placeholder="Product name">
                 @error('name') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
             </div>
 
             <div>
-                <label class="input-label">Description</label>
-                <textarea wire:model="description" rows="5" class="input-field text-sm resize-y" placeholder="Product description... HTML supported."></textarea>
+                <label class="flux-label">Description</label>
+                <textarea wire:model="description" rows="5" class="flux-input text-sm resize-y" placeholder="Product description... HTML supported."></textarea>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="input-label">Price</label>
-                    <input type="number" step="0.01" wire:model="price" class="input-field mono" placeholder="0.00">
+                    <label class="flux-label">Price</label>
+                    <input type="number" step="0.01" wire:model="price" class="flux-input mono" placeholder="0.00">
                 </div>
                 <div>
-                    <label class="input-label">Currency</label>
-                    <select wire:model="currency" class="input-field">
+                    <label class="flux-label">Currency</label>
+                    <select wire:model="currency" class="flux-input">
                         <option value="USD">USD</option>
                         <option value="EUR">EUR</option>
                         <option value="GBP">GBP</option>
@@ -49,11 +49,11 @@
         </div>
 
         {{-- Images --}}
-        <div class="card space-y-3">
+        <div class="flux-card space-y-3">
             <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Images</h3>
             <div class="flex gap-2">
-                <input type="text" wire:model="imageInput" wire:keydown.enter.prevent="addImage" class="input-field text-xs mono flex-1" placeholder="https://... image URL">
-                <button wire:click="addImage" class="btn-secondary text-xs !py-1.5 !px-3">Add</button>
+                <input type="text" wire:model="imageInput" wire:keydown.enter.prevent="addImage" class="flux-input text-xs mono flex-1" placeholder="https://... image URL">
+                <button wire:click="addImage" class="flux-btn-secondary text-xs !py-1.5 !px-3">Add</button>
             </div>
             @if (!empty($images))
                 <div class="grid grid-cols-3 gap-2">
@@ -68,12 +68,12 @@
         </div>
 
         {{-- Attributes --}}
-        <div class="card space-y-3">
+        <div class="flux-card space-y-3">
             <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Attributes</h3>
             <div class="flex gap-2">
-                <input type="text" wire:model="attrKey" class="input-field text-xs flex-1" placeholder="Key (e.g. Color)">
-                <input type="text" wire:model="attrValue" wire:keydown.enter.prevent="addAttribute" class="input-field text-xs flex-1" placeholder="Value (e.g. Red)">
-                <button wire:click="addAttribute" class="btn-secondary text-xs !py-1.5 !px-3">Add</button>
+                <input type="text" wire:model="attrKey" class="flux-input text-xs flex-1" placeholder="Key (e.g. Color)">
+                <input type="text" wire:model="attrValue" wire:keydown.enter.prevent="addAttribute" class="flux-input text-xs flex-1" placeholder="Value (e.g. Red)">
+                <button wire:click="addAttribute" class="flux-btn-secondary text-xs !py-1.5 !px-3">Add</button>
             </div>
             @if (!empty($attributes))
                 <div class="space-y-1">
@@ -90,7 +90,7 @@
         {{-- Output --}}
         <div class="card">
             <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider mb-3">Output Path</h3>
-            <input type="text" wire:model="outputPath" class="input-field text-xs mono" placeholder="products/product-name.html">
+            <input type="text" wire:model="outputPath" class="flux-input text-xs mono" placeholder="products/product-name.html">
             <p class="mt-1 text-[10px] text-zinc-600">Where in the repo the generated HTML file will be saved.</p>
         </div>
     </div>

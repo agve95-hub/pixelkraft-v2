@@ -7,7 +7,7 @@
     {{-- Toolbar --}}
     <div class="flex items-center gap-2 border-b border-zinc-800 px-4 py-2 bg-zinc-900/50 flex-shrink-0">
         {{-- Back --}}
-        <a href="{{ route('sites.show', $site) }}" class="btn-ghost text-xs !px-2 !py-1.5">
+        <a href="{{ route('sites.show', $site) }}" class="flux-btn-ghost text-xs !px-2 !py-1.5">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
         </a>
 
@@ -44,7 +44,7 @@
         {{-- Save --}}
         <button
             wire:click="openSaveModal"
-            class="btn-primary text-xs !py-1.5"
+            class="flux-btn-primary text-xs !py-1.5"
             :disabled="$wire.isSaving"
         >
             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" /></svg>
@@ -93,7 +93,7 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-2 mt-1">
-                            <span class="badge-purple !text-[10px]">{{ $selectedRegion->region_type }}</span>
+                            <span class="flux-badge-purple !text-[10px]">{{ $selectedRegion->region_type }}</span>
                             <span class="mono text-[10px] text-zinc-600 truncate">{{ $selectedRegion->selector }}</span>
                         </div>
                     </div>
@@ -102,11 +102,11 @@
                         @if ($selectedRegion->region_type === 'image')
                             {{-- Image edit --}}
                             <div class="space-y-3">
-                                <label class="input-label">Image URL</label>
+                                <label class="flux-label">Image URL</label>
                                 <input
                                     type="text"
                                     wire:model.live="editContent"
-                                    class="input-field mono text-xs"
+                                    class="flux-input mono text-xs"
                                     placeholder="https://..."
                                 >
                                 @if ($editContent)
@@ -118,21 +118,21 @@
                         @elseif ($selectedRegion->region_type === 'link')
                             {{-- Link edit --}}
                             <div class="space-y-3">
-                                <label class="input-label">URL or Text</label>
+                                <label class="flux-label">URL or Text</label>
                                 <input
                                     type="text"
                                     wire:model.live="editContent"
-                                    class="input-field text-sm"
+                                    class="flux-input text-sm"
                                 >
                             </div>
                         @else
                             {{-- Text edit (rich text) --}}
                             <div class="space-y-3">
-                                <label class="input-label">Content</label>
+                                <label class="flux-label">Content</label>
                                 <textarea
                                     wire:model.live="editContent"
                                     rows="8"
-                                    class="input-field text-sm resize-y"
+                                    class="flux-input text-sm resize-y"
                                 ></textarea>
                             </div>
                         @endif
@@ -140,7 +140,7 @@
 
                     {{-- Region edit footer --}}
                     <div class="px-4 py-3 border-t border-zinc-800">
-                        <button wire:click="openSaveModal" class="btn-primary w-full text-xs">
+                        <button wire:click="openSaveModal" class="flux-btn-primary w-full text-xs">
                             Save & Push
                         </button>
                     </div>
@@ -181,11 +181,11 @@
 
                 <div class="space-y-4">
                     <div>
-                        <label class="input-label">Commit message</label>
+                        <label class="flux-label">Commit message</label>
                         <input
                             type="text"
                             wire:model="commitMessage"
-                            class="input-field text-sm"
+                            class="flux-input text-sm"
                             placeholder="Update content..."
                             wire:keydown.enter="save"
                         >
@@ -194,7 +194,7 @@
                     <div class="flex items-center gap-3">
                         <button
                             wire:click="save"
-                            class="btn-primary text-sm"
+                            class="flux-btn-primary text-sm"
                             wire:loading.attr="disabled"
                             wire:target="save"
                         >
@@ -204,7 +204,7 @@
                                 Pushing...
                             </span>
                         </button>
-                        <button wire:click="$set('showSaveModal', false)" class="btn-ghost text-sm">Cancel</button>
+                        <button wire:click="$set('showSaveModal', false)" class="flux-btn-ghost text-sm">Cancel</button>
                     </div>
                 </div>
             </div>

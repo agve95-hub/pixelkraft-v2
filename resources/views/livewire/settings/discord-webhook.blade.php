@@ -1,22 +1,15 @@
 <div>
     <form wire:submit="save" class="space-y-4">
-        <div>
-            <label class="input-label">Webhook URL</label>
-            <input
-                type="url"
-                wire:model="webhookUrl"
-                class="input-field mono text-sm"
-                placeholder="https://discord.com/api/webhooks/..."
-            >
-            @error('webhookUrl') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
-        </div>
+        <flux:field>
+            <flux:label>Webhook URL</flux:label>
+            <flux:input wire:model="webhookUrl" placeholder="https://discord.com/api/webhooks/..." class="font-mono" />
+            <flux:error name="webhookUrl" />
+        </flux:field>
 
         <div class="flex items-center gap-3">
-            <button type="submit" class="btn-primary text-sm">Save</button>
+            <flux:button type="submit" variant="primary" size="sm">Save</flux:button>
             @if ($webhookUrl)
-                <button type="button" wire:click="testWebhook" class="btn-secondary text-sm">
-                    Send test
-                </button>
+                <flux:button wire:click="testWebhook" variant="subtle" size="sm">Send test</flux:button>
             @endif
         </div>
     </form>

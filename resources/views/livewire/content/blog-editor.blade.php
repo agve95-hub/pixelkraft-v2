@@ -5,12 +5,12 @@
             <p class="text-sm text-zinc-500">Write and publish a blog post.</p>
         </div>
         <div class="flex items-center gap-2">
-            <select wire:model="status" class="input-field text-sm w-auto">
+            <select wire:model="status" class="flux-input text-sm w-auto">
                 <option value="draft">Draft</option>
                 <option value="scheduled">Scheduled</option>
                 <option value="published">Published</option>
             </select>
-            <button wire:click="save" class="btn-primary text-sm" wire:loading.attr="disabled" wire:target="save">
+            <button wire:click="save" class="flux-btn-primary text-sm" wire:loading.attr="disabled" wire:target="save">
                 <span wire:loading.remove wire:target="save">{{ $postId ? 'Update' : 'Publish' }}</span>
                 <span wire:loading wire:target="save">Saving...</span>
             </button>
@@ -45,11 +45,11 @@
 
             {{-- Body --}}
             <div>
-                <label class="input-label">Content</label>
+                <label class="flux-label">Content</label>
                 <textarea
                     wire:model.live.debounce.500ms="body"
                     rows="20"
-                    class="input-field text-sm resize-y min-h-[300px]"
+                    class="flux-input text-sm resize-y min-h-[300px]"
                     placeholder="Write your post content here... HTML is supported."
                 ></textarea>
                 @error('body') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
@@ -57,11 +57,11 @@
 
             {{-- Excerpt --}}
             <div>
-                <label class="input-label">Excerpt <span class="text-zinc-600 font-normal">(optional)</span></label>
+                <label class="flux-label">Excerpt <span class="text-zinc-600 font-normal">(optional)</span></label>
                 <textarea
                     wire:model="excerpt"
                     rows="3"
-                    class="input-field text-sm resize-y"
+                    class="flux-input text-sm resize-y"
                     placeholder="Brief summary for previews and listings..."
                 ></textarea>
             </div>
@@ -75,7 +75,7 @@
                 <input
                     type="text"
                     wire:model="featuredImage"
-                    class="input-field text-xs mono"
+                    class="flux-input text-xs mono"
                     placeholder="https://... or path/to/image.jpg"
                 >
                 @if ($featuredImage)
@@ -93,10 +93,10 @@
                         type="text"
                         wire:model="tagInput"
                         wire:keydown.enter.prevent="addTag"
-                        class="input-field text-xs flex-1"
+                        class="flux-input text-xs flex-1"
                         placeholder="Add tag..."
                     >
-                    <button wire:click="addTag" class="btn-secondary text-xs !py-1.5 !px-2">+</button>
+                    <button wire:click="addTag" class="flux-btn-secondary text-xs !py-1.5 !px-2">+</button>
                 </div>
                 @if (!empty($tags))
                     <div class="flex flex-wrap gap-1.5 mt-3">
@@ -117,7 +117,7 @@
                     <input
                         type="datetime-local"
                         wire:model="scheduledAt"
-                        class="input-field text-sm"
+                        class="flux-input text-sm"
                     >
                 </div>
             @endif
@@ -126,7 +126,7 @@
             @if ($templates->isNotEmpty())
                 <div class="card">
                     <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider mb-3">Template</h3>
-                    <select wire:model="templateId" class="input-field text-sm">
+                    <select wire:model="templateId" class="flux-input text-sm">
                         <option value="">Default (basic HTML)</option>
                         @foreach ($templates as $template)
                             <option value="{{ $template->id }}">{{ $template->name }}</option>
@@ -141,7 +141,7 @@
                 <input
                     type="text"
                     wire:model="outputPath"
-                    class="input-field text-xs mono"
+                    class="flux-input text-xs mono"
                     placeholder="blog/{{ $slug ?: 'post-slug' }}.html"
                 >
                 <p class="mt-1 text-[10px] text-zinc-600">Relative to repo root. Where the generated HTML is saved.</p>
@@ -153,17 +153,17 @@
                 <div class="space-y-3">
                     <div>
                         <label class="text-[10px] uppercase tracking-wider text-zinc-600 mb-1 block">Title tag</label>
-                        <input type="text" wire:model="seoTitle" class="input-field text-xs" placeholder="{{ $title }}">
+                        <input type="text" wire:model="seoTitle" class="flux-input text-xs" placeholder="{{ $title }}">
                         <p class="mt-0.5 text-[10px] text-zinc-600 mono">{{ Str::length($seoTitle ?: $title) }}/70</p>
                     </div>
                     <div>
                         <label class="text-[10px] uppercase tracking-wider text-zinc-600 mb-1 block">Meta description</label>
-                        <textarea wire:model="seoDescription" rows="3" class="input-field text-xs resize-y" placeholder="Post description..."></textarea>
+                        <textarea wire:model="seoDescription" rows="3" class="flux-input text-xs resize-y" placeholder="Post description..."></textarea>
                         <p class="mt-0.5 text-[10px] text-zinc-600 mono">{{ Str::length($seoDescription) }}/160</p>
                     </div>
                     <div>
                         <label class="text-[10px] uppercase tracking-wider text-zinc-600 mb-1 block">OG Image</label>
-                        <input type="text" wire:model="ogImage" class="input-field text-xs mono" placeholder="https://...">
+                        <input type="text" wire:model="ogImage" class="flux-input text-xs mono" placeholder="https://...">
                     </div>
                 </div>
             </div>

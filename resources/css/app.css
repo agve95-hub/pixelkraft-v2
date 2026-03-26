@@ -6,85 +6,10 @@
 
 @layer base {
     body {
-        @apply bg-zinc-950 text-zinc-100 antialiased;
         font-family: 'Instrument Sans', system-ui, sans-serif;
     }
-}
 
-@layer components {
-    .btn-primary {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:opacity-50 disabled:cursor-not-allowed;
-    }
-
-    .btn-secondary {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950;
-    }
-
-    .btn-danger {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-950;
-    }
-
-    .btn-ghost {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200;
-    }
-
-    .input-field {
-        @apply block w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 transition focus:border-violet-500 focus:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-violet-500;
-    }
-
-    .input-label {
-        @apply block text-sm font-medium text-zinc-400 mb-1.5;
-    }
-
-    .card {
-        @apply rounded-xl border border-zinc-800 bg-zinc-900 p-6;
-    }
-
-    .card-hover {
-        @apply card transition hover:border-zinc-700 hover:bg-zinc-800/50;
-    }
-
-    .sidebar-link {
-        @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200;
-    }
-
-    .sidebar-link-active {
-        @apply flex items-center gap-3 rounded-lg bg-violet-600/10 px-3 py-2 text-sm font-medium text-violet-400;
-    }
-
-    .badge {
-        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
-    }
-
-    .badge-green {
-        @apply badge bg-emerald-500/10 text-emerald-400;
-    }
-
-    .badge-amber {
-        @apply badge bg-amber-500/10 text-amber-400;
-    }
-
-    .badge-red {
-        @apply badge bg-red-500/10 text-red-400;
-    }
-
-    .badge-blue {
-        @apply badge bg-blue-500/10 text-blue-400;
-    }
-
-    .badge-purple {
-        @apply badge bg-violet-500/10 text-violet-400;
-    }
-
-    .table-header {
-        @apply text-left text-xs font-semibold uppercase tracking-wider text-zinc-500;
-    }
-
-    .table-cell {
-        @apply px-4 py-3 text-sm text-zinc-300 border-b border-zinc-800/50;
-    }
-
-    .mono {
+    .font-mono, [class*="font-mono"], code, pre {
         font-family: 'DM Mono', monospace;
     }
 }
