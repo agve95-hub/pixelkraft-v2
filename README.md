@@ -12,6 +12,7 @@ If you build websites with AI tools and manage multiple sites, pixelkraft gives 
 |-------|-----------|
 | Backend | Laravel 11 (PHP 8.3) |
 | Frontend | Livewire 3 + Alpine.js + Tailwind CSS |
+| UI Components | Livewire Flux (official Livewire UI kit) |
 | Database | MariaDB |
 | Cache / Queue / Sessions | Redis |
 | Queue Dashboard | Laravel Horizon |
@@ -153,6 +154,7 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in
 - [x] 6.5 — FileManager Livewire (browse, view, edit, upload, delete repo files)
 - [x] 6.6 — All sidebar links wired (Analytics, Uptime, Inbox, Subscribers, Newsletters)
 - [x] 6.7 — All routes finalized (45+ routes covering every feature)
+- [x] 6.8 — Full UI redesign with Livewire Flux (500+ component usages, zero custom CSS classes)
 
 ## Requirements
 
