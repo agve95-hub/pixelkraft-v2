@@ -1,18 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+@import '../../vendor/livewire/flux/dist/flux.css';
 
-@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @source "../../resources/views";
 @source "../../vendor/livewire/flux/stubs";
-@source "../../vendor/livewire/flux";
-@source "../../app";
 
-@layer base {
-    body {
-        font-family: 'Instrument Sans', system-ui, sans-serif;
-    }
-
-    .font-mono, [class*="font-mono"], code, pre {
-        font-family: 'DM Mono', monospace;
-    }
+@theme {
+    --font-sans: 'Inter', sans-serif;
 }
