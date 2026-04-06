@@ -17,8 +17,8 @@
             class="flux-input mono text-xs resize-y"
             spellcheck="false"
             placeholder='{
-  "@context": "https://schema.org",
-  "@type": "Article",
+  "@@context": "https://schema.org",
+  "@@type": "Article",
   "headline": "Your page title"
 }'
         ></textarea>

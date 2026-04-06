@@ -493,9 +493,14 @@ class SpaComponentParser implements ParserInterface
 
     private function isPageComponent(string $relativePath, string $projectType): bool
     {
+        $normalizedPath = trim(str_replace('\\', '/', $relativePath), '/');
+
+        if ($projectType === 'nextjs') {
+            return $this->isNextPageComponent($normalizedPath);
+        }
+
         // Page-like patterns by framework
         $pagePatterns = match ($projectType) {
-            'nextjs' => ['#^(src/)?(app|pages)/#'],
             'nuxt'   => ['#^pages/#'],
             'astro'  => ['#^src/pages/#', '#^src/content/#'],
             'svelte' => ['#^src/routes/#'],
@@ -503,13 +508,13 @@ class SpaComponentParser implements ParserInterface
         };
 
         foreach ($pagePatterns as $pattern) {
-            if (preg_match($pattern, $relativePath)) {
+            if (preg_match($pattern, $normalizedPath)) {
                 return true;
             }
         }
 
         // Also include any component file in a pages/views directory
-        return (bool) preg_match('#/(pages|views|routes)/#', $relativePath);
+        return (bool) preg_match('#/(pages|views|routes)/#', $normalizedPath);
     }
 
     private function componentPathToUrlPath(string $filePath, string $projectType): string
@@ -523,18 +528,50 @@ class SpaComponentParser implements ParserInterface
         // Strip extension
         $path = preg_replace('#\.(jsx|tsx|vue|svelte|astro|md|mdx)$#', '', $path);
 
+        $segments = array_values(array_filter(
+            explode('/', trim((string) $path, '/')),
+            fn (string $segment) => $segment !== '' && ! preg_match('/^\(.*\)$/', $segment) && ! str_starts_with($segment, '@')
+        ));
+
+        $path = implode('/', $segments);
+
         // Strip index
         $path = preg_replace('#/?index$#', '', $path);
 
         // Handle Next.js page.tsx convention
         $path = preg_replace('#/?page$#', '', $path);
 
-        // Handle dynamic routes [slug] → :slug
+        // Handle Next.js catch-all routes before simple dynamic segments.
+        $path = preg_replace('/\[\[\.\.\.([^\]]+)\]\]/', ':$1*', $path);
+        $path = preg_replace('/\[\.\.\.([^\]]+)\]/', ':$1*', $path);
         $path = preg_replace('/\[([^\]]+)\]/', ':$1', $path);
 
         $path = '/' . ltrim($path, '/');
 
         return $path ?: '/';
+    }
+
+    private function isNextPageComponent(string $relativePath): bool
+    {
+        if (preg_match('#^(src/)?app/#', $relativePath)) {
+            return (bool) preg_match('#(^|/)page\.(jsx|tsx)$#', $relativePath);
+        }
+
+        if (! preg_match('#^(src/)?pages/#', $relativePath)) {
+            return false;
+        }
+
+        if (preg_match('#^(src/)?pages/api/#', $relativePath)) {
+            return false;
+        }
+
+        $basename = pathinfo($relativePath, PATHINFO_FILENAME);
+
+        if (in_array($basename, ['_app', '_document', '_error', '404', '500'], true)) {
+            return false;
+        }
+
+        return (bool) preg_match('#\.(jsx|tsx)$#', $relativePath);
     }
 
     private function shouldSkip(string $path): bool
