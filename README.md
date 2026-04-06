@@ -11,10 +11,10 @@ If you build websites with AI tools and manage multiple sites, pixelkraft gives 
 | Layer | Technology |
 |-------|-----------|
 | Backend | Laravel 11 (PHP 8.3) |
-| Frontend | Livewire 3 + Alpine.js + Tailwind CSS |
-| UI Components | Livewire Flux (official Livewire UI kit) |
+| Frontend | Livewire 3 + Alpine.js + Tailwind CSS v4 |
+| UI Components | Livewire Flux v2 (official Livewire UI kit) |
 | Database | MariaDB |
-| Cache / Queue / Sessions | Redis |
+| Cache / Queue / Sessions | Redis (Valkey on AlmaLinux 10) |
 | Queue Dashboard | Laravel Horizon |
 | Media Storage | Cloudflare R2 (S3-compatible) |
 | Email | Resend |
@@ -81,91 +81,16 @@ If you build websites with AI tools and manage multiple sites, pixelkraft gives 
 
 See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in a browser for a formatted, interactive view covering all 20 sections: tech stack, database schema, multi-strategy parser design, visual editor architecture, deployment pipeline, and 6 build phases.
 
-## Build Phases
-
-| Phase | Focus | Status |
-|-------|-------|--------|
-| 1 | Foundation + Auth + GitHub Sync | ✅ Complete |
-| 2 | Multi-Strategy Parser + Region Detection | ✅ Complete |
-| 3 | Visual Editor + Content Management | ✅ Complete |
-| 4 | Deploy Pipeline + Domain/SSL Management | ✅ Complete |
-| 5 | SEO + Analytics + Monitoring | ✅ Complete |
-| 6 | Email + Operations + Polish | ✅ Complete |
-
-### Phase 1 Progress
-
-- [x] 1.1 — Laravel scaffold + config (MariaDB, Redis, Horizon, Tailwind, Livewire)
-- [x] 1.2 — Database migrations (15 tables)
-- [x] 1.3 — Eloquent models (16 models with relationships)
-- [x] 1.4 — Auth with 2FA (Fortify views + routing)
-- [x] 1.5 — Dashboard layout + Site CRUD + Settings
-- [x] 1.7 — GitSyncService + ProjectDetector
-- [x] 1.8 — Webhook receiver + Public API + Notifications + Scheduled tasks
-
-### Phase 2 Progress
-
-- [x] 2.1 — ParserService orchestrator + StaticHtmlParser (DomCrawler)
-- [x] 2.2 — RegionDetector with heuristic scoring + cross-page refinement
-- [x] 2.3 — SsgOutputParser (Hugo, Astro, 11ty source-to-output mapping)
-- [x] 2.4 — SpaComponentParser (React JSX, Vue SFC, Svelte, Astro)
-- [x] 2.5 — ContentPatcher (edit mapping back to source files)
-
-### Phase 3 Progress
-
-- [x] 3.1 — RegionPanel (review/confirm auto-detected regions with filtering + confidence bars)
-- [x] 3.2 — VisualEditor (iframe + injected overlay script + inline editing)
-- [x] 3.3 — Code editor mode (toggle between visual and code view)
-- [x] 3.4 — Editor toolbar (save → patch → commit → push flow with modal)
-- [x] 3.5 — BlogEditor (structured fields: title, body, tags, SEO, scheduling, templates)
-- [x] 3.6 — ProductEditor (name, price, images, attributes, output path)
-- [x] 3.7 — TemplateManager (create/edit reusable templates with {{placeholders}})
-
-### Phase 4 Progress
-
-- [x] 4.1 — DeployService (full pipeline: pull → install deps → build → optimize → deploy → nginx reload)
-- [x] 4.2 — NginxConfigService (vhost generation, symlinks, staging configs, security headers, gzip, WebP)
-- [x] 4.3 — SslService (Certbot provisioning, expiry checking, renewal)
-- [x] 4.4 — ImageOptimizer (jpegoptim, pngquant, svgo, WebP generation via cwebp)
-- [x] 4.5 — HtmlMinifier (HTML/CSS/JS minification, lazy loading injection)
-- [x] 4.6 — DeployControls Livewire (deploy button, domain setup, log viewer, rollback)
-- [x] 4.7 — Artisan commands (check-uptime, check-ssl, backup-database, publish-scheduled)
-- [x] 4.8 — Deploy + rollback API endpoints
-
-### Phase 5 Progress
-
-- [x] 5.1 — SeoAnalyzer (score computation with per-check breakdown + actionable suggestions)
-- [x] 5.2 — MetaEditor Livewire (title, description, keywords, OG tags, canonical + Google/social preview)
-- [x] 5.3 — SchemaEditor (JSON-LD editor with presets: Article, Product, LocalBusiness, FAQ)
-- [x] 5.4 — RobotsTxtEditor (presets: allow all, block AI bots, block all)
-- [x] 5.5 — RedirectManager (301/302 CRUD, auto-regenerates Nginx config on change)
-- [x] 5.6 — SitemapGenerator (XML sitemap from pages + blog posts, writes to deploy + repo)
-- [x] 5.7 — AnalyticsAggregator (Cloudflare GraphQL API sync, GA4 placeholder, site/page stats)
-- [x] 5.8 — UnifiedDashboard Livewire (global + per-site views, uptime bars, traffic chart, top pages)
-- [x] 5.9 — BrokenLinkCrawler (internal 404s, external checks, redirect chain detection)
-- [x] 5.10 — RunLighthouse command (Lighthouse CLI + HTTP timing fallback)
-- [x] 5.11 — SyncAnalytics + CrawlLinks artisan commands
-
-### Phase 6 Progress
-
-- [x] 6.1 — FormInbox Livewire (view/read/spam/delete submissions, per-site filter, integration docs)
-- [x] 6.2 — SubscriberList Livewire (add/unsubscribe/delete, search, stats)
-- [x] 6.3 — CampaignEditor Livewire (compose, schedule, send newsletters)
-- [x] 6.4 — SendCampaigns command (Resend API integration, personalization, rate limiting)
-- [x] 6.5 — FileManager Livewire (browse, view, edit, upload, delete repo files)
-- [x] 6.6 — All sidebar links wired (Analytics, Uptime, Inbox, Subscribers, Newsletters)
-- [x] 6.7 — All routes finalized (45+ routes covering every feature)
-- [x] 6.8 — Full UI redesign with Livewire Flux (500+ component usages, zero custom CSS classes)
-
 ## Requirements
 
 - PHP 8.3+
 - MariaDB 10.11+
-- Redis 7+
-- Node.js 20 LTS
+- Redis 7+ (or Valkey on AlmaLinux 10)
+- Node.js 20+
 - Nginx
-- Chromium (for Browsershot)
-- Certbot (for SSL)
-- Supervisor (for queue workers)
+- Composer 2.x
+- Supervisor (for Horizon queue workers)
+- Certbot (for SSL, optional)
 
 ## Setup (Development)
 
@@ -184,6 +109,172 @@ php artisan horizon  # Start queue workers
 npm run dev          # Start Vite dev server
 php artisan serve    # Start Laravel dev server
 ```
+
+## Deployment (Production VPS)
+
+### 1. Server Prerequisites
+
+```bash
+# PHP 8.3 + extensions
+dnf install php php-fpm php-mysqlnd php-mbstring php-xml php-curl php-zip php-bcmath php-gd php-intl php-opcache php-sodium
+
+# Redis-compatible cache (AlmaLinux 10 uses Valkey, not Redis)
+dnf install valkey
+systemctl enable --now valkey
+
+# Composer
+curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Supervisor for Horizon
+dnf install supervisor
+systemctl enable --now supervisord
+```
+
+### 2. Application Setup
+
+```bash
+cd /var/www/pixelkraft
+composer install --no-dev --optimize-autoloader
+cp .env.example .env
+php artisan key:generate
+
+# Configure .env:
+#   APP_URL=http://YOUR_SERVER_IP
+#   DB_CONNECTION=mariadb
+#   CACHE_STORE=redis / QUEUE_CONNECTION=redis / SESSION_DRIVER=redis
+
+php artisan migrate --force
+php artisan storage:link
+npm install
+npm run build
+chown -R nginx:nginx /var/www/pixelkraft
+```
+
+### 3. Flux UI v2 — Critical CSS Setup
+
+The CSS file **must** follow the [Flux v2 installation docs](https://fluxui.dev/docs/installation) exactly:
+
+**`resources/css/app.css`:**
+```css
+@import 'tailwindcss';
+@import '../../vendor/livewire/flux/dist/flux.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source "../../resources/views";
+@source "../../vendor/livewire/flux/stubs";
+
+@theme {
+    --font-sans: 'Inter', sans-serif;
+}
+```
+
+**`postcss.config.js`** — Must use the Tailwind v4 PostCSS plugin:
+```js
+export default {
+    plugins: {
+        '@tailwindcss/postcss': {},
+    },
+};
+```
+
+Install the PostCSS plugin:
+```bash
+npm install @tailwindcss/postcss
+```
+
+**Build validation:** After `npm run build`, the CSS should be ~249 kB. If it's ~13 kB, the Flux CSS import is missing.
+
+### 4. Nginx Configuration
+
+```nginx
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+    root /var/www/pixelkraft/public;
+    index index.php;
+    client_max_body_size 20M;
+
+    # Required for Flux JS/CSS assets (per fluxui.dev/docs/installation)
+    location ~* ^/flux/flux(\.min)?\.(js|css)$ {
+        expires off;
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/run/php-fpm/www.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+}
+```
+
+### 5. Supervisor (Horizon)
+
+Create `/etc/supervisord.d/horizon.ini`:
+```ini
+[program:horizon]
+process_name=%(program_name)s
+command=php /var/www/pixelkraft/artisan horizon
+autostart=true
+autorestart=true
+user=nginx
+redirect_stderr=true
+stdout_logfile=/var/www/pixelkraft/storage/logs/horizon.log
+stopwaitsecs=3600
+```
+
+### 6. Cron
+
+```bash
+* * * * * cd /var/www/pixelkraft && php artisan schedule:run >> /dev/null 2>&1
+```
+
+## Key Notes
+
+### Flux v2 vs v1 Component Names
+
+This project uses **Flux v2.13.1**. If you encounter broken UI, check that Blade templates use v2 syntax:
+
+| Flux v1 (wrong) | Flux v2 (correct) |
+|---|---|
+| `flux:sidebar sticky stashable` | `flux:sidebar sticky collapsible="mobile"` |
+| `flux:brand` | `flux:sidebar.brand` |
+| `flux:navlist.item` | `flux:sidebar.item` |
+| `flux:navlist.group` | `flux:sidebar.group` |
+| `flux:spacer` (in sidebar) | `flux:sidebar.spacer` |
+| `flux:profile` (in sidebar) | `flux:sidebar.profile` |
+
+### AlmaLinux 10 Specifics
+
+- **No `redis` package** — use `valkey` (Redis-compatible fork, drop-in replacement)
+- **php-pecl-redis6** works with Valkey on the default port 6379
+
+### Tailwind v4 Migration
+
+- Uses `@import "tailwindcss"` (not `@tailwind base/components/utilities`)
+- PostCSS plugin is `@tailwindcss/postcss` (not `tailwindcss`)
+- Content scanning uses `@source` directives in CSS (not `content` array in config)
+
+## Build Phases
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| 1 | Foundation + Auth + GitHub Sync | ✅ Complete |
+| 2 | Multi-Strategy Parser + Region Detection | ✅ Complete |
+| 3 | Visual Editor + Content Management | ✅ Complete |
+| 4 | Deploy Pipeline + Domain/SSL Management | ✅ Complete |
+| 5 | SEO + Analytics + Monitoring | ✅ Complete |
+| 6 | Email + Operations + Polish | ✅ Complete |
 
 ## License
 
