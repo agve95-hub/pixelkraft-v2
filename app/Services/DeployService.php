@@ -220,7 +220,17 @@ class DeployService
         if (File::exists("{$repoPath}/package.json")) {
             $installCommand = $this->dependencyInstallCommand($repoPath);
 
-            $result = $this->runCommand($installCommand, $repoPath, $site, timeout: 180);
+            $result = $this->runCommand(
+                $installCommand,
+                $repoPath,
+                $site,
+                timeout: 180,
+                envOverrides: [
+                    'NODE_ENV' => 'development',
+                    'NPM_CONFIG_PRODUCTION' => 'false',
+                    'npm_config_production' => 'false',
+                ],
+            );
             $this->appendCommandResult($log, '  Dependencies', $result);
 
             if (! $result['success']) {
@@ -364,7 +374,13 @@ class DeployService
         );
     }
 
-    private function runCommand(string $command, string $cwd, Site $site, int $timeout = 120): array
+    private function runCommand(
+        string $command,
+        string $cwd,
+        Site $site,
+        int $timeout = 120,
+        array $envOverrides = [],
+    ): array
     {
         $nodeBinPath = str_replace('\\', '/', "{$cwd}/node_modules/.bin");
         $systemPath = getenv('PATH') ?: ($_SERVER['PATH'] ?? '');
@@ -376,6 +392,7 @@ class DeployService
                 'PATH' => $nodeBinPath . PATH_SEPARATOR . $systemPath,
             ],
             $site->env_variables ?? [],
+            $envOverrides,
         );
 
         // Use nvm if node version is specified
@@ -412,11 +429,11 @@ class DeployService
     private function dependencyInstallCommand(string $repoPath): string
     {
         return match ($this->packageManager($repoPath)) {
-            'pnpm' => 'corepack pnpm install --frozen-lockfile',
-            'yarn' => 'corepack yarn install --frozen-lockfile',
+            'pnpm' => 'corepack pnpm install --frozen-lockfile --prod=false',
+            'yarn' => 'corepack yarn install --frozen-lockfile --production=false',
             'bun' => 'bun install --frozen-lockfile',
             'npm' => File::exists("{$repoPath}/package-lock.json") || File::exists("{$repoPath}/npm-shrinkwrap.json")
-                ? 'npm ci'
+                ? 'npm ci --include=dev'
                 : 'npm install',
             default => 'npm install',
         };
