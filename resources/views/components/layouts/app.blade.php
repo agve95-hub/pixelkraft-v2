@@ -51,6 +51,8 @@
 
     <flux:header class="lg:hidden">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
+
+        @livewire('layout.notification-bell')
         <flux:spacer />
         <flux:dropdown position="top" align="start">
             <flux:profile name="{{ auth()->user()->name }}" />
