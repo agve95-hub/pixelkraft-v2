@@ -63,7 +63,7 @@ class SiteController extends Controller
         }
 
         $deployer = app(DeployService::class);
-        $result = $deployer->rollback($site, $log->snapshot_tag);
+        $result = $deployer->rollback($site, $log);
 
         return response()->json([
             'status'  => $result->status,

@@ -89,13 +89,27 @@ class ProjectDetector
 
     private function detectNextjs(string $path, ?array $pkg): ?array
     {
+        $isStaticExport = $this->hasNextStaticExportConfig($path);
+        $buildCmd = $this->getScript($pkg, 'build') ?? 'npx next build';
+
         if ($this->packageHasDependency($pkg, 'next')) {
-            $buildCmd = $this->getScript($pkg, 'build') ?? 'npx next build';
+            if ($isStaticExport) {
+                return $this->result('nextjs', $buildCmd, 'out', 0.98);
+            }
+
+            $exportScript = $this->getScript($pkg, 'export');
+            if ($exportScript) {
+                return $this->result('nextjs', "{$buildCmd} && {$exportScript}", 'out', 0.95);
+            }
 
             return $this->result('nextjs', $buildCmd, '.next', 0.95);
         }
 
         if (File::exists("{$path}/next.config.js") || File::exists("{$path}/next.config.mjs") || File::exists("{$path}/next.config.ts")) {
+            if ($isStaticExport) {
+                return $this->result('nextjs', $buildCmd, 'out', 0.92);
+            }
+
             return $this->result('nextjs', 'npx next build', '.next', 0.85);
         }
 
@@ -266,6 +280,30 @@ class ProjectDetector
     private function getScript(?array $pkg, string $name): ?string
     {
         return $pkg['scripts'][$name] ?? null;
+    }
+
+    private function hasNextStaticExportConfig(string $path): bool
+    {
+        $configFiles = [
+            'next.config.js',
+            'next.config.mjs',
+            'next.config.ts',
+        ];
+
+        foreach ($configFiles as $configFile) {
+            $configPath = "{$path}/{$configFile}";
+
+            if (! File::exists($configPath)) {
+                continue;
+            }
+
+            $config = File::get($configPath);
+            if (preg_match('/output\s*:\s*[\'"]export[\'"]/', $config)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function fileContains(string $path, string $needle): bool

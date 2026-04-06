@@ -55,8 +55,12 @@ class DeployService
             $this->deployFiles($site, $log);
 
             // Step 6: Reload Nginx
-            $log->appendLog('[6/6] Reloading Nginx...');
-            $this->nginx->reloadNginx();
+            if ($this->shouldReloadNginx($site)) {
+                $log->appendLog('[6/6] Reloading Nginx...');
+                $this->nginx->reloadNginx();
+            } else {
+                $log->appendLog('[6/6] Skipping Nginx reload (no site config generated).');
+            }
 
             // Record commit info
             $sha = $this->git->isCloned($site)
@@ -145,7 +149,11 @@ class DeployService
             $this->deployFiles($site, $log);
 
             // Reload nginx
-            $this->nginx->reloadNginx();
+            if ($this->shouldReloadNginx($site)) {
+                $this->nginx->reloadNginx();
+            } else {
+                $log->appendLog('Skipping Nginx reload (no site config generated).');
+            }
 
             // Checkout back to branch head
             $this->git->checkout($site, $site->branch);
@@ -284,6 +292,10 @@ class DeployService
     {
         $repoPath = $site->repo_path;
 
+        if ($site->project_type === 'nextjs') {
+            return $this->resolveNextjsOutputDir($site);
+        }
+
         if ($site->build_output_dir) {
             $outputPath = "{$repoPath}/{$site->build_output_dir}";
             if (File::isDirectory($outputPath)) {
@@ -297,6 +309,40 @@ class DeployService
         }
 
         return $repoPath;
+    }
+
+    private function resolveNextjsOutputDir(Site $site): string
+    {
+        $repoPath = $site->repo_path;
+        $configuredOutputDir = $site->build_output_dir;
+
+        if ($configuredOutputDir && $configuredOutputDir !== '.next') {
+            $configuredPath = "{$repoPath}/{$configuredOutputDir}";
+            if (File::isDirectory($configuredPath)) {
+                return $configuredPath;
+            }
+        }
+
+        $staticCandidates = [
+            "{$repoPath}/out",
+        ];
+
+        foreach ($staticCandidates as $candidate) {
+            if (File::isDirectory($candidate)) {
+                return $candidate;
+            }
+        }
+
+        if ($configuredOutputDir === '.next' || File::isDirectory("{$repoPath}/.next")) {
+            throw new \RuntimeException(
+                'Next.js built a `.next` directory, which is not a static deploy artifact. ' .
+                'Configure static export so the build outputs to `out`, or update the site build output directory to the exported folder.'
+            );
+        }
+
+        throw new \RuntimeException(
+            'No deployable Next.js output was found. Expected a static export directory such as `out` after the build finished.'
+        );
     }
 
     private function runCommand(string $command, string $cwd, Site $site, int $timeout = 120): array
@@ -330,6 +376,11 @@ class DeployService
     private function openRepo(Site $site)
     {
         return (new \CzProject\GitPhp\Git())->open($site->repo_path);
+    }
+
+    private function shouldReloadNginx(Site $site): bool
+    {
+        return ! empty($site->nginx_conf_path) && File::exists($site->nginx_conf_path);
     }
 
     private function cleanOldSnapshots(Site $site): void

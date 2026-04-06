@@ -66,7 +66,7 @@ class DeployControls extends Component
 
         try {
             $deployer = app(DeployService::class);
-            $deployer->rollback($site, $log->snapshot_tag);
+            $deployer->rollback($site, $log);
 
             session()->flash('success', "Rolled back to {$log->snapshot_tag}.");
         } catch (\Throwable $e) {

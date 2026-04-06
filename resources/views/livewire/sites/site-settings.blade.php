@@ -49,7 +49,7 @@
             <flux:field>
                 <flux:label>Build output directory</flux:label>
                 <flux:input wire:model="buildOutputDir" placeholder="dist" class="font-mono" />
-                <flux:description>Relative to repo root. Common values: dist, build, public, _site</flux:description>
+                <flux:description>Relative to repo root. Common values: dist, build, public, _site, out (Next.js static export)</flux:description>
             </flux:field>
 
             <flux:button type="submit" variant="primary" size="sm">Save</flux:button>
