@@ -121,24 +121,61 @@ class ParserService
             ]
         );
 
-        // Store discovered regions
-        if (! empty($parsed->regions)) {
-            foreach ($parsed->regions as $region) {
-                $page->editableRegions()->updateOrCreate(
-                    ['selector' => $region['selector']],
-                    [
-                        'region_type'      => $region['type'] ?? 'text',
-                        'is_static'        => $region['is_static'] ?? false,
-                        'detection_method' => 'auto',
-                        'confidence_score' => $region['confidence'] ?? 0.5,
-                        'current_content'  => $region['content'] ?? null,
-                        'source_location'  => $region['source_location'] ?? null,
-                    ]
-                );
-            }
-        }
+        $this->syncEditableRegions($page, $parsed->regions);
 
         return $page;
+    }
+
+    private function syncEditableRegions(Page $page, array $regions): void
+    {
+        $existingBySelector = $page->editableRegions()
+            ->get()
+            ->keyBy('selector');
+
+        $currentSelectors = [];
+
+        foreach ($regions as $region) {
+            $selector = $region['selector'] ?? null;
+            if (! $selector) {
+                continue;
+            }
+
+            $currentSelectors[] = $selector;
+            $existing = $existingBySelector->get($selector);
+
+            $attributes = [
+                'region_type' => $region['type'] ?? ($existing?->region_type ?? 'text'),
+                'current_content' => $region['content'] ?? null,
+                'source_location' => $region['source_location'] ?? null,
+            ];
+
+            if (! $existing || $existing->detection_method === 'auto') {
+                $attributes['is_static'] = $region['is_static'] ?? false;
+                $attributes['detection_method'] = 'auto';
+                $attributes['confidence_score'] = $region['confidence'] ?? 0.5;
+                $attributes['marker_id'] = $region['marker_id'] ?? null;
+            } else {
+                $attributes['is_static'] = $existing->is_static;
+                $attributes['detection_method'] = $existing->detection_method;
+                $attributes['confidence_score'] = $existing->confidence_score;
+                $attributes['marker_id'] = $existing->marker_id;
+            }
+
+            $page->editableRegions()->updateOrCreate(
+                ['selector' => $selector],
+                $attributes,
+            );
+        }
+
+        $selectorsToDelete = $existingBySelector
+            ->filter(fn ($region, string $selector) => $region->detection_method === 'auto' && ! in_array($selector, $currentSelectors, true))
+            ->pluck('id');
+
+        if ($selectorsToDelete->isNotEmpty()) {
+            $page->editableRegions()
+                ->whereIn('id', $selectorsToDelete)
+                ->delete();
+        }
     }
 
     /**

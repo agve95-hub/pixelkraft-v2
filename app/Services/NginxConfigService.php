@@ -2,15 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\Redirect;
 use App\Models\Site;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\View;
 
 class NginxConfigService
 {
+    public function __construct(
+        private SiteRuntimeService $runtime,
+    ) {}
+
     /**
      * Generate and write an Nginx vhost config for a site.
      */
@@ -136,7 +138,11 @@ class NginxConfigService
 
         foreach ($redirects as $redirect) {
             $from = preg_quote($redirect->from_path, '~');
-            $redirectBlock .= "    rewrite ^{$redirect->from_path}$ {$redirect->to_path} permanent;\n";
+            $redirectBlock .= "    rewrite ^{$from}$ {$redirect->to_path} permanent;\n";
+        }
+
+        if ($this->runtime->usesRuntimeServer($site)) {
+            return $this->renderRuntimeTemplate($site, $redirectBlock);
         }
 
         $webpBlock = <<<'NGINX'
@@ -199,6 +205,53 @@ server {
     }
 
     error_page 404 /404.html;
+
+    access_log /var/log/nginx/{$site->slug}-access.log;
+    error_log /var/log/nginx/{$site->slug}-error.log;
+}
+NGINX;
+    }
+
+    private function renderRuntimeTemplate(Site $site, string $redirectBlock): string
+    {
+        $host = config('pixelkraft.runtime.host', '127.0.0.1');
+        $port = $this->runtime->portFor($site);
+
+        return <<<NGINX
+server {
+    listen 80;
+    server_name {$site->domain};
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # Gzip
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript image/svg+xml;
+
+    # Redirects
+{$redirectBlock}
+
+    location / {
+        proxy_pass http://{$host}:{$port};
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 60s;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
 
     access_log /var/log/nginx/{$site->slug}-access.log;
     error_log /var/log/nginx/{$site->slug}-error.log;

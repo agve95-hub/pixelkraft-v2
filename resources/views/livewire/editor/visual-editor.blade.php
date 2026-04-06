@@ -1,6 +1,6 @@
 <div
     class="flex flex-col h-[calc(100vh-3.5rem)]"
-    x-data="editorState()"
+    x-data="editorState({ visualEditingEnabled: @js($visualEditingEnabled) })"
     x-on:highlight-region.window="highlightRegion($event.detail.selector)"
     x-on:reload-iframe.window="reloadIframe()"
 >
@@ -20,7 +20,7 @@
         {{-- Mode toggle --}}
         <div class="flex items-center rounded-lg border border-zinc-700 bg-zinc-800 p-0.5">
             <button
-                wire:click="toggleMode"
+                wire:click="setMode('visual')"
                 @class([
                     'px-3 py-1 rounded-md text-xs font-medium transition',
                     'bg-violet-600 text-white' => $mode === 'visual',
@@ -30,7 +30,7 @@
                 Visual
             </button>
             <button
-                wire:click="toggleMode"
+                wire:click="setMode('code')"
                 @class([
                     'px-3 py-1 rounded-md text-xs font-medium transition',
                     'bg-violet-600 text-white' => $mode === 'code',
@@ -72,6 +72,7 @@
                     class="w-full h-full border-0"
                     sandbox="allow-same-origin allow-scripts"
                     x-on:load="onIframeLoad()"
+                    x-on:error="iframeLoading = false"
                 ></iframe>
 
                 {{-- Overlay loading state --}}
@@ -233,9 +234,10 @@
 {{-- ── Alpine.js editor state ────────────────── --}}
 @script
 <script>
-Alpine.data('editorState', () => ({
+Alpine.data('editorState', ({ visualEditingEnabled }) => ({
     iframeLoading: true,
     selectedSelector: null,
+    visualEditingEnabled,
 
     onIframeLoad() {
         this.iframeLoading = false;
@@ -280,7 +282,19 @@ Alpine.data('editorState', () => ({
                 white-space: nowrap;
             }
         `;
-        doc.head.appendChild(style);
+        (doc.head || doc.documentElement).appendChild(style);
+
+        doc.addEventListener('click', (e) => {
+            const target = e.target?.nodeType === 1 ? e.target : e.target?.parentElement;
+            const link = target?.closest('a') ?? null;
+            if (link) {
+                e.preventDefault();
+            }
+        }, true);
+
+        if (!this.visualEditingEnabled) {
+            return;
+        }
 
         // Create tooltip element
         const tooltip = doc.createElement('div');
@@ -292,7 +306,8 @@ Alpine.data('editorState', () => ({
 
         // Hover effect
         doc.addEventListener('mouseover', (e) => {
-            const el = e.target;
+            const el = e.target?.nodeType === 1 ? e.target : e.target?.parentElement;
+            if (!el) return;
             if (el === doc.body || el === doc.documentElement) return;
 
             if (lastHovered && lastHovered !== el) {
@@ -329,10 +344,11 @@ Alpine.data('editorState', () => ({
 
         // Click to select element
         doc.addEventListener('click', (e) => {
+            const el = e.target?.nodeType === 1 ? e.target : e.target?.parentElement;
+            if (!el) return;
+
             e.preventDefault();
             e.stopPropagation();
-
-            const el = e.target;
 
             // Clear previous selection
             doc.querySelectorAll('[data-pk-selected]').forEach(n => n.removeAttribute('data-pk-selected'));
@@ -377,7 +393,11 @@ Alpine.data('editorState', () => ({
     reloadIframe() {
         this.iframeLoading = true;
         const iframe = this.$refs.previewFrame;
-        if (iframe) iframe.src = iframe.src;
+        if (!iframe) return;
+
+        const url = new URL(iframe.src, window.location.origin);
+        url.searchParams.set('_pk_preview', Date.now().toString());
+        iframe.src = url.toString();
     },
 }));
 </script>

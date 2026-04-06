@@ -42,6 +42,11 @@ class VisualEditor extends Component
         $page = $this->resolvePage();
 
         $this->codeFilePath = $page->file_path;
+
+        if (! $this->supportsVisualEditing()) {
+            $this->mode = 'code';
+        }
+
         $this->loadCodeContent();
     }
 
@@ -60,6 +65,10 @@ class VisualEditor extends Component
 
     public function onIframeElementClicked(string $selector, string $content, string $tagName): void
     {
+        if (! $this->supportsVisualEditing()) {
+            return;
+        }
+
         // Find or create a region for this element
         $page = $this->resolvePage();
 
@@ -84,7 +93,16 @@ class VisualEditor extends Component
 
     public function toggleMode(): void
     {
-        $this->mode = $this->mode === 'visual' ? 'code' : 'visual';
+        $this->setMode($this->mode === 'visual' ? 'code' : 'visual');
+    }
+
+    public function setMode(string $mode): void
+    {
+        if (! in_array($mode, ['visual', 'code'], true)) {
+            return;
+        }
+
+        $this->mode = $mode;
 
         if ($this->mode === 'code') {
             $this->loadCodeContent();
@@ -150,6 +168,7 @@ class VisualEditor extends Component
                 $sha = $git->commitAndPush($site, $changedFiles, $message);
 
                 $site->update(['last_synced_at' => now()]);
+                app(\App\Services\ParserService::class)->parseSinglePage($site, $page->file_path);
 
                 // Refresh code content if in code mode
                 if ($this->mode === 'code') {
@@ -208,12 +227,6 @@ class VisualEditor extends Component
 
     private function buildPreviewUrl(Site $site, Page $page): string
     {
-        // If site has a domain and is live, use that
-        if ($site->domain && $site->deploy_status === 'live') {
-            return "https://{$site->domain}" . ($page->url_path ?? '/');
-        }
-
-        // Otherwise serve the file locally via a preview route
         return route('editor.preview', [
             'site' => $site->id,
             'page' => $page->id,

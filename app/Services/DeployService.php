@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\ParseSiteJob;
 use App\Models\DeployLog;
 use App\Models\Site;
 use Illuminate\Support\Facades\File;
@@ -15,6 +16,7 @@ class DeployService
         private NginxConfigService $nginx,
         private ImageOptimizer $imageOptimizer,
         private HtmlMinifier $minifier,
+        private SiteRuntimeService $runtime,
     ) {}
 
     /**
@@ -49,10 +51,15 @@ class DeployService
             $log->appendLog('[4/6] Optimizing assets...');
             $this->optimizeAssets($site, $log);
 
-            // Step 5: Deploy to serve directory
+            // Step 5: Deploy / start runtime
             $site->update(['deploy_status' => 'deploying']);
-            $log->appendLog('[5/6] Deploying to serve directory...');
-            $this->deployFiles($site, $log);
+            if ($this->runtime->usesRuntimeServer($site)) {
+                $log->appendLog('[5/6] Starting runtime server...');
+                $this->deployRuntime($site, $log);
+            } else {
+                $log->appendLog('[5/6] Deploying static files...');
+                $this->deployFiles($site, $log);
+            }
 
             // Step 6: Reload Nginx
             if ($this->shouldReloadNginx($site)) {
@@ -82,6 +89,8 @@ class DeployService
                 'deploy_status'    => 'live',
                 'last_deployed_at' => now(),
             ]);
+
+            ParseSiteJob::dispatch($site);
 
             // Create rollback tag
             if ($sha && $this->git->isCloned($site)) {
@@ -145,8 +154,11 @@ class DeployService
             // Checkout the tagged commit
             $this->git->checkout($site, $targetDeploy->snapshot_tag);
 
-            // Re-deploy files
-            $this->deployFiles($site, $log);
+            if ($this->runtime->usesRuntimeServer($site)) {
+                $this->deployRuntime($site, $log);
+            } else {
+                $this->deployFiles($site, $log);
+            }
 
             // Reload nginx
             if ($this->shouldReloadNginx($site)) {
@@ -206,13 +218,13 @@ class DeployService
 
         // Node.js dependencies
         if (File::exists("{$repoPath}/package.json")) {
-            $lockFile = File::exists("{$repoPath}/package-lock.json") ? 'npm ci' : 'npm install';
+            $installCommand = $this->dependencyInstallCommand($repoPath);
 
-            $result = $this->runCommand($lockFile, $repoPath, $site, timeout: 180);
-            $log->appendLog("  npm: {$result['summary']}");
+            $result = $this->runCommand($installCommand, $repoPath, $site, timeout: 180);
+            $this->appendCommandResult($log, '  Dependencies', $result);
 
             if (! $result['success']) {
-                throw new \RuntimeException("npm install failed: {$result['output']}");
+                throw new \RuntimeException("Dependency installation failed: {$result['output']}");
             }
         } else {
             $log->appendLog('  No package.json found, skipping npm install.');
@@ -221,19 +233,21 @@ class DeployService
 
     private function runBuild(Site $site, DeployLog $log): void
     {
-        if (empty($site->build_command)) {
+        $buildCommand = $this->resolveBuildCommand($site);
+
+        if (empty($buildCommand)) {
             $log->appendLog('  No build command configured, skipping build.');
             return;
         }
 
         $result = $this->runCommand(
-            $site->build_command,
+            $buildCommand,
             $site->repo_path,
             $site,
             timeout: config('pixelkraft.deploy.build_timeout_seconds', 300),
         );
 
-        $log->appendLog("  Build: {$result['summary']}");
+        $this->appendCommandResult($log, '  Build', $result);
 
         if (! $result['success']) {
             throw new \RuntimeException("Build failed: {$result['output']}");
@@ -242,6 +256,11 @@ class DeployService
 
     private function optimizeAssets(Site $site, DeployLog $log): void
     {
+        if ($this->runtime->usesRuntimeServer($site)) {
+            $log->appendLog('  Skipping static post-processing for runtime-managed build output.');
+            return;
+        }
+
         $outputDir = $this->resolveOutputDir($site);
 
         if (! File::isDirectory($outputDir)) {
@@ -253,13 +272,17 @@ class DeployService
         $imageCount = $this->imageOptimizer->optimizeDirectory($outputDir);
         $log->appendLog("  Optimized {$imageCount} images.");
 
-        // HTML/CSS/JS minification
-        $minifiedCount = $this->minifier->minifyDirectory($outputDir);
-        $log->appendLog("  Minified {$minifiedCount} files.");
+        if ($this->supportsAggressiveOptimization($site)) {
+            // HTML/CSS/JS minification is only safe for plain static/SSG sites.
+            $minifiedCount = $this->minifier->minifyDirectory($outputDir);
+            $log->appendLog("  Minified {$minifiedCount} files.");
 
-        // Lazy loading injection
-        $lazyCount = $this->minifier->injectLazyLoading($outputDir);
-        $log->appendLog("  Injected lazy loading on {$lazyCount} images.");
+            // Lazy loading injection is also limited to static markup.
+            $lazyCount = $this->minifier->injectLazyLoading($outputDir);
+            $log->appendLog("  Injected lazy loading on {$lazyCount} images.");
+        } else {
+            $log->appendLog('  Skipping HTML/JS minification and lazy-loading injection for framework-managed output.');
+        }
     }
 
     private function deployFiles(Site $site, DeployLog $log): void
@@ -271,19 +294,15 @@ class DeployService
             throw new \RuntimeException("Output directory not found: {$sourceDir}");
         }
 
-        // Ensure deploy directory exists
-        File::ensureDirectoryExists($deployPath, 0755, true);
-
-        // Sync files (rsync-style: copy new/changed, delete removed)
-        $result = Process::timeout(60)
-            ->path($site->repo_path)
-            ->run("rsync -a --delete {$sourceDir}/ {$deployPath}/");
-
-        if (! $result->successful()) {
-            throw new \RuntimeException("File sync failed: {$result->errorOutput()}");
-        }
+        $this->replaceDirectory($sourceDir, $deployPath);
 
         $log->appendLog("  Files deployed to {$deployPath}");
+    }
+
+    private function deployRuntime(Site $site, DeployLog $log): void
+    {
+        $this->runtime->deploy($site, $log);
+        $log->appendLog('  Runtime site deployed on ' . $this->runtime->baseUrl($site));
     }
 
     // ── Helpers ──────────────────────────────────
@@ -347,9 +366,15 @@ class DeployService
 
     private function runCommand(string $command, string $cwd, Site $site, int $timeout = 120): array
     {
+        $nodeBinPath = str_replace('\\', '/', "{$cwd}/node_modules/.bin");
+        $systemPath = getenv('PATH') ?: ($_SERVER['PATH'] ?? '');
+
         // Build environment variables
         $env = array_merge(
-            ['NODE_ENV' => 'production'],
+            [
+                'NODE_ENV' => 'production',
+                'PATH' => $nodeBinPath . PATH_SEPARATOR . $systemPath,
+            ],
             $site->env_variables ?? [],
         );
 
@@ -368,6 +393,7 @@ class DeployService
 
         return [
             'success' => $result->successful(),
+            'command' => $command,
             'output'  => $output,
             'summary' => $result->successful() ? 'OK' : 'FAILED (exit ' . $result->exitCode() . ')',
         ];
@@ -381,6 +407,131 @@ class DeployService
     private function shouldReloadNginx(Site $site): bool
     {
         return ! empty($site->nginx_conf_path) && File::exists($site->nginx_conf_path);
+    }
+
+    private function dependencyInstallCommand(string $repoPath): string
+    {
+        return match ($this->packageManager($repoPath)) {
+            'pnpm' => 'corepack pnpm install --frozen-lockfile',
+            'yarn' => 'corepack yarn install --frozen-lockfile',
+            'bun' => 'bun install --frozen-lockfile',
+            'npm' => File::exists("{$repoPath}/package-lock.json") || File::exists("{$repoPath}/npm-shrinkwrap.json")
+                ? 'npm ci'
+                : 'npm install',
+            default => 'npm install',
+        };
+    }
+
+    private function resolveBuildCommand(Site $site): ?string
+    {
+        $buildCommand = trim((string) ($site->build_command ?? ''));
+
+        if ($buildCommand === '') {
+            return null;
+        }
+
+        $packagePath = "{$site->repo_path}/package.json";
+        if (! File::exists($packagePath)) {
+            return $buildCommand;
+        }
+
+        $packageJson = json_decode(File::get($packagePath), true);
+        if (! is_array($packageJson)) {
+            return $buildCommand;
+        }
+
+        $scripts = is_array($packageJson['scripts'] ?? null) ? $packageJson['scripts'] : [];
+        $buildScript = trim((string) ($scripts['build'] ?? ''));
+        $exportScript = trim((string) ($scripts['export'] ?? ''));
+        $normalizedBuild = preg_replace('/\s+/', ' ', strtolower($buildCommand)) ?: strtolower($buildCommand);
+
+        if (
+            $buildScript !== '' &&
+            (
+                $buildCommand === $buildScript
+                || preg_match('/^(?:npm run|corepack pnpm|corepack yarn|pnpm|yarn|bun run)\s+build$/', $normalizedBuild)
+            )
+        ) {
+            return $this->packageManagerRun($site->repo_path, 'build');
+        }
+
+        if (
+            $buildScript !== '' &&
+            $exportScript !== '' &&
+            (
+                $buildCommand === "{$buildScript} && {$exportScript}"
+                || preg_match('/^(?:npm run|corepack pnpm|corepack yarn|pnpm|yarn|bun run)\s+build\s+&&\s+(?:npm run|corepack pnpm|corepack yarn|pnpm|yarn|bun run)\s+export$/', $normalizedBuild)
+            )
+        ) {
+            return $this->packageManagerRun($site->repo_path, 'build')
+                . ' && ' .
+                $this->packageManagerRun($site->repo_path, 'export');
+        }
+
+        return $buildCommand;
+    }
+
+    private function packageManager(string $repoPath): string
+    {
+        return match (true) {
+            File::exists("{$repoPath}/pnpm-lock.yaml") => 'pnpm',
+            File::exists("{$repoPath}/yarn.lock") => 'yarn',
+            File::exists("{$repoPath}/bun.lockb"), File::exists("{$repoPath}/bun.lock") => 'bun',
+            File::exists("{$repoPath}/package-lock.json"), File::exists("{$repoPath}/npm-shrinkwrap.json") => 'npm',
+            default => 'npm',
+        };
+    }
+
+    private function packageManagerRun(string $repoPath, string $script): string
+    {
+        return match ($this->packageManager($repoPath)) {
+            'pnpm' => "corepack pnpm {$script}",
+            'yarn' => "corepack yarn {$script}",
+            'bun' => "bun run {$script}",
+            default => "npm run {$script}",
+        };
+    }
+
+    private function supportsAggressiveOptimization(Site $site): bool
+    {
+        return in_array($site->project_type, ['static_html', 'hugo', 'eleventy'], true);
+    }
+
+    private function replaceDirectory(string $sourceDir, string $targetDir): void
+    {
+        $stagingDir = $targetDir . '.__pixelkraft_tmp';
+
+        File::deleteDirectory($stagingDir);
+        File::ensureDirectoryExists(dirname($targetDir), 0755, true);
+
+        if (! File::copyDirectory($sourceDir, $stagingDir)) {
+            throw new \RuntimeException("Failed to stage files from {$sourceDir}");
+        }
+
+        File::deleteDirectory($targetDir);
+
+        if (! File::moveDirectory($stagingDir, $targetDir)) {
+            File::deleteDirectory($stagingDir);
+            throw new \RuntimeException("Failed to activate staged deploy at {$targetDir}");
+        }
+    }
+
+    private function appendCommandResult(DeployLog $log, string $label, array $result): void
+    {
+        $log->appendLog("{$label}: {$result['summary']} ({$result['command']})");
+
+        if (! empty($result['output'])) {
+            $log->appendLog($this->indentMultilineOutput($result['output']));
+        }
+    }
+
+    private function indentMultilineOutput(string $output): string
+    {
+        return collect(preg_split("/\r\n|\n|\r/", trim($output)) ?: [])
+            ->filter(fn (?string $line) => $line !== null && $line !== '')
+            ->map(fn (string $line) => '    ' . $line)
+            ->take(80)
+            ->implode("\n");
     }
 
     private function cleanOldSnapshots(Site $site): void

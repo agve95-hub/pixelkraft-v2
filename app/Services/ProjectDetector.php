@@ -77,11 +77,11 @@ class ProjectDetector
     private function detectAstro(string $path, ?array $pkg): ?array
     {
         if ($this->packageHasDependency($pkg, 'astro')) {
-            return $this->result('astro', 'npx astro build', 'dist', 0.95);
+            return $this->result('astro', $this->scriptCommand($path, $pkg, 'build', 'npx astro build'), 'dist', 0.95);
         }
 
         if (File::exists("{$path}/astro.config.mjs") || File::exists("{$path}/astro.config.ts")) {
-            return $this->result('astro', 'npx astro build', 'dist', 0.9);
+            return $this->result('astro', $this->scriptCommand($path, $pkg, 'build', 'npx astro build'), 'dist', 0.9);
         }
 
         return null;
@@ -90,14 +90,16 @@ class ProjectDetector
     private function detectNextjs(string $path, ?array $pkg): ?array
     {
         $isStaticExport = $this->hasNextStaticExportConfig($path);
-        $buildCmd = $this->getScript($pkg, 'build') ?? 'npx next build';
+        $buildCmd = $this->scriptCommand($path, $pkg, 'build', 'npx next build');
 
         if ($this->packageHasDependency($pkg, 'next')) {
             if ($isStaticExport) {
                 return $this->result('nextjs', $buildCmd, 'out', 0.98);
             }
 
-            $exportScript = $this->getScript($pkg, 'export');
+            $exportScript = $this->hasScript($pkg, 'export')
+                ? $this->scriptCommand($path, $pkg, 'export', 'npx next export')
+                : null;
             if ($exportScript) {
                 return $this->result('nextjs', "{$buildCmd} && {$exportScript}", 'out', 0.95);
             }
@@ -110,7 +112,7 @@ class ProjectDetector
                 return $this->result('nextjs', $buildCmd, 'out', 0.92);
             }
 
-            return $this->result('nextjs', 'npx next build', '.next', 0.85);
+            return $this->result('nextjs', $this->scriptCommand($path, $pkg, 'build', 'npx next build'), '.next', 0.85);
         }
 
         return null;
@@ -119,13 +121,13 @@ class ProjectDetector
     private function detectNuxt(string $path, ?array $pkg): ?array
     {
         if ($this->packageHasDependency($pkg, 'nuxt')) {
-            $buildCmd = $this->getScript($pkg, 'build') ?? 'npx nuxt build';
+            $buildCmd = $this->scriptCommand($path, $pkg, 'build', 'npx nuxt build');
 
             return $this->result('nuxt', $buildCmd, '.output/public', 0.95);
         }
 
         if (File::exists("{$path}/nuxt.config.ts") || File::exists("{$path}/nuxt.config.js")) {
-            return $this->result('nuxt', 'npx nuxt build', '.output/public', 0.85);
+            return $this->result('nuxt', $this->scriptCommand($path, $pkg, 'build', 'npx nuxt build'), '.output/public', 0.85);
         }
 
         return null;
@@ -134,13 +136,13 @@ class ProjectDetector
     private function detectSvelte(string $path, ?array $pkg): ?array
     {
         if ($this->packageHasDependency($pkg, '@sveltejs/kit')) {
-            $buildCmd = $this->getScript($pkg, 'build') ?? 'npm run build';
+            $buildCmd = $this->scriptCommand($path, $pkg, 'build', 'npm run build');
 
             return $this->result('svelte', $buildCmd, 'build', 0.95);
         }
 
         if ($this->packageHasDependency($pkg, 'svelte')) {
-            $buildCmd = $this->getScript($pkg, 'build') ?? 'npm run build';
+            $buildCmd = $this->scriptCommand($path, $pkg, 'build', 'npm run build');
 
             return $this->result('svelte', $buildCmd, 'public', 0.85);
         }
@@ -151,7 +153,7 @@ class ProjectDetector
     private function detectVue(string $path, ?array $pkg): ?array
     {
         if ($this->packageHasDependency($pkg, 'vue')) {
-            $buildCmd = $this->getScript($pkg, 'build') ?? 'npm run build';
+            $buildCmd = $this->scriptCommand($path, $pkg, 'build', 'npm run build');
             $outputDir = 'dist';
 
             // Vite-based Vue projects
@@ -168,7 +170,7 @@ class ProjectDetector
     private function detectReact(string $path, ?array $pkg): ?array
     {
         if ($this->packageHasDependency($pkg, 'react')) {
-            $buildCmd = $this->getScript($pkg, 'build') ?? 'npm run build';
+            $buildCmd = $this->scriptCommand($path, $pkg, 'build', 'npm run build');
 
             // CRA uses build/, Vite uses dist/
             $outputDir = $this->packageHasDependency($pkg, 'vite') ? 'dist' : 'build';
@@ -206,14 +208,14 @@ class ProjectDetector
 
         foreach ($configFiles as $configFile) {
             if (File::exists("{$path}/{$configFile}")) {
-                $buildCmd = $this->getScript($pkg, 'build') ?? 'npx @11ty/eleventy';
+                $buildCmd = $this->scriptCommand($path, $pkg, 'build', 'npx @11ty/eleventy');
 
                 return $this->result('eleventy', $buildCmd, '_site', 0.95);
             }
         }
 
         if ($this->packageHasDependency($pkg, '@11ty/eleventy')) {
-            $buildCmd = $this->getScript($pkg, 'build') ?? 'npx @11ty/eleventy';
+            $buildCmd = $this->scriptCommand($path, $pkg, 'build', 'npx @11ty/eleventy');
 
             return $this->result('eleventy', $buildCmd, '_site', 0.9);
         }
@@ -280,6 +282,35 @@ class ProjectDetector
     private function getScript(?array $pkg, string $name): ?string
     {
         return $pkg['scripts'][$name] ?? null;
+    }
+
+    private function hasScript(?array $pkg, string $name): bool
+    {
+        return trim((string) $this->getScript($pkg, $name)) !== '';
+    }
+
+    private function scriptCommand(string $path, ?array $pkg, string $name, string $fallback): string
+    {
+        if (! $this->hasScript($pkg, $name)) {
+            return $fallback;
+        }
+
+        return match ($this->packageManager($path)) {
+            'pnpm' => "corepack pnpm {$name}",
+            'yarn' => "corepack yarn {$name}",
+            'bun' => "bun run {$name}",
+            default => "npm run {$name}",
+        };
+    }
+
+    private function packageManager(string $path): string
+    {
+        return match (true) {
+            File::exists("{$path}/pnpm-lock.yaml") => 'pnpm',
+            File::exists("{$path}/yarn.lock") => 'yarn',
+            File::exists("{$path}/bun.lockb"), File::exists("{$path}/bun.lock") => 'bun',
+            default => 'npm',
+        };
     }
 
     private function hasNextStaticExportConfig(string $path): bool

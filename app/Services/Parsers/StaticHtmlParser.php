@@ -55,6 +55,15 @@ class StaticHtmlParser implements ParserInterface
 
         $html = File::get($fullPath);
 
+        return $this->parseHtmlDocument(
+            html: $html,
+            filePath: $filePath,
+            site: $site,
+        );
+    }
+
+    public function parseHtmlDocument(string $html, string $filePath, Site $site, ?string $urlPath = null): ?ParsedPage
+    {
         if (empty(trim($html))) {
             return null;
         }
@@ -76,7 +85,7 @@ class StaticHtmlParser implements ParserInterface
 
         return new ParsedPage(
             filePath: $filePath,
-            urlPath: $this->filePathToUrlPath($filePath, $site->build_output_dir),
+            urlPath: $urlPath ?? $this->filePathToUrlPath($filePath, $site->build_output_dir),
             title: $title,
             metaDescription: $metaDescription,
             metaKeywords: $metaKeywords,
@@ -373,30 +382,55 @@ class StaticHtmlParser implements ParserInterface
      */
     private function buildSelector(Crawler $node, int $index): string
     {
-        $tagName = $node->nodeName();
+        $domNode = $node->getNode(0);
 
-        try {
-            $id = $node->attr('id');
-            if ($id) {
-                return "#{$id}";
-            }
-
-            $class = $node->attr('class');
-            if ($class) {
-                $classes = array_filter(explode(' ', $class));
-                // Use first meaningful class
-                foreach ($classes as $cls) {
-                    if (! preg_match('/^(flex|grid|block|hidden|p-|m-|w-|h-|text-|bg-|border|rounded)/i', $cls)) {
-                        return "{$tagName}.{$cls}";
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            // ignore
+        if (! $domNode instanceof \DOMElement) {
+            return $node->nodeName();
         }
 
-        // Fallback to nth-of-type with data attribute
-        return "{$tagName}[data-pk-region=\"{$index}\"]";
+        if ($domNode->hasAttribute('id')) {
+            return '#' . $domNode->getAttribute('id');
+        }
+
+        $segments = [];
+        $current = $domNode;
+
+        while ($current instanceof \DOMElement) {
+            $tagName = strtolower($current->tagName);
+
+            if ($current->hasAttribute('id')) {
+                array_unshift($segments, '#' . $current->getAttribute('id'));
+                break;
+            }
+
+            array_unshift($segments, $tagName . ':nth-of-type(' . $this->nthOfType($current) . ')');
+
+            $parent = $current->parentNode;
+            if (! $parent instanceof \DOMElement || in_array(strtolower($parent->tagName), ['html'], true)) {
+                break;
+            }
+
+            $current = $parent;
+        }
+
+        return implode(' > ', $segments) ?: strtolower($domNode->tagName) . ':nth-of-type(' . max(1, $index + 1) . ')';
+    }
+
+    private function nthOfType(\DOMElement $element): int
+    {
+        $position = 1;
+        $tagName = $element->tagName;
+        $sibling = $element->previousSibling;
+
+        while ($sibling) {
+            if ($sibling instanceof \DOMElement && $sibling->tagName === $tagName) {
+                $position++;
+            }
+
+            $sibling = $sibling->previousSibling;
+        }
+
+        return $position;
     }
 
     // ── Helpers ──────────────────────────────────

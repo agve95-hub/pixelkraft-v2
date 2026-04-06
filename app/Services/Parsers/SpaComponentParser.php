@@ -3,10 +3,18 @@
 namespace App\Services\Parsers;
 
 use App\Models\Site;
+use App\Services\PagePreviewService;
+use App\Services\SiteRuntimeService;
 use Illuminate\Support\Facades\File;
 
 class SpaComponentParser implements ParserInterface
 {
+    public function __construct(
+        private StaticHtmlParser $htmlParser,
+        private PagePreviewService $previews,
+        private SiteRuntimeService $runtime,
+    ) {}
+
     public function name(): string
     {
         return 'spa_component';
@@ -61,6 +69,7 @@ class SpaComponentParser implements ParserInterface
 
         $content = File::get($fullPath);
         $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+        $urlPath = $this->componentPathToUrlPath($filePath, $site->project_type);
 
         // Extract content based on file type
         $extractedContent = match ($extension) {
@@ -71,15 +80,25 @@ class SpaComponentParser implements ParserInterface
             default         => $this->parseGeneric($content),
         };
 
+        $renderedPreview = $this->parseRenderedPreview($repoPath, $filePath, $urlPath, $content, $site);
+        if ($renderedPreview) {
+            return $renderedPreview;
+        }
+
         if (! $extractedContent) {
-            return null;
+            return new ParsedPage(
+                filePath: $filePath,
+                urlPath: $urlPath,
+                contentHash: md5($content),
+                regions: [],
+            );
         }
 
         $regions = $this->buildRegions($extractedContent, $filePath);
 
         return new ParsedPage(
             filePath: $filePath,
-            urlPath: $this->componentPathToUrlPath($filePath, $site->project_type),
+            urlPath: $urlPath,
             title: $extractedContent['title'] ?? null,
             metaDescription: $extractedContent['meta_description'] ?? null,
             contentHash: md5($content),
@@ -339,6 +358,112 @@ class SpaComponentParser implements ParserInterface
         }
 
         return $regions;
+    }
+
+    private function parseRenderedPreview(
+        string $repoPath,
+        string $sourceFilePath,
+        string $urlPath,
+        string $sourceContent,
+        Site $site,
+    ): ?ParsedPage {
+        $builtPreviewPath = $this->previews->findBuiltHtmlPath($site, $urlPath);
+
+        if (! $builtPreviewPath) {
+            return $this->parseRuntimePreview($sourceFilePath, $urlPath, $sourceContent, $site);
+        }
+
+        $parsed = $this->htmlParser->parsePage($repoPath, $builtPreviewPath, $site);
+
+        if (! $parsed) {
+            return null;
+        }
+
+        return $this->mapRenderedPreviewToSource(
+            parsed: $parsed,
+            sourceFilePath: $sourceFilePath,
+            sourceContent: $sourceContent,
+            urlPath: $urlPath,
+            sourceType: 'component_preview',
+            previewReference: $builtPreviewPath,
+        );
+    }
+
+    private function parseRuntimePreview(
+        string $sourceFilePath,
+        string $urlPath,
+        string $sourceContent,
+        Site $site,
+    ): ?ParsedPage {
+        if (! $this->runtime->usesRuntimeServer($site) || ! $this->runtime->isReachable($site, $urlPath)) {
+            return null;
+        }
+
+        $response = $this->runtime->fetch($site, $urlPath);
+
+        if (! $response || $response->status() >= 500) {
+            return null;
+        }
+
+        $contentType = strtolower((string) $response->header('Content-Type'));
+        if ($contentType !== '' && ! str_contains($contentType, 'html')) {
+            return null;
+        }
+
+        $parsed = $this->htmlParser->parseHtmlDocument(
+            html: $response->body(),
+            filePath: $sourceFilePath,
+            site: $site,
+            urlPath: $urlPath,
+        );
+
+        if (! $parsed) {
+            return null;
+        }
+
+        return $this->mapRenderedPreviewToSource(
+            parsed: $parsed,
+            sourceFilePath: $sourceFilePath,
+            sourceContent: $sourceContent,
+            urlPath: $urlPath,
+            sourceType: 'component_runtime_preview',
+            previewReference: $this->runtime->baseUrl($site) . $urlPath,
+        );
+    }
+
+    private function mapRenderedPreviewToSource(
+        ParsedPage $parsed,
+        string $sourceFilePath,
+        string $sourceContent,
+        string $urlPath,
+        string $sourceType,
+        string $previewReference,
+    ): ParsedPage {
+        $regions = array_map(function (array $region) use ($sourceFilePath, $sourceType, $previewReference) {
+            $sourceLocation = $region['source_location'] ?? [];
+            $sourceLocation['file'] = $sourceFilePath;
+            $sourceLocation['source_type'] = $sourceType;
+            $sourceLocation['preview_file'] = $previewReference;
+
+            $region['source_location'] = $sourceLocation;
+
+            return $region;
+        }, $parsed->regions);
+
+        return new ParsedPage(
+            filePath: $sourceFilePath,
+            urlPath: $urlPath,
+            title: $parsed->title,
+            metaDescription: $parsed->metaDescription,
+            metaKeywords: $parsed->metaKeywords,
+            ogTitle: $parsed->ogTitle,
+            ogDescription: $parsed->ogDescription,
+            ogImage: $parsed->ogImage,
+            canonicalUrl: $parsed->canonicalUrl,
+            schemaJson: $parsed->schemaJson,
+            contentHash: md5($sourceContent),
+            regions: $regions,
+        );
     }
 
     // ── Helpers ──────────────────────────────────

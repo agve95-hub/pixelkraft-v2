@@ -65,6 +65,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Runtime Sites
+    |--------------------------------------------------------------------------
+    |
+    | Runtime-managed sites (for example non-exported Next.js apps) are served
+    | from a local Node process that pixelkraft starts and health-checks.
+    |
+    */
+    'runtime' => [
+        'host'                    => env('SITE_RUNTIME_HOST', '127.0.0.1'),
+        'port_start'              => (int) env('SITE_RUNTIME_PORT_START', 4100),
+        'port_span'               => (int) env('SITE_RUNTIME_PORT_SPAN', 2000),
+        'storage_path'            => env('SITE_RUNTIME_STORAGE_PATH', storage_path('app/runtime-sites')),
+        'pid_path'                => env('SITE_RUNTIME_PID_PATH', storage_path('app/runtime-pids')),
+        'log_path'                => env('SITE_RUNTIME_LOG_PATH', storage_path('logs/runtime-sites')),
+        'startup_timeout_seconds' => (int) env('SITE_RUNTIME_STARTUP_TIMEOUT_SECONDS', 30),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Monitoring Defaults
     |--------------------------------------------------------------------------
     */
