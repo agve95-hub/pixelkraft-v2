@@ -14,7 +14,7 @@ class RegionPanel extends Component
 
     public function confirmEditable(string $regionId): void
     {
-        $region = EditableRegion::findOrFail($regionId);
+        $region = $this->resolveRegion($regionId);
         $detector = app(RegionDetector::class);
 
         $markerId = $detector->generateMarkerId($region);
@@ -25,7 +25,7 @@ class RegionPanel extends Component
 
     public function confirmStatic(string $regionId): void
     {
-        $region = EditableRegion::findOrFail($regionId);
+        $region = $this->resolveRegion($regionId);
         app(RegionDetector::class)->confirmAsStatic($region);
 
         $this->dispatch('region-updated', regionId: $regionId);
@@ -33,7 +33,7 @@ class RegionPanel extends Component
 
     public function toggleRegion(string $regionId): void
     {
-        $region = EditableRegion::findOrFail($regionId);
+        $region = $this->resolveRegion($regionId);
 
         if ($region->is_static) {
             $this->confirmEditable($regionId);
@@ -50,6 +50,9 @@ class RegionPanel extends Component
     public function render()
     {
         $page = Page::findOrFail($this->pageId);
+        $extension = strtolower(pathinfo($page->file_path, PATHINFO_EXTENSION));
+        $isPreviewOnly = in_array($page->site->project_type, ['nextjs', 'react', 'vue', 'svelte', 'nuxt'], true)
+            && ! in_array($extension, ['html', 'htm'], true);
 
         $query = $page->editableRegions();
 
@@ -70,8 +73,17 @@ class RegionPanel extends Component
         ];
 
         return view('livewire.editor.region-panel', [
-            'regions' => $regions,
-            'counts'  => $counts,
+            'regions'       => $regions,
+            'counts'        => $counts,
+            'isPreviewOnly' => $isPreviewOnly,
         ]);
+    }
+
+    private function resolveRegion(string $regionId): EditableRegion
+    {
+        return EditableRegion::query()
+            ->whereKey($regionId)
+            ->where('page_id', $this->pageId)
+            ->firstOrFail();
     }
 }

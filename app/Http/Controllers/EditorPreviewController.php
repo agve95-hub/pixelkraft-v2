@@ -15,6 +15,8 @@ class EditorPreviewController extends Controller
      */
     public function show(Site $site, Page $page): Response
     {
+        abort_unless($page->site_id === $site->id, 404);
+
         $previewFilePath = $this->resolvePreviewFilePath($site, $page);
 
         if (! $previewFilePath) {

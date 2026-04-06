@@ -46,6 +46,7 @@
             wire:click="openSaveModal"
             class="flux-btn-primary text-xs !py-1.5"
             :disabled="$wire.isSaving"
+            @disabled($mode === 'visual' && ! $visualEditingEnabled)
         >
             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" /></svg>
             Save & Push
@@ -58,6 +59,12 @@
         {{-- ── Visual Mode: iframe ─────────────── --}}
         @if ($mode === 'visual')
             <div class="flex-1 relative bg-zinc-950">
+                @if (! $visualEditingEnabled)
+                    <div class="absolute left-4 right-4 top-4 z-10 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 shadow-lg">
+                        Visual mode is preview-only for this component-based page. Use <span class="font-semibold">Code</span> mode to edit safely.
+                    </div>
+                @endif
+
                 {{-- Iframe --}}
                 <iframe
                     x-ref="previewFrame"
@@ -80,7 +87,7 @@
             </div>
 
             {{-- ── Inline edit panel (when region selected) ── --}}
-            @if ($selectedRegion && $selectedRegion->isDynamic())
+            @if ($selectedRegion && $selectedRegion->isDynamic() && $visualEditingEnabled)
                 <div class="w-80 border-l border-zinc-800 bg-zinc-900 flex flex-col flex-shrink-0">
                     <div class="px-4 py-3 border-b border-zinc-800">
                         <div class="flex items-center justify-between">
@@ -143,6 +150,17 @@
                         <button wire:click="openSaveModal" class="flux-btn-primary w-full text-xs">
                             Save & Push
                         </button>
+                    </div>
+                </div>
+            @elseif (! $visualEditingEnabled)
+                <div class="w-80 border-l border-zinc-800 bg-zinc-900 flex flex-col flex-shrink-0">
+                    <div class="px-4 py-4 border-b border-zinc-800">
+                        <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Preview Only</h3>
+                    </div>
+
+                    <div class="p-4 space-y-3 text-sm text-zinc-400">
+                        <p>This page is backed by component source code, so iframe clicks cannot be mapped back to safe source edits yet.</p>
+                        <p>Use <span class="font-semibold text-zinc-200">Code</span> mode for reliable changes, then save and push from there.</p>
                     </div>
                 </div>
             @endif

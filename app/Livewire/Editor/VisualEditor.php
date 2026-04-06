@@ -39,8 +39,7 @@ class VisualEditor extends Component
         $this->siteId = $siteId;
         $this->pageId = $pageId;
 
-        $page = Page::findOrFail($pageId);
-        $site = Site::findOrFail($siteId);
+        $page = $this->resolvePage();
 
         $this->codeFilePath = $page->file_path;
         $this->loadCodeContent();
@@ -48,10 +47,10 @@ class VisualEditor extends Component
 
     public function onRegionSelected(string $regionId): void
     {
-        $this->selectedRegionId = $regionId;
-        $region = EditableRegion::find($regionId);
+        $region = $this->findRegion($regionId);
 
         if ($region) {
+            $this->selectedRegionId = $regionId;
             $this->editContent = $region->current_content ?? '';
 
             // Tell the iframe to highlight this element
@@ -62,7 +61,7 @@ class VisualEditor extends Component
     public function onIframeElementClicked(string $selector, string $content, string $tagName): void
     {
         // Find or create a region for this element
-        $page = Page::findOrFail($this->pageId);
+        $page = $this->resolvePage();
 
         $region = $page->editableRegions()
             ->where('selector', $selector)
@@ -99,6 +98,11 @@ class VisualEditor extends Component
 
     public function openSaveModal(): void
     {
+        if ($this->mode === 'visual' && ! $this->supportsVisualEditing()) {
+            session()->flash('error', 'Visual editing is preview-only for component-based pages. Switch to Code mode to edit safely.');
+            return;
+        }
+
         $this->commitMessage = $this->generateCommitMessage();
         $this->showSaveModal = true;
     }
@@ -108,12 +112,16 @@ class VisualEditor extends Component
         $this->isSaving = true;
 
         try {
-            $site = Site::findOrFail($this->siteId);
-            $page = Page::findOrFail($this->pageId);
+            $site = $this->resolveSite();
+            $page = $this->resolvePage();
             $patcher = app(ContentPatcher::class);
             $git = app(GitSyncService::class);
 
             $changedFiles = [];
+
+            if ($this->mode === 'visual' && ! $this->supportsVisualEditing()) {
+                throw new \RuntimeException('Visual editing is preview-only for component-based pages. Use Code mode to make changes.');
+            }
 
             if ($this->mode === 'code') {
                 // Save code editor content directly to file
@@ -122,7 +130,7 @@ class VisualEditor extends Component
                 $changedFiles[] = $this->codeFilePath;
             } elseif ($this->selectedRegionId) {
                 // Save visual editor edit via ContentPatcher
-                $region = EditableRegion::findOrFail($this->selectedRegionId);
+                $region = $this->resolveRegion($this->selectedRegionId);
 
                 // Create revision
                 ContentRevision::create([
@@ -166,11 +174,14 @@ class VisualEditor extends Component
 
     public function render()
     {
-        $site = Site::findOrFail($this->siteId);
-        $page = Page::with('editableRegions')->findOrFail($this->pageId);
+        $site = $this->resolveSite();
+        $page = Page::with('editableRegions')
+            ->whereKey($this->pageId)
+            ->where('site_id', $site->id)
+            ->firstOrFail();
 
         $selectedRegion = $this->selectedRegionId
-            ? EditableRegion::find($this->selectedRegionId)
+            ? $this->findRegion($this->selectedRegionId)
             : null;
 
         // Build the preview URL for the iframe
@@ -181,6 +192,7 @@ class VisualEditor extends Component
             'page'           => $page,
             'selectedRegion' => $selectedRegion,
             'previewUrl'     => $previewUrl,
+            'visualEditingEnabled' => $this->supportsVisualEditing($selectedRegion),
         ]);
     }
 
@@ -188,7 +200,7 @@ class VisualEditor extends Component
 
     private function loadCodeContent(): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = $this->resolveSite();
         $fullPath = "{$site->repo_path}/{$this->codeFilePath}";
 
         $this->codeContent = file_exists($fullPath) ? file_get_contents($fullPath) : '';
@@ -210,16 +222,66 @@ class VisualEditor extends Component
 
     private function generateCommitMessage(): string
     {
-        $page = Page::find($this->pageId);
+        $page = $this->resolvePage();
         $pageName = $page?->title ?? $page?->url_path ?? 'page';
 
         if ($this->selectedRegionId) {
-            $region = EditableRegion::find($this->selectedRegionId);
+            $region = $this->findRegion($this->selectedRegionId);
             $regionType = $region?->region_type ?? 'content';
 
             return "Update {$regionType} on {$pageName}";
         }
 
         return "Update {$pageName}";
+    }
+
+    private function resolveSite(): Site
+    {
+        return Site::findOrFail($this->siteId);
+    }
+
+    private function resolvePage(): Page
+    {
+        return Page::query()
+            ->whereKey($this->pageId)
+            ->where('site_id', $this->siteId)
+            ->firstOrFail();
+    }
+
+    private function resolveRegion(string $regionId): EditableRegion
+    {
+        return EditableRegion::query()
+            ->whereKey($regionId)
+            ->whereHas('page', function ($query) {
+                $query->whereKey($this->pageId)
+                    ->where('site_id', $this->siteId);
+            })
+            ->firstOrFail();
+    }
+
+    private function findRegion(string $regionId): ?EditableRegion
+    {
+        return EditableRegion::query()
+            ->whereKey($regionId)
+            ->whereHas('page', function ($query) {
+                $query->whereKey($this->pageId)
+                    ->where('site_id', $this->siteId);
+            })
+            ->first();
+    }
+
+    private function supportsVisualEditing(?EditableRegion $region = null): bool
+    {
+        $site = $this->resolveSite();
+        $page = $this->resolvePage();
+        $extension = strtolower(pathinfo($page->file_path, PATHINFO_EXTENSION));
+        $sourceLocation = $region?->source_location ?? [];
+
+        if (in_array($site->project_type, ['nextjs', 'react', 'vue', 'svelte', 'nuxt'], true)
+            && ! in_array($extension, ['html', 'htm'], true)) {
+            return false;
+        }
+
+        return ($sourceLocation['source_type'] ?? null) !== 'component';
     }
 }

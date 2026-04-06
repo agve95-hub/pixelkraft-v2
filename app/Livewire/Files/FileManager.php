@@ -5,6 +5,7 @@ namespace App\Livewire\Files;
 use App\Models\Site;
 use App\Services\GitSyncService;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -20,18 +21,14 @@ class FileManager extends Component
 
     public function navigateTo(string $path): void
     {
-        // Prevent path traversal
-        if (str_contains($path, '..')) {
-            return;
-        }
-
-        $this->currentPath = $path;
+        $this->currentPath = $this->normalizeRelativePath($path);
         $this->viewingFile = null;
     }
 
     public function goUp(): void
     {
-        $this->currentPath = dirname($this->currentPath);
+        $currentPath = $this->normalizeRelativePath($this->currentPath);
+        $this->currentPath = dirname($currentPath);
 
         if ($this->currentPath === '.') {
             $this->currentPath = '';
@@ -41,9 +38,10 @@ class FileManager extends Component
     public function viewFile(string $relativePath): void
     {
         $site = Site::findOrFail($this->siteId);
-        $fullPath = "{$site->repo_path}/{$relativePath}";
+        $relativePath = $this->normalizeRelativePath($relativePath);
+        $fullPath = $this->resolveExistingPath($site, $relativePath);
 
-        if (! File::exists($fullPath) || ! File::isFile($fullPath)) {
+        if (! $fullPath || ! File::isFile($fullPath)) {
             return;
         }
 
@@ -64,7 +62,13 @@ class FileManager extends Component
         }
 
         $site = Site::findOrFail($this->siteId);
-        $fullPath = "{$site->repo_path}/{$this->viewingFile}";
+        $this->viewingFile = $this->normalizeRelativePath($this->viewingFile);
+        $fullPath = $this->resolvePathWithinRepo($site, $this->viewingFile);
+
+        if (! File::exists($fullPath) || ! File::isFile($fullPath)) {
+            session()->flash('error', 'File not found.');
+            return;
+        }
 
         File::put($fullPath, $this->fileContent);
 
@@ -82,19 +86,25 @@ class FileManager extends Component
         $this->validate(['uploadFile' => 'required|file|max:10240']);
 
         $site = Site::findOrFail($this->siteId);
+        $this->currentPath = $this->normalizeRelativePath($this->currentPath);
         $targetDir = $this->currentPath
-            ? "{$site->repo_path}/{$this->currentPath}"
-            : $site->repo_path;
+            ? $this->resolveExistingPath($site, $this->currentPath)
+            : $this->resolveRepoBasePath($site);
 
         if (! File::isDirectory($targetDir)) {
             session()->flash('error', 'Target directory not found.');
             return;
         }
 
-        $filename = $this->uploadFile->getClientOriginalName();
-        $this->uploadFile->storeAs('', $filename, ['disk' => 'local']);
+        $filename = basename(str_replace('\\', '/', $this->uploadFile->getClientOriginalName()));
+        if ($filename === '' || $filename === '.' || $filename === '..') {
+            session()->flash('error', 'Invalid filename.');
+            return;
+        }
 
-        $sourcePath = storage_path("app/private/{$filename}");
+        $storedPath = $this->uploadFile->storeAs('', $filename, ['disk' => 'local']);
+        $sourcePath = Storage::disk('local')->path($storedPath);
+
         $destPath = "{$targetDir}/{$filename}";
 
         File::move($sourcePath, $destPath);
@@ -114,9 +124,10 @@ class FileManager extends Component
     public function deleteFile(string $relativePath): void
     {
         $site = Site::findOrFail($this->siteId);
-        $fullPath = "{$site->repo_path}/{$relativePath}";
+        $relativePath = $this->normalizeRelativePath($relativePath);
+        $fullPath = $this->resolveExistingPath($site, $relativePath);
 
-        if (! File::exists($fullPath)) {
+        if (! $fullPath || ! File::exists($fullPath)) {
             return;
         }
 
@@ -168,10 +179,12 @@ class FileManager extends Component
 
     private function getDirectoryEntries(Site $site): array
     {
-        $basePath = $site->repo_path;
-        $scanPath = $this->currentPath ? "{$basePath}/{$this->currentPath}" : $basePath;
+        $this->currentPath = $this->normalizeRelativePath($this->currentPath);
+        $scanPath = $this->currentPath
+            ? $this->resolveExistingPath($site, $this->currentPath)
+            : $this->resolveRepoBasePath($site);
 
-        if (! File::isDirectory($scanPath)) {
+        if (! $scanPath || ! File::isDirectory($scanPath)) {
             return [];
         }
 
@@ -224,5 +237,74 @@ class FileManager extends Component
         });
 
         return $entries;
+    }
+
+    private function normalizeRelativePath(string $path): string
+    {
+        $normalized = str_replace('\\', '/', trim($path));
+        $normalized = trim($normalized, '/');
+
+        if ($normalized === '') {
+            return '';
+        }
+
+        $segments = array_filter(explode('/', $normalized), fn ($segment) => $segment !== '');
+
+        foreach ($segments as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                return '';
+            }
+        }
+
+        return implode('/', $segments);
+    }
+
+    private function resolveRepoBasePath(Site $site): string
+    {
+        $resolved = realpath($site->repo_path);
+
+        return $this->normalizeAbsolutePath($resolved ?: $site->repo_path);
+    }
+
+    private function resolveExistingPath(Site $site, string $relativePath): ?string
+    {
+        $candidate = $this->resolvePathWithinRepo($site, $relativePath);
+        $resolved = realpath($candidate);
+
+        if ($resolved === false) {
+            return null;
+        }
+
+        $resolved = $this->normalizeAbsolutePath($resolved);
+        $basePath = $this->resolveRepoBasePath($site);
+
+        if ($resolved !== $basePath && ! str_starts_with($resolved, $basePath . '/')) {
+            return null;
+        }
+
+        return $resolved;
+    }
+
+    private function resolvePathWithinRepo(Site $site, string $relativePath): string
+    {
+        $basePath = $this->resolveRepoBasePath($site);
+        $relativePath = $this->normalizeRelativePath($relativePath);
+
+        if ($relativePath === '') {
+            return $basePath;
+        }
+
+        $candidate = $this->normalizeAbsolutePath($basePath . '/' . $relativePath);
+
+        if (! str_starts_with($candidate, $basePath . '/')) {
+            return $basePath;
+        }
+
+        return $candidate;
+    }
+
+    private function normalizeAbsolutePath(string $path): string
+    {
+        return rtrim(str_replace('\\', '/', $path), '/');
     }
 }

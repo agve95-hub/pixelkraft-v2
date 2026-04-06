@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn () => redirect()->route('login'));
 
 // ── Dashboard (auth required) ───────────────────
-Route::middleware(['auth'])->prefix('dashboard')->group(function () {
+Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(function () {
 
     Route::get('/', fn () => view('dashboard.index'))->name('dashboard');
 
