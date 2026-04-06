@@ -143,7 +143,9 @@ class SiteRuntimeService
             . ' >> ' . escapeshellarg($logFile)
             . ' 2>&1 & echo $! > ' . escapeshellarg($pidFile);
 
-        $result = Process::timeout(20)->run(['bash', '-lc', $script]);
+        $result = Process::timeout(20)
+            ->path($execution['working_dir'])
+            ->run(['bash', '-lc', $script]);
 
         if (! $result->successful()) {
             throw new \RuntimeException('Failed to start runtime process: ' . trim($result->errorOutput() ?: $result->output()));
@@ -164,7 +166,9 @@ class SiteRuntimeService
             . 'rm -f ' . escapeshellarg($pidFile) . '; '
             . 'fi';
 
-        Process::timeout(10)->run(['bash', '-lc', $script]);
+        Process::timeout(10)
+            ->path(dirname($pidFile))
+            ->run(['bash', '-lc', $script]);
     }
 
     private function waitUntilHealthy(Site $site, DeployLog $log): void
