@@ -64,7 +64,7 @@ class GitSyncService
         $this->configureAuth($repo, $site);
 
         try {
-            $repo->pull('origin', [$site->branch]);
+            $repo->execute('pull', '--ff-only', 'origin', $site->branch);
         } catch (GitException $e) {
             if ($this->isConflict($e)) {
                 Log::warning("Merge conflict pulling site [{$site->slug}]", [
@@ -110,7 +110,7 @@ class GitSyncService
         $repo->commit($message);
 
         try {
-            $repo->push('origin', [$site->branch]);
+            $repo->execute('push', 'origin', $site->branch);
         } catch (GitException $e) {
             if ($this->isPushRejected($e)) {
                 Log::info("Push rejected for [{$site->slug}], attempting pull + rebase");
@@ -147,7 +147,7 @@ class GitSyncService
         $repo->commit($message);
 
         try {
-            $repo->push('origin', [$site->branch]);
+            $repo->execute('push', 'origin', $site->branch);
         } catch (GitException $e) {
             if ($this->isPushRejected($e)) {
                 return $this->pullRebaseAndPush($site, $repo);
@@ -346,7 +346,7 @@ class GitSyncService
     {
         try {
             $repo->execute('pull', '--rebase', 'origin', $site->branch);
-            $repo->push('origin', [$site->branch]);
+            $repo->execute('push', 'origin', $site->branch);
 
             return $this->getCurrentSha($repo);
         } catch (GitException $e) {
