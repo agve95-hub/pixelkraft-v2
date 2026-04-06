@@ -34,14 +34,16 @@
         <flux:sidebar.spacer />
 
         <flux:sidebar.nav>
+            <flux:sidebar.item icon="server-stack" href="{{ route('system.diagnostics') }}" :current="request()->routeIs('system.diagnostics')">System</flux:sidebar.item>
             <flux:sidebar.item icon="cog-6-tooth" href="{{ route('settings') }}" :current="request()->routeIs('settings')">Settings</flux:sidebar.item>
         </flux:sidebar.nav>
 
         <flux:dropdown position="top" align="start" class="max-lg:hidden">
             <flux:sidebar.profile name="{{ auth()->user()->name }}" />
             <flux:menu>
-                <flux:menu.item href="{{ route('settings') }}" icon="cog-6-tooth">Settings</flux:menu.item>
+                <flux:menu.item href="{{ route('system.diagnostics') }}" icon="server-stack">System</flux:menu.item>
                 <flux:menu.separator />
+                <flux:menu.item href="{{ route('settings') }}" icon="cog-6-tooth">Settings</flux:menu.item>
                 <flux:menu.item icon="arrow-right-start-on-rectangle" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Sign out</flux:menu.item>
             </flux:menu>
         </flux:dropdown>
@@ -55,8 +57,9 @@
         <flux:dropdown position="top" align="start">
             <flux:profile name="{{ auth()->user()->name }}" />
             <flux:menu>
-                <flux:menu.item href="{{ route('settings') }}" icon="cog-6-tooth">Settings</flux:menu.item>
+                <flux:menu.item href="{{ route('system.diagnostics') }}" icon="server-stack">System</flux:menu.item>
                 <flux:menu.separator />
+                <flux:menu.item href="{{ route('settings') }}" icon="cog-6-tooth">Settings</flux:menu.item>
                 <flux:menu.item icon="arrow-right-start-on-rectangle" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Sign out</flux:menu.item>
             </flux:menu>
         </flux:dropdown>

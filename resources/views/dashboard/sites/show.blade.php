@@ -22,7 +22,10 @@
                     <flux:link href="https://{{ $site->domain }}" target="_blank" variant="subtle" class="font-mono text-sm">{{ $site->domain }} ↗</flux:link>
                 @endif
             </div>
-            <flux:button href="{{ route('sites.settings', $site) }}" variant="subtle" icon="cog-6-tooth" size="sm">Settings</flux:button>
+            <div class="flex items-center gap-2">
+                <flux:button href="{{ route('system.diagnostics') }}" variant="subtle" icon="server-stack" size="sm">Diagnostics</flux:button>
+                <flux:button href="{{ route('sites.settings', $site) }}" variant="subtle" icon="cog-6-tooth" size="sm">Settings</flux:button>
+            </div>
         </div>
 
         {{-- Quick Stats --}}

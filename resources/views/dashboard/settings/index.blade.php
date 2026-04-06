@@ -82,5 +82,14 @@
             <flux:subheading class="mb-4">Generate tokens to access the pixelkraft API.</flux:subheading>
             @livewire('settings.api-tokens')
         </flux:card>
+
+        {{-- System --}}
+        <flux:card>
+            <flux:heading size="sm" class="mb-2">System Diagnostics</flux:heading>
+            <flux:subheading class="mb-4">Inspect queue health, recent failed jobs, and sites that look stuck.</flux:subheading>
+            <flux:button href="{{ route('system.diagnostics') }}" variant="primary" size="sm" icon="server-stack">
+                Open diagnostics
+            </flux:button>
+        </flux:card>
     </div>
 </x-layouts.app>
