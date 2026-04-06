@@ -1,6 +1,10 @@
 <x-layouts.app>
     <x-slot:title>{{ $site->name }}</x-slot:title>
 
+    @php
+        $shouldAutoRefresh = is_null($site->last_synced_at) || in_array($site->deploy_status, ['building', 'deploying']);
+    @endphp
+
     <div class="space-y-6">
         {{-- Header --}}
         <div class="flex flex-wrap items-start justify-between gap-4">
@@ -66,4 +70,10 @@
         {{-- Pages List --}}
         @livewire('sites.page-listing', ['siteId' => $site->id])
     </div>
+
+    @if ($shouldAutoRefresh)
+        <script>
+            setTimeout(() => window.location.reload(), 5000);
+        </script>
+    @endif
 </x-layouts.app>

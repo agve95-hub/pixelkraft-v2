@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.5s>
     <div class="flex items-center justify-between mb-4">
         <flux:heading size="sm">Pages</flux:heading>
         <flux:input wire:model.live.debounce.300ms="search" placeholder="Search pages..." icon="magnifying-glass" size="sm" class="max-w-xs" />

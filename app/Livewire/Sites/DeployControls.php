@@ -22,8 +22,6 @@ class DeployControls extends Component
 
         DeploySiteJob::dispatch($site, 'manual');
 
-        $site->update(['deploy_status' => 'building']);
-
         session()->flash('success', "Deploy started for {$site->name}.");
     }
 
