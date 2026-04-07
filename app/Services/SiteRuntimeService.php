@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Process;
 
 class SiteRuntimeService
 {
+    /**
+     * @var array<string, int|null>
+     */
+    private array $activePortCache = [];
+
     public function usesRuntimeServer(Site $site): bool
     {
         return $site->project_type === 'nextjs' && ! $this->usesStaticExport($site);
@@ -48,18 +53,31 @@ class SiteRuntimeService
 
     public function baseUrl(Site $site): string
     {
-        return 'http://' . $this->host() . ':' . $this->portFor($site);
+        return $this->urlForPort($this->portFor($site));
+    }
+
+    public function previewBaseUrl(Site $site): string
+    {
+        return $this->urlForPort($this->activePortFor($site) ?? $this->portFor($site));
     }
 
     public function fetch(Site $site, string $path = '/', array $query = [])
     {
-        try {
-            return Http::timeout(15)
-                ->withOptions(['http_errors' => false])
-                ->get($this->baseUrl($site) . $this->normalizePath($path), $query);
-        } catch (\Throwable) {
-            return null;
+        foreach ($this->candidatePorts($site) as $port) {
+            try {
+                $response = Http::timeout(15)
+                    ->withOptions(['http_errors' => false])
+                    ->get($this->urlForPort($port) . $this->normalizePath($path), $query);
+
+                if ($response->status() > 0) {
+                    return $response;
+                }
+            } catch (\Throwable) {
+                continue;
+            }
         }
+
+        return null;
     }
 
     public function isReachable(Site $site, string $path = '/'): bool
@@ -169,15 +187,19 @@ class SiteRuntimeService
         Process::timeout(10)
             ->path(dirname($pidFile))
             ->run(['bash', '-lc', $script]);
+
+        unset($this->activePortCache[(string) $site->id]);
     }
 
     private function waitUntilHealthy(Site $site, DeployLog $log): void
     {
         $timeout = max(5, (int) config('pixelkraft.runtime.startup_timeout_seconds', 30));
         $deadline = microtime(true) + $timeout;
+        $desiredPort = $this->portFor($site);
 
         while (microtime(true) < $deadline) {
-            if ($this->isReachable($site)) {
+            if ($this->isReachableOnPort($desiredPort, '/')) {
+                unset($this->activePortCache[(string) $site->id]);
                 $log->appendLog('  Runtime server is responding on ' . $this->baseUrl($site));
                 return;
             }
@@ -240,6 +262,93 @@ class SiteRuntimeService
     private function normalizePath(string $path): string
     {
         return '/' . ltrim($path, '/');
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function candidatePorts(Site $site): array
+    {
+        $ports = [];
+        $activePort = $this->activePortFor($site);
+
+        if ($activePort !== null) {
+            $ports[] = $activePort;
+        }
+
+        $desiredPort = $this->portFor($site);
+
+        if (! in_array($desiredPort, $ports, true)) {
+            $ports[] = $desiredPort;
+        }
+
+        return $ports;
+    }
+
+    private function activePortFor(Site $site): ?int
+    {
+        $cacheKey = (string) $site->id;
+
+        if (array_key_exists($cacheKey, $this->activePortCache)) {
+            return $this->activePortCache[$cacheKey];
+        }
+
+        return $this->activePortCache[$cacheKey] = $this->discoverActivePort($site);
+    }
+
+    private function discoverActivePort(Site $site): ?int
+    {
+        $pidFile = $this->pidFile($site);
+
+        if (! File::exists($pidFile)) {
+            return null;
+        }
+
+        $pid = trim((string) File::get($pidFile));
+
+        if ($pid === '' || ! ctype_digit($pid)) {
+            return null;
+        }
+
+        $result = Process::timeout(5)->run([
+            'bash',
+            '-lc',
+            'ps -p ' . escapeshellarg($pid) . ' -o args=',
+        ]);
+
+        if (! $result->successful()) {
+            return null;
+        }
+
+        $command = trim($result->output());
+
+        if ($command === '') {
+            return null;
+        }
+
+        if (preg_match('/\b(?:PORT=|-p\s+)(\d{2,5})\b/', $command, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return null;
+    }
+
+    private function isReachableOnPort(int $port, string $path = '/'): bool
+    {
+        try {
+            $response = Http::timeout(15)
+                ->withOptions(['http_errors' => false])
+                ->get($this->urlForPort($port) . $this->normalizePath($path));
+
+            return $response->status() > 0 && $response->status() < 500;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function urlForPort(int $port): string
+    {
+        return 'http://' . $this->host() . ':' . $port;
     }
 
     private function nvmBootstrap(string $nodeVersion): string

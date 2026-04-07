@@ -427,7 +427,7 @@ class SpaComponentParser implements ParserInterface
             sourceContent: $sourceContent,
             urlPath: $urlPath,
             sourceType: 'component_runtime_preview',
-            previewReference: $this->runtime->baseUrl($site) . $urlPath,
+            previewReference: $this->runtime->previewBaseUrl($site) . $urlPath,
         );
     }
 
