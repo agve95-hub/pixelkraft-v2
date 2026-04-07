@@ -231,6 +231,10 @@ class StaticHtmlParser implements ParserInterface
             'figcaption',
             'img[src][alt]',
             'a[href]',
+            'button',
+            'span',
+            'em',
+            'strong',
             'blockquote',
             'ul > li', 'ol > li',
         ];
@@ -248,6 +252,11 @@ class StaticHtmlParser implements ParserInterface
                     $tagName = $node->nodeName();
                     $text = trim($node->text(''));
                     $isImage = ($tagName === 'img');
+                    $isInlineTextElement = in_array($tagName, ['span', 'em', 'strong'], true);
+
+                    if ($isInlineTextElement && $this->hasElementChildren($node)) {
+                        return;
+                    }
 
                     // Skip empty non-image elements
                     if (! $isImage && empty($text)) {
@@ -255,7 +264,7 @@ class StaticHtmlParser implements ParserInterface
                     }
 
                     // Skip very short text that's likely navigation
-                    if (! $isImage && mb_strlen($text) < 5 && ! in_array($tagName, ['h1', 'h2', 'h3'])) {
+                    if (! $isImage && mb_strlen($text) < 5 && ! in_array($tagName, ['h1', 'h2', 'h3', 'span', 'em', 'strong'], true)) {
                         return;
                     }
 
@@ -303,7 +312,7 @@ class StaticHtmlParser implements ParserInterface
         $text = trim($node->text(''));
 
         // Semantic content tags get a boost
-        $contentTags = ['h1' => 0.35, 'h2' => 0.3, 'h3' => 0.28, 'h4' => 0.25, 'h5' => 0.22, 'h6' => 0.2, 'p' => 0.25, 'article' => 0.2, 'figcaption' => 0.25, 'blockquote' => 0.25, 'li' => 0.15];
+        $contentTags = ['h1' => 0.35, 'h2' => 0.3, 'h3' => 0.28, 'h4' => 0.25, 'h5' => 0.22, 'h6' => 0.2, 'p' => 0.25, 'article' => 0.2, 'figcaption' => 0.25, 'blockquote' => 0.25, 'li' => 0.15, 'button' => 0.18, 'span' => 0.16, 'em' => 0.2, 'strong' => 0.2];
         $score += $contentTags[$tagName] ?? 0;
 
         // Meaningful text length
@@ -375,6 +384,23 @@ class StaticHtmlParser implements ParserInterface
         }
 
         return max(0, min(1, $score));
+    }
+
+    private function hasElementChildren(Crawler $node): bool
+    {
+        $domNode = $node->getNode(0);
+
+        if (! $domNode instanceof \DOMElement) {
+            return false;
+        }
+
+        foreach ($domNode->childNodes as $childNode) {
+            if ($childNode instanceof \DOMElement) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

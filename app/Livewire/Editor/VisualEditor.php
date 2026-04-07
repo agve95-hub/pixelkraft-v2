@@ -8,8 +8,9 @@ use App\Models\Page;
 use App\Models\Site;
 use App\Services\ContentPatcher;
 use App\Services\GitSyncService;
-use Livewire\Component;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Livewire\Component;
 
 class VisualEditor extends Component
 {
@@ -30,7 +31,6 @@ class VisualEditor extends Component
     protected $listeners = [
         'region-selected' => 'onRegionSelected',
         'region-updated'  => '$refresh',
-        'iframe-element-clicked' => 'onIframeElementClicked',
         'inline-edit-saved' => 'onInlineEditSaved',
     ];
 
@@ -42,10 +42,6 @@ class VisualEditor extends Component
         $page = $this->resolvePage();
 
         $this->codeFilePath = $page->file_path;
-
-        if (! $this->supportsVisualEditing()) {
-            $this->mode = 'code';
-        }
 
         $this->loadCodeContent();
     }
@@ -60,28 +56,6 @@ class VisualEditor extends Component
 
             // Tell the iframe to highlight this element
             $this->dispatch('highlight-region', selector: $region->selector);
-        }
-    }
-
-    public function onIframeElementClicked(string $selector, string $content, string $tagName): void
-    {
-        if (! $this->supportsVisualEditing()) {
-            return;
-        }
-
-        // Find or create a region for this element
-        $page = $this->resolvePage();
-
-        $region = $page->editableRegions()
-            ->where('selector', $selector)
-            ->first();
-
-        if ($region) {
-            $this->selectedRegionId = $region->id;
-            $this->editContent = $region->current_content ?? $content;
-        } else {
-            $this->editContent = $content;
-            $this->selectedRegionId = null;
         }
     }
 
@@ -116,9 +90,16 @@ class VisualEditor extends Component
 
     public function openSaveModal(): void
     {
-        if ($this->mode === 'visual' && ! $this->supportsVisualEditing()) {
-            session()->flash('error', 'Visual editing is preview-only for component-based pages. Switch to Code mode to edit safely.');
-            return;
+        if ($this->mode === 'visual') {
+            if (! $this->selectedRegionId) {
+                session()->flash('error', 'Select a highlighted element first, then edit its content.');
+                return;
+            }
+
+            if (! $this->selectedRegionCanBeEdited()) {
+                session()->flash('error', 'This region is preview-only because pixelkraft could not map it back to a unique source edit safely. Use Code mode for this one.');
+                return;
+            }
         }
 
         $this->commitMessage = $this->generateCommitMessage();
@@ -137,16 +118,16 @@ class VisualEditor extends Component
 
             $changedFiles = [];
 
-            if ($this->mode === 'visual' && ! $this->supportsVisualEditing()) {
-                throw new \RuntimeException('Visual editing is preview-only for component-based pages. Use Code mode to make changes.');
-            }
-
             if ($this->mode === 'code') {
                 // Save code editor content directly to file
                 $fullPath = "{$site->repo_path}/{$this->codeFilePath}";
                 file_put_contents($fullPath, $this->codeContent);
                 $changedFiles[] = $this->codeFilePath;
             } elseif ($this->selectedRegionId) {
+                if (! $this->selectedRegionCanBeEdited()) {
+                    throw new \RuntimeException('This region is preview-only because pixelkraft could not map it back to a unique source edit safely. Use Code mode for this one.');
+                }
+
                 // Save visual editor edit via ContentPatcher
                 $region = $this->resolveRegion($this->selectedRegionId);
 
@@ -202,6 +183,22 @@ class VisualEditor extends Component
         $selectedRegion = $this->selectedRegionId
             ? $this->findRegion($this->selectedRegionId)
             : null;
+        $patcher = app(ContentPatcher::class);
+        $previewRegions = $page->editableRegions
+            ->map(function (EditableRegion $region) use ($patcher) {
+                return [
+                    'id' => $region->id,
+                    'selector' => $region->selector,
+                    'type' => $region->region_type,
+                    'editable' => $patcher->canVisuallyEditRegion($region),
+                    'content' => Str::limit(trim(strip_tags($region->current_content ?? '')), 80),
+                ];
+            })
+            ->values();
+        $patchableRegionCount = $previewRegions->where('editable', true)->count();
+        $selectedRegionEditable = $selectedRegion
+            ? $patcher->canVisuallyEditRegion($selectedRegion)
+            : false;
 
         // Build the preview URL for the iframe
         $previewUrl = $this->buildPreviewUrl($site, $page);
@@ -211,7 +208,10 @@ class VisualEditor extends Component
             'page'           => $page,
             'selectedRegion' => $selectedRegion,
             'previewUrl'     => $previewUrl,
-            'visualEditingEnabled' => $this->supportsVisualEditing($selectedRegion),
+            'previewRegions' => $previewRegions,
+            'previewRegionCount' => $previewRegions->count(),
+            'patchableRegionCount' => $patchableRegionCount,
+            'selectedRegionEditable' => $selectedRegionEditable,
         ]);
     }
 
@@ -283,18 +283,14 @@ class VisualEditor extends Component
             ->first();
     }
 
-    private function supportsVisualEditing(?EditableRegion $region = null): bool
+    private function selectedRegionCanBeEdited(): bool
     {
-        $site = $this->resolveSite();
-        $page = $this->resolvePage();
-        $extension = strtolower(pathinfo($page->file_path, PATHINFO_EXTENSION));
-        $sourceLocation = $region?->source_location ?? [];
-
-        if (in_array($site->project_type, ['nextjs', 'react', 'vue', 'svelte', 'nuxt'], true)
-            && ! in_array($extension, ['html', 'htm'], true)) {
+        if (! $this->selectedRegionId) {
             return false;
         }
 
-        return ($sourceLocation['source_type'] ?? null) !== 'component';
+        $region = $this->findRegion($this->selectedRegionId);
+
+        return $region ? app(ContentPatcher::class)->canVisuallyEditRegion($region) : false;
     }
 }

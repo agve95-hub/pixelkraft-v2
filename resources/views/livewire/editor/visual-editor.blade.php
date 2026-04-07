@@ -1,6 +1,9 @@
 <div
     class="flex flex-col h-[calc(100vh-3.5rem)]"
-    x-data="editorState({ visualEditingEnabled: @js($visualEditingEnabled) })"
+    x-data="editorState({
+        previewRegions: @js($previewRegions),
+        selectedRegionId: @js($selectedRegion?->id),
+    })"
     x-on:highlight-region.window="highlightRegion($event.detail.selector)"
     x-on:reload-iframe.window="reloadIframe()"
 >
@@ -46,7 +49,7 @@
             wire:click="openSaveModal"
             class="flux-btn-primary text-xs !py-1.5"
             :disabled="$wire.isSaving"
-            @disabled($mode === 'visual' && ! $visualEditingEnabled)
+            @disabled($mode === 'visual' && ! $selectedRegionEditable)
         >
             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" /></svg>
             Save & Push
@@ -59,11 +62,15 @@
         {{-- ── Visual Mode: iframe ─────────────── --}}
         @if ($mode === 'visual')
             <div class="flex-1 relative bg-zinc-950">
-                @if (! $visualEditingEnabled)
-                    <div class="absolute left-4 right-4 top-4 z-10 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 shadow-lg">
-                        Visual mode is preview-only for this component-based page. Use <span class="font-semibold">Code</span> mode to edit safely.
+                <div class="absolute left-4 right-4 top-4 z-10 rounded-lg border border-violet-500/20 bg-zinc-950/85 px-4 py-3 text-sm text-zinc-100 shadow-lg backdrop-blur">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="font-semibold">Click a highlighted region to edit it.</span>
+                        <span class="text-zinc-400">{{ $patchableRegionCount }} of {{ $previewRegionCount }} detected regions can be saved visually.</span>
                     </div>
-                @endif
+                    <p class="mt-2 text-xs text-zinc-400">
+                        Green regions can be edited and pushed from Visual mode. Amber regions are still preview-only and should be changed in <span class="font-semibold text-zinc-200">Code</span> mode.
+                    </p>
+                </div>
 
                 {{-- Iframe --}}
                 <iframe
@@ -88,11 +95,13 @@
             </div>
 
             {{-- ── Inline edit panel (when region selected) ── --}}
-            @if ($selectedRegion && $selectedRegion->isDynamic() && $visualEditingEnabled)
+            @if ($selectedRegion)
                 <div class="w-80 border-l border-zinc-800 bg-zinc-900 flex flex-col flex-shrink-0">
                     <div class="px-4 py-3 border-b border-zinc-800">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Edit Region</h3>
+                            <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
+                                {{ $selectedRegionEditable ? 'Edit Region' : 'Preview Region' }}
+                            </h3>
                             <button
                                 wire:click="$set('selectedRegionId', null)"
                                 class="text-zinc-600 hover:text-zinc-400"
@@ -102,12 +111,35 @@
                         </div>
                         <div class="flex items-center gap-2 mt-1">
                             <span class="flux-badge-purple !text-[10px]">{{ $selectedRegion->region_type }}</span>
+                            @if ($selectedRegionEditable)
+                                <span class="flux-badge-green !text-[10px]">visual save</span>
+                            @else
+                                <span class="flux-badge-amber !text-[10px]">code mode</span>
+                            @endif
                             <span class="mono text-[10px] text-zinc-600 truncate">{{ $selectedRegion->selector }}</span>
                         </div>
                     </div>
 
                     <div class="flex-1 p-4 overflow-y-auto">
-                        @if ($selectedRegion->region_type === 'image')
+                        @if (! $selectedRegionEditable)
+                            <div class="space-y-4 text-sm text-zinc-400">
+                                <p>This region was detected correctly in the preview, but pixelkraft could not map it back to one unique source edit safely.</p>
+                                <p>That usually means the content is split across several JSX elements or reused in multiple places.</p>
+                                <p class="text-zinc-300">Try clicking the exact highlighted word, span, button label, or paragraph you want to change. Smaller inner regions can often be saved visually even when the whole block cannot.</p>
+
+                                <div class="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
+                                    <p class="text-[11px] uppercase tracking-wider text-zinc-500">Detected Content</p>
+                                    <p class="mt-2 text-sm text-zinc-200">{{ $editContent ?: '(empty)' }}</p>
+                                </div>
+
+                                <button
+                                    wire:click="setMode('code')"
+                                    class="flux-btn-secondary w-full text-sm"
+                                >
+                                    Open In Code Mode
+                                </button>
+                            </div>
+                        @elseif ($selectedRegion->region_type === 'image')
                             {{-- Image edit --}}
                             <div class="space-y-3">
                                 <label class="flux-label">Image URL</label>
@@ -148,20 +180,22 @@
 
                     {{-- Region edit footer --}}
                     <div class="px-4 py-3 border-t border-zinc-800">
-                        <button wire:click="openSaveModal" class="flux-btn-primary w-full text-xs">
-                            Save & Push
-                        </button>
+                        @if ($selectedRegionEditable)
+                            <button wire:click="openSaveModal" class="flux-btn-primary w-full text-xs">
+                                Save & Push
+                            </button>
+                        @endif
                     </div>
                 </div>
-            @elseif (! $visualEditingEnabled)
+            @else
                 <div class="w-80 border-l border-zinc-800 bg-zinc-900 flex flex-col flex-shrink-0">
                     <div class="px-4 py-4 border-b border-zinc-800">
-                        <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Preview Only</h3>
+                        <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Visual Editing</h3>
                     </div>
 
                     <div class="p-4 space-y-3 text-sm text-zinc-400">
-                        <p>This page is backed by component source code, so iframe clicks cannot be mapped back to safe source edits yet.</p>
-                        <p>Use <span class="font-semibold text-zinc-200">Code</span> mode for reliable changes, then save and push from there.</p>
+                        <p>Click a highlighted region in the preview or choose one from the region list to start editing.</p>
+                        <p>Green regions can be changed and pushed from Visual mode. Amber regions still need <span class="font-semibold text-zinc-200">Code</span> mode.</p>
                     </div>
                 </div>
             @endif
@@ -234,10 +268,12 @@
 {{-- ── Alpine.js editor state ────────────────── --}}
 @script
 <script>
-Alpine.data('editorState', ({ visualEditingEnabled }) => ({
+Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     iframeLoading: true,
-    selectedSelector: null,
-    visualEditingEnabled,
+    previewRegions,
+    selectedRegionId,
+    hoveredRegionElement: null,
+    tooltip: null,
 
     onIframeLoad() {
         this.iframeLoading = false;
@@ -250,123 +286,101 @@ Alpine.data('editorState', ({ visualEditingEnabled }) => ({
 
         const doc = iframe.contentDocument;
 
-        // Inject overlay styles
         const style = doc.createElement('style');
         style.textContent = `
-            [data-pk-hover] {
+            [data-pk-region] {
+                transition: outline-color 120ms ease, background-color 120ms ease;
+            }
+            [data-pk-region][data-pk-editable="true"] {
+                cursor: text !important;
+            }
+            [data-pk-region][data-pk-editable="false"] {
+                cursor: not-allowed !important;
+            }
+            [data-pk-hover][data-pk-editable="true"] {
                 outline: 2px dashed rgba(139, 92, 246, 0.5) !important;
                 outline-offset: 2px !important;
-                cursor: pointer !important;
+                background: rgba(139, 92, 246, 0.08) !important;
             }
-            [data-pk-selected] {
+            [data-pk-hover][data-pk-editable="false"] {
+                outline: 2px dashed rgba(245, 158, 11, 0.7) !important;
+                outline-offset: 2px !important;
+                background: rgba(245, 158, 11, 0.08) !important;
+            }
+            [data-pk-selected][data-pk-editable="true"] {
                 outline: 2px solid rgba(139, 92, 246, 0.9) !important;
                 outline-offset: 2px !important;
-                background: rgba(139, 92, 246, 0.05) !important;
+                background: rgba(139, 92, 246, 0.12) !important;
             }
-            [data-pk-static] {
-                outline: 2px dashed rgba(113, 113, 122, 0.3) !important;
+            [data-pk-selected][data-pk-editable="false"] {
+                outline: 2px solid rgba(245, 158, 11, 0.95) !important;
                 outline-offset: 2px !important;
-                cursor: not-allowed !important;
+                background: rgba(245, 158, 11, 0.12) !important;
             }
             .pk-tooltip {
                 position: fixed;
                 background: #18181b;
                 border: 1px solid #3f3f46;
-                color: #a1a1aa;
+                color: #e4e4e7;
                 font-family: 'DM Mono', monospace;
                 font-size: 11px;
-                padding: 3px 8px;
+                padding: 5px 8px;
                 border-radius: 6px;
                 pointer-events: none;
                 z-index: 99999;
                 white-space: nowrap;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
             }
         `;
         (doc.head || doc.documentElement).appendChild(style);
 
+        this.tooltip = doc.createElement('div');
+        this.tooltip.className = 'pk-tooltip';
+        this.tooltip.style.display = 'none';
+        doc.body.appendChild(this.tooltip);
+
+        this.decoratePreviewRegions(doc);
+
         doc.addEventListener('click', (e) => {
-            const target = e.target?.nodeType === 1 ? e.target : e.target?.parentElement;
-            const link = target?.closest('a') ?? null;
+            const regionElement = this.findRegionElement(e.target);
+            const link = (e.target?.nodeType === 1 ? e.target : e.target?.parentElement)?.closest('a') ?? null;
+
             if (link) {
                 e.preventDefault();
             }
-        }, true);
 
-        if (!this.visualEditingEnabled) {
-            return;
-        }
-
-        // Create tooltip element
-        const tooltip = doc.createElement('div');
-        tooltip.className = 'pk-tooltip';
-        tooltip.style.display = 'none';
-        doc.body.appendChild(tooltip);
-
-        let lastHovered = null;
-
-        // Hover effect
-        doc.addEventListener('mouseover', (e) => {
-            const el = e.target?.nodeType === 1 ? e.target : e.target?.parentElement;
-            if (!el) return;
-            if (el === doc.body || el === doc.documentElement) return;
-
-            if (lastHovered && lastHovered !== el) {
-                lastHovered.removeAttribute('data-pk-hover');
+            if (!regionElement) {
+                return;
             }
-
-            if (!el.hasAttribute('data-pk-selected')) {
-                el.setAttribute('data-pk-hover', '');
-            }
-
-            lastHovered = el;
-
-            // Show tooltip
-            const tag = el.tagName.toLowerCase();
-            const id = el.id ? '#' + el.id : '';
-            const cls = el.className && typeof el.className === 'string'
-                ? '.' + el.className.split(' ').filter(c => c).slice(0, 2).join('.')
-                : '';
-            tooltip.textContent = tag + id + cls;
-            tooltip.style.display = 'block';
-
-            const rect = el.getBoundingClientRect();
-            tooltip.style.left = Math.min(rect.left, doc.documentElement.clientWidth - 200) + 'px';
-            tooltip.style.top = Math.max(0, rect.top - 24) + 'px';
-        });
-
-        doc.addEventListener('mouseout', (e) => {
-            if (lastHovered) {
-                lastHovered.removeAttribute('data-pk-hover');
-                lastHovered = null;
-            }
-            tooltip.style.display = 'none';
-        });
-
-        // Click to select element
-        doc.addEventListener('click', (e) => {
-            const el = e.target?.nodeType === 1 ? e.target : e.target?.parentElement;
-            if (!el) return;
 
             e.preventDefault();
             e.stopPropagation();
+            this.selectRegionElement(regionElement, true);
+        }, true);
 
-            // Clear previous selection
-            doc.querySelectorAll('[data-pk-selected]').forEach(n => n.removeAttribute('data-pk-selected'));
-            el.setAttribute('data-pk-selected', '');
+        doc.addEventListener('mousemove', (e) => {
+            const regionElement = this.findRegionElement(e.target);
 
-            // Build selector
-            let selector = el.tagName.toLowerCase();
-            if (el.id) selector = '#' + el.id;
-            else if (el.className && typeof el.className === 'string') {
-                const cls = el.className.split(' ').filter(c => c && !c.startsWith('pk-'))[0];
-                if (cls) selector = el.tagName.toLowerCase() + '.' + cls;
+            if (!regionElement) {
+                this.clearHoveredRegion();
+                return;
             }
 
-            // Get content
-            const content = el.tagName === 'IMG' ? el.src : el.textContent.trim().substring(0, 500);
+            if (this.hoveredRegionElement && this.hoveredRegionElement !== regionElement) {
+                this.hoveredRegionElement.removeAttribute('data-pk-hover');
+            }
 
-            // Dispatch to Livewire
-            this.$wire.onIframeElementClicked(selector, content, el.tagName.toLowerCase());
+            this.hoveredRegionElement = regionElement;
+
+            if (!regionElement.hasAttribute('data-pk-selected')) {
+                regionElement.setAttribute('data-pk-hover', '');
+            }
+
+            this.showTooltip(regionElement);
+        }, true);
+
+        doc.addEventListener('mouseleave', () => {
+            this.clearHoveredRegion();
         }, true);
     },
 
@@ -382,11 +396,114 @@ Alpine.data('editorState', ({ visualEditingEnabled }) => ({
         try {
             const el = doc.querySelector(selector);
             if (el) {
-                el.setAttribute('data-pk-selected', '');
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                this.selectRegionElement(el, false);
             }
         } catch (e) {
             // Invalid selector, ignore
+        }
+    },
+
+    decoratePreviewRegions(doc) {
+        this.previewRegions.forEach((region) => {
+            try {
+                const elements = doc.querySelectorAll(region.selector);
+
+                elements.forEach((element) => {
+                    if (!(element instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    element.setAttribute('data-pk-region', '');
+                    element.setAttribute('data-pk-region-id', region.id);
+                    element.setAttribute('data-pk-editable', region.editable ? 'true' : 'false');
+                    element.setAttribute('data-pk-region-type', region.type);
+                    element.setAttribute('data-pk-region-label', region.content || region.type);
+                });
+            } catch (e) {
+                // Invalid selector, ignore
+            }
+        });
+
+        if (this.selectedRegionId) {
+            this.applySelectedRegion();
+        }
+    },
+
+    findRegionElement(target) {
+        let current = target?.nodeType === 1 ? target : target?.parentElement;
+
+        while (current && current !== current.ownerDocument?.documentElement) {
+            if (current.hasAttribute('data-pk-region-id')) {
+                return current;
+            }
+
+            current = current.parentElement;
+        }
+
+        return null;
+    },
+
+    clearHoveredRegion() {
+        if (this.hoveredRegionElement) {
+            this.hoveredRegionElement.removeAttribute('data-pk-hover');
+            this.hoveredRegionElement = null;
+        }
+
+        if (this.tooltip) {
+            this.tooltip.style.display = 'none';
+        }
+    },
+
+    showTooltip(element) {
+        if (!this.tooltip) {
+            return;
+        }
+
+        const label = element.getAttribute('data-pk-region-label') || element.getAttribute('data-pk-region-type') || 'region';
+        const mode = element.getAttribute('data-pk-editable') === 'true' ? 'visual save' : 'code mode';
+        this.tooltip.textContent = `${label} - ${mode}`;
+        this.tooltip.style.display = 'block';
+
+        const rect = element.getBoundingClientRect();
+        this.tooltip.style.left = Math.min(rect.left, element.ownerDocument.documentElement.clientWidth - 260) + 'px';
+        this.tooltip.style.top = Math.max(0, rect.top - 32) + 'px';
+    },
+
+    selectRegionElement(element, notifyLivewire = true) {
+        const iframe = this.$refs.previewFrame;
+        const doc = iframe?.contentDocument;
+
+        if (!doc || !(element instanceof HTMLElement)) {
+            return;
+        }
+
+        this.clearHoveredRegion();
+        doc.querySelectorAll('[data-pk-selected]').forEach((node) => node.removeAttribute('data-pk-selected'));
+        element.setAttribute('data-pk-selected', '');
+        this.selectedRegionId = element.getAttribute('data-pk-region-id');
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        if (notifyLivewire && this.selectedRegionId) {
+            this.$wire.onRegionSelected(this.selectedRegionId);
+        }
+    },
+
+    applySelectedRegion() {
+        if (!this.selectedRegionId) {
+            return;
+        }
+
+        const iframe = this.$refs.previewFrame;
+        const doc = iframe?.contentDocument;
+
+        if (!doc) {
+            return;
+        }
+
+        const element = doc.querySelector(`[data-pk-region-id="${this.selectedRegionId}"]`);
+
+        if (element) {
+            this.selectRegionElement(element, false);
         }
     },
 

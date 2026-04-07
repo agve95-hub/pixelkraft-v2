@@ -1,24 +1,27 @@
 <div class="space-y-4">
     <div class="card">
-        <h3 class="text-sm font-semibold text-zinc-200 mb-4">JSON-LD Structured Data</h3>
+        <div class="mb-4 space-y-1">
+            <h3 class="text-lg font-semibold text-zinc-100">JSON-LD structured data</h3>
+            <p class="text-sm text-zinc-400">Pick the closest preset, then adjust only the values you want search engines to understand.</p>
+        </div>
 
         {{-- Presets --}}
         <div class="flex flex-wrap gap-2 mb-4">
-            <span class="text-[10px] text-zinc-600 uppercase tracking-wider leading-loose">Presets:</span>
-            <button wire:click="usePreset('article')" class="flux-btn-ghost text-[10px] !px-2 !py-1">Article</button>
-            <button wire:click="usePreset('product')" class="flux-btn-ghost text-[10px] !px-2 !py-1">Product</button>
-            <button wire:click="usePreset('local_business')" class="flux-btn-ghost text-[10px] !px-2 !py-1">Local Business</button>
-            <button wire:click="usePreset('faq')" class="flux-btn-ghost text-[10px] !px-2 !py-1">FAQ</button>
+            <span class="text-[11px] text-zinc-500 uppercase tracking-wider leading-loose">Presets</span>
+            <button wire:click="usePreset('article')" class="flux-btn-ghost text-xs !px-3 !py-1.5">Article</button>
+            <button wire:click="usePreset('product')" class="flux-btn-ghost text-xs !px-3 !py-1.5">Product</button>
+            <button wire:click="usePreset('local_business')" class="flux-btn-ghost text-xs !px-3 !py-1.5">Local Business</button>
+            <button wire:click="usePreset('faq')" class="flux-btn-ghost text-xs !px-3 !py-1.5">FAQ</button>
         </div>
 
         <textarea
             wire:model="schemaJson"
             rows="16"
-            class="flux-input mono text-xs resize-y"
+            class="flux-input mono text-sm resize-y"
             spellcheck="false"
             placeholder='{
-  "@@context": "https://schema.org",
-  "@@type": "Article",
+  "&#64;context": "https://schema.org",
+  "&#64;type": "Article",
   "headline": "Your page title"
 }'
         ></textarea>

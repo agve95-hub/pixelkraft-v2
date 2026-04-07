@@ -4,6 +4,7 @@ namespace App\Livewire\Editor;
 
 use App\Models\EditableRegion;
 use App\Models\Page;
+use App\Services\ContentPatcher;
 use App\Services\RegionDetector;
 use Livewire\Component;
 
@@ -50,9 +51,7 @@ class RegionPanel extends Component
     public function render()
     {
         $page = Page::findOrFail($this->pageId);
-        $extension = strtolower(pathinfo($page->file_path, PATHINFO_EXTENSION));
-        $isPreviewOnly = in_array($page->site->project_type, ['nextjs', 'react', 'vue', 'svelte', 'nuxt'], true)
-            && ! in_array($extension, ['html', 'htm'], true);
+        $patcher = app(ContentPatcher::class);
 
         $query = $page->editableRegions();
 
@@ -64,6 +63,9 @@ class RegionPanel extends Component
         };
 
         $regions = $query->orderBy('confidence_score', 'desc')->get();
+        $visualEditability = $regions
+            ->mapWithKeys(fn (EditableRegion $region) => [$region->id => $patcher->canVisuallyEditRegion($region)])
+            ->all();
 
         $counts = [
             'all'         => $page->editableRegions()->count(),
@@ -71,11 +73,16 @@ class RegionPanel extends Component
             'static'      => $page->editableRegions()->where('is_static', true)->count(),
             'unconfirmed' => $page->editableRegions()->where('detection_method', 'auto')->count(),
         ];
+        $visualEditableCount = $page->editableRegions()
+            ->get()
+            ->filter(fn (EditableRegion $region) => $patcher->canVisuallyEditRegion($region))
+            ->count();
 
         return view('livewire.editor.region-panel', [
             'regions'       => $regions,
             'counts'        => $counts,
-            'isPreviewOnly' => $isPreviewOnly,
+            'visualEditability' => $visualEditability,
+            'visualEditableCount' => $visualEditableCount,
         ]);
     }
 

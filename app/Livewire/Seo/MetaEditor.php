@@ -3,8 +3,8 @@
 namespace App\Livewire\Seo;
 
 use App\Models\Page;
-use App\Services\ContentPatcher;
 use App\Services\GitSyncService;
+use App\Services\NextMetadataPatcher;
 use App\Services\SeoAnalyzer;
 use Livewire\Component;
 
@@ -92,13 +92,25 @@ class MetaEditor extends Component
         try {
             $html = file_get_contents($fullPath);
 
-            $html = $this->upsertMetaTag($html, 'title', null, $this->title);
-            $html = $this->upsertMetaTag($html, 'meta', 'description', $this->metaDescription);
-            $html = $this->upsertMetaTag($html, 'meta', 'keywords', $this->metaKeywords);
-            $html = $this->upsertMetaTag($html, 'og', 'og:title', $this->ogTitle);
-            $html = $this->upsertMetaTag($html, 'og', 'og:description', $this->ogDescription);
-            $html = $this->upsertMetaTag($html, 'og', 'og:image', $this->ogImage);
-            $html = $this->upsertCanonical($html, $this->canonicalUrl);
+            if ($this->isNextMetadataFile($page->file_path, $site->project_type) && app(NextMetadataPatcher::class)->canPatch($html)) {
+                $html = app(NextMetadataPatcher::class)->patch($html, [
+                    'title' => $this->title,
+                    'description' => $this->metaDescription,
+                    'keywords' => $this->metaKeywords,
+                    'canonical' => $this->canonicalUrl,
+                    'og_title' => $this->ogTitle,
+                    'og_description' => $this->ogDescription,
+                    'og_image' => $this->ogImage,
+                ]);
+            } else {
+                $html = $this->upsertMetaTag($html, 'title', null, $this->title);
+                $html = $this->upsertMetaTag($html, 'meta', 'description', $this->metaDescription);
+                $html = $this->upsertMetaTag($html, 'meta', 'keywords', $this->metaKeywords);
+                $html = $this->upsertMetaTag($html, 'og', 'og:title', $this->ogTitle);
+                $html = $this->upsertMetaTag($html, 'og', 'og:description', $this->ogDescription);
+                $html = $this->upsertMetaTag($html, 'og', 'og:image', $this->ogImage);
+                $html = $this->upsertCanonical($html, $this->canonicalUrl);
+            }
 
             file_put_contents($fullPath, $html);
 
@@ -166,5 +178,14 @@ class MetaEditor extends Component
         }
 
         return $html;
+    }
+
+    private function isNextMetadataFile(string $filePath, string $projectType): bool
+    {
+        if ($projectType !== 'nextjs') {
+            return false;
+        }
+
+        return (bool) preg_match('/\.(tsx|jsx|ts|js)$/', $filePath);
     }
 }
