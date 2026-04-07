@@ -5,6 +5,21 @@
     </div>
 
     <flux:card>
+        <flux:heading size="sm" class="mb-3">Current Support Mode</flux:heading>
+        <div class="space-y-3 text-sm text-zinc-300">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="flux-badge-purple !text-[10px]">{{ strtoupper($supportProfile['deployment_mode']) }}</span>
+                @if (($supportProfile['deployment_mode_source'] ?? 'configured') === 'inferred')
+                    <span class="flux-badge-amber !text-[10px]">AUTO</span>
+                @endif
+                <span class="flux-badge-green !text-[10px]">{{ $supportProfile['editor_workflow'] === 'visual_html' ? 'VISUAL HTML' : 'CODE FIRST' }}</span>
+            </div>
+            <p>{{ $supportProfile['summary'] }}</p>
+            <p class="text-zinc-400">{{ $supportProfile['detail'] }}</p>
+        </div>
+    </flux:card>
+
+    <flux:card>
         <flux:heading size="sm" class="mb-4">General</flux:heading>
         <form wire:submit="save" class="space-y-4">
             <flux:field>
@@ -31,6 +46,20 @@
                         <flux:select.option value="{{ $type }}">{{ $type }}</flux:select.option>
                     @endforeach
                 </flux:select>
+                <flux:description>Static HTML, Hugo, and Eleventy are the only project families that currently support true visual save. Component-based apps remain preview-assisted and code-first.</flux:description>
+            </flux:field>
+
+            <flux:field>
+                <flux:label>Deployment mode</flux:label>
+                <flux:select wire:model="deploymentMode">
+                    @foreach ($deploymentOptions as $mode)
+                        <flux:select.option value="{{ $mode }}">{{ $mode }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:description>
+                    `static` publishes build artifacts for Nginx to serve directly. `runtime` keeps a local app process alive behind Nginx. Runtime mode is currently supported for Next.js projects only.
+                </flux:description>
+                <flux:error name="deploymentMode" />
             </flux:field>
 
             <flux:button type="submit" variant="primary" size="sm">Save</flux:button>
@@ -49,7 +78,7 @@
             <flux:field>
                 <flux:label>Build output directory</flux:label>
                 <flux:input wire:model="buildOutputDir" placeholder="dist" class="font-mono" />
-                <flux:description>Relative to repo root. Common values: dist, build, public, _site, out (Next.js static export). Leave `.next` or blank for runtime-managed Next.js apps.</flux:description>
+                <flux:description>Relative to repo root. Common values: dist, build, public, _site, out. For runtime-managed Next.js apps, leave this blank or `.next`; the deployment mode controls whether pixelkraft serves files or starts a runtime process.</flux:description>
             </flux:field>
 
             <flux:button type="submit" variant="primary" size="sm">Save</flux:button>

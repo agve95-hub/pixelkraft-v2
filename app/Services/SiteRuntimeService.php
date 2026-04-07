@@ -10,37 +10,82 @@ use Illuminate\Support\Facades\Process;
 
 class SiteRuntimeService
 {
+    public const MODE_STATIC = 'static';
+
+    public const MODE_RUNTIME = 'runtime';
+
     /**
      * @var array<string, int|null>
      */
     private array $activePortCache = [];
 
+    public function deploymentMode(Site $site): string
+    {
+        $configured = $this->configuredDeploymentMode($site);
+
+        if ($configured !== null && $this->supportsDeploymentMode($site, $configured)) {
+            return $configured;
+        }
+
+        return $this->inferDeploymentMode($site);
+    }
+
+    public function configuredDeploymentMode(Site $site): ?string
+    {
+        return $this->normalizeDeploymentMode($site->deployment_mode ?? null);
+    }
+
+    public function inferredDeploymentMode(Site $site): string
+    {
+        return $this->inferDeploymentMode($site);
+    }
+
+    public function deploymentModeSource(Site $site): string
+    {
+        $configured = $this->configuredDeploymentMode($site);
+
+        return $configured !== null && $this->supportsDeploymentMode($site, $configured)
+            ? 'configured'
+            : 'inferred';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function supportedDeploymentModes(Site $site): array
+    {
+        return $this->supportedDeploymentModesForProjectType((string) $site->project_type);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function supportedDeploymentModesForProjectType(string $projectType): array
+    {
+        return $this->supportsRuntimeModeForProjectType($projectType)
+            ? [self::MODE_STATIC, self::MODE_RUNTIME]
+            : [self::MODE_STATIC];
+    }
+
+    public function supportsRuntimeMode(Site $site): bool
+    {
+        return $this->supportsRuntimeModeForProjectType((string) $site->project_type);
+    }
+
+    public function supportsRuntimeModeForProjectType(string $projectType): bool
+    {
+        return in_array($projectType, ['nextjs'], true);
+    }
+
     public function usesRuntimeServer(Site $site): bool
     {
-        return $site->project_type === 'nextjs' && ! $this->usesStaticExport($site);
+        return $this->deploymentMode($site) === self::MODE_RUNTIME;
     }
 
     public function usesStaticExport(Site $site): bool
     {
-        if ($site->project_type !== 'nextjs') {
-            return false;
-        }
-
-        $configuredOutputDir = trim((string) $site->build_output_dir, '/');
-        if ($configuredOutputDir !== '' && $configuredOutputDir !== '.next') {
-            return true;
-        }
-
-        if ($this->nextConfigContains($site, 'output', 'export')) {
-            return true;
-        }
-
-        $buildCommand = strtolower((string) ($site->build_command ?? ''));
-        if (str_contains($buildCommand, 'next export')) {
-            return true;
-        }
-
-        return false;
+        return $site->project_type === 'nextjs'
+            && $this->deploymentMode($site) === self::MODE_STATIC;
     }
 
     public function portFor(Site $site): int
@@ -89,6 +134,17 @@ class SiteRuntimeService
 
     public function deploy(Site $site, DeployLog $log): void
     {
+        if (! $this->supportsRuntimeMode($site)) {
+            throw new \RuntimeException("Runtime deployment is not supported for {$site->project_type} projects.");
+        }
+
+        if ($site->project_type === 'nextjs' && $this->inferredDeploymentMode($site) === self::MODE_STATIC) {
+            throw new \RuntimeException(
+                'This Next.js repository is configured for static export. '
+                . 'Switch the site deployment mode to static, or remove the export configuration before using runtime mode.'
+            );
+        }
+
         $execution = $this->prepareExecution($site, $log);
 
         $this->stopShellProcess($site);
@@ -236,6 +292,39 @@ class SiteRuntimeService
         return File::exists("{$site->repo_path}/.next/standalone/server.js");
     }
 
+    private function supportsDeploymentMode(Site $site, string $mode): bool
+    {
+        return in_array($mode, $this->supportedDeploymentModes($site), true);
+    }
+
+    private function inferDeploymentMode(Site $site): string
+    {
+        if ($site->project_type === 'nextjs' && ! $this->infersNextjsStaticDeploy($site)) {
+            return self::MODE_RUNTIME;
+        }
+
+        return self::MODE_STATIC;
+    }
+
+    private function infersNextjsStaticDeploy(Site $site): bool
+    {
+        $configuredOutputDir = trim((string) $site->build_output_dir, '/');
+        if ($configuredOutputDir !== '' && $configuredOutputDir !== '.next') {
+            return true;
+        }
+
+        if ($this->nextConfigContains($site, 'output', 'export')) {
+            return true;
+        }
+
+        $buildCommand = strtolower((string) ($site->build_command ?? ''));
+        if (str_contains($buildCommand, 'next export')) {
+            return true;
+        }
+
+        return false;
+    }
+
     private function nextConfigContains(Site $site, string $key, string $expectedValue): bool
     {
         foreach (['next.config.js', 'next.config.mjs', 'next.config.ts'] as $configFile) {
@@ -357,5 +446,14 @@ class SiteRuntimeService
             . 'if [ -s "$NVM_DIR/nvm.sh" ]; then . "$NVM_DIR/nvm.sh"; nvm use '
             . escapeshellarg($nodeVersion)
             . ' >/dev/null 2>&1 || true; fi && ';
+    }
+
+    private function normalizeDeploymentMode(mixed $mode): ?string
+    {
+        $normalized = strtolower(trim((string) $mode));
+
+        return in_array($normalized, [self::MODE_STATIC, self::MODE_RUNTIME], true)
+            ? $normalized
+            : null;
     }
 }

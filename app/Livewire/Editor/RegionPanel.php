@@ -6,6 +6,7 @@ use App\Models\EditableRegion;
 use App\Models\Page;
 use App\Services\ContentPatcher;
 use App\Services\RegionDetector;
+use App\Services\SiteSupportService;
 use Livewire\Component;
 
 class RegionPanel extends Component
@@ -50,8 +51,10 @@ class RegionPanel extends Component
 
     public function render()
     {
-        $page = Page::findOrFail($this->pageId);
+        $page = Page::with('site')->findOrFail($this->pageId);
         $patcher = app(ContentPatcher::class);
+        $support = app(SiteSupportService::class);
+        $editorProfile = $support->editorProfile($page->site, $page);
 
         $query = $page->editableRegions();
 
@@ -64,7 +67,9 @@ class RegionPanel extends Component
 
         $regions = $query->orderBy('confidence_score', 'desc')->get();
         $visualEditability = $regions
-            ->mapWithKeys(fn (EditableRegion $region) => [$region->id => $patcher->canVisuallyEditRegion($region)])
+            ->mapWithKeys(fn (EditableRegion $region) => [
+                $region->id => $editorProfile['visual_editing_supported'] && $patcher->canVisuallyEditRegion($region),
+            ])
             ->all();
 
         $counts = [
@@ -73,16 +78,19 @@ class RegionPanel extends Component
             'static'      => $page->editableRegions()->where('is_static', true)->count(),
             'unconfirmed' => $page->editableRegions()->where('detection_method', 'auto')->count(),
         ];
-        $visualEditableCount = $page->editableRegions()
-            ->get()
-            ->filter(fn (EditableRegion $region) => $patcher->canVisuallyEditRegion($region))
-            ->count();
+        $visualEditableCount = $editorProfile['visual_editing_supported']
+            ? $page->editableRegions()
+                ->get()
+                ->filter(fn (EditableRegion $region) => $patcher->canVisuallyEditRegion($region))
+                ->count()
+            : 0;
 
         return view('livewire.editor.region-panel', [
             'regions'       => $regions,
             'counts'        => $counts,
             'visualEditability' => $visualEditability,
             'visualEditableCount' => $visualEditableCount,
+            'editorProfile' => $editorProfile,
         ]);
     }
 

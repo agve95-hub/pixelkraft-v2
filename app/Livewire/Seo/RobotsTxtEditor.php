@@ -4,6 +4,7 @@ namespace App\Livewire\Seo;
 
 use App\Models\Site;
 use App\Services\GitSyncService;
+use App\Services\SiteRuntimeService;
 use Illuminate\Support\Facades\File;
 use Livewire\Component;
 
@@ -37,15 +38,14 @@ class RobotsTxtEditor extends Component
         }
 
         // Write to repo
-        $outputDir = $site->build_output_dir;
-        $targetDir = $outputDir ? "{$site->repo_path}/{$outputDir}" : $site->repo_path;
+        $targetDir = $this->targetDirectory($site);
         $filePath = "{$targetDir}/robots.txt";
 
         File::ensureDirectoryExists(dirname($filePath));
         File::put($filePath, $this->content);
 
         // Also write to deploy path if exists
-        if ($site->deploy_path && File::isDirectory($site->deploy_path)) {
+        if (! $this->runtime()->usesRuntimeServer($site) && $site->deploy_path && File::isDirectory($site->deploy_path)) {
             File::put("{$site->deploy_path}/robots.txt", $this->content);
         }
 
@@ -87,9 +87,7 @@ class RobotsTxtEditor extends Component
             "{$site->repo_path}/robots.txt",
         ];
 
-        if ($site->build_output_dir) {
-            array_unshift($candidates, "{$site->repo_path}/{$site->build_output_dir}/robots.txt");
-        }
+        array_unshift($candidates, $this->targetDirectory($site) . '/robots.txt');
 
         foreach ($candidates as $path) {
             if (File::exists($path)) {
@@ -105,5 +103,21 @@ class RobotsTxtEditor extends Component
         $domain = $site->domain ?? 'example.com';
 
         return "User-agent: *\nAllow: /\n\nSitemap: https://{$domain}/sitemap.xml";
+    }
+
+    private function targetDirectory(Site $site): string
+    {
+        if ($this->runtime()->usesRuntimeServer($site)) {
+            return "{$site->repo_path}/public";
+        }
+
+        return $site->build_output_dir
+            ? "{$site->repo_path}/{$site->build_output_dir}"
+            : $site->repo_path;
+    }
+
+    private function runtime(): SiteRuntimeService
+    {
+        return app(SiteRuntimeService::class);
     }
 }

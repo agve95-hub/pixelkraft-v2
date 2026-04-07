@@ -1,7 +1,11 @@
 <div class="flex flex-col h-full">
     <div class="mx-3 mt-3 rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-xs text-zinc-300">
-        <span class="font-semibold text-zinc-100">{{ $visualEditableCount }}</span> region{{ $visualEditableCount === 1 ? '' : 's' }} can be saved from Visual mode.
-        Others are still safer in Code mode.
+        @if ($editorProfile['visual_editing_supported'])
+            <span class="font-semibold text-zinc-100">{{ $visualEditableCount }}</span> region{{ $visualEditableCount === 1 ? '' : 's' }} can be saved from Visual mode.
+            Others are still safer in Code mode.
+        @else
+            This page is <span class="font-semibold text-zinc-100">code-first</span>. Regions below help you locate content in the preview, but saves should happen from Code mode.
+        @endif
     </div>
 
     {{-- Filter tabs --}}
@@ -57,7 +61,7 @@
                         @if ($region->is_static)
                             <span class="flux-badge bg-zinc-500/10 text-zinc-500 !text-[10px] !px-1.5 !py-0">static</span>
                         @else
-                            <span class="flux-badge-green !text-[10px] !px-1.5 !py-0">editable</span>
+                            <span class="flux-badge-green !text-[10px] !px-1.5 !py-0">{{ $editorProfile['visual_editing_supported'] ? 'editable' : 'content' }}</span>
                         @endif
 
                         @if (($visualEditability[$region->id] ?? false))
@@ -96,7 +100,15 @@
 
                 {{-- Actions --}}
                 <div class="flex-shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                    @if ($region->detection_method === 'auto')
+                    @if (! $editorProfile['visual_editing_supported'])
+                        <button
+                            wire:click.stop="selectRegion('{{ $region->id }}')"
+                            class="p-1 rounded text-zinc-500 hover:bg-zinc-500/10 transition"
+                            title="Inspect in preview"
+                        >
+                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                        </button>
+                    @elseif ($region->detection_method === 'auto')
                         <button
                             wire:click.stop="confirmEditable('{{ $region->id }}')"
                             class="p-1 rounded text-emerald-500 hover:bg-emerald-500/10 transition"

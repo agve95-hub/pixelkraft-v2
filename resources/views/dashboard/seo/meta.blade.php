@@ -1,6 +1,8 @@
 <x-layouts.app>
     <x-slot:title>SEO - {{ $page->title ?? $page->file_path }}</x-slot:title>
 
+    @php($editorSupport = app(\App\Services\SiteSupportService::class)->editorProfile($site, $page))
+
     <div class="mx-auto max-w-6xl space-y-6" x-data="{ tab: 'meta' }">
         <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
@@ -43,6 +45,14 @@
                     </button>
                 </div>
             </div>
+        </div>
+
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/70 px-5 py-4 text-sm text-zinc-300">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="flux-badge-purple !text-[10px]">{{ strtoupper($editorSupport['meta_editing_mode'] === 'unsupported' ? 'CODE FIRST' : 'SOURCE ADAPTER') }}</span>
+                <span class="text-zinc-100 font-medium">{{ $editorSupport['meta_notice'] }}</span>
+            </div>
+            <p class="mt-2 text-zinc-400">{{ $editorSupport['schema_notice'] }}</p>
         </div>
 
         <div x-show="tab === 'meta'" x-cloak>

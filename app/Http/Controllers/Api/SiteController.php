@@ -119,6 +119,7 @@ class SiteController extends Controller
             'slug'           => $site->slug,
             'domain'         => $site->domain,
             'project_type'   => $site->project_type,
+            'deployment_mode' => app(\App\Services\SiteRuntimeService::class)->deploymentMode($site),
             'deploy_status'  => $site->deploy_status,
             'ssl_status'     => $site->ssl_status,
             'is_active'      => $site->is_active,

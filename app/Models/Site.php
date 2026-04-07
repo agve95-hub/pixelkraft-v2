@@ -18,6 +18,7 @@ class Site extends Model
         'branch',
         'github_token',
         'project_type',
+        'deployment_mode',
         'build_command',
         'build_output_dir',
         'node_version',

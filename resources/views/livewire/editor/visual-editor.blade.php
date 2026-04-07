@@ -30,7 +30,7 @@
                     'text-zinc-400 hover:text-zinc-200' => $mode !== 'visual',
                 ])
             >
-                Visual
+                {{ $editorProfile['visual_editing_supported'] ? 'Visual' : 'Preview' }}
             </button>
             <button
                 wire:click="setMode('code')"
@@ -64,11 +64,15 @@
             <div class="flex-1 relative bg-zinc-950">
                 <div class="absolute left-4 right-4 top-4 z-10 rounded-lg border border-violet-500/20 bg-zinc-950/85 px-4 py-3 text-sm text-zinc-100 shadow-lg backdrop-blur">
                     <div class="flex flex-wrap items-center gap-3">
-                        <span class="font-semibold">Click a highlighted region to edit it.</span>
-                        <span class="text-zinc-400">{{ $patchableRegionCount }} of {{ $previewRegionCount }} detected regions can be saved visually.</span>
+                        <span class="font-semibold">{{ $editorProfile['visual_notice'] }}</span>
+                        @if ($editorProfile['visual_editing_supported'])
+                            <span class="text-zinc-400">{{ $patchableRegionCount }} of {{ $previewRegionCount }} detected regions can be saved visually.</span>
+                        @else
+                            <span class="text-zinc-400">{{ $previewRegionCount }} detected regions are available for inspection in the preview.</span>
+                        @endif
                     </div>
                     <p class="mt-2 text-xs text-zinc-400">
-                        Green regions can be edited and pushed from Visual mode. Amber regions are still preview-only and should be changed in <span class="font-semibold text-zinc-200">Code</span> mode.
+                        {{ $editorProfile['visual_hint'] }}
                     </p>
                 </div>
 
@@ -123,9 +127,14 @@
                     <div class="flex-1 p-4 overflow-y-auto">
                         @if (! $selectedRegionEditable)
                             <div class="space-y-4 text-sm text-zinc-400">
-                                <p>This region was detected correctly in the preview, but pixelkraft could not map it back to one unique source edit safely.</p>
-                                <p>That usually means the content is split across several JSX elements or reused in multiple places.</p>
-                                <p class="text-zinc-300">Try clicking the exact highlighted word, span, button label, or paragraph you want to change. Smaller inner regions can often be saved visually even when the whole block cannot.</p>
+                                @if ($editorProfile['visual_editing_supported'])
+                                    <p>This region was detected correctly in the preview, but pixelkraft could not map it back to one unique source edit safely.</p>
+                                    <p>That usually means the content is split across several elements or reused in multiple places.</p>
+                                    <p class="text-zinc-300">Try clicking the exact highlighted word, span, button label, or paragraph you want to change. Smaller inner regions can often be saved visually even when the whole block cannot.</p>
+                                @else
+                                    <p>This preview helps you find the right content, but pixelkraft will not rewrite this component source from Visual mode.</p>
+                                    <p>Use the detected content below as a guide, then switch to <span class="font-semibold text-zinc-200">Code</span> mode to update the source file directly.</p>
+                                @endif
 
                                 <div class="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
                                     <p class="text-[11px] uppercase tracking-wider text-zinc-500">Detected Content</p>
@@ -194,8 +203,8 @@
                     </div>
 
                     <div class="p-4 space-y-3 text-sm text-zinc-400">
-                        <p>Click a highlighted region in the preview or choose one from the region list to start editing.</p>
-                        <p>Green regions can be changed and pushed from Visual mode. Amber regions still need <span class="font-semibold text-zinc-200">Code</span> mode.</p>
+                        <p>{{ $editorProfile['visual_editing_supported'] ? 'Click a highlighted region in the preview or choose one from the region list to start editing.' : 'Click a highlighted region in the preview or choose one from the region list to inspect it.' }}</p>
+                        <p>{{ $editorProfile['visual_hint'] }}</p>
                     </div>
                 </div>
             @endif

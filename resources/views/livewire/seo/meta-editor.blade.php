@@ -1,5 +1,11 @@
 <div class="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
     <form wire:submit="save" class="space-y-6">
+        @if (! $metaEditingSupported)
+            <div class="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-4 text-sm text-amber-100">
+                {{ $metaEditingNotice }}
+            </div>
+        @endif
+
         <div class="card space-y-5">
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
@@ -11,7 +17,7 @@
 
                 <div class="flex gap-3">
                     <button type="button" wire:click="runAnalysis" class="flux-btn-secondary text-sm">Re-analyze</button>
-                    <button type="submit" class="flux-btn-primary text-sm">Save Page SEO</button>
+                    <button type="submit" class="flux-btn-primary text-sm" @disabled(! $metaEditingSupported)>Save Page SEO</button>
                 </div>
             </div>
 
@@ -23,6 +29,7 @@
                         wire:model.live="title"
                         class="flux-input text-sm"
                         placeholder="Page title that people see in search results"
+                        @disabled(! $metaEditingSupported)
                     >
                     <div class="mt-2 flex items-center justify-between text-xs">
                         <p class="text-zinc-500">Aim for 30 to 60 characters.</p>
@@ -42,6 +49,7 @@
                         wire:model="canonicalUrl"
                         class="flux-input text-sm mono"
                         placeholder="https://example.com/page"
+                        @disabled(! $metaEditingSupported)
                     >
                     <p class="mt-2 text-xs text-zinc-500">Use this when one page should be treated as the main version.</p>
                 </div>
@@ -54,6 +62,7 @@
                     rows="4"
                     class="flux-input text-sm resize-y"
                     placeholder="A clear summary that tells people what this page is about."
+                    @disabled(! $metaEditingSupported)
                 ></textarea>
                 <div class="mt-2 flex items-center justify-between text-xs">
                     <p class="text-zinc-500">Aim for 120 to 155 characters.</p>
@@ -73,6 +82,7 @@
                     wire:model="metaKeywords"
                     class="flux-input text-sm"
                     placeholder="keyword one, keyword two, keyword three"
+                    @disabled(! $metaEditingSupported)
                 >
                 <p class="mt-2 text-xs text-zinc-500">Optional. Keep this short and useful.</p>
             </div>
@@ -94,6 +104,7 @@
                         wire:model.live="ogTitle"
                         class="flux-input text-sm"
                         placeholder="{{ $title ?: 'Use the SEO title' }}"
+                        @disabled(! $metaEditingSupported)
                     >
                     <p class="mt-2 text-xs text-zinc-500">Leave blank to fall back to the SEO title.</p>
                 </div>
@@ -105,6 +116,7 @@
                         wire:model.live="ogImage"
                         class="flux-input text-sm mono"
                         placeholder="https://example.com/og-image.jpg"
+                        @disabled(! $metaEditingSupported)
                     >
                     <p class="mt-2 text-xs text-zinc-500">Best size: 1200 x 630.</p>
                 </div>
@@ -117,12 +129,13 @@
                     rows="3"
                     class="flux-input text-sm resize-y"
                     placeholder="{{ $metaDescription ?: 'Use the SEO description' }}"
+                    @disabled(! $metaEditingSupported)
                 ></textarea>
                 <p class="mt-2 text-xs text-zinc-500">Leave blank to fall back to the meta description.</p>
             </div>
 
             <div class="flex gap-3">
-                <button type="submit" class="flux-btn-primary text-sm">Save Page SEO</button>
+                <button type="submit" class="flux-btn-primary text-sm" @disabled(! $metaEditingSupported)>Save Page SEO</button>
                 <button type="button" wire:click="runAnalysis" class="flux-btn-secondary text-sm">Re-analyze</button>
             </div>
         </div>

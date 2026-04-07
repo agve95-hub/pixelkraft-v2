@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\Log;
 
 class SitemapGenerator
 {
+    public function __construct(
+        private SiteRuntimeService $runtime,
+    ) {}
+
     /**
      * Generate an XML sitemap for a site and write it to the deploy directory.
      */
@@ -70,7 +74,7 @@ class SitemapGenerator
 
     private function writeSitemap(Site $site, string $xml): ?string
     {
-        if (! $site->deploy_path) {
+        if (! $site->deploy_path || $this->runtime->usesRuntimeServer($site)) {
             return null;
         }
 
@@ -87,12 +91,12 @@ class SitemapGenerator
             return;
         }
 
-        $outputDir = $site->build_output_dir;
-        $targetDir = $outputDir ? "{$site->repo_path}/{$outputDir}" : $site->repo_path;
+        $targetDir = $this->runtime->usesRuntimeServer($site)
+            ? "{$site->repo_path}/public"
+            : ($site->build_output_dir ? "{$site->repo_path}/{$site->build_output_dir}" : $site->repo_path);
 
-        if (File::isDirectory($targetDir)) {
-            File::put("{$targetDir}/sitemap.xml", $xml);
-        }
+        File::ensureDirectoryExists($targetDir);
+        File::put("{$targetDir}/sitemap.xml", $xml);
     }
 
     private function calculatePriority($page): string

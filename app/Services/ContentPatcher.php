@@ -26,6 +26,10 @@ class ContentPatcher
         $site = $page->site;
         $repoPath = $site->repo_path;
 
+        if (! app(SiteSupportService::class)->supportsVisualEditing($site, $page)) {
+            throw new \RuntimeException('Visual save is disabled for this page type. Use Code mode to edit the source safely.');
+        }
+
         $sourceLocation = $region->source_location;
         $targetFile = $sourceLocation['file'] ?? $page->file_path;
         $sourceType = $sourceLocation['source_type'] ?? 'html';
@@ -68,6 +72,11 @@ class ContentPatcher
 
         $page = $region->page;
         $site = $page->site;
+
+        if (! app(SiteSupportService::class)->supportsVisualEditing($site, $page)) {
+            return false;
+        }
+
         $sourceLocation = $region->source_location ?? [];
         $targetFile = $sourceLocation['file'] ?? $page->file_path;
         $sourceType = $sourceLocation['source_type'] ?? 'html';

@@ -6,6 +6,7 @@ use App\Models\Page;
 use App\Services\GitSyncService;
 use App\Services\NextMetadataPatcher;
 use App\Services\SeoAnalyzer;
+use App\Services\SiteSupportService;
 use Livewire\Component;
 
 class MetaEditor extends Component
@@ -21,6 +22,9 @@ class MetaEditor extends Component
     public string $canonicalUrl = '';
 
     public array $analysis = [];
+    public bool $metaEditingSupported = false;
+    public string $metaEditingMode = 'unsupported';
+    public string $metaEditingNotice = '';
 
     public function mount(): void
     {
@@ -33,6 +37,7 @@ class MetaEditor extends Component
         $this->ogDescription = $page->og_description ?? '';
         $this->ogImage = $page->og_image ?? '';
         $this->canonicalUrl = $page->canonical_url ?? '';
+        $this->refreshSupportState($page);
 
         $this->runAnalysis();
     }
@@ -40,8 +45,14 @@ class MetaEditor extends Component
     public function save(): void
     {
         $page = Page::findOrFail($this->pageId);
+        $this->refreshSupportState($page);
 
-        $page->update([
+        if (! $this->metaEditingSupported) {
+            session()->flash('error', $this->metaEditingNotice);
+            return;
+        }
+
+        $attributes = [
             'title'            => $this->title ?: null,
             'meta_description' => $this->metaDescription ?: null,
             'meta_keywords'    => $this->metaKeywords ?: null,
@@ -49,10 +60,15 @@ class MetaEditor extends Component
             'og_description'   => $this->ogDescription ?: null,
             'og_image'         => $this->ogImage ?: null,
             'canonical_url'    => $this->canonicalUrl ?: null,
-        ]);
+        ];
 
-        // Write meta tags back to source file
-        $this->patchSourceFile($page);
+        try {
+            $this->patchSourceFile($page);
+            $page->update($attributes);
+        } catch (\Throwable $e) {
+            session()->flash('error', 'SEO save failed: ' . $e->getMessage());
+            return;
+        }
 
         $this->runAnalysis();
 
@@ -72,6 +88,8 @@ class MetaEditor extends Component
 
         return view('livewire.seo.meta-editor', [
             'page' => $page,
+            'metaEditingSupported' => $this->metaEditingSupported,
+            'metaEditingNotice' => $this->metaEditingNotice,
         ]);
     }
 
@@ -80,46 +98,43 @@ class MetaEditor extends Component
         $site = $page->site;
 
         if (! app(GitSyncService::class)->isCloned($site)) {
-            return;
+            throw new \RuntimeException('Repository is not cloned yet.');
         }
 
         $fullPath = "{$site->repo_path}/{$page->file_path}";
 
         if (! file_exists($fullPath)) {
-            return;
+            throw new \RuntimeException('Source file not found.');
         }
 
-        try {
-            $html = file_get_contents($fullPath);
+        $html = file_get_contents($fullPath);
 
-            if ($this->isNextMetadataFile($page->file_path, $site->project_type) && app(NextMetadataPatcher::class)->canPatch($html)) {
-                $html = app(NextMetadataPatcher::class)->patch($html, [
-                    'title' => $this->title,
-                    'description' => $this->metaDescription,
-                    'keywords' => $this->metaKeywords,
-                    'canonical' => $this->canonicalUrl,
-                    'og_title' => $this->ogTitle,
-                    'og_description' => $this->ogDescription,
-                    'og_image' => $this->ogImage,
-                ]);
-            } else {
-                $html = $this->upsertMetaTag($html, 'title', null, $this->title);
-                $html = $this->upsertMetaTag($html, 'meta', 'description', $this->metaDescription);
-                $html = $this->upsertMetaTag($html, 'meta', 'keywords', $this->metaKeywords);
-                $html = $this->upsertMetaTag($html, 'og', 'og:title', $this->ogTitle);
-                $html = $this->upsertMetaTag($html, 'og', 'og:description', $this->ogDescription);
-                $html = $this->upsertMetaTag($html, 'og', 'og:image', $this->ogImage);
-                $html = $this->upsertCanonical($html, $this->canonicalUrl);
-            }
-
-            file_put_contents($fullPath, $html);
-
-            $git = app(GitSyncService::class);
-            $git->commitAndPush($site, [$page->file_path], "Update SEO meta for {$page->url_path}");
-
-        } catch (\Throwable $e) {
-            session()->flash('error', 'Meta saved to DB but failed to update source: ' . $e->getMessage());
+        if ($this->metaEditingMode === 'next_metadata') {
+            $html = app(NextMetadataPatcher::class)->patch($html, [
+                'title' => $this->title,
+                'description' => $this->metaDescription,
+                'keywords' => $this->metaKeywords,
+                'canonical' => $this->canonicalUrl,
+                'og_title' => $this->ogTitle,
+                'og_description' => $this->ogDescription,
+                'og_image' => $this->ogImage,
+            ]);
+        } elseif ($this->metaEditingMode === 'html') {
+            $html = $this->upsertMetaTag($html, 'title', null, $this->title);
+            $html = $this->upsertMetaTag($html, 'meta', 'description', $this->metaDescription);
+            $html = $this->upsertMetaTag($html, 'meta', 'keywords', $this->metaKeywords);
+            $html = $this->upsertMetaTag($html, 'og', 'og:title', $this->ogTitle);
+            $html = $this->upsertMetaTag($html, 'og', 'og:description', $this->ogDescription);
+            $html = $this->upsertMetaTag($html, 'og', 'og:image', $this->ogImage);
+            $html = $this->upsertCanonical($html, $this->canonicalUrl);
+        } else {
+            throw new \RuntimeException($this->metaEditingNotice);
         }
+
+        file_put_contents($fullPath, $html);
+
+        $git = app(GitSyncService::class);
+        $git->commitAndPush($site, [$page->file_path], "Update SEO meta for {$page->url_path}");
     }
 
     private function upsertMetaTag(string $html, string $type, ?string $name, string $value): string
@@ -180,12 +195,13 @@ class MetaEditor extends Component
         return $html;
     }
 
-    private function isNextMetadataFile(string $filePath, string $projectType): bool
+    private function refreshSupportState(Page $page): void
     {
-        if ($projectType !== 'nextjs') {
-            return false;
-        }
+        $support = app(SiteSupportService::class);
+        $site = $page->site;
 
-        return (bool) preg_match('/\.(tsx|jsx|ts|js)$/', $filePath);
+        $this->metaEditingMode = $support->metaEditingMode($site, $page);
+        $this->metaEditingSupported = $this->metaEditingMode !== 'unsupported';
+        $this->metaEditingNotice = $support->editorProfile($site, $page)['meta_notice'];
     }
 }

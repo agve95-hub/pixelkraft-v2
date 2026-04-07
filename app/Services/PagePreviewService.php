@@ -39,13 +39,17 @@ class PagePreviewService
 
     public function staticOutputDirs(Site $site): array
     {
+        if ($this->runtime->usesRuntimeServer($site)) {
+            return [];
+        }
+
         $dirs = [];
 
         if ($site->build_output_dir && $site->build_output_dir !== '.next') {
             $dirs[] = trim($site->build_output_dir, '/');
         }
 
-        if ($site->project_type === 'nextjs' && ! $this->runtime->usesRuntimeServer($site)) {
+        if ($site->project_type === 'nextjs') {
             $dirs[] = 'out';
         }
 

@@ -8,6 +8,7 @@ use App\Models\Page;
 use App\Models\Site;
 use App\Services\ContentPatcher;
 use App\Services\GitSyncService;
+use App\Services\SiteSupportService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -39,7 +40,11 @@ class VisualEditor extends Component
         $this->siteId = $siteId;
         $this->pageId = $pageId;
 
+        $site = $this->resolveSite();
         $page = $this->resolvePage();
+        $profile = app(SiteSupportService::class)->editorProfile($site, $page);
+
+        $this->mode = $profile['default_mode'];
 
         $this->codeFilePath = $page->file_path;
 
@@ -97,7 +102,7 @@ class VisualEditor extends Component
             }
 
             if (! $this->selectedRegionCanBeEdited()) {
-                session()->flash('error', 'This region is preview-only because pixelkraft could not map it back to a unique source edit safely. Use Code mode for this one.');
+                session()->flash('error', $this->visualSaveErrorMessage());
                 return;
             }
         }
@@ -125,7 +130,7 @@ class VisualEditor extends Component
                 $changedFiles[] = $this->codeFilePath;
             } elseif ($this->selectedRegionId) {
                 if (! $this->selectedRegionCanBeEdited()) {
-                    throw new \RuntimeException('This region is preview-only because pixelkraft could not map it back to a unique source edit safely. Use Code mode for this one.');
+                    throw new \RuntimeException($this->visualSaveErrorMessage());
                 }
 
                 // Save visual editor edit via ContentPatcher
@@ -199,6 +204,7 @@ class VisualEditor extends Component
         $selectedRegionEditable = $selectedRegion
             ? $patcher->canVisuallyEditRegion($selectedRegion)
             : false;
+        $editorProfile = app(SiteSupportService::class)->editorProfile($site, $page);
 
         // Build the preview URL for the iframe
         $previewUrl = $this->buildPreviewUrl($site, $page);
@@ -212,6 +218,7 @@ class VisualEditor extends Component
             'previewRegionCount' => $previewRegions->count(),
             'patchableRegionCount' => $patchableRegionCount,
             'selectedRegionEditable' => $selectedRegionEditable,
+            'editorProfile' => $editorProfile,
         ]);
     }
 
@@ -292,5 +299,17 @@ class VisualEditor extends Component
         $region = $this->findRegion($this->selectedRegionId);
 
         return $region ? app(ContentPatcher::class)->canVisuallyEditRegion($region) : false;
+    }
+
+    private function visualSaveErrorMessage(): string
+    {
+        $site = $this->resolveSite();
+        $page = $this->resolvePage();
+
+        if (! app(SiteSupportService::class)->supportsVisualEditing($site, $page)) {
+            return 'Visual save is disabled for this page type. Use Code mode to edit the source safely.';
+        }
+
+        return 'This region is preview-only because pixelkraft could not map it back to a unique source edit safely. Use Code mode for this one.';
     }
 }

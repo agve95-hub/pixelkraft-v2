@@ -11,6 +11,10 @@ use Symfony\Component\DomCrawler\Crawler;
 
 class BrokenLinkCrawler
 {
+    public function __construct(
+        private SiteRuntimeService $runtime,
+    ) {}
+
     /**
      * Crawl all pages of a site and find broken links.
      *
@@ -184,18 +188,31 @@ class BrokenLinkCrawler
     private function fileExistsInRepo(Site $site, string $urlPath): bool
     {
         $repoPath = $site->repo_path;
-        $outputDir = $site->build_output_dir;
-        $basePath = $outputDir ? "{$repoPath}/{$outputDir}" : $repoPath;
+        $basePaths = [];
 
-        $candidates = [
-            "{$basePath}{$urlPath}",
-            "{$basePath}{$urlPath}.html",
-            "{$basePath}{$urlPath}/index.html",
-        ];
+        if ($this->runtime->usesRuntimeServer($site)) {
+            $basePaths[] = "{$repoPath}/public";
+            $basePaths[] = $repoPath;
+        } else {
+            $outputDir = $site->build_output_dir;
+            $basePaths[] = $outputDir ? "{$repoPath}/{$outputDir}" : $repoPath;
 
-        foreach ($candidates as $path) {
-            if (file_exists($path)) {
-                return true;
+            if (($outputDir ? "{$repoPath}/{$outputDir}" : $repoPath) !== $repoPath) {
+                $basePaths[] = $repoPath;
+            }
+        }
+
+        foreach (array_unique($basePaths) as $basePath) {
+            $candidates = [
+                "{$basePath}{$urlPath}",
+                "{$basePath}{$urlPath}.html",
+                "{$basePath}{$urlPath}/index.html",
+            ];
+
+            foreach ($candidates as $path) {
+                if (file_exists($path)) {
+                    return true;
+                }
             }
         }
 

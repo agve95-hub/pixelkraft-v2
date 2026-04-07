@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Jobs\ParseSiteJob;
 use App\Models\DeployLog;
 use App\Models\Site;
+use App\Services\Deployment\DeploymentAdapter;
+use App\Services\Deployment\RuntimeDeploymentAdapter;
+use App\Services\Deployment\StaticDeploymentAdapter;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
@@ -17,6 +20,8 @@ class DeployService
         private ImageOptimizer $imageOptimizer,
         private HtmlMinifier $minifier,
         private SiteRuntimeService $runtime,
+        private StaticDeploymentAdapter $staticDeployments,
+        private RuntimeDeploymentAdapter $runtimeDeployments,
     ) {}
 
     /**
@@ -53,13 +58,9 @@ class DeployService
 
             // Step 5: Deploy / start runtime
             $site->update(['deploy_status' => 'deploying']);
-            if ($this->runtime->usesRuntimeServer($site)) {
-                $log->appendLog('[5/6] Starting runtime server...');
-                $this->deployRuntime($site, $log);
-            } else {
-                $log->appendLog('[5/6] Deploying static files...');
-                $this->deployFiles($site, $log);
-            }
+            $adapter = $this->adapterFor($site);
+            $log->appendLog('[5/6] ' . $adapter->activationStepLabel($site));
+            $adapter->activate($site, $log);
 
             // Step 6: Reload Nginx
             if ($this->shouldReloadNginx($site)) {
@@ -154,11 +155,9 @@ class DeployService
             // Checkout the tagged commit
             $this->git->checkout($site, $targetDeploy->snapshot_tag);
 
-            if ($this->runtime->usesRuntimeServer($site)) {
-                $this->deployRuntime($site, $log);
-            } else {
-                $this->deployFiles($site, $log);
-            }
+            $adapter = $this->adapterFor($site);
+            $log->appendLog($adapter->activationStepLabel($site));
+            $adapter->activate($site, $log);
 
             // Reload nginx
             if ($this->shouldReloadNginx($site)) {
@@ -266,12 +265,17 @@ class DeployService
 
     private function optimizeAssets(Site $site, DeployLog $log): void
     {
-        if ($this->runtime->usesRuntimeServer($site)) {
-            $log->appendLog('  Skipping static post-processing for runtime-managed build output.');
+        $adapter = $this->adapterFor($site);
+        $outputDir = $adapter->artifactDirectory($site);
+
+        if (! $outputDir) {
+            $log->appendLog(
+                $adapter->mode() === SiteRuntimeService::MODE_RUNTIME
+                    ? '  Skipping static post-processing for runtime-managed build output.'
+                    : '  No static build artifact was found yet, skipping optimization.'
+            );
             return;
         }
-
-        $outputDir = $this->resolveOutputDir($site);
 
         if (! File::isDirectory($outputDir)) {
             $log->appendLog('  No output directory found, skipping optimization.');
@@ -282,7 +286,7 @@ class DeployService
         $imageCount = $this->imageOptimizer->optimizeDirectory($outputDir);
         $log->appendLog("  Optimized {$imageCount} images.");
 
-        if ($this->supportsAggressiveOptimization($site)) {
+        if ($adapter->supportsAggressiveOptimization($site)) {
             // HTML/CSS/JS minification is only safe for plain static/SSG sites.
             $minifiedCount = $this->minifier->minifyDirectory($outputDir);
             $log->appendLog("  Minified {$minifiedCount} files.");
@@ -295,84 +299,7 @@ class DeployService
         }
     }
 
-    private function deployFiles(Site $site, DeployLog $log): void
-    {
-        $sourceDir = $this->resolveOutputDir($site);
-        $deployPath = $site->deploy_path;
-
-        if (! File::isDirectory($sourceDir)) {
-            throw new \RuntimeException("Output directory not found: {$sourceDir}");
-        }
-
-        $this->replaceDirectory($sourceDir, $deployPath);
-
-        $log->appendLog("  Files deployed to {$deployPath}");
-    }
-
-    private function deployRuntime(Site $site, DeployLog $log): void
-    {
-        $this->runtime->deploy($site, $log);
-        $log->appendLog('  Runtime site deployed on ' . $this->runtime->baseUrl($site));
-    }
-
     // ── Helpers ──────────────────────────────────
-
-    private function resolveOutputDir(Site $site): string
-    {
-        $repoPath = $site->repo_path;
-
-        if ($site->project_type === 'nextjs') {
-            return $this->resolveNextjsOutputDir($site);
-        }
-
-        if ($site->build_output_dir) {
-            $outputPath = "{$repoPath}/{$site->build_output_dir}";
-            if (File::isDirectory($outputPath)) {
-                return $outputPath;
-            }
-        }
-
-        // For static sites with no build, serve from repo root (or public/)
-        if (File::isDirectory("{$repoPath}/public")) {
-            return "{$repoPath}/public";
-        }
-
-        return $repoPath;
-    }
-
-    private function resolveNextjsOutputDir(Site $site): string
-    {
-        $repoPath = $site->repo_path;
-        $configuredOutputDir = $site->build_output_dir;
-
-        if ($configuredOutputDir && $configuredOutputDir !== '.next') {
-            $configuredPath = "{$repoPath}/{$configuredOutputDir}";
-            if (File::isDirectory($configuredPath)) {
-                return $configuredPath;
-            }
-        }
-
-        $staticCandidates = [
-            "{$repoPath}/out",
-        ];
-
-        foreach ($staticCandidates as $candidate) {
-            if (File::isDirectory($candidate)) {
-                return $candidate;
-            }
-        }
-
-        if ($configuredOutputDir === '.next' || File::isDirectory("{$repoPath}/.next")) {
-            throw new \RuntimeException(
-                'Next.js built a `.next` directory, which is not a static deploy artifact. ' .
-                'Configure static export so the build outputs to `out`, or update the site build output directory to the exported folder.'
-            );
-        }
-
-        throw new \RuntimeException(
-            'No deployable Next.js output was found. Expected a static export directory such as `out` after the build finished.'
-        );
-    }
 
     private function runCommand(
         string $command,
@@ -509,30 +436,6 @@ class DeployService
         };
     }
 
-    private function supportsAggressiveOptimization(Site $site): bool
-    {
-        return in_array($site->project_type, ['static_html', 'hugo', 'eleventy'], true);
-    }
-
-    private function replaceDirectory(string $sourceDir, string $targetDir): void
-    {
-        $stagingDir = $targetDir . '.__pixelkraft_tmp';
-
-        File::deleteDirectory($stagingDir);
-        File::ensureDirectoryExists(dirname($targetDir), 0755, true);
-
-        if (! File::copyDirectory($sourceDir, $stagingDir)) {
-            throw new \RuntimeException("Failed to stage files from {$sourceDir}");
-        }
-
-        File::deleteDirectory($targetDir);
-
-        if (! File::moveDirectory($stagingDir, $targetDir)) {
-            File::deleteDirectory($stagingDir);
-            throw new \RuntimeException("Failed to activate staged deploy at {$targetDir}");
-        }
-    }
-
     private function appendCommandResult(DeployLog $log, string $label, array $result): void
     {
         $log->appendLog("{$label}: {$result['summary']} ({$result['command']})");
@@ -566,5 +469,13 @@ class DeployService
         foreach ($oldDeploys as $deploy) {
             $deploy->update(['snapshot_tag' => null]);
         }
+    }
+
+    private function adapterFor(Site $site): DeploymentAdapter
+    {
+        return match ($this->runtime->deploymentMode($site)) {
+            SiteRuntimeService::MODE_RUNTIME => $this->runtimeDeployments,
+            default => $this->staticDeployments,
+        };
     }
 }

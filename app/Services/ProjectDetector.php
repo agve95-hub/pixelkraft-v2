@@ -11,7 +11,13 @@ class ProjectDetector
     /**
      * Detect the project type and suggest build configuration.
      *
-     * @return array{type: string, build_command: ?string, build_output_dir: ?string, confidence: float}
+     * @return array{
+     *   type: string,
+     *   deployment_mode: string,
+     *   build_command: ?string,
+     *   build_output_dir: ?string,
+     *   confidence: float
+     * }
      */
     public function detect(Site $site): array
     {
@@ -59,6 +65,10 @@ class ProjectDetector
 
         $updates = ['project_type' => $detection['type']];
 
+        if (empty($site->deployment_mode) && ! empty($detection['deployment_mode'])) {
+            $updates['deployment_mode'] = $detection['deployment_mode'];
+        }
+
         if (empty($site->build_command) && $detection['build_command']) {
             $updates['build_command'] = $detection['build_command'];
         }
@@ -94,25 +104,25 @@ class ProjectDetector
 
         if ($this->packageHasDependency($pkg, 'next')) {
             if ($isStaticExport) {
-                return $this->result('nextjs', $buildCmd, 'out', 0.98);
+                return $this->result('nextjs', $buildCmd, 'out', 0.98, SiteRuntimeService::MODE_STATIC);
             }
 
             $exportScript = $this->hasScript($pkg, 'export')
                 ? $this->scriptCommand($path, $pkg, 'export', 'npx next export')
                 : null;
             if ($exportScript) {
-                return $this->result('nextjs', "{$buildCmd} && {$exportScript}", 'out', 0.95);
+                return $this->result('nextjs', "{$buildCmd} && {$exportScript}", 'out', 0.95, SiteRuntimeService::MODE_STATIC);
             }
 
-            return $this->result('nextjs', $buildCmd, '.next', 0.95);
+            return $this->result('nextjs', $buildCmd, '.next', 0.95, SiteRuntimeService::MODE_RUNTIME);
         }
 
         if (File::exists("{$path}/next.config.js") || File::exists("{$path}/next.config.mjs") || File::exists("{$path}/next.config.ts")) {
             if ($isStaticExport) {
-                return $this->result('nextjs', $buildCmd, 'out', 0.92);
+                return $this->result('nextjs', $buildCmd, 'out', 0.92, SiteRuntimeService::MODE_STATIC);
             }
 
-            return $this->result('nextjs', $this->scriptCommand($path, $pkg, 'build', 'npx next build'), '.next', 0.85);
+            return $this->result('nextjs', $this->scriptCommand($path, $pkg, 'build', 'npx next build'), '.next', 0.85, SiteRuntimeService::MODE_RUNTIME);
         }
 
         return null;
@@ -346,9 +356,16 @@ class ProjectDetector
         return str_contains(File::get($path), $needle);
     }
 
-    private function result(string $type, ?string $buildCommand, ?string $outputDir, float $confidence): array
+    private function result(
+        string $type,
+        ?string $buildCommand,
+        ?string $outputDir,
+        float $confidence,
+        string $deploymentMode = SiteRuntimeService::MODE_STATIC,
+    ): array
     {
         return [
+            'deployment_mode'  => $deploymentMode,
             'type'             => $type,
             'build_command'    => $buildCommand,
             'build_output_dir' => $outputDir,
