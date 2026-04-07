@@ -1,96 +1,110 @@
 # pixelkraft
 
-A self-hosted site operations platform for managing, editing, deploying, and monitoring AI-generated websites from a single dashboard.
+A self-hosted site operations platform for managing, editing, deploying, and monitoring Git-backed websites from one dashboard.
 
-## What is pixelkraft?
+## What Is pixelkraft?
 
-If you build websites with AI tools and manage multiple sites, pixelkraft gives you one place to control everything: edit content visually, push changes to GitHub, deploy to your VPS, monitor uptime, track SEO, handle contact forms, and send newsletters — across 10, 20, or 25+ sites.
+If you build sites with AI tools and manage more than a few repos, pixelkraft gives you one place to:
+
+- sync with GitHub
+- parse pages and editable regions
+- edit content and code
+- deploy sites to your VPS
+- manage SEO, forms, and operations
+- monitor logs, uptime, and site health
 
 ## Stack
 
 | Layer | Technology |
-|-------|-----------|
-| Backend | Laravel 11 (PHP 8.3) |
-| Frontend | Livewire 3 + Alpine.js + Tailwind CSS v4 |
-| UI Components | Livewire Flux v2 (official Livewire UI kit) |
+|-------|------------|
+| Backend | Laravel 13 (PHP 8.3+) |
+| Frontend | Livewire 4 + Alpine.js + Tailwind CSS v4 |
+| UI Components | Livewire Flux v2 |
 | Database | MariaDB |
-| Cache / Queue / Sessions | Redis (Valkey on AlmaLinux 10) |
+| Cache / Queue / Sessions | Redis or Valkey |
 | Queue Dashboard | Laravel Horizon |
-| Media Storage | Cloudflare R2 (S3-compatible) |
+| Media Storage | Cloudflare R2 |
 | Email | Resend |
-| Auth | Laravel Fortify (email/password + TOTP 2FA) |
+| Auth | Laravel Fortify |
 | API Tokens | Laravel Sanctum |
-| Headless Browser | Spatie Browsershot (Puppeteer) |
 | Web Server | Nginx |
-| OS | AlmaLinux 10 |
+| OS Target | AlmaLinux 10 |
 
 ## Features
 
 **Core**
-- GitHub two-way sync (clone, pull, push, webhook listener)
-- Multi-strategy parser — handles static HTML, React, Vue, Svelte, Astro, Hugo, 11ty
-- Hybrid content detection (auto-detect + marker confirmation)
-- Visual page editor (click on elements) + code view toggle
-- Structured blog editor and product listing editor
-- Content templates and global components
-- Per-site configuration for heterogeneous projects
+
+- GitHub two-way sync: clone, pull, commit, push
+- Multi-strategy parser for static HTML, rendered SSG output, and component-based apps
+- Region detection from rendered DOM output with manual confirmation controls
+- Visual preview plus code editor with Git-backed save and push
+- Blog, product, template, redirect, and file-management surfaces
+- Per-site configuration for mixed project types
 
 **Deployment**
-- End-to-end pipeline: edit → commit → build → optimize → deploy
-- Domain, SSL (Let's Encrypt), and Nginx vhost management
-- Staging preview before going live
-- Rollback to previous deploys
+
+- End-to-end pipeline: edit -> commit -> build -> deploy
+- Static-site deploys
+- Runtime-managed Next.js deploys behind Nginx
+- Package-manager-aware builds for npm, pnpm, yarn, and bun
+- Domain, SSL, and Nginx vhost management
+- Deploy history and rollback support
 
 **SEO**
-- Meta editor (title, description, keywords)
-- Open Graph / social sharing tags
-- JSON-LD structured data (Schema.org)
-- robots.txt editor, canonical URLs, 301 redirect manager
-- Auto-generated XML sitemaps
 
-**Analytics & Monitoring**
-- Google Analytics + Cloudflare Analytics unified dashboard
+- Meta editor
+- Open Graph fields
+- JSON-LD structured data editor
+- robots.txt editor
+- Canonical URLs
+- Redirect manager
+- Sitemap generation
+
+**Analytics And Monitoring**
+
+- Cloudflare analytics aggregation
 - Custom event tracking
-- Google Search Console integration (keywords, indexing)
-- Weekly Lighthouse audits with actionable suggestions
-- Uptime monitoring (5-min intervals)
-- Broken link checker
-
-**Email**
-- Contact form API endpoint for any site
-- Newsletter system with templates, scheduling, and basic segmentation
-- Powered by Resend
-
-**Performance**
-- Image optimization + WebP conversion on deploy
-- Lazy loading injection
-- HTML/CSS/JS minification
+- Lighthouse and uptime monitoring hooks
+- Broken-link checking
+- Additional provider integrations are still being expanded
 
 **Operations**
-- Deploy and error logs in dashboard
-- Public REST API with Sanctum tokens
-- Automated daily database backups to R2
-- Discord + in-dashboard notifications
 
-**Auth**
-- Email/password + TOTP two-factor authentication
-- Role-based access (admin/editor) for future team support
-- API token management
+- Deploy logs and error logs in the dashboard
+- Sanctum-backed API surface
+- Notification hooks
+- Queue diagnostics and stuck-job visibility
+
+## Framework Support
+
+pixelkraft does not treat every project type the same. The current support model is:
+
+- `static_html`: direct HTML parsing, visual editing, and static deployment
+- `hugo`, `eleventy`, static `astro`: parse rendered output and deploy static build artifacts
+- `nextjs`: supports static export or a runtime-managed Node process behind Nginx
+- `react`, `vue`, `svelte`, `nuxt`: parsing works best from rendered output or preview HTML when available
+
+For component-based frameworks, the editor currently uses this safety model:
+
+- preview is generated from rendered HTML or a local runtime server
+- regions are detected from the rendered DOM
+- code mode is the reliable editing path for component source files
+- full direct visual source patching is still more limited than raw HTML editing
 
 ## Architecture
 
-See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint — open it in a browser for a formatted, interactive view covering all 20 sections: tech stack, database schema, multi-strategy parser design, visual editor architecture, deployment pipeline, and 6 build phases.
+See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint. It covers the parser strategies, editor flow, deployment pipeline, database schema, and the intended phase breakdown.
 
 ## Requirements
 
 - PHP 8.3+
 - MariaDB 10.11+
-- Redis 7+ (or Valkey on AlmaLinux 10)
+- Redis 7+ or Valkey
 - Node.js 20+
 - Nginx
 - Composer 2.x
-- Supervisor (for Horizon queue workers)
-- Certbot (for SSL, optional)
+- Supervisor
+- Certbot for SSL automation, optional
 
 ## Setup (Development)
 
@@ -102,35 +116,30 @@ npm install
 cp .env.example .env
 php artisan key:generate
 
-# Configure .env with your MariaDB, Redis, and service credentials
+# Configure .env for MariaDB, Redis/Valkey, and service credentials
 
 php artisan migrate
-php artisan horizon  # Start queue workers
-npm run dev          # Start Vite dev server
-php artisan serve    # Start Laravel dev server
+php artisan horizon
+npm run dev
+php artisan serve
 ```
 
 ## Deployment (Production VPS)
 
-### 1. Server Prerequisites
+### 1. Server prerequisites
 
 ```bash
-# PHP 8.3 + extensions
 dnf install php php-fpm php-mysqlnd php-mbstring php-xml php-curl php-zip php-bcmath php-gd php-intl php-opcache php-sodium
-
-# Redis-compatible cache (AlmaLinux 10 uses Valkey, not Redis)
 dnf install valkey
 systemctl enable --now valkey
 
-# Composer
 curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Supervisor for Horizon
 dnf install supervisor
 systemctl enable --now supervisord
 ```
 
-### 2. Application Setup
+### 2. Application setup
 
 ```bash
 cd /var/www/pixelkraft
@@ -139,9 +148,11 @@ cp .env.example .env
 php artisan key:generate
 
 # Configure .env:
-#   APP_URL=http://YOUR_SERVER_IP
-#   DB_CONNECTION=mariadb
-#   CACHE_STORE=redis / QUEUE_CONNECTION=redis / SESSION_DRIVER=redis
+# APP_URL=http://YOUR_SERVER_IP
+# DB_CONNECTION=mariadb
+# CACHE_STORE=redis
+# QUEUE_CONNECTION=redis
+# SESSION_DRIVER=redis
 
 php artisan migrate --force
 php artisan storage:link
@@ -150,11 +161,19 @@ npm run build
 chown -R nginx:nginx /var/www/pixelkraft
 ```
 
-### 3. Flux UI v2 — Critical CSS Setup
+After each pixelkraft application update:
 
-The CSS file **must** follow the [Flux v2 installation docs](https://fluxui.dev/docs/installation) exactly:
+```bash
+php artisan optimize:clear
+php artisan horizon:terminate
+```
 
-**`resources/css/app.css`:**
+### 3. Flux UI CSS setup
+
+Follow the Flux v2 installation rules exactly.
+
+`resources/css/app.css`
+
 ```css
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
@@ -169,7 +188,8 @@ The CSS file **must** follow the [Flux v2 installation docs](https://fluxui.dev/
 }
 ```
 
-**`postcss.config.js`** — Must use the Tailwind v4 PostCSS plugin:
+`postcss.config.js`
+
 ```js
 export default {
     plugins: {
@@ -178,14 +198,13 @@ export default {
 };
 ```
 
-Install the PostCSS plugin:
+Install the Tailwind PostCSS plugin:
+
 ```bash
 npm install @tailwindcss/postcss
 ```
 
-**Build validation:** After `npm run build`, the CSS should be ~249 kB. If it's ~13 kB, the Flux CSS import is missing.
-
-### 4. Nginx Configuration
+### 4. Nginx configuration
 
 ```nginx
 server {
@@ -196,7 +215,6 @@ server {
     index index.php;
     client_max_body_size 20M;
 
-    # Required for Flux JS/CSS assets (per fluxui.dev/docs/installation)
     location ~* ^/flux/flux(\.min)?\.(js|css)$ {
         expires off;
         try_files $uri $uri/ /index.php?$query_string;
@@ -221,6 +239,7 @@ server {
 ### 5. Supervisor (Horizon)
 
 Create `/etc/supervisord.d/horizon.ini`:
+
 ```ini
 [program:horizon]
 process_name=%(program_name)s
@@ -241,9 +260,15 @@ stopwaitsecs=3600
 
 ## Key Notes
 
-### Flux v2 vs v1 Component Names
+### Managed site builds
 
-This project uses **Flux v2.13.1**. If you encounter broken UI, check that Blade templates use v2 syntax:
+- Frontend site builds install dev dependencies when the target framework needs them to compile successfully
+- Runtime-managed Next.js sites run on an internal port and are proxied through Nginx
+- Static optimization steps are skipped for runtime-managed output
+
+### Flux v2 component names
+
+This project uses Flux v2. If you hit broken UI after refactors, double-check Blade component names:
 
 | Flux v1 (wrong) | Flux v2 (correct) |
 |---|---|
@@ -251,31 +276,31 @@ This project uses **Flux v2.13.1**. If you encounter broken UI, check that Blade
 | `flux:brand` | `flux:sidebar.brand` |
 | `flux:navlist.item` | `flux:sidebar.item` |
 | `flux:navlist.group` | `flux:sidebar.group` |
-| `flux:spacer` (in sidebar) | `flux:sidebar.spacer` |
-| `flux:profile` (in sidebar) | `flux:sidebar.profile` |
+| `flux:spacer` | `flux:sidebar.spacer` |
+| `flux:profile` | `flux:sidebar.profile` |
 
-### AlmaLinux 10 Specifics
+### AlmaLinux 10 specifics
 
-- **No `redis` package** — use `valkey` (Redis-compatible fork, drop-in replacement)
-- **php-pecl-redis6** works with Valkey on the default port 6379
+- Use `valkey` instead of a `redis` package
+- `php-pecl-redis6` works with Valkey on the default port `6379`
 
-### Tailwind v4 Migration
+### Tailwind v4 migration
 
-- Uses `@import "tailwindcss"` (not `@tailwind base/components/utilities`)
-- PostCSS plugin is `@tailwindcss/postcss` (not `tailwindcss`)
-- Content scanning uses `@source` directives in CSS (not `content` array in config)
+- Use `@import "tailwindcss"` instead of the old Tailwind layers
+- Use `@tailwindcss/postcss` as the PostCSS plugin
+- Use `@source` directives in CSS instead of an old `content` array
 
 ## Build Phases
 
 | Phase | Focus | Status |
 |-------|-------|--------|
-| 1 | Foundation + Auth + GitHub Sync | ✅ Complete |
-| 2 | Multi-Strategy Parser + Region Detection | ✅ Complete |
-| 3 | Visual Editor + Content Management | ✅ Complete |
-| 4 | Deploy Pipeline + Domain/SSL Management | ✅ Complete |
-| 5 | SEO + Analytics + Monitoring | ✅ Complete |
-| 6 | Email + Operations + Polish | ✅ Complete |
+| 1 | Foundation + Auth + GitHub Sync | Complete |
+| 2 | Multi-Strategy Parser + Region Detection | Complete |
+| 3 | Visual Editor + Content Management | Complete |
+| 4 | Deploy Pipeline + Domain / SSL Management | Complete |
+| 5 | SEO + Analytics + Monitoring | Complete |
+| 6 | Email + Operations + Polish | Complete |
 
 ## License
 
-Private — not open source.
+Private - not open source.
