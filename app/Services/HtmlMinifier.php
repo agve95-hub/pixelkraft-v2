@@ -18,11 +18,25 @@ class HtmlMinifier
         }
 
         $count = 0;
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
+
+        $skipDirs = ['node_modules', '.git', '.next', '.nuxt', 'vendor', '.svelte-kit', '__pycache__', '.cache'];
+        $directoryIterator = new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS);
+        $filteredIterator = new \RecursiveCallbackFilterIterator(
+            $directoryIterator,
+            function (\SplFileInfo $current) use ($skipDirs) {
+                if ($current->isDir() && in_array($current->getFilename(), $skipDirs, true)) {
+                    return false;
+                }
+                return true;
+            }
         );
+        $iterator = new \RecursiveIteratorIterator($filteredIterator);
 
         foreach ($iterator as $file) {
+            if (! $file->isFile()) {
+                continue;
+            }
+
             $ext = strtolower($file->getExtension());
 
             if (! in_array($ext, ['html', 'htm', 'css', 'js'], true)) {
@@ -148,5 +162,65 @@ class HtmlMinifier
         $js = preg_replace('/^\n/m', '', $js);
 
         return trim($js);
+    }
+
+    /**
+     * Inject loading="lazy" on <img> tags that don't already have it.
+     * Returns number of images modified.
+     */
+    public function injectLazyLoading(string $directory): int
+    {
+        if (! File::isDirectory($directory)) {
+            return 0;
+        }
+
+        $count = 0;
+        $skipDirs = ['node_modules', '.git', '.next', '.nuxt', 'vendor', '.svelte-kit', '.cache'];
+        $directoryIterator = new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS);
+        $filteredIterator = new \RecursiveCallbackFilterIterator(
+            $directoryIterator,
+            function (\SplFileInfo $current) use ($skipDirs) {
+                if ($current->isDir() && in_array($current->getFilename(), $skipDirs, true)) {
+                    return false;
+                }
+                return true;
+            }
+        );
+        $iterator = new \RecursiveIteratorIterator($filteredIterator);
+
+        foreach ($iterator as $file) {
+            if (! $file->isFile()) {
+                continue;
+            }
+
+            $ext = strtolower($file->getExtension());
+            if (! in_array($ext, ['html', 'htm'], true)) {
+                continue;
+            }
+
+            $path = $file->getPathname();
+
+            try {
+                $html = File::get($path);
+                $modified = preg_replace_callback(
+                    '/<img\b(?![^>]*\bloading\s*=)([^>]*)>/i',
+                    function ($match) {
+                        return '<img loading="lazy"' . $match[1] . '>';
+                    },
+                    $html,
+                    -1,
+                    $replacements,
+                );
+
+                if ($replacements > 0 && $modified !== $html) {
+                    File::put($path, $modified);
+                    $count += $replacements;
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Lazy loading injection failed for [{$path}]", ['error' => $e->getMessage()]);
+            }
+        }
+
+        return $count;
     }
 }

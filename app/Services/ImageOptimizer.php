@@ -19,11 +19,29 @@ class ImageOptimizer
         }
 
         $count = 0;
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
+
+        // Skip directories that should never be scanned for images
+        $skipDirs = ['node_modules', '.git', '.next', '.nuxt', 'vendor', '.svelte-kit', '__pycache__', '.cache'];
+
+        $directoryIterator = new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS);
+
+        $filteredIterator = new \RecursiveCallbackFilterIterator(
+            $directoryIterator,
+            function (\SplFileInfo $current, string $key, \RecursiveDirectoryIterator $iterator) use ($skipDirs) {
+                if ($current->isDir() && in_array($current->getFilename(), $skipDirs, true)) {
+                    return false;
+                }
+                return true;
+            }
         );
 
+        $iterator = new \RecursiveIteratorIterator($filteredIterator);
+
         foreach ($iterator as $file) {
+            if (! $file->isFile()) {
+                continue;
+            }
+
             $ext = strtolower($file->getExtension());
 
             if (! in_array($ext, ['jpg', 'jpeg', 'png', 'svg', 'gif'], true)) {
@@ -37,11 +55,10 @@ class ImageOptimizer
                     'jpg', 'jpeg' => $this->optimizeJpeg($path),
                     'png'         => $this->optimizePng($path),
                     'svg'         => $this->optimizeSvg($path),
-                    'gif'         => false, // Skip gif optimization
+                    'gif'         => false,
                     default       => false,
                 };
 
-                // Generate WebP variant for jpg/png
                 if (in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
                     $this->generateWebp($path);
                 }
