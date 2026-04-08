@@ -29,7 +29,7 @@
                         @endif
                     </flux:table.cell>
                     <flux:table.cell class="text-xs">{{ $site->last_deployed_at?->diffForHumans() ?? 'Never' }}</flux:table.cell>
-                    <flux:table.cell><flux:button href="{{ route('sites.show', $site) }}" size="xs" variant="ghost">Manage</flux:button></flux:table.cell>
+                    <flux:table.cell><flux:button href="{{ route('sites.index', ['site' => $site->id]) }}" size="xs" variant="ghost">Open</flux:button></flux:table.cell>
                 </flux:table.row>
             @empty
                 <flux:table.row>
@@ -38,7 +38,7 @@
                             <flux:icon name="globe-alt" variant="outline" class="size-10 text-zinc-400" />
                             <flux:heading>No sites yet</flux:heading>
                             <flux:text size="sm">Add your first site to get started.</flux:text>
-                            <flux:button href="{{ route('sites.create') }}" variant="primary" icon="plus" class="mt-2">Add your first site</flux:button>
+                            <flux:button href="#add-site" variant="primary" icon="plus" class="mt-2">Add your first site</flux:button>
                         </div>
                     </flux:table.cell>
                 </flux:table.row>
