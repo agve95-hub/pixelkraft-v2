@@ -1,4 +1,4 @@
-<div class="max-w-xl">
+<div class="w-full">
     <div class="mb-6">
         <flux:heading size="lg">Add a new site</flux:heading>
         <flux:subheading>Connect a GitHub repository to start managing it.</flux:subheading>
