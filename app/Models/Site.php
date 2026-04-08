@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class Site extends Model
@@ -72,6 +74,10 @@ class Site extends Model
             if (empty($site->deploy_path)) {
                 $site->deploy_path = config('pixelkraft.sites_deploy_path') . '/' . $site->slug;
             }
+        });
+
+        static::deleting(function (Site $site): void {
+            $site->cleanupFilesystemArtifacts();
         });
     }
 
@@ -207,5 +213,103 @@ class Site extends Model
     public function latestUptimeCheck()
     {
         return $this->hasOne(UptimeCheck::class)->latestOfMany('checked_at');
+    }
+
+    private function cleanupFilesystemArtifacts(): void
+    {
+        $this->deleteDirectory($this->repo_path, $this->slug);
+        $this->deleteDirectory($this->deploy_path, $this->slug);
+        $this->deleteDirectory($this->runtimeRootPath(), $this->slug);
+        $this->deleteFile($this->runtimePidPath(), $this->slug . '.pid');
+        $this->deleteFile($this->runtimeLogPath(), $this->slug . '.log');
+        $this->deleteFile($this->nginxConfigPath(), $this->slug . '.conf');
+        $this->deleteFile($this->nginxEnabledPath(), $this->slug . '.conf');
+    }
+
+    private function runtimeRootPath(): string
+    {
+        return rtrim((string) config('pixelkraft.runtime.storage_path', storage_path('app/runtime-sites')), '/')
+            . '/' . $this->slug;
+    }
+
+    private function runtimePidPath(): string
+    {
+        return rtrim((string) config('pixelkraft.runtime.pid_path', storage_path('app/runtime-pids')), '/')
+            . '/' . $this->slug . '.pid';
+    }
+
+    private function runtimeLogPath(): string
+    {
+        return rtrim((string) config('pixelkraft.runtime.log_path', storage_path('logs/runtime-sites')), '/')
+            . '/' . $this->slug . '.log';
+    }
+
+    private function nginxConfigPath(): string
+    {
+        return (string) ($this->nginx_conf_path ?: (rtrim((string) config('pixelkraft.nginx_sites_path'), '/') . '/' . $this->slug . '.conf'));
+    }
+
+    private function nginxEnabledPath(): string
+    {
+        $enabledDir = str_replace(
+            'sites-available',
+            'sites-enabled',
+            (string) config('pixelkraft.nginx_sites_path')
+        );
+
+        return rtrim($enabledDir, '/') . '/' . $this->slug . '.conf';
+    }
+
+    private function deleteDirectory(?string $path, ?string $expectedBasename = null): void
+    {
+        $path = trim((string) $path);
+
+        if ($path === '' || in_array($path, ['/', '.'], true)) {
+            return;
+        }
+
+        if ($expectedBasename !== null && basename($path) !== $expectedBasename) {
+            Log::warning("Skipped deleting unexpected directory [{$path}] for site [{$this->slug}]");
+            return;
+        }
+
+        try {
+            if (is_link($path)) {
+                @unlink($path);
+                return;
+            }
+
+            if (File::isDirectory($path)) {
+                File::deleteDirectory($path);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Failed to delete directory [{$path}] for deleted site [{$this->slug}]", [
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function deleteFile(?string $path, ?string $expectedBasename = null): void
+    {
+        $path = trim((string) $path);
+
+        if ($path === '' || in_array($path, ['/', '.'], true)) {
+            return;
+        }
+
+        if ($expectedBasename !== null && basename($path) !== $expectedBasename) {
+            Log::warning("Skipped deleting unexpected file [{$path}] for site [{$this->slug}]");
+            return;
+        }
+
+        try {
+            if (is_link($path) || File::exists($path)) {
+                File::delete($path);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Failed to delete file [{$path}] for deleted site [{$this->slug}]", [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
