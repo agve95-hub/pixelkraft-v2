@@ -7,12 +7,14 @@ use App\Models\Page;
 use App\Services\ContentPatcher;
 use App\Services\RegionDetector;
 use App\Services\SiteSupportService;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class RegionPanel extends Component
 {
     public string $pageId;
     public string $filter = 'all'; // all|dynamic|static|unconfirmed
+    public ?string $selectedRegionId = null;
 
     public function confirmEditable(string $regionId): void
     {
@@ -46,7 +48,14 @@ class RegionPanel extends Component
 
     public function selectRegion(string $regionId): void
     {
+        $this->selectedRegionId = $regionId;
         $this->dispatch('region-selected', regionId: $regionId)->to(VisualEditor::class);
+    }
+
+    #[On('region-selected')]
+    public function syncSelectedRegion(string $regionId): void
+    {
+        $this->selectedRegionId = $regionId;
     }
 
     public function render()

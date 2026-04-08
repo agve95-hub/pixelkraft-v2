@@ -1,5 +1,5 @@
 <div
-    class="flex flex-col h-[calc(100vh-3.5rem)]"
+    class="flex h-[calc(100vh-3.5rem)] flex-col"
     x-data="editorState({
         previewRegions: @js($previewRegions),
         selectedRegionId: @js($selectedRegion?->id),
@@ -7,35 +7,31 @@
     x-on:highlight-region.window="highlightRegion($event.detail.selector, $event.detail.regionId, $event.detail.content)"
     x-on:reload-iframe.window="reloadIframe()"
 >
-    {{-- Toolbar --}}
-    <div class="flex items-center gap-2 border-b border-zinc-800 px-4 py-2 bg-zinc-900/50 flex-shrink-0">
-        {{-- Back --}}
-        <a href="{{ route('sites.show', $site) }}" class="flux-btn-ghost text-xs !px-2 !py-1.5">
+    <div class="flex flex-wrap items-center gap-2 border-b border-zinc-800 bg-zinc-900/60 px-4 py-2">
+        <a href="{{ route('sites.show', $site) }}" class="flux-btn-ghost text-xs !px-2 !py-1.5" title="Back to site">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
         </a>
 
-        {{-- Page info --}}
-        <div class="flex items-center gap-2 mr-auto min-w-0">
-            <span class="text-sm font-medium text-zinc-200 truncate">{{ $page->title ?? $page->file_path }}</span>
-            <span class="mono text-xs text-zinc-600 truncate hidden sm:inline">{{ $page->url_path }}</span>
+        <div class="mr-auto min-w-0">
+            <p class="truncate text-sm font-medium text-zinc-100">{{ $page->title ?? $page->file_path }}</p>
+            <p class="truncate font-mono text-[11px] text-zinc-500">{{ $page->url_path }}</p>
         </div>
 
-        {{-- Mode toggle --}}
         <div class="flex items-center rounded-lg border border-zinc-700 bg-zinc-800 p-0.5">
             <button
                 wire:click="setMode('visual')"
                 @class([
-                    'px-3 py-1 rounded-md text-xs font-medium transition',
+                    'rounded-md px-3 py-1 text-xs font-medium transition',
                     'bg-violet-600 text-white' => $mode === 'visual',
                     'text-zinc-400 hover:text-zinc-200' => $mode !== 'visual',
                 ])
             >
-                {{ $editorProfile['visual_editing_supported'] ? 'Visual' : 'Preview' }}
+                Canvas
             </button>
             <button
                 wire:click="setMode('code')"
                 @class([
-                    'px-3 py-1 rounded-md text-xs font-medium transition',
+                    'rounded-md px-3 py-1 text-xs font-medium transition',
                     'bg-violet-600 text-white' => $mode === 'code',
                     'text-zinc-400 hover:text-zinc-200' => $mode !== 'code',
                 ])
@@ -44,28 +40,6 @@
             </button>
         </div>
 
-        {{-- Save --}}
-        <button
-            wire:click="openSaveModal"
-            class="flux-btn-primary text-xs !py-1.5"
-            wire:loading.attr="disabled"
-            wire:target="openSaveModal,save"
-            @disabled($mode === 'visual' && ! $selectedRegionEditable)
-        >
-            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" /></svg>
-            Save & Push
-        </button>
-
-        <button
-            wire:click="toggleDebugTelemetry"
-            class="flux-btn-ghost text-xs !py-1.5"
-            wire:loading.attr="disabled"
-            wire:target="toggleDebugTelemetry"
-            title="Toggle editor debug telemetry"
-        >
-            {{ $debugTelemetryEnabled ? 'Debug On' : 'Debug' }}
-        </button>
-
         <button
             wire:click="reparsePage"
             class="flux-btn-ghost text-xs !py-1.5"
@@ -73,265 +47,179 @@
             wire:target="reparsePage"
             title="Re-parse this page from source"
         >
-            Parse & Refresh
+            Refresh Regions
+        </button>
+
+        <button
+            wire:click="openSaveModal"
+            class="flux-btn-primary text-xs !py-1.5"
+            wire:loading.attr="disabled"
+            wire:target="openSaveModal,save"
+            @disabled($mode === 'visual' && ! $selectedRegionEditable)
+        >
+            Save & Push
         </button>
     </div>
 
     @if (session()->has('success') || session()->has('error'))
-        <div class="px-4 py-2 border-b border-zinc-800 bg-zinc-900/40">
+        <div class="border-b border-zinc-800 bg-zinc-900/50 px-4 py-2">
             @if (session()->has('success'))
                 <div class="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
                     {{ session('success') }}
                 </div>
             @endif
             @if (session()->has('error'))
-                <div class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300 mt-2">
+                <div class="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
                     {{ session('error') }}
                 </div>
             @endif
         </div>
     @endif
 
-    {{-- Main editor area --}}
-    <div class="flex flex-1 overflow-hidden">
-
-        {{-- ── Visual Mode: iframe ─────────────── --}}
+    <div class="flex min-h-0 flex-1 overflow-hidden">
         @if ($mode === 'visual')
-            <div class="flex-1 relative bg-zinc-950">
-                <div class="absolute left-4 right-4 top-4 z-10 rounded-lg border border-violet-500/20 bg-zinc-950/85 px-4 py-3 text-sm text-zinc-100 shadow-lg backdrop-blur">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <span class="font-semibold">{{ $editorProfile['visual_notice'] }}</span>
-                        @if ($editorProfile['visual_editing_supported'])
-                            <span class="text-zinc-400">{{ $patchableRegionCount }} of {{ $previewRegionCount }} detected regions can be saved visually.</span>
-                        @else
-                            <span class="text-zinc-400">{{ $previewRegionCount }} detected regions are available for inspection in the preview.</span>
-                        @endif
-                    </div>
-                    <p class="mt-2 text-xs text-zinc-400">
-                        {{ $editorProfile['visual_hint'] }}
-                    </p>
+            <aside
+                x-show="showLayers"
+                x-transition.opacity
+                class="hidden h-full w-80 shrink-0 border-r border-zinc-800 bg-zinc-900 lg:flex lg:flex-col"
+            >
+                @livewire('editor.region-panel', ['pageId' => $pageId], key('region-panel'))
+            </aside>
+
+            <div class="flex min-w-0 flex-1 flex-col bg-zinc-950">
+                <div class="flex flex-wrap items-center gap-2 border-b border-zinc-800 bg-zinc-900/40 px-4 py-2">
+                    <button
+                        type="button"
+                        x-on:click="showLayers = !showLayers"
+                        class="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
+                    >
+                        <span x-text="showLayers ? 'Hide Layers' : 'Show Layers'"></span>
+                    </button>
+                    <button
+                        type="button"
+                        x-on:click="toggleBorders()"
+                        class="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
+                    >
+                        <span x-text="bordersVisible ? 'Borders: On' : 'Borders: Off'"></span>
+                    </button>
+
+                    <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300">
+                        {{ $patchableRegionCount }}/{{ $previewRegionCount }} visual-editable
+                    </span>
+                    <span class="truncate font-mono text-[11px] text-zinc-500">source: {{ $codeFilePath }}</span>
+
+                    @if ($selectedRegion)
+                        <span class="truncate rounded border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-[11px] text-zinc-300">
+                            {{ $selectedRegion->selector }}
+                        </span>
+                    @endif
                 </div>
 
-                {{-- Iframe --}}
-                <iframe
-                    x-ref="previewFrame"
-                    src="{{ $previewUrl }}"
-                    class="w-full h-full border-0"
-                    sandbox="allow-same-origin allow-scripts"
-                    x-on:load="onIframeLoad()"
-                    x-on:error="iframeLoading = false"
-                ></iframe>
+                <div class="relative min-h-0 flex-1">
+                    <iframe
+                        x-ref="previewFrame"
+                        src="{{ $previewUrl }}"
+                        class="h-full w-full border-0"
+                        sandbox="allow-same-origin allow-scripts"
+                        x-on:load="onIframeLoad()"
+                        x-on:error="iframeLoading = false"
+                    ></iframe>
 
-                {{-- Overlay loading state --}}
-                <div
-                    x-show="iframeLoading"
-                    class="absolute inset-0 flex items-center justify-center bg-zinc-950/80"
-                >
-                    <div class="flex items-center gap-3 text-zinc-400">
-                        <svg class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                        Loading preview...
+                    <div
+                        x-show="iframeLoading"
+                        class="absolute inset-0 flex items-center justify-center bg-zinc-950/80"
+                    >
+                        <div class="flex items-center gap-3 text-zinc-400">
+                            <svg class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                            Loading preview...
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {{-- ── Inline edit panel (when region selected) ── --}}
-            @if ($selectedRegion)
-                <div class="w-80 border-l border-zinc-800 bg-zinc-900 flex flex-col flex-shrink-0">
-                    <div class="px-4 py-3 border-b border-zinc-800">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
-                                {{ $selectedRegionEditable ? 'Edit Region' : 'Preview Region' }}
-                            </h3>
-                            <button
-                                wire:click="$set('selectedRegionId', null)"
-                                class="text-zinc-600 hover:text-zinc-400"
-                            >
-                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                            </button>
+                <div class="border-t border-zinc-800 bg-zinc-900/40 px-4 py-3">
+                    @if (! $selectedRegion)
+                        <p class="text-sm text-zinc-300">Move over any highlighted element and type to edit, or click a layer to focus it.</p>
+                        <p class="mt-1 text-xs text-zinc-500">{{ $editorProfile['visual_hint'] }}</p>
+                    @elseif (! $selectedRegionEditable)
+                        <p class="text-sm text-amber-200">This layer is preview-only and cannot be safely patched from canvas mode.</p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-[11px] text-zinc-400">{{ $selectedRegion->selector }}</span>
+                            <button wire:click="setMode('code')" class="flux-btn-secondary text-xs">Open in Code Mode</button>
                         </div>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="flux-badge-purple !text-[10px]">{{ $selectedRegion->region_type }}</span>
-                            @if ($selectedRegionEditable)
-                                <span class="flux-badge-green !text-[10px]">visual save</span>
-                            @else
-                                <span class="flux-badge-amber !text-[10px]">code mode</span>
-                            @endif
-                            <span class="mono text-[10px] text-zinc-600 truncate">{{ $selectedRegion->selector }}</span>
-                        </div>
-                    </div>
-
-                    <div class="flex-1 p-4 overflow-y-auto">
-                        @if (! $selectedRegionEditable)
-                            <div class="space-y-4 text-sm text-zinc-400">
-                                @if ($editorProfile['visual_editing_supported'])
-                                    <p>This region was detected correctly in the preview, but pixelkraft could not map it back to one unique source edit safely.</p>
-                                    <p>That usually means the content is split across several elements or reused in multiple places.</p>
-                                    <p class="text-zinc-300">Try clicking the exact highlighted word, span, button label, or paragraph you want to change. Smaller inner regions can often be saved visually even when the whole block cannot.</p>
-                                @else
-                                    <p>This preview helps you find the right content, but pixelkraft will not rewrite this component source from Visual mode.</p>
-                                    <p>Use the detected content below as a guide, then switch to <span class="font-semibold text-zinc-200">Code</span> mode to update the source file directly.</p>
-                                @endif
-
-                                <div class="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
-                                    <p class="text-[11px] uppercase tracking-wider text-zinc-500">Detected Content</p>
-                                    <p class="mt-2 text-sm text-zinc-200">{{ $editContent ?: '(empty)' }}</p>
-                                </div>
-
-                                <button
-                                    wire:click="setMode('code')"
-                                    class="flux-btn-secondary w-full text-sm"
-                                >
-                                    Open In Code Mode
-                                </button>
+                    @else
+                        <div class="space-y-2">
+                            <div class="flex flex-wrap items-center gap-2 text-[11px]">
+                                <span class="rounded border border-violet-500/40 bg-violet-500/10 px-2 py-1 text-violet-200">editable</span>
+                                <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-300">{{ $selectedRegion->region_type }}</span>
+                                <span class="truncate rounded border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-zinc-400">{{ $selectedRegion->selector }}</span>
                             </div>
-                        @elseif ($selectedRegion->region_type === 'image')
-                            {{-- Image edit --}}
-                            <div class="space-y-3">
-                                <label class="flux-label">Image URL</label>
+                            <p class="text-xs text-zinc-400">Click the element once in canvas and type directly there. Changes sync here instantly.</p>
+
+                            @if ($selectedRegion->region_type === 'image')
                                 <input
                                     type="text"
                                     wire:model.live="editContent"
-                                    class="flux-input mono text-xs"
-                                    placeholder="https://..."
+                                    class="flux-input font-mono text-xs"
+                                    placeholder="Image URL"
                                 >
-                                @if ($editContent)
-                                    <div class="rounded-lg border border-zinc-800 overflow-hidden">
-                                        <img src="{{ $editContent }}" alt="Preview" class="w-full h-auto">
-                                    </div>
-                                @endif
-                            </div>
-                        @elseif ($selectedRegion->region_type === 'link')
-                            {{-- Link edit --}}
-                            <div class="space-y-3">
-                                <label class="flux-label">URL or Text</label>
+                            @elseif ($selectedRegion->region_type === 'link')
                                 <input
                                     type="text"
                                     wire:model.live="editContent"
                                     class="flux-input text-sm"
+                                    placeholder="Link text or URL"
                                 >
-                            </div>
-                        @else
-                            {{-- Text edit (rich text) --}}
-                            <div class="space-y-3">
-                                <label class="flux-label">Content</label>
+                            @else
                                 <textarea
                                     wire:model.live="editContent"
-                                    rows="8"
-                                    class="flux-input text-sm resize-y"
+                                    rows="2"
+                                    class="flux-input resize-y text-sm"
+                                    placeholder="Inline edits appear here"
                                 ></textarea>
-                            </div>
-                        @endif
-                    </div>
-
-                    {{-- Region edit footer --}}
-                    <div class="px-4 py-3 border-t border-zinc-800">
-                        @if ($selectedRegionEditable)
-                            <button wire:click="openSaveModal" class="flux-btn-primary w-full text-xs">
-                                Save & Push
-                            </button>
-                        @endif
-                    </div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
-            @else
-                <div class="w-80 border-l border-zinc-800 bg-zinc-900 flex flex-col flex-shrink-0">
-                    <div class="px-4 py-4 border-b border-zinc-800">
-                        <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Visual Editing</h3>
-                    </div>
-
-                    <div class="p-4 space-y-3 text-sm text-zinc-400">
-                        <p>{{ $editorProfile['visual_editing_supported'] ? 'Click a highlighted region in the preview or choose one from the region list to start editing.' : 'Click a highlighted region in the preview or choose one from the region list to inspect it.' }}</p>
-                        <p>{{ $editorProfile['visual_hint'] }}</p>
-                    </div>
-                </div>
-            @endif
-
+            </div>
         @else
-            {{-- ── Code Mode ───────────────────── --}}
-            <div class="flex-1 flex flex-col bg-zinc-950">
-                {{-- File path header --}}
-                    <div class="flex items-center gap-2 px-4 py-2 border-b border-zinc-800 bg-zinc-900/30">
-                    <svg class="h-4 w-4 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
-                        <span class="mono text-xs text-zinc-400">{{ $codeFilePath }}</span>
-                        <span class="ml-auto rounded border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">{{ $codeLanguage }}</span>
+            <div class="flex min-w-0 flex-1 flex-col bg-zinc-950">
+                <div class="flex flex-wrap items-center gap-2 border-b border-zinc-800 bg-zinc-900/40 px-4 py-2">
+                    <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300">Code Layer</span>
+                    <span class="truncate font-mono text-xs text-zinc-400">{{ $codeFilePath }}</span>
+                    <span class="ml-auto rounded border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">{{ $codeLanguage }}</span>
                 </div>
 
-                    {{-- Code editor textarea --}}
-                    <div class="flex-1 overflow-hidden">
-                        <textarea
-                            wire:model.blur="codeContent"
-                            class="w-full h-full bg-zinc-950 text-zinc-200 mono text-sm p-4 resize-none border-0 focus:outline-none focus:ring-0 leading-6"
-                            spellcheck="false"
-                            autocapitalize="off"
-                            autocomplete="off"
-                            autocorrect="off"
-                            wrap="off"
-                        ></textarea>
+                <div class="min-h-0 flex-1 overflow-hidden">
+                    <textarea
+                        wire:model.blur="codeContent"
+                        class="h-full w-full resize-none border-0 bg-zinc-950 p-4 font-mono text-sm leading-6 text-zinc-200 focus:outline-none focus:ring-0"
+                        spellcheck="false"
+                        autocapitalize="off"
+                        autocomplete="off"
+                        autocorrect="off"
+                        wrap="off"
+                    ></textarea>
                 </div>
             </div>
         @endif
-
-        {{-- ── Region Sidebar (always visible) ── --}}
-        <div class="w-72 border-l border-zinc-800 bg-zinc-900 flex-shrink-0 hidden xl:flex xl:flex-col overflow-y-auto">
-            @if ($debugTelemetryEnabled)
-                <div class="p-3 border-b border-zinc-800">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Debug Telemetry</h3>
-                        <button wire:click="clearDebugTelemetry" class="flux-btn-ghost text-[10px] !px-2 !py-1">Clear</button>
-                    </div>
-                </div>
-                <div class="p-3 space-y-2 text-[11px]">
-                    <div class="rounded-md border border-zinc-800 bg-zinc-950/60 p-2">
-                        <p class="text-zinc-500 uppercase tracking-wide">State</p>
-                        <p class="mt-1 text-zinc-200 font-mono">action: {{ $debugTelemetry['last_action'] ?? 'n/a' }}</p>
-                        <p class="text-zinc-200 font-mono">mode: {{ $debugTelemetry['mode'] ?? 'n/a' }}</p>
-                        <p class="text-zinc-200 font-mono">selected: {{ $debugTelemetry['selected_region_id'] ?? 'n/a' }}</p>
-                        <p class="text-zinc-200 font-mono">editable: {{ is_null($debugTelemetry['selected_region_editable'] ?? null) ? 'n/a' : (($debugTelemetry['selected_region_editable'] ?? false) ? 'true' : 'false') }}</p>
-                        <p class="text-zinc-200 font-mono break-all">selector: {{ $debugTelemetry['selected_selector'] ?? 'n/a' }}</p>
-                    </div>
-
-                    <div class="rounded-md border border-zinc-800 bg-zinc-950/60 p-2">
-                        <p class="text-zinc-500 uppercase tracking-wide">Patch</p>
-                        <p class="mt-1 text-zinc-200 font-mono">file: {{ $debugTelemetry['patch']['target_file'] ?? 'n/a' }}</p>
-                        <p class="text-zinc-200 font-mono">source_type: {{ $debugTelemetry['patch']['source_type'] ?? 'n/a' }}</p>
-                        <p class="text-zinc-200 font-mono">region_type: {{ $debugTelemetry['patch']['region_type'] ?? 'n/a' }}</p>
-                        <p class="text-zinc-200 font-mono">applied: {{ isset($debugTelemetry['patch']['applied']) ? ($debugTelemetry['patch']['applied'] ? 'true' : 'false') : 'n/a' }}</p>
-                        <p class="text-zinc-200 font-mono">byte_delta: {{ $debugTelemetry['patch']['byte_delta'] ?? 'n/a' }}</p>
-                        @if (! empty($debugTelemetry['patch']['error']))
-                            <p class="text-red-400 break-words">{{ $debugTelemetry['patch']['error'] }}</p>
-                        @endif
-                    </div>
-
-                    <div class="rounded-md border border-zinc-800 bg-zinc-950/60 p-2">
-                        <p class="text-zinc-500 uppercase tracking-wide">Git / Deploy</p>
-                        <p class="mt-1 text-zinc-200 font-mono">changed_files: {{ $debugTelemetry['changed_file_count'] ?? 0 }}</p>
-                        @if (! empty($debugTelemetry['changed_files']))
-                            <p class="text-zinc-400 break-words">files: {{ implode(', ', $debugTelemetry['changed_files']) }}</p>
-                        @endif
-                        <p class="text-zinc-200 font-mono break-all">sha: {{ $debugTelemetry['commit_sha'] ?? 'n/a' }}</p>
-                        <p class="text-zinc-200 font-mono">deploy_queued: {{ is_null($debugTelemetry['deploy_queued'] ?? null) ? 'n/a' : (($debugTelemetry['deploy_queued'] ?? false) ? 'true' : 'false') }}</p>
-                    </div>
-
-                    <div class="rounded-md border border-zinc-800 bg-zinc-950/60 p-2">
-                        <p class="text-zinc-500 uppercase tracking-wide">Result</p>
-                        <p class="mt-1 text-zinc-200 font-mono">success: {{ is_null($debugTelemetry['last_save_success'] ?? null) ? 'n/a' : (($debugTelemetry['last_save_success'] ?? false) ? 'true' : 'false') }}</p>
-                        <p class="text-zinc-200 font-mono">started: {{ $debugTelemetry['save_started_at'] ?? 'n/a' }}</p>
-                        <p class="text-zinc-200 font-mono">finished: {{ $debugTelemetry['save_finished_at'] ?? 'n/a' }}</p>
-                        @if (! empty($debugTelemetry['last_error']))
-                            <p class="text-red-400 break-words">{{ $debugTelemetry['last_error'] }}</p>
-                        @endif
-                    </div>
-                </div>
-            @else
-                @livewire('editor.region-panel', ['pageId' => $pageId], key('region-panel'))
-            @endif
-        </div>
     </div>
 
-    {{-- ── Save Modal ────────────────────────── --}}
+    @if ($debugTelemetryEnabled)
+        <details class="border-t border-zinc-800 bg-zinc-950/70 px-4 py-2 text-[11px] text-zinc-400">
+            <summary class="cursor-pointer select-none text-zinc-300">Debug telemetry</summary>
+            <div class="mt-2 space-y-1 font-mono">
+                <p>action: {{ $debugTelemetry['last_action'] ?? 'n/a' }}</p>
+                <p>mode: {{ $debugTelemetry['mode'] ?? 'n/a' }}</p>
+                <p>selected: {{ $debugTelemetry['selected_region_id'] ?? 'n/a' }}</p>
+                <p>error: {{ $debugTelemetry['last_error'] ?? 'n/a' }}</p>
+            </div>
+        </details>
+    @endif
+
     @if ($showSaveModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60" x-on:keydown.escape.window="$wire.set('showSaveModal', false)">
             <div class="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl" x-on:click.outside="$wire.set('showSaveModal', false)">
-                <h3 class="text-sm font-semibold text-zinc-200 mb-4">Save & Push to GitHub</h3>
+                <h3 class="mb-4 text-sm font-semibold text-zinc-200">Save & Push to GitHub</h3>
 
                 <div class="space-y-4">
                     <div>
@@ -380,7 +268,6 @@
     @endif
 </div>
 
-{{-- ── Alpine.js editor state ────────────────── --}}
 @script
 <script>
 Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
@@ -389,8 +276,14 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     selectedRegionId,
     lastRegionLookupMap: {},
     hoveredRegionElement: null,
+    inlineEditingElement: null,
+    regionSyncTimer: null,
+    hoverOverlay: null,
+    selectedOverlay: null,
     tooltip: null,
     iframeBootstrapped: false,
+    showLayers: true,
+    bordersVisible: true,
 
     init() {
         const iframe = this.$refs.previewFrame;
@@ -398,20 +291,15 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return;
         }
 
-        const onLoad = () => this.onIframeLoad();
-        iframe.addEventListener('load', onLoad);
+        iframe.addEventListener('load', () => this.onIframeLoad());
 
-        // Some previews load before Alpine binds x-on:load; recover by checking readyState.
-        queueMicrotask(() => {
-            this.bootstrapIframeIfReady();
-        });
-        setTimeout(() => this.bootstrapIframeIfReady(), 60);
-        setTimeout(() => this.bootstrapIframeIfReady(), 180);
+        queueMicrotask(() => this.bootstrapIframeIfReady());
+        setTimeout(() => this.bootstrapIframeIfReady(), 80);
+        setTimeout(() => this.bootstrapIframeIfReady(), 220);
     },
 
     bootstrapIframeIfReady() {
-        const iframe = this.$refs.previewFrame;
-        const doc = iframe?.contentDocument;
+        const doc = this.$refs.previewFrame?.contentDocument;
         if (!doc) {
             return;
         }
@@ -432,130 +320,410 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     },
 
     injectOverlayScript() {
-        const iframe = this.$refs.previewFrame;
-        if (!iframe || !iframe.contentDocument) return;
+        const doc = this.$refs.previewFrame?.contentDocument;
+        if (!doc) {
+            return;
+        }
 
-        const doc = iframe.contentDocument;
         if (!doc.body) {
-            setTimeout(() => this.injectOverlayScript(), 30);
+            setTimeout(() => this.injectOverlayScript(), 40);
             return;
         }
 
-        if (doc.documentElement.hasAttribute('data-pk-overlay-ready')) {
-            this.decoratePreviewRegions(doc);
-            return;
+        if (!doc.documentElement.hasAttribute('data-pk-overlay-ready')) {
+            doc.documentElement.setAttribute('data-pk-overlay-ready', 'true');
+
+            const style = doc.createElement('style');
+            style.textContent = `
+                [data-pk-region] {
+                    transition: outline-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+                }
+                html[data-pk-borders="on"] [data-pk-region] {
+                    position: relative !important;
+                    box-sizing: border-box !important;
+                    border-radius: 4px !important;
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-editable="true"] {
+                    outline: 2px dashed rgba(79, 70, 229, 0.75) !important;
+                    outline-offset: 2px !important;
+                    box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.35) !important;
+                    background: rgba(79, 70, 229, 0.04) !important;
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-editable="false"] {
+                    outline: 2px dashed rgba(245, 158, 11, 0.85) !important;
+                    outline-offset: 2px !important;
+                    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45) !important;
+                    background: rgba(245, 158, 11, 0.05) !important;
+                }
+                html[data-pk-borders="on"] [data-pk-region]::before {
+                    content: attr(data-pk-region-role);
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    transform: translateY(-100%);
+                    padding: 2px 6px;
+                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.04em;
+                    border-radius: 4px 4px 0 0;
+                    white-space: nowrap;
+                    z-index: 99997;
+                    pointer-events: none;
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-editable="true"]::before {
+                    color: #e0e7ff;
+                    background: rgba(67, 56, 202, 0.95);
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-editable="false"]::before {
+                    color: #ffedd5;
+                    background: rgba(217, 119, 6, 0.95);
+                }
+                [data-pk-region][data-pk-editable="true"] {
+                    cursor: text !important;
+                }
+                [data-pk-region][data-pk-editable="false"] {
+                    cursor: not-allowed !important;
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="true"] {
+                    outline: 3px solid rgba(129, 140, 248, 1) !important;
+                    outline-offset: 2px !important;
+                    background: rgba(129, 140, 248, 0.18) !important;
+                    box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.45) !important;
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="false"] {
+                    outline: 3px solid rgba(245, 158, 11, 1) !important;
+                    outline-offset: 2px !important;
+                    background: rgba(245, 158, 11, 0.2) !important;
+                    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.55) !important;
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"] {
+                    outline: 2px solid rgba(99, 102, 241, 0.95) !important;
+                    outline-offset: 2px !important;
+                    background: rgba(99, 102, 241, 0.12) !important;
+                    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.7) !important;
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="false"] {
+                    outline: 2px solid rgba(245, 158, 11, 0.95) !important;
+                    outline-offset: 2px !important;
+                    background: rgba(245, 158, 11, 0.12) !important;
+                    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.7) !important;
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"] {
+                    outline: 2px solid rgba(34, 197, 94, 0.95) !important;
+                    outline-offset: 2px !important;
+                    background: rgba(34, 197, 94, 0.1) !important;
+                    box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.4) !important;
+                }
+                .pk-overlay-box {
+                    position: fixed;
+                    pointer-events: none;
+                    z-index: 99998;
+                    border-radius: 4px;
+                    display: none;
+                }
+                .pk-overlay-box--hover[data-pk-editable="true"] {
+                    border: 2px dashed rgba(79, 70, 229, 0.98);
+                    box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.45), inset 0 0 0 9999px rgba(79, 70, 229, 0.08);
+                }
+                .pk-overlay-box--hover[data-pk-editable="false"] {
+                    border: 2px dashed rgba(245, 158, 11, 1);
+                    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.55), inset 0 0 0 9999px rgba(245, 158, 11, 0.1);
+                }
+                .pk-overlay-box--selected[data-pk-editable="true"] {
+                    border: 2px solid rgba(67, 56, 202, 1);
+                    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.75), inset 0 0 0 9999px rgba(99, 102, 241, 0.12);
+                }
+                .pk-overlay-box--selected[data-pk-editable="false"] {
+                    border: 2px solid rgba(217, 119, 6, 1);
+                    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.75), inset 0 0 0 9999px rgba(245, 158, 11, 0.14);
+                }
+                .pk-tooltip {
+                    position: fixed;
+                    border: 1px solid #3f3f46;
+                    background: #111827;
+                    color: #e5e7eb;
+                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+                    font-size: 11px;
+                    padding: 5px 8px;
+                    border-radius: 6px;
+                    pointer-events: none;
+                    z-index: 99999;
+                    white-space: nowrap;
+                    box-shadow: 0 12px 38px rgba(0, 0, 0, 0.4);
+                }
+            `;
+            (doc.head || doc.documentElement).appendChild(style);
+
+            this.tooltip = doc.createElement('div');
+            this.tooltip.className = 'pk-tooltip';
+            this.tooltip.style.display = 'none';
+            doc.body.appendChild(this.tooltip);
+
+            this.hoverOverlay = doc.createElement('div');
+            this.hoverOverlay.className = 'pk-overlay-box pk-overlay-box--hover';
+            doc.body.appendChild(this.hoverOverlay);
+
+            this.selectedOverlay = doc.createElement('div');
+            this.selectedOverlay.className = 'pk-overlay-box pk-overlay-box--selected';
+            doc.body.appendChild(this.selectedOverlay);
+
+            doc.addEventListener('click', (event) => {
+                const regionElement = this.findRegionElement(event.target);
+                const link = (event.target?.nodeType === 1 ? event.target : event.target?.parentElement)?.closest('a') ?? null;
+                if (link) {
+                    event.preventDefault();
+                }
+                if (!regionElement) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                this.selectRegionElement(regionElement, true);
+
+                if (this.isRegionEditable(regionElement) && this.isInlineCapable(regionElement)) {
+                    this.startInlineEditing(regionElement);
+                }
+            }, true);
+
+            doc.addEventListener('mousemove', (event) => {
+                const regionElement = this.findRegionElement(event.target);
+                if (!regionElement) {
+                    this.clearHoveredRegion();
+                    return;
+                }
+
+                if (this.hoveredRegionElement && this.hoveredRegionElement !== regionElement) {
+                    this.hoveredRegionElement.removeAttribute('data-pk-hover');
+                }
+
+                this.hoveredRegionElement = regionElement;
+                if (!regionElement.hasAttribute('data-pk-selected') && regionElement !== this.inlineEditingElement) {
+                    regionElement.setAttribute('data-pk-hover', '');
+                }
+                this.updateOverlayPosition(this.hoverOverlay, regionElement);
+                this.showTooltip(regionElement);
+            }, true);
+
+            doc.addEventListener('keydown', (event) => {
+                if (event.metaKey || event.ctrlKey || event.altKey) {
+                    return;
+                }
+
+                const active = doc.activeElement;
+                if (active && (active.matches('input,textarea,select') || active.isContentEditable)) {
+                    return;
+                }
+
+                const canTriggerFromKey = event.key.length === 1 || event.key === 'Backspace' || event.key === 'Delete';
+                if (!canTriggerFromKey) {
+                    return;
+                }
+
+                const target = this.hoveredRegionElement
+                    || (this.selectedRegionId ? this.lastRegionLookupMap[this.selectedRegionId] : null);
+                if (!target || !this.isRegionEditable(target) || !this.isInlineCapable(target)) {
+                    return;
+                }
+
+                this.selectRegionElement(target, true);
+                this.startInlineEditing(target, event.key.length === 1 ? event.key : null);
+                event.preventDefault();
+            }, true);
+
+            doc.addEventListener('mouseleave', () => this.clearHoveredRegion(), true);
+            doc.addEventListener('scroll', () => this.refreshOverlayPositions(), true);
+            doc.defaultView?.addEventListener('resize', () => this.refreshOverlayPositions());
         }
 
-        doc.documentElement.setAttribute('data-pk-overlay-ready', 'true');
-
-        const style = doc.createElement('style');
-        style.textContent = `
-            [data-pk-region] {
-                transition: outline-color 120ms ease, background-color 120ms ease;
-            }
-            [data-pk-region][data-pk-editable="true"] {
-                cursor: text !important;
-            }
-            [data-pk-region][data-pk-editable="false"] {
-                cursor: not-allowed !important;
-            }
-            [data-pk-hover][data-pk-editable="true"] {
-                outline: 2px dashed rgba(139, 92, 246, 0.5) !important;
-                outline-offset: 2px !important;
-                background: rgba(139, 92, 246, 0.08) !important;
-            }
-            [data-pk-hover][data-pk-editable="false"] {
-                outline: 2px dashed rgba(245, 158, 11, 0.7) !important;
-                outline-offset: 2px !important;
-                background: rgba(245, 158, 11, 0.08) !important;
-            }
-            [data-pk-selected][data-pk-editable="true"] {
-                outline: 2px solid rgba(139, 92, 246, 0.9) !important;
-                outline-offset: 2px !important;
-                background: rgba(139, 92, 246, 0.12) !important;
-            }
-            [data-pk-selected][data-pk-editable="false"] {
-                outline: 2px solid rgba(245, 158, 11, 0.95) !important;
-                outline-offset: 2px !important;
-                background: rgba(245, 158, 11, 0.12) !important;
-            }
-            .pk-tooltip {
-                position: fixed;
-                background: #18181b;
-                border: 1px solid #3f3f46;
-                color: #e4e4e7;
-                font-family: 'DM Mono', monospace;
-                font-size: 11px;
-                padding: 5px 8px;
-                border-radius: 6px;
-                pointer-events: none;
-                z-index: 99999;
-                white-space: nowrap;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
-            }
-        `;
-        (doc.head || doc.documentElement).appendChild(style);
-
-        this.tooltip = doc.createElement('div');
-        this.tooltip.className = 'pk-tooltip';
-        this.tooltip.style.display = 'none';
-        doc.body.appendChild(this.tooltip);
-
+        this.applyBorderVisibility(doc);
         this.decoratePreviewRegions(doc);
-        setTimeout(() => this.decoratePreviewRegions(doc), 40);
+        setTimeout(() => this.decoratePreviewRegions(doc), 50);
+    },
 
-        doc.addEventListener('click', (e) => {
-            const regionElement = this.findRegionElement(e.target);
-            const link = (e.target?.nodeType === 1 ? e.target : e.target?.parentElement)?.closest('a') ?? null;
+    toggleBorders() {
+        this.bordersVisible = !this.bordersVisible;
+        const doc = this.$refs.previewFrame?.contentDocument;
+        if (doc) {
+            this.applyBorderVisibility(doc);
+        }
+    },
 
-            if (link) {
-                e.preventDefault();
+    applyBorderVisibility(doc) {
+        doc.documentElement.setAttribute('data-pk-borders', this.bordersVisible ? 'on' : 'off');
+        doc.querySelectorAll('[data-pk-region]').forEach((element) => this.applyRegionOutlineStyles(element));
+        this.refreshOverlayPositions();
+    },
+
+    applyRegionOutlineStyles(element) {
+        if (!(element instanceof HTMLElement)) {
+            return;
+        }
+
+        if (!this.bordersVisible) {
+            element.style.removeProperty('border');
+            element.style.removeProperty('border-radius');
+            element.style.removeProperty('box-sizing');
+            element.style.removeProperty('outline');
+            element.style.removeProperty('outline-offset');
+            element.style.removeProperty('box-shadow');
+            element.style.removeProperty('background');
+            return;
+        }
+
+        // Do not set border/background/box-shadow inline with !important — it overrides injected
+        // hover/selected rules. Base + state styling lives in the iframe <style> block above.
+        element.style.removeProperty('border');
+        element.style.removeProperty('border-radius');
+        element.style.removeProperty('box-sizing');
+        element.style.removeProperty('outline');
+        element.style.removeProperty('outline-offset');
+        element.style.removeProperty('box-shadow');
+        element.style.removeProperty('background');
+    },
+
+    isRegionEditable(element) {
+        return element?.getAttribute('data-pk-editable') === 'true';
+    },
+
+    isInlineCapable(element) {
+        if (!(element instanceof HTMLElement)) {
+            return false;
+        }
+
+        const regionType = element.getAttribute('data-pk-region-type');
+        if (regionType === 'image') {
+            return false;
+        }
+
+        const blockedTags = ['IMG', 'INPUT', 'TEXTAREA', 'SELECT', 'VIDEO', 'SVG', 'PATH'];
+        return !blockedTags.includes(element.tagName);
+    },
+
+    startInlineEditing(element, firstChar = null) {
+        if (!(element instanceof HTMLElement) || !this.isRegionEditable(element) || !this.isInlineCapable(element)) {
+            return;
+        }
+
+        if (this.inlineEditingElement && this.inlineEditingElement !== element) {
+            this.finishInlineEditing(true);
+        }
+
+        if (this.inlineEditingElement === element) {
+            if (firstChar) {
+                this.insertTextAtCursor(element.ownerDocument, firstChar);
+                this.queueRegionSync(element);
             }
+            return;
+        }
 
-            if (!regionElement) {
-                return;
-            }
+        this.inlineEditingElement = element;
+        element.setAttribute('contenteditable', 'true');
+        element.setAttribute('data-pk-editing', '');
+        element.removeAttribute('data-pk-hover');
+        element.focus({ preventScroll: true });
 
-            e.preventDefault();
-            e.stopPropagation();
-            this.selectRegionElement(regionElement, true);
-        }, true);
+        const selection = element.ownerDocument.getSelection();
+        const range = element.ownerDocument.createRange();
+        range.selectNodeContents(element);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
 
-        doc.addEventListener('mousemove', (e) => {
-            const regionElement = this.findRegionElement(e.target);
+        if (firstChar) {
+            this.insertTextAtCursor(element.ownerDocument, firstChar);
+        }
 
-            if (!regionElement) {
-                this.clearHoveredRegion();
-                return;
-            }
+        const onInput = () => this.queueRegionSync(element);
+        const onBlur = () => this.finishInlineEditing(true);
+        element.addEventListener('input', onInput);
+        element.addEventListener('blur', onBlur, { once: true });
+        element._pkInlineHandlers = { onInput };
 
-            if (this.hoveredRegionElement && this.hoveredRegionElement !== regionElement) {
-                this.hoveredRegionElement.removeAttribute('data-pk-hover');
-            }
+        this.queueRegionSync(element);
+    },
 
-            this.hoveredRegionElement = regionElement;
+    insertTextAtCursor(doc, text) {
+        const selection = doc.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+            return;
+        }
 
-            if (!regionElement.hasAttribute('data-pk-selected')) {
-                regionElement.setAttribute('data-pk-hover', '');
-            }
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(doc.createTextNode(text));
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    },
 
-            this.showTooltip(regionElement);
-        }, true);
+    finishInlineEditing(sync = false) {
+        const element = this.inlineEditingElement;
+        if (!element) {
+            return;
+        }
 
-        doc.addEventListener('mouseleave', () => {
-            this.clearHoveredRegion();
-        }, true);
+        const handlers = element._pkInlineHandlers;
+        if (handlers?.onInput) {
+            element.removeEventListener('input', handlers.onInput);
+        }
+
+        delete element._pkInlineHandlers;
+        element.removeAttribute('contenteditable');
+        element.removeAttribute('data-pk-editing');
+        this.inlineEditingElement = null;
+
+        if (sync) {
+            this.syncRegionContent(element);
+        }
+    },
+
+    queueRegionSync(element) {
+        if (this.regionSyncTimer) {
+            clearTimeout(this.regionSyncTimer);
+        }
+
+        this.regionSyncTimer = setTimeout(() => this.syncRegionContent(element), 120);
+    },
+
+    syncRegionContent(element) {
+        if (!(element instanceof HTMLElement)) {
+            return;
+        }
+
+        const regionId = element.getAttribute('data-pk-region-id');
+        if (!regionId) {
+            return;
+        }
+
+        this.selectedRegionId = regionId;
+        this.$wire.onRegionSelected(regionId);
+        this.$wire.updateEditContent(this.extractEditableContent(element));
+    },
+
+    extractEditableContent(element) {
+        const type = element.getAttribute('data-pk-region-type');
+        if (type === 'image') {
+            return element.getAttribute('src') || '';
+        }
+
+        if (type === 'link') {
+            const text = (element.innerText || element.textContent || '').trim();
+            return text || element.getAttribute('href') || '';
+        }
+
+        return (element.innerText || element.textContent || '').trim();
     },
 
     highlightRegion(selector, regionId = null, regionContent = '') {
-        const iframe = this.$refs.previewFrame;
-        if (!iframe || !iframe.contentDocument) return;
+        const doc = this.$refs.previewFrame?.contentDocument;
+        if (!doc) {
+            return;
+        }
 
-        const doc = iframe.contentDocument;
         const region = regionId ? this.previewRegions.find((item) => item.id === regionId) : null;
-
-        // Clear previous
-        doc.querySelectorAll('[data-pk-selected]').forEach(n => n.removeAttribute('data-pk-selected'));
+        doc.querySelectorAll('[data-pk-selected]').forEach((node) => node.removeAttribute('data-pk-selected'));
 
         const bySelector = this.findRegionBySelector(doc, selector);
         const byId = regionId ? doc.querySelector(`[data-pk-region-id="${regionId}"]`) : null;
@@ -566,16 +734,17 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         if (byText && region) {
             this.markRegionElement(byText, region);
         }
-        const el = bySelector || byId || byText;
 
-        if (el) {
-            this.selectRegionElement(el, false);
+        const element = bySelector || byId || byText;
+        if (element) {
+            this.selectRegionElement(element, false);
         }
     },
 
     decoratePreviewRegions(doc) {
         this.lastRegionLookupMap = {};
         const seenRegionIds = new Set();
+
         this.previewRegions.forEach((region) => {
             if (seenRegionIds.has(region.id)) {
                 return;
@@ -588,8 +757,8 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                 elements.forEach((element) => {
                     matched = this.markRegionElement(element, region) || matched;
                 });
-            } catch (e) {
-                // Invalid selector, ignore; fallback below
+            } catch (error) {
+                // Ignore invalid selectors and use fallback matching.
             }
 
             if (!matched) {
@@ -607,12 +776,10 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
 
     findRegionElement(target) {
         let current = target?.nodeType === 1 ? target : target?.parentElement;
-
         while (current && current !== current.ownerDocument?.documentElement) {
             if (current.hasAttribute('data-pk-region-id')) {
                 return current;
             }
-
             current = current.parentElement;
         }
 
@@ -622,7 +789,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     findRegionBySelector(doc, selector) {
         try {
             return doc.querySelector(selector);
-        } catch (e) {
+        } catch (error) {
             return null;
         }
     },
@@ -633,11 +800,10 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return null;
         }
 
-        const regionNodes = this.collectCandidateElements(doc);
+        const candidates = this.collectCandidateElements(doc);
         let best = null;
         let bestScore = 0;
-
-        for (const node of regionNodes) {
+        for (const node of candidates) {
             if (!(node instanceof HTMLElement)) {
                 continue;
             }
@@ -731,22 +897,19 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         element.setAttribute('data-pk-editable', region.editable ? 'true' : 'false');
         element.setAttribute('data-pk-region-type', region.type);
         element.setAttribute('data-pk-region-label', region.content || region.type);
+        element.setAttribute('data-pk-region-role', region.editable ? 'editable' : 'code');
+        this.applyRegionOutlineStyles(element);
         this.lastRegionLookupMap[region.id] = element;
 
         return true;
     },
 
     collectCandidateElements(doc) {
-        return Array.from(
-            doc.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,a,button,label,blockquote,figcaption,span,div,section,article')
-        );
+        return Array.from(doc.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,a,button,label,blockquote,figcaption,span,div,section,article'));
     },
 
     normalizeText(value) {
-        return String(value || '')
-            .replace(/\s+/g, ' ')
-            .trim()
-            .toLowerCase();
+        return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
     },
 
     textSimilarity(a, b) {
@@ -772,6 +935,10 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             this.hoveredRegionElement = null;
         }
 
+        if (this.hoverOverlay) {
+            this.hoverOverlay.style.display = 'none';
+        }
+
         if (this.tooltip) {
             this.tooltip.style.display = 'none';
         }
@@ -783,19 +950,17 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
 
         const label = element.getAttribute('data-pk-region-label') || element.getAttribute('data-pk-region-type') || 'region';
-        const mode = element.getAttribute('data-pk-editable') === 'true' ? 'visual save' : 'code mode';
-        this.tooltip.textContent = `${label} - ${mode}`;
+        const mode = this.isRegionEditable(element) ? 'click + type' : 'code mode only';
+        this.tooltip.textContent = `${label} • ${mode}`;
         this.tooltip.style.display = 'block';
 
         const rect = element.getBoundingClientRect();
-        this.tooltip.style.left = Math.min(rect.left, element.ownerDocument.documentElement.clientWidth - 260) + 'px';
-        this.tooltip.style.top = Math.max(0, rect.top - 32) + 'px';
+        this.tooltip.style.left = `${Math.min(rect.left, element.ownerDocument.documentElement.clientWidth - 280)}px`;
+        this.tooltip.style.top = `${Math.max(0, rect.top - 32)}px`;
     },
 
     selectRegionElement(element, notifyLivewire = true) {
-        const iframe = this.$refs.previewFrame;
-        const doc = iframe?.contentDocument;
-
+        const doc = this.$refs.previewFrame?.contentDocument;
         if (!doc || !(element instanceof HTMLElement)) {
             return;
         }
@@ -805,6 +970,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         element.setAttribute('data-pk-selected', '');
         this.selectedRegionId = element.getAttribute('data-pk-region-id');
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        this.updateOverlayPosition(this.selectedOverlay, element);
 
         if (notifyLivewire && this.selectedRegionId) {
             this.$wire.onRegionSelected(this.selectedRegionId);
@@ -816,26 +982,83 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return;
         }
 
-        const iframe = this.$refs.previewFrame;
-        const doc = iframe?.contentDocument;
-
+        const doc = this.$refs.previewFrame?.contentDocument;
         if (!doc) {
             return;
         }
 
         const element = this.lastRegionLookupMap[this.selectedRegionId]
             || doc.querySelector(`[data-pk-region-id="${this.selectedRegionId}"]`);
-
         if (element) {
             this.selectRegionElement(element, false);
         }
     },
 
+    refreshOverlayPositions() {
+        if (!this.bordersVisible) {
+            if (this.hoverOverlay) {
+                this.hoverOverlay.style.display = 'none';
+            }
+            if (this.selectedOverlay) {
+                this.selectedOverlay.style.display = 'none';
+            }
+            return;
+        }
+
+        if (this.hoveredRegionElement) {
+            this.updateOverlayPosition(this.hoverOverlay, this.hoveredRegionElement);
+        } else if (this.hoverOverlay) {
+            this.hoverOverlay.style.display = 'none';
+        }
+
+        const doc = this.$refs.previewFrame?.contentDocument;
+        if (!doc || !this.selectedRegionId) {
+            if (this.selectedOverlay) {
+                this.selectedOverlay.style.display = 'none';
+            }
+            return;
+        }
+
+        const selectedElement = this.lastRegionLookupMap[this.selectedRegionId]
+            || doc.querySelector(`[data-pk-region-id="${this.selectedRegionId}"]`);
+
+        if (selectedElement) {
+            this.updateOverlayPosition(this.selectedOverlay, selectedElement);
+        } else if (this.selectedOverlay) {
+            this.selectedOverlay.style.display = 'none';
+        }
+    },
+
+    updateOverlayPosition(overlay, element) {
+        if (!overlay || !(element instanceof HTMLElement) || !this.bordersVisible) {
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+            return;
+        }
+
+        const rect = element.getBoundingClientRect();
+        if (rect.width < 2 || rect.height < 2) {
+            overlay.style.display = 'none';
+            return;
+        }
+
+        overlay.dataset.pkEditable = this.isRegionEditable(element) ? 'true' : 'false';
+        overlay.style.left = `${Math.max(0, rect.left - 2)}px`;
+        overlay.style.top = `${Math.max(0, rect.top - 2)}px`;
+        overlay.style.width = `${Math.max(0, rect.width + 4)}px`;
+        overlay.style.height = `${Math.max(0, rect.height + 4)}px`;
+        overlay.style.display = 'block';
+    },
+
     reloadIframe() {
+        this.finishInlineEditing(false);
         this.iframeLoading = true;
         this.iframeBootstrapped = false;
         const iframe = this.$refs.previewFrame;
-        if (!iframe) return;
+        if (!iframe) {
+            return;
+        }
 
         const url = new URL(iframe.src, window.location.origin);
         url.searchParams.set('_pk_preview', Date.now().toString());
