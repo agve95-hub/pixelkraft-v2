@@ -168,6 +168,28 @@ php artisan optimize:clear
 php artisan horizon:terminate
 ```
 
+### 2b. Optional: GitHub Actions auto-deploy
+
+This repository includes `.github/workflows/deploy-production.yml` to publish changes automatically when pushing to `main`.
+
+Configure these GitHub repository secrets:
+
+- `PROD_HOST` (example: `187.124.26.127`)
+- `PROD_USER` (recommended non-root deploy user)
+- `PROD_SSH_KEY` (private key for the deploy user)
+- `PROD_APP_DIR` (example: `/var/www/pixelkraft`)
+
+The workflow runs:
+
+- `git pull --ff-only`
+- `composer install --no-dev --optimize-autoloader`
+- `php artisan migrate --force`
+- `npm ci && npm run build`
+- `php artisan optimize:clear`
+- `php artisan horizon:terminate`
+
+> Release policy: because deploy runs automatically from `main`, only merge to `main` when a release is ready for production.
+
 ### 3. Flux UI CSS setup
 
 Follow the Flux v2 installation rules exactly.

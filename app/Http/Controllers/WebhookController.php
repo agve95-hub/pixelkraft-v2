@@ -18,6 +18,12 @@ class WebhookController extends Controller
         // Verify signature if webhook secret is configured
         $secret = config('pixelkraft.github_webhook_secret');
 
+        if (! $secret && app()->environment('production')) {
+            Log::error('GitHub webhook secret is missing in production environment');
+
+            return response()->json(['error' => 'Webhook receiver is not configured'], 503);
+        }
+
         if ($secret) {
             $signature = $request->header('X-Hub-Signature-256');
 
