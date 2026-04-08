@@ -40,6 +40,12 @@
             </flux:field>
 
             <flux:field>
+                <flux:checkbox wire:model="deployOnWebhook" label="Auto deploy on GitHub push webhook" />
+                <flux:description>When enabled, webhook sync will also trigger a deploy after pull/parse succeeds.</flux:description>
+                <flux:error name="deployOnWebhook" />
+            </flux:field>
+
+            <flux:field>
                 <flux:label>Project type</flux:label>
                 <flux:select wire:model="projectType">
                     @foreach (config('pixelkraft.project_types') as $type)

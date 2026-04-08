@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Editor;
 
+use App\Jobs\DeploySiteJob;
 use App\Models\ContentRevision;
 use App\Models\EditableRegion;
 use App\Models\Page;
@@ -11,6 +12,7 @@ use App\Services\GitSyncService;
 use App\Services\SiteSupportService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class VisualEditor extends Component
@@ -24,16 +26,13 @@ class VisualEditor extends Component
     public string $commitMessage = '';
     public bool $showSaveModal = false;
     public bool $isSaving = false;
+    public bool $deployAfterSave = true;
+    public bool $debugTelemetryEnabled = false;
+    public array $debugTelemetry = [];
 
     // Code editor state
     public string $codeContent = '';
     public string $codeFilePath = '';
-
-    protected $listeners = [
-        'region-selected' => 'onRegionSelected',
-        'region-updated'  => '$refresh',
-        'inline-edit-saved' => 'onInlineEditSaved',
-    ];
 
     public function mount(string $siteId, string $pageId): void
     {
@@ -47,10 +46,13 @@ class VisualEditor extends Component
         $this->mode = $profile['default_mode'];
 
         $this->codeFilePath = $page->file_path;
+        $this->debugTelemetryEnabled = (bool) request()->boolean('debug');
+        $this->resetDebugTelemetry();
 
         $this->loadCodeContent();
     }
 
+    #[On('region-selected')]
     public function onRegionSelected(string $regionId): void
     {
         $region = $this->findRegion($regionId);
@@ -58,12 +60,17 @@ class VisualEditor extends Component
         if ($region) {
             $this->selectedRegionId = $regionId;
             $this->editContent = $region->current_content ?? '';
+            $this->debugTelemetry['selected_region_id'] = $regionId;
+            $this->debugTelemetry['selected_selector'] = $region->selector;
+            $this->debugTelemetry['selected_region_type'] = $region->region_type;
+            $this->debugTelemetry['selected_region_editable'] = app(ContentPatcher::class)->canVisuallyEditRegion($region);
 
             // Tell the iframe to highlight this element
             $this->dispatch('highlight-region', selector: $region->selector);
         }
     }
 
+    #[On('inline-edit-saved')]
     public function onInlineEditSaved(string $regionId, string $newContent): void
     {
         $this->selectedRegionId = $regionId;
@@ -95,31 +102,49 @@ class VisualEditor extends Component
 
     public function openSaveModal(): void
     {
+        $this->debugTelemetry['last_action'] = 'open_save_modal';
+
         if ($this->mode === 'visual') {
             if (! $this->selectedRegionId) {
+                $this->debugTelemetry['last_error'] = 'No region selected';
                 session()->flash('error', 'Select a highlighted element first, then edit its content.');
                 return;
             }
 
             if (! $this->selectedRegionCanBeEdited()) {
+                $this->debugTelemetry['last_error'] = 'Selected region is not visually editable';
                 session()->flash('error', $this->visualSaveErrorMessage());
                 return;
             }
         }
 
         $this->commitMessage = $this->generateCommitMessage();
+        $this->deployAfterSave = true;
         $this->showSaveModal = true;
     }
 
     public function save(): void
     {
         $this->isSaving = true;
+        $this->debugTelemetry['last_action'] = 'save';
+        $this->debugTelemetry['last_error'] = null;
+        $this->debugTelemetry['save_started_at'] = now()->toIso8601String();
+        $this->debugTelemetry['mode'] = $this->mode;
+        $this->debugTelemetry['deploy_after_save'] = $this->deployAfterSave;
+        $this->debugTelemetry['patch'] = [];
+        $this->debugTelemetry['changed_files'] = [];
+        $this->debugTelemetry['changed_file_count'] = 0;
+        $this->debugTelemetry['commit_sha'] = null;
+        $this->debugTelemetry['deploy_queued'] = null;
+        $patcher = app(ContentPatcher::class);
 
         try {
             $site = $this->resolveSite();
             $page = $this->resolvePage();
-            $patcher = app(ContentPatcher::class);
             $git = app(GitSyncService::class);
+            $this->debugTelemetry['site_id'] = $site->id;
+            $this->debugTelemetry['page_id'] = $page->id;
+            $this->debugTelemetry['page_file_path'] = $page->file_path;
 
             $changedFiles = [];
 
@@ -128,6 +153,8 @@ class VisualEditor extends Component
                 $fullPath = "{$site->repo_path}/{$this->codeFilePath}";
                 file_put_contents($fullPath, $this->codeContent);
                 $changedFiles[] = $this->codeFilePath;
+                $this->debugTelemetry['code_file_path'] = $this->codeFilePath;
+                $this->debugTelemetry['code_content_length'] = strlen($this->codeContent);
             } elseif ($this->selectedRegionId) {
                 if (! $this->selectedRegionCanBeEdited()) {
                     throw new \RuntimeException($this->visualSaveErrorMessage());
@@ -146,37 +173,85 @@ class VisualEditor extends Component
                 ]);
 
                 $changedFiles = $patcher->applyEdit($region, $this->editContent);
+                $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
             }
+
+            $this->debugTelemetry['changed_files'] = $changedFiles;
+            $this->debugTelemetry['changed_file_count'] = count($changedFiles);
 
             if (! empty($changedFiles)) {
                 $message = $this->commitMessage ?: $this->generateCommitMessage();
+                $this->debugTelemetry['commit_message'] = $message;
 
                 $sha = $git->commitAndPush($site, $changedFiles, $message);
+                $this->debugTelemetry['commit_sha'] = $sha;
 
                 $site->update(['last_synced_at' => now()]);
                 app(\App\Services\ParserService::class)->parseSinglePage($site, $page->file_path);
+
+                if ($this->deployAfterSave) {
+                    DeploySiteJob::dispatch($site->fresh(), 'editor');
+                    $this->debugTelemetry['deploy_queued'] = true;
+                    $this->debugTelemetry['deploy_trigger'] = 'editor';
+                } else {
+                    $this->debugTelemetry['deploy_queued'] = false;
+                }
 
                 // Refresh code content if in code mode
                 if ($this->mode === 'code') {
                     $this->loadCodeContent();
                 }
 
-                session()->flash('success', 'Changes saved and pushed to GitHub.');
+                session()->flash(
+                    'success',
+                    $this->deployAfterSave
+                        ? 'Changes saved, pushed to GitHub, and deploy queued.'
+                        : 'Changes saved and pushed to GitHub.'
+                );
 
                 // Dispatch event to refresh iframe
                 $this->dispatch('reload-iframe');
+            } else {
+                $this->debugTelemetry['last_save_success'] = false;
+                $this->debugTelemetry['last_error'] = 'No source changes detected';
             }
 
+            if ($this->debugTelemetry['last_save_success'] !== false) {
+                $this->debugTelemetry['last_save_success'] = true;
+            }
             $this->showSaveModal = false;
 
         } catch (\Throwable $e) {
+            $this->debugTelemetry['last_save_success'] = false;
+            $this->debugTelemetry['last_error'] = $e->getMessage();
+            $this->debugTelemetry['exception_class'] = $e::class;
+            if (empty($this->debugTelemetry['patch'])) {
+                $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
+            }
             Log::error("Editor save failed", ['error' => $e->getMessage()]);
             session()->flash('error', 'Save failed: ' . $e->getMessage());
         } finally {
+            $this->debugTelemetry['save_finished_at'] = now()->toIso8601String();
             $this->isSaving = false;
         }
     }
 
+    #[On('region-updated')]
+    public function refreshEditor(): void
+    {
+        // Region classification changed in sibling panel; rerender counts/editability badges.
+    }
+
+    public function toggleDebugTelemetry(): void
+    {
+        $this->debugTelemetryEnabled = ! $this->debugTelemetryEnabled;
+        $this->debugTelemetry['last_action'] = $this->debugTelemetryEnabled ? 'debug_enabled' : 'debug_disabled';
+    }
+
+    public function clearDebugTelemetry(): void
+    {
+        $this->resetDebugTelemetry();
+    }
     public function render()
     {
         $site = $this->resolveSite();
@@ -219,6 +294,8 @@ class VisualEditor extends Component
             'patchableRegionCount' => $patchableRegionCount,
             'selectedRegionEditable' => $selectedRegionEditable,
             'editorProfile' => $editorProfile,
+            'debugTelemetryEnabled' => $this->debugTelemetryEnabled,
+            'debugTelemetry' => $this->debugTelemetry,
         ]);
     }
 
@@ -311,5 +388,32 @@ class VisualEditor extends Component
         }
 
         return 'This region is preview-only because pixelkraft could not map it back to a unique source edit safely. Use Code mode for this one.';
+    }
+
+    private function resetDebugTelemetry(): void
+    {
+        $this->debugTelemetry = [
+            'last_action' => null,
+            'last_save_success' => null,
+            'last_error' => null,
+            'selected_region_id' => null,
+            'selected_selector' => null,
+            'selected_region_type' => null,
+            'selected_region_editable' => null,
+            'mode' => $this->mode,
+            'deploy_after_save' => $this->deployAfterSave,
+            'changed_files' => [],
+            'changed_file_count' => 0,
+            'commit_message' => null,
+            'commit_sha' => null,
+            'deploy_queued' => null,
+            'deploy_trigger' => null,
+            'patch' => [],
+            'save_started_at' => null,
+            'save_finished_at' => null,
+            'site_id' => $this->siteId,
+            'page_id' => $this->pageId,
+            'page_file_path' => $this->codeFilePath,
+        ];
     }
 }

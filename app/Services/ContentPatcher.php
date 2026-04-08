@@ -14,6 +14,10 @@ class ContentPatcher
      * @var array<string, string>
      */
     private array $sourceContentCache = [];
+    /**
+     * @var array<string, mixed>
+     */
+    private array $lastPatchTelemetry = [];
 
     /**
      * Apply a content edit to the source file and return the list of changed files.
@@ -41,6 +45,18 @@ class ContentPatcher
 
         $originalContent = File::get($fullPath);
         $changedFiles = [];
+        $contentChanged = trim((string) $region->current_content) !== trim($newContent);
+        $this->lastPatchTelemetry = [
+            'region_id' => $region->id,
+            'selector' => $region->selector,
+            'region_type' => $region->region_type,
+            'source_type' => $sourceType,
+            'target_file' => $targetFile,
+            'before_length' => strlen($originalContent),
+            'requested_content_change' => $contentChanged,
+            'applied' => false,
+            'error' => null,
+        ];
 
         $patched = match ($sourceType) {
             'html', 'template' => $this->patchHtml($originalContent, $region, $newContent),
@@ -54,14 +70,30 @@ class ContentPatcher
         if ($patched !== $originalContent) {
             File::put($fullPath, $patched);
             $changedFiles[] = $targetFile;
+            $this->lastPatchTelemetry['applied'] = true;
+            $this->lastPatchTelemetry['after_length'] = strlen($patched);
+            $this->lastPatchTelemetry['byte_delta'] = strlen($patched) - strlen($originalContent);
 
             Log::info("Patched [{$targetFile}] for region [{$region->selector}]");
         }
+        // Do not silently accept a "save" when no source edit was applied.
+        if ($patched === $originalContent && $contentChanged) {
+            $this->lastPatchTelemetry['error'] = 'No patch delta produced';
+            throw new \RuntimeException('pixelkraft could not map this edit back to source code safely. Try a smaller element or switch to Code mode.');
+        }
 
-        // Update the region's current content
+        // Update region snapshot only after a successful source update (or true no-op).
         $region->update(['current_content' => $newContent]);
 
         return $changedFiles;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function lastPatchTelemetry(): array
+    {
+        return $this->lastPatchTelemetry;
     }
 
     public function canVisuallyEditRegion(EditableRegion $region): bool

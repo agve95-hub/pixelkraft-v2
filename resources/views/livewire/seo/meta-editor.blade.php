@@ -23,6 +23,18 @@
 
             <div class="grid gap-4 lg:grid-cols-2">
                 <div>
+                    <label class="flux-label">Focus keyword</label>
+                    <input
+                        type="text"
+                        wire:model.live.debounce.300ms="focusKeyword"
+                        class="flux-input text-sm"
+                        placeholder="e.g. ai website builder"
+                        @disabled(! $metaEditingSupported)
+                    >
+                    <p class="mt-2 text-xs text-zinc-500">Used for SEO scoring guidance (title + description targeting).</p>
+                </div>
+
+                <div>
                     <label class="flux-label">SEO title</label>
                     <input
                         type="text"
@@ -159,6 +171,27 @@
                     <p class="text-xs text-zinc-500">Current score</p>
                 </div>
             </div>
+
+            @if (!empty($analysis['highlights']))
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-3 py-2.5">
+                        <p class="text-[11px] uppercase tracking-wide text-zinc-500">Word Count</p>
+                        <p class="mt-1 text-lg font-semibold mono text-zinc-100">{{ number_format($analysis['highlights']['word_count'] ?? 0) }}</p>
+                    </div>
+                    <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-3 py-2.5">
+                        <p class="text-[11px] uppercase tracking-wide text-zinc-500">H1 Tags</p>
+                        <p class="mt-1 text-lg font-semibold mono text-zinc-100">{{ number_format($analysis['highlights']['h1_count'] ?? 0) }}</p>
+                    </div>
+                    <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-3 py-2.5">
+                        <p class="text-[11px] uppercase tracking-wide text-zinc-500">Images Missing Alt</p>
+                        <p class="mt-1 text-lg font-semibold mono text-zinc-100">{{ number_format($analysis['highlights']['img_missing_alt'] ?? 0) }}</p>
+                    </div>
+                    <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-3 py-2.5">
+                        <p class="text-[11px] uppercase tracking-wide text-zinc-500">Internal Links</p>
+                        <p class="mt-1 text-lg font-semibold mono text-zinc-100">{{ number_format($analysis['highlights']['internal_link_count'] ?? 0) }}</p>
+                    </div>
+                </div>
+            @endif
 
             <div class="h-2 rounded-full bg-zinc-800 overflow-hidden">
                 <div

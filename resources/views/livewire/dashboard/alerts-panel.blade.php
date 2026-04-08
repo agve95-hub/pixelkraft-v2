@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.60s>
     <flux:card>
         <flux:heading size="sm" class="mb-4">Alerts</flux:heading>
 

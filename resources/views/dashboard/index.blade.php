@@ -2,12 +2,15 @@
     <x-slot:title>Dashboard</x-slot:title>
 
     <div class="space-y-8">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <flux:heading size="xl" level="1">Dashboard</flux:heading>
-                <flux:text class="mt-2 text-base">Welcome back, {{ auth()->user()->name }}</flux:text>
+                <flux:text class="mt-2 text-base">Welcome back, {{ auth()->user()->name }}. Manage your sites like a modern website builder.</flux:text>
             </div>
-            <flux:button href="{{ route('sites.create') }}" variant="primary" icon="plus">Add site</flux:button>
+            <div class="flex items-center gap-2">
+                <flux:button href="{{ route('analytics') }}" variant="subtle" icon="chart-bar">View analytics</flux:button>
+                <flux:button href="{{ route('sites.create') }}" variant="primary" icon="plus">Add site</flux:button>
+            </div>
         </div>
 
         <flux:separator variant="subtle" />
@@ -18,7 +21,7 @@
             $totalDeploys = \App\Models\DeployLog::where('status', 'success')->count();
         @endphp
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <flux:card>
                 <flux:heading size="sm">Total Sites</flux:heading>
                 <div class="mt-2 flex items-baseline gap-2">
@@ -40,6 +43,16 @@
                 <div class="mt-2 flex items-baseline gap-2">
                     <flux:heading size="xl" class="!text-3xl tabular-nums">{{ $totalDeploys }}</flux:heading>
                     <flux:text size="sm">total</flux:text>
+                </div>
+            </flux:card>
+
+            <flux:card>
+                <flux:heading size="sm">Workspace Health</flux:heading>
+                <div class="mt-2 flex items-baseline gap-2">
+                    <flux:heading size="xl" class="!text-3xl tabular-nums">
+                        {{ \App\Models\Site::where('deploy_status', 'live')->count() }}
+                    </flux:heading>
+                    <flux:text size="sm">live right now</flux:text>
                 </div>
             </flux:card>
         </div>

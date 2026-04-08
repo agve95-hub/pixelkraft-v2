@@ -22,12 +22,12 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div id="add-site" class="lg:col-span-5 space-y-6">
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            <div id="add-site" class="xl:col-span-5 space-y-6">
                 @livewire('sites.site-manager')
             </div>
 
-            <div class="lg:col-span-7 space-y-6">
+            <div class="xl:col-span-7 space-y-6">
                 <flux:card>
                     <flux:heading size="lg">Your sites</flux:heading>
                     <flux:subheading>Select a site to view status and deploy controls.</flux:subheading>

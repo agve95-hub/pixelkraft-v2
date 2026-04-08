@@ -20,11 +20,13 @@
         </flux:sidebar.header>
 
         <flux:sidebar.nav>
-            <flux:sidebar.item icon="home" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')">Dashboard</flux:sidebar.item>
-
-            <flux:sidebar.group expandable heading="Pages" class="grid">
+            <flux:sidebar.group expandable heading="Workspace" class="grid">
+                <flux:sidebar.item icon="home" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')">Dashboard</flux:sidebar.item>
                 <flux:sidebar.item icon="globe-alt" href="{{ route('sites.index') }}" :current="request()->routeIs('sites.*')">Sites</flux:sidebar.item>
                 <flux:sidebar.item icon="chart-bar" href="{{ route('analytics') }}" :current="request()->routeIs('analytics')">Analytics</flux:sidebar.item>
+            </flux:sidebar.group>
+
+            <flux:sidebar.group expandable heading="Marketing" class="grid">
                 <flux:sidebar.item icon="inbox" href="{{ route('inbox') }}" :current="request()->routeIs('inbox')">Form Inbox</flux:sidebar.item>
                 <flux:sidebar.item icon="users" href="{{ route('subscribers') }}" :current="request()->routeIs('subscribers')">Subscribers</flux:sidebar.item>
                 <flux:sidebar.item icon="envelope" href="{{ route('newsletters') }}" :current="request()->routeIs('newsletters')">Newsletters</flux:sidebar.item>
@@ -53,7 +55,7 @@
 
     <flux:header class="lg:hidden">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-
+        <flux:link href="{{ route('dashboard') }}" class="font-semibold text-sm text-zinc-900 dark:text-zinc-100">pixelkraft</flux:link>
         @livewire('layout.notification-bell')
         <flux:spacer />
         <flux:dropdown position="top" align="start">

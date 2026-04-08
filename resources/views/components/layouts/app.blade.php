@@ -20,11 +20,12 @@
         </flux:sidebar.header>
 
         <flux:sidebar.nav>
-            <flux:sidebar.item icon="home" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')">Dashboard</flux:sidebar.item>
-
-            <flux:sidebar.group expandable heading="Pages" class="grid">
+            <flux:sidebar.group expandable heading="Workspace" class="grid">
+                <flux:sidebar.item icon="home" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')">Dashboard</flux:sidebar.item>
                 <flux:sidebar.item icon="globe-alt" href="{{ route('sites.index') }}" :current="request()->routeIs('sites.*')">Sites</flux:sidebar.item>
                 <flux:sidebar.item icon="chart-bar" href="{{ route('analytics') }}" :current="request()->routeIs('analytics')">Analytics</flux:sidebar.item>
+            </flux:sidebar.group>
+            <flux:sidebar.group expandable heading="Marketing" class="grid">
                 <flux:sidebar.item icon="inbox" href="{{ route('inbox') }}" :current="request()->routeIs('inbox')">Form Inbox</flux:sidebar.item>
                 <flux:sidebar.item icon="users" href="{{ route('subscribers') }}" :current="request()->routeIs('subscribers')">Subscribers</flux:sidebar.item>
                 <flux:sidebar.item icon="envelope" href="{{ route('newsletters') }}" :current="request()->routeIs('newsletters')">Newsletters</flux:sidebar.item>
@@ -34,14 +35,16 @@
         <flux:sidebar.spacer />
 
         <flux:sidebar.nav>
+            <flux:sidebar.item icon="server-stack" href="{{ route('system.diagnostics') }}" :current="request()->routeIs('system.diagnostics')">System</flux:sidebar.item>
             <flux:sidebar.item icon="cog-6-tooth" href="{{ route('settings') }}" :current="request()->routeIs('settings')">Settings</flux:sidebar.item>
         </flux:sidebar.nav>
 
         <flux:dropdown position="top" align="start" class="max-lg:hidden">
             <flux:sidebar.profile name="{{ auth()->user()->name }}" />
             <flux:menu>
-                <flux:menu.item href="{{ route('settings') }}" icon="cog-6-tooth">Settings</flux:menu.item>
+                <flux:menu.item href="{{ route('system.diagnostics') }}" icon="server-stack">System</flux:menu.item>
                 <flux:menu.separator />
+                <flux:menu.item href="{{ route('settings') }}" icon="cog-6-tooth">Settings</flux:menu.item>
                 <flux:menu.item icon="arrow-right-start-on-rectangle" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Sign out</flux:menu.item>
             </flux:menu>
         </flux:dropdown>
@@ -51,14 +54,15 @@
 
     <flux:header class="lg:hidden">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-
+        <flux:button href="{{ route('sites.create') }}" size="sm" variant="ghost" icon="plus" class="max-sm:hidden">New Site</flux:button>
         @livewire('layout.notification-bell')
         <flux:spacer />
         <flux:dropdown position="top" align="start">
             <flux:profile name="{{ auth()->user()->name }}" />
             <flux:menu>
-                <flux:menu.item href="{{ route('settings') }}" icon="cog-6-tooth">Settings</flux:menu.item>
+                <flux:menu.item href="{{ route('system.diagnostics') }}" icon="server-stack">System</flux:menu.item>
                 <flux:menu.separator />
+                <flux:menu.item href="{{ route('settings') }}" icon="cog-6-tooth">Settings</flux:menu.item>
                 <flux:menu.item icon="arrow-right-start-on-rectangle" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Sign out</flux:menu.item>
             </flux:menu>
         </flux:dropdown>
