@@ -38,7 +38,7 @@ class SiteManager extends Component
 
         session()->flash('success', "Site '{$site->name}' created. Cloning repository in background...");
 
-        $this->redirect(route('sites.show', $site), navigate: true);
+        $this->redirect(route('sites.index', ['site' => $site->id]), navigate: true);
     }
 
     public function render()
