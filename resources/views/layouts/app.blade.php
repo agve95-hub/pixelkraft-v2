@@ -21,10 +21,10 @@
 
         <flux:sidebar.nav>
             <flux:sidebar.item icon="home" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')">Dashboard</flux:sidebar.item>
-            <flux:sidebar.item icon="globe-alt" href="{{ route('sites.index') }}" :current="request()->routeIs('sites.*')">Sites</flux:sidebar.item>
-            <flux:sidebar.item icon="chart-bar" href="{{ route('analytics') }}" :current="request()->routeIs('analytics')">Analytics</flux:sidebar.item>
 
-            <flux:sidebar.group expandable heading="Email" class="grid">
+            <flux:sidebar.group expandable heading="Pages" class="grid">
+                <flux:sidebar.item icon="globe-alt" href="{{ route('sites.index') }}" :current="request()->routeIs('sites.*')">Sites</flux:sidebar.item>
+                <flux:sidebar.item icon="chart-bar" href="{{ route('analytics') }}" :current="request()->routeIs('analytics')">Analytics</flux:sidebar.item>
                 <flux:sidebar.item icon="inbox" href="{{ route('inbox') }}" :current="request()->routeIs('inbox')">Form Inbox</flux:sidebar.item>
                 <flux:sidebar.item icon="users" href="{{ route('subscribers') }}" :current="request()->routeIs('subscribers')">Subscribers</flux:sidebar.item>
                 <flux:sidebar.item icon="envelope" href="{{ route('newsletters') }}" :current="request()->routeIs('newsletters')">Newsletters</flux:sidebar.item>
