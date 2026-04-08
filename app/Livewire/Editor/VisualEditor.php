@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Editor;
 
+use App\Jobs\DeploySiteJob;
 use App\Models\ContentRevision;
 use App\Models\EditableRegion;
 use App\Models\Page;
@@ -24,6 +25,7 @@ class VisualEditor extends Component
     public string $commitMessage = '';
     public bool $showSaveModal = false;
     public bool $isSaving = false;
+    public bool $deployAfterSave = true;
 
     // Code editor state
     public string $codeContent = '';
@@ -108,6 +110,7 @@ class VisualEditor extends Component
         }
 
         $this->commitMessage = $this->generateCommitMessage();
+        $this->deployAfterSave = true;
         $this->showSaveModal = true;
     }
 
@@ -156,12 +159,21 @@ class VisualEditor extends Component
                 $site->update(['last_synced_at' => now()]);
                 app(\App\Services\ParserService::class)->parseSinglePage($site, $page->file_path);
 
+                if ($this->deployAfterSave) {
+                    DeploySiteJob::dispatch($site->fresh(), 'editor');
+                }
+
                 // Refresh code content if in code mode
                 if ($this->mode === 'code') {
                     $this->loadCodeContent();
                 }
 
-                session()->flash('success', 'Changes saved and pushed to GitHub.');
+                session()->flash(
+                    'success',
+                    $this->deployAfterSave
+                        ? 'Changes saved, pushed to GitHub, and deploy queued.'
+                        : 'Changes saved and pushed to GitHub.'
+                );
 
                 // Dispatch event to refresh iframe
                 $this->dispatch('reload-iframe');

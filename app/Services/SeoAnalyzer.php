@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Page;
 use App\Models\Site;
+use Illuminate\Support\Facades\File;
 
 class SeoAnalyzer
 {
@@ -12,11 +13,12 @@ class SeoAnalyzer
      *
      * @return array{score: int, suggestions: array<array{severity: string, message: string, field: string}>}
      */
-    public function analyze(Page $page): array
+    public function analyze(Page $page, ?string $focusKeyword = null): array
     {
         $suggestions = [];
         $score = 0;
-        $maxScore = 100;
+        $maxScore = 120;
+        $insights = $this->sourceInsights($page);
 
         // Title (25 points)
         $titleResult = $this->checkTitle($page);
@@ -49,17 +51,28 @@ class SeoAnalyzer
         $suggestions = array_merge($suggestions, $urlResult['suggestions']);
 
         // Content (10 points)
-        $contentResult = $this->checkContent($page);
+        $contentResult = $this->checkContent($page, $insights);
         $score += $contentResult['points'];
         $suggestions = array_merge($suggestions, $contentResult['suggestions']);
 
+        // Readability & keyword targeting (10 points)
+        $readabilityResult = $this->checkReadabilityAndKeyword($page, $focusKeyword);
+        $score += $readabilityResult['points'];
+        $suggestions = array_merge($suggestions, $readabilityResult['suggestions']);
+
+        // Technical hygiene (10 points)
+        $technicalResult = $this->checkTechnicalHygiene($page, $insights);
+        $score += $technicalResult['points'];
+        $suggestions = array_merge($suggestions, $technicalResult['suggestions']);
+
         $score = min($maxScore, max(0, $score));
+        $normalizedScore = (int) round(($score / $maxScore) * 100);
 
         // Update the page's SEO score
-        $page->update(['seo_score' => $score]);
+        $page->update(['seo_score' => $normalizedScore]);
 
         return [
-            'score'       => $score,
+            'score'       => $normalizedScore,
             'suggestions' => $suggestions,
         ];
     }
@@ -165,6 +178,15 @@ class SeoAnalyzer
         $suggestions = [];
 
         if ($page->canonical_url) {
+            if (! str_starts_with($page->canonical_url, 'http://') && ! str_starts_with($page->canonical_url, 'https://')) {
+                $suggestions[] = [
+                    'severity' => 'warning',
+                    'message' => 'Canonical URL should be absolute and include http/https.',
+                    'field' => 'canonical_url',
+                ];
+                return ['points' => 5, 'suggestions' => $suggestions];
+            }
+
             return ['points' => 10, 'suggestions' => []];
         }
 
@@ -178,6 +200,15 @@ class SeoAnalyzer
         $suggestions = [];
 
         if (! empty($page->schema_json)) {
+            if (is_array($page->schema_json) && empty($page->schema_json['@type'] ?? null)) {
+                $suggestions[] = [
+                    'severity' => 'warning',
+                    'message' => 'Schema exists but is missing @type. Add a specific schema type (Article, Product, FAQPage, etc).',
+                    'field' => 'schema_json',
+                ];
+                return ['points' => 6, 'suggestions' => $suggestions];
+            }
+
             return ['points' => 10, 'suggestions' => []];
         }
 
@@ -210,19 +241,276 @@ class SeoAnalyzer
             $points += 2;
         }
 
+        if (str_contains($path, '_') || preg_match('/[A-Z]/', $path)) {
+            $suggestions[] = [
+                'severity' => 'info',
+                'message' => 'Use lowercase words and hyphens in URLs for better readability.',
+                'field' => 'url_path',
+            ];
+            $points = max(0, $points - 1);
+        }
+
         return ['points' => $points, 'suggestions' => $suggestions];
     }
 
-    private function checkContent(Page $page): array
+    private function checkContent(Page $page, array $insights): array
     {
         $suggestions = [];
 
-        if ($page->content_hash) {
-            return ['points' => 10, 'suggestions' => []];
+        if (! $page->content_hash) {
+            $suggestions[] = ['severity' => 'warning', 'message' => 'Page content could not be analyzed.', 'field' => 'content'];
+            return ['points' => 0, 'suggestions' => $suggestions];
         }
 
-        $suggestions[] = ['severity' => 'warning', 'message' => 'Page content could not be analyzed.', 'field' => 'content'];
+        $wordCount = $insights['word_count'] ?? 0;
+        if ($wordCount < 150) {
+            $suggestions[] = [
+                'severity' => 'warning',
+                'message' => "Page appears thin ({$wordCount} words). Add more useful content for stronger rankings.",
+                'field' => 'content',
+            ];
+            return ['points' => 4, 'suggestions' => $suggestions];
+        }
 
-        return ['points' => 0, 'suggestions' => $suggestions];
+        if ($wordCount < 300) {
+            $suggestions[] = [
+                'severity' => 'info',
+                'message' => "Content depth is moderate ({$wordCount} words). Expanding can improve topical authority.",
+                'field' => 'content',
+            ];
+            return ['points' => 7, 'suggestions' => $suggestions];
+        }
+
+        return ['points' => 10, 'suggestions' => []];
+    }
+
+    private function checkReadabilityAndKeyword(Page $page, ?string $focusKeyword = null): array
+    {
+        $suggestions = [];
+        $points = 6;
+
+        $title = trim((string) $page->title);
+        $description = trim((string) $page->meta_description);
+        $keywords = collect(explode(',', (string) $page->meta_keywords))
+            ->map(fn (string $keyword) => trim(mb_strtolower($keyword)))
+            ->filter()
+            ->values();
+        $focusKeyword = trim(mb_strtolower((string) $focusKeyword));
+
+        if ($focusKeyword !== '') {
+            $keywords = $keywords->prepend($focusKeyword)->unique()->values();
+        }
+
+        if ($title !== '' && preg_match('/[|>\-]/', $title)) {
+            $points += 1;
+        } else {
+            $suggestions[] = [
+                'severity' => 'info',
+                'message' => 'Title can often perform better with a clear separator (e.g., "Service | Brand").',
+                'field' => 'title',
+            ];
+        }
+
+        if ($keywords->isNotEmpty()) {
+            $keywordHits = $keywords->filter(function (string $keyword) use ($title, $description): bool {
+                return str_contains(mb_strtolower($title), $keyword)
+                    || str_contains(mb_strtolower($description), $keyword);
+            })->count();
+
+            if ($keywordHits === 0) {
+                $suggestions[] = [
+                    'severity' => 'warning',
+                    'message' => 'Primary keywords are not reflected in title/description. Include at least one naturally.',
+                    'field' => 'meta_keywords',
+                ];
+                $points -= 3;
+            } elseif ($keywordHits >= 1) {
+                $points += 2;
+            }
+        } else {
+            $suggestions[] = [
+                'severity' => 'info',
+                'message' => 'Add one or two primary keywords to guide copy optimization.',
+                'field' => 'meta_keywords',
+            ];
+        }
+
+        if ($focusKeyword !== '') {
+            $focusInTitle = str_contains(mb_strtolower($title), $focusKeyword);
+            $focusInDescription = str_contains(mb_strtolower($description), $focusKeyword);
+
+            if (! $focusInTitle && ! $focusInDescription) {
+                $suggestions[] = [
+                    'severity' => 'warning',
+                    'message' => "Focus keyword \"{$focusKeyword}\" is missing from title and description.",
+                    'field' => 'focus_keyword',
+                ];
+                $points -= 2;
+            } elseif ($focusInTitle && $focusInDescription) {
+                $points += 1;
+            }
+        }
+
+        if ($description !== '' && mb_strlen($description) > 0) {
+            $sentenceCount = max(1, preg_match_all('/[.!?]+/', $description));
+            $wordCount = max(1, count(preg_split('/\s+/', $description, -1, PREG_SPLIT_NO_EMPTY) ?: []));
+            $avgSentenceLength = $wordCount / $sentenceCount;
+
+            if ($avgSentenceLength > 22) {
+                $suggestions[] = [
+                    'severity' => 'info',
+                    'message' => 'Meta description reads long. Shorter sentences are easier to scan in SERPs.',
+                    'field' => 'meta_description',
+                ];
+                $points -= 1;
+            } else {
+                $points += 1;
+            }
+        }
+
+        return ['points' => max(0, min(10, $points)), 'suggestions' => $suggestions];
+    }
+
+    private function checkTechnicalHygiene(Page $page, array $insights): array
+    {
+        $suggestions = [];
+        $points = 6;
+
+        if ($page->canonical_url && $page->site?->domain) {
+            $siteDomain = mb_strtolower((string) $page->site->domain);
+            $canonicalHost = parse_url((string) $page->canonical_url, PHP_URL_HOST);
+            if ($canonicalHost && ! str_contains(mb_strtolower($canonicalHost), $siteDomain)) {
+                $suggestions[] = [
+                    'severity' => 'warning',
+                    'message' => 'Canonical URL points to a different domain. Confirm this is intentional.',
+                    'field' => 'canonical_url',
+                ];
+                $points -= 2;
+            }
+        }
+
+        if ($page->og_image) {
+            if (! str_starts_with($page->og_image, 'http://') && ! str_starts_with($page->og_image, 'https://')) {
+                $suggestions[] = [
+                    'severity' => 'warning',
+                    'message' => 'Social image should use an absolute URL for reliable previews.',
+                    'field' => 'og_image',
+                ];
+                $points -= 2;
+            } else {
+                $points += 2;
+            }
+        }
+
+        $h1Count = (int) ($insights['h1_count'] ?? 0);
+        if ($h1Count === 0) {
+            $suggestions[] = [
+                'severity' => 'warning',
+                'message' => 'No H1 heading found in page source. Add one clear primary heading.',
+                'field' => 'content',
+            ];
+            $points -= 2;
+        } elseif ($h1Count > 1) {
+            $suggestions[] = [
+                'severity' => 'info',
+                'message' => "Multiple H1 tags detected ({$h1Count}). Prefer one primary H1 per page.",
+                'field' => 'content',
+            ];
+            $points -= 1;
+        } else {
+            $points += 1;
+        }
+
+        $missingAlt = (int) ($insights['img_missing_alt'] ?? 0);
+        if ($missingAlt > 0) {
+            $suggestions[] = [
+                'severity' => 'warning',
+                'message' => "Found {$missingAlt} image(s) without alt text. Add descriptive alts for accessibility and image SEO.",
+                'field' => 'content',
+            ];
+            $points -= 2;
+        } elseif (($insights['img_count'] ?? 0) > 0) {
+            $points += 1;
+        }
+
+        if (($insights['internal_link_count'] ?? 0) === 0) {
+            $suggestions[] = [
+                'severity' => 'info',
+                'message' => 'No internal links detected on this page. Add links to related pages for crawl depth.',
+                'field' => 'content',
+            ];
+            $points -= 1;
+        }
+
+        if ($page->og_title && $page->title && mb_strtolower(trim($page->og_title)) === mb_strtolower(trim($page->title))) {
+            $suggestions[] = [
+                'severity' => 'info',
+                'message' => 'og:title matches SEO title exactly. Consider variant copy for better social CTR.',
+                'field' => 'og_title',
+            ];
+        }
+
+        if (! $page->schema_json) {
+            $points -= 1;
+        } else {
+            $points += 1;
+        }
+
+        return ['points' => max(0, min(10, $points)), 'suggestions' => $suggestions];
+    }
+
+    /**
+     * @return array{word_count:int,h1_count:int,img_count:int,img_missing_alt:int,internal_link_count:int}
+     */
+    private function sourceInsights(Page $page): array
+    {
+        $defaults = [
+            'word_count' => 0,
+            'h1_count' => 0,
+            'img_count' => 0,
+            'img_missing_alt' => 0,
+            'internal_link_count' => 0,
+        ];
+
+        $site = $page->site;
+        if (! $site?->repo_path || ! $page->file_path) {
+            return $defaults;
+        }
+
+        $fullPath = "{$site->repo_path}/{$page->file_path}";
+        if (! File::exists($fullPath)) {
+            return $defaults;
+        }
+
+        $source = (string) File::get($fullPath);
+        if ($source === '') {
+            return $defaults;
+        }
+
+        $withoutScripts = preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', $source) ?? $source;
+        $withoutStyles = preg_replace('/<style\b[^>]*>.*?<\/style>/is', ' ', $withoutScripts) ?? $withoutScripts;
+
+        $text = trim(strip_tags($withoutStyles));
+        $wordCount = count(preg_split('/\s+/', $text, -1, PREG_SPLIT_NO_EMPTY) ?: []);
+        $h1Count = preg_match_all('/<h1\b[^>]*>/i', $withoutStyles) ?: 0;
+        $imgCount = preg_match_all('/<img\b[^>]*>/i', $withoutStyles) ?: 0;
+        $imgMissingAlt = preg_match_all('/<img\b(?![^>]*\balt\s*=)[^>]*>/i', $withoutStyles) ?: 0;
+
+        $internalLinks = 0;
+        if (preg_match_all('/<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>/i', $withoutStyles, $matches)) {
+            foreach ($matches[1] as $href) {
+                if (str_starts_with($href, '/')) {
+                    $internalLinks++;
+                }
+            }
+        }
+
+        return [
+            'word_count' => $wordCount,
+            'h1_count' => $h1Count,
+            'img_count' => $imgCount,
+            'img_missing_alt' => $imgMissingAlt,
+            'internal_link_count' => $internalLinks,
+        ];
     }
 }

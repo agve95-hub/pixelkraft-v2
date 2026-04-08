@@ -253,6 +253,18 @@
                         >
                     </div>
 
+                    <label class="flex items-start gap-3 rounded-lg border border-zinc-800 px-3 py-2.5 text-sm text-zinc-300">
+                        <input
+                            type="checkbox"
+                            wire:model.live="deployAfterSave"
+                            class="mt-0.5 h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-violet-500 focus:ring-violet-500"
+                        >
+                        <span>
+                            Auto-deploy after push
+                            <span class="block text-xs text-zinc-500">Recommended so your change appears online immediately.</span>
+                        </span>
+                    </label>
+
                     <div class="flex items-center gap-3">
                         <button
                             wire:click="save"
@@ -260,7 +272,9 @@
                             wire:loading.attr="disabled"
                             wire:target="save"
                         >
-                            <span wire:loading.remove wire:target="save">Commit & Push</span>
+                            <span wire:loading.remove wire:target="save">
+                                {{ $deployAfterSave ? 'Commit, Push & Deploy' : 'Commit & Push' }}
+                            </span>
                             <span wire:loading wire:target="save" class="flex items-center gap-2">
                                 <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                                 Pushing...

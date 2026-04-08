@@ -12,6 +12,7 @@ use Livewire\Component;
 class MetaEditor extends Component
 {
     public string $pageId;
+    public string $focusKeyword = '';
 
     public string $title = '';
     public string $metaDescription = '';
@@ -37,6 +38,10 @@ class MetaEditor extends Component
         $this->ogDescription = $page->og_description ?? '';
         $this->ogImage = $page->og_image ?? '';
         $this->canonicalUrl = $page->canonical_url ?? '';
+        $this->focusKeyword = collect(explode(',', (string) ($page->meta_keywords ?? '')))
+            ->map(fn (string $value) => trim($value))
+            ->filter()
+            ->first() ?? '';
         $this->refreshSupportState($page);
 
         $this->runAnalysis();
@@ -79,7 +84,7 @@ class MetaEditor extends Component
     {
         $page = Page::findOrFail($this->pageId);
         $analyzer = app(SeoAnalyzer::class);
-        $this->analysis = $analyzer->analyze($page);
+        $this->analysis = $analyzer->analyze($page, $this->focusKeyword);
     }
 
     public function render()
