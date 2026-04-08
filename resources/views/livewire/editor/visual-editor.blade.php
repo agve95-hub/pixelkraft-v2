@@ -55,6 +55,16 @@
             <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" /></svg>
             Save & Push
         </button>
+
+        <button
+            wire:click="toggleDebugTelemetry"
+            class="flux-btn-ghost text-xs !py-1.5"
+            wire:loading.attr="disabled"
+            wire:target="toggleDebugTelemetry"
+            title="Toggle editor debug telemetry"
+        >
+            {{ $debugTelemetryEnabled ? 'Debug On' : 'Debug' }}
+        </button>
     </div>
 
     {{-- Main editor area --}}
@@ -231,8 +241,59 @@
         @endif
 
         {{-- ── Region Sidebar (always visible) ── --}}
-        <div class="w-72 border-l border-zinc-800 bg-zinc-900 flex-shrink-0 hidden xl:flex xl:flex-col">
-            @livewire('editor.region-panel', ['pageId' => $pageId], key('region-panel'))
+        <div class="w-72 border-l border-zinc-800 bg-zinc-900 flex-shrink-0 hidden xl:flex xl:flex-col overflow-y-auto">
+            @if ($debugTelemetryEnabled)
+                <div class="p-3 border-b border-zinc-800">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Debug Telemetry</h3>
+                        <button wire:click="clearDebugTelemetry" class="flux-btn-ghost text-[10px] !px-2 !py-1">Clear</button>
+                    </div>
+                </div>
+                <div class="p-3 space-y-2 text-[11px]">
+                    <div class="rounded-md border border-zinc-800 bg-zinc-950/60 p-2">
+                        <p class="text-zinc-500 uppercase tracking-wide">State</p>
+                        <p class="mt-1 text-zinc-200 font-mono">action: {{ $debugTelemetry['last_action'] ?? 'n/a' }}</p>
+                        <p class="text-zinc-200 font-mono">mode: {{ $debugTelemetry['mode'] ?? 'n/a' }}</p>
+                        <p class="text-zinc-200 font-mono">selected: {{ $debugTelemetry['selected_region_id'] ?? 'n/a' }}</p>
+                        <p class="text-zinc-200 font-mono">editable: {{ is_null($debugTelemetry['selected_region_editable'] ?? null) ? 'n/a' : (($debugTelemetry['selected_region_editable'] ?? false) ? 'true' : 'false') }}</p>
+                        <p class="text-zinc-200 font-mono break-all">selector: {{ $debugTelemetry['selected_selector'] ?? 'n/a' }}</p>
+                    </div>
+
+                    <div class="rounded-md border border-zinc-800 bg-zinc-950/60 p-2">
+                        <p class="text-zinc-500 uppercase tracking-wide">Patch</p>
+                        <p class="mt-1 text-zinc-200 font-mono">file: {{ $debugTelemetry['patch']['target_file'] ?? 'n/a' }}</p>
+                        <p class="text-zinc-200 font-mono">source_type: {{ $debugTelemetry['patch']['source_type'] ?? 'n/a' }}</p>
+                        <p class="text-zinc-200 font-mono">region_type: {{ $debugTelemetry['patch']['region_type'] ?? 'n/a' }}</p>
+                        <p class="text-zinc-200 font-mono">applied: {{ isset($debugTelemetry['patch']['applied']) ? ($debugTelemetry['patch']['applied'] ? 'true' : 'false') : 'n/a' }}</p>
+                        <p class="text-zinc-200 font-mono">byte_delta: {{ $debugTelemetry['patch']['byte_delta'] ?? 'n/a' }}</p>
+                        @if (! empty($debugTelemetry['patch']['error']))
+                            <p class="text-red-400 break-words">{{ $debugTelemetry['patch']['error'] }}</p>
+                        @endif
+                    </div>
+
+                    <div class="rounded-md border border-zinc-800 bg-zinc-950/60 p-2">
+                        <p class="text-zinc-500 uppercase tracking-wide">Git / Deploy</p>
+                        <p class="mt-1 text-zinc-200 font-mono">changed_files: {{ $debugTelemetry['changed_file_count'] ?? 0 }}</p>
+                        @if (! empty($debugTelemetry['changed_files']))
+                            <p class="text-zinc-400 break-words">files: {{ implode(', ', $debugTelemetry['changed_files']) }}</p>
+                        @endif
+                        <p class="text-zinc-200 font-mono break-all">sha: {{ $debugTelemetry['commit_sha'] ?? 'n/a' }}</p>
+                        <p class="text-zinc-200 font-mono">deploy_queued: {{ is_null($debugTelemetry['deploy_queued'] ?? null) ? 'n/a' : (($debugTelemetry['deploy_queued'] ?? false) ? 'true' : 'false') }}</p>
+                    </div>
+
+                    <div class="rounded-md border border-zinc-800 bg-zinc-950/60 p-2">
+                        <p class="text-zinc-500 uppercase tracking-wide">Result</p>
+                        <p class="mt-1 text-zinc-200 font-mono">success: {{ is_null($debugTelemetry['last_save_success'] ?? null) ? 'n/a' : (($debugTelemetry['last_save_success'] ?? false) ? 'true' : 'false') }}</p>
+                        <p class="text-zinc-200 font-mono">started: {{ $debugTelemetry['save_started_at'] ?? 'n/a' }}</p>
+                        <p class="text-zinc-200 font-mono">finished: {{ $debugTelemetry['save_finished_at'] ?? 'n/a' }}</p>
+                        @if (! empty($debugTelemetry['last_error']))
+                            <p class="text-red-400 break-words">{{ $debugTelemetry['last_error'] }}</p>
+                        @endif
+                    </div>
+                </div>
+            @else
+                @livewire('editor.region-panel', ['pageId' => $pageId], key('region-panel'))
+            @endif
         </div>
     </div>
 
