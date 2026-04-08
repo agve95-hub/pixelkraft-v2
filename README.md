@@ -188,6 +188,8 @@ The workflow runs:
 - `php artisan optimize:clear`
 - `php artisan horizon:terminate`
 
+> Release policy: because deploy runs automatically from `main`, only merge to `main` when a release is ready for production.
+
 ### 3. Flux UI CSS setup
 
 Follow the Flux v2 installation rules exactly.
