@@ -14,6 +14,7 @@ Route::post('/webhooks/github', [WebhookController::class, 'github'])
 
 // Contact form submission endpoint (rate limited, no auth)
 Route::post('/forms/{slug}', [FormSubmissionController::class, 'store'])
+    ->middleware('throttle:10,1')
     ->name('api.forms.store');
 
 // ── Authenticated API (Sanctum) ─────────────────
