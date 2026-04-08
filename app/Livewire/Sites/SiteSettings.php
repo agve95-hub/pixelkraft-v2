@@ -17,6 +17,7 @@ class SiteSettings extends Component
     public string $branch = 'main';
     public string $projectType = 'static_html';
     public string $deploymentMode = SiteRuntimeService::MODE_STATIC;
+    public bool $deployOnWebhook = false;
 
     public function mount(): void
     {
@@ -29,6 +30,7 @@ class SiteSettings extends Component
         $this->branch = $site->branch;
         $this->projectType = $site->project_type;
         $this->deploymentMode = $site->deployment_mode ?: $runtime->deploymentMode($site);
+        $this->deployOnWebhook = (bool) $site->deploy_on_webhook;
     }
 
     public function updatedProjectType(string $value): void
@@ -48,6 +50,7 @@ class SiteSettings extends Component
             'branch'         => 'required|string|max:100',
             'projectType'    => 'required|string',
             'deploymentMode' => 'required|in:static,runtime',
+            'deployOnWebhook' => 'boolean',
         ]);
 
         if (
@@ -67,6 +70,7 @@ class SiteSettings extends Component
             'build_output_dir' => $this->buildOutputDir ?: null,
             'branch'           => $this->branch,
             'project_type'     => $this->projectType,
+            'deploy_on_webhook' => $this->deployOnWebhook,
         ]);
 
         session()->flash('success', 'Site settings updated.');

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Jobs\DeploySiteJob;
 use App\Models\Notification;
 use App\Models\Site;
 use App\Services\GitConflictException;
@@ -49,6 +50,11 @@ class SyncFromWebhookJob implements ShouldQueue
 
             // Re-parse affected pages
             ParseSiteJob::dispatch($this->site);
+
+            if ($this->site->deploy_on_webhook) {
+                DeploySiteJob::dispatch($this->site, 'webhook');
+                Log::info("SyncFromWebhookJob: dispatched deploy for [{$this->site->slug}]");
+            }
 
         } catch (GitConflictException $e) {
             Log::error("SyncFromWebhookJob: conflict for [{$this->site->slug}]", [

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Jobs\SyncFromWebhookJob;
 use App\Models\Site;
+use App\Models\WebhookDelivery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
@@ -15,69 +17,83 @@ class WebhookController extends Controller
      */
     public function github(Request $request): JsonResponse
     {
-        // Verify signature if webhook secret is configured
-        $secret = config('pixelkraft.github_webhook_secret');
+        $event = (string) $request->header('X-GitHub-Event', '');
+        $deliveryId = trim((string) $request->header('X-GitHub-Delivery', ''));
 
-        if (! $secret && app()->environment('production')) {
-            Log::error('GitHub webhook secret is missing in production environment');
+        if ($deliveryId === '') {
+            return response()->json(['error' => 'Missing delivery id'], 400);
+        }
+
+        // Verify signature based on environment/config.
+        $secret = config('pixelkraft.github_webhook_secret');
+        $mustVerifySignature = (bool) config('pixelkraft.github_webhook_require_signature', ! app()->environment('local'));
+
+        if ($mustVerifySignature && ! $secret) {
+            Log::error('GitHub webhook secret is required but missing', [
+                'event' => $event,
+                'delivery_id' => $deliveryId,
+            ]);
 
             return response()->json(['error' => 'Webhook receiver is not configured'], 503);
         }
 
-        if ($secret) {
+        if ($mustVerifySignature) {
             $signature = $request->header('X-Hub-Signature-256');
 
             if (! $this->verifyGitHubSignature($request->getContent(), $signature, $secret)) {
-                Log::warning('GitHub webhook signature verification failed');
+                Log::warning('GitHub webhook signature verification failed', [
+                    'event' => $event,
+                    'delivery_id' => $deliveryId,
+                ]);
 
                 return response()->json(['error' => 'Invalid signature'], 403);
             }
         }
 
-        $event = $request->header('X-GitHub-Event');
         $payload = $request->all();
+        $repository = Site::normalizeGithubRepository($payload['repository']['full_name'] ?? '');
+
+        if (! $repository) {
+            return response()->json(['error' => 'Missing repository info'], 400);
+        }
+
+        if (! $this->recordDelivery('github', $deliveryId, $event, $repository)) {
+            return response()->json(['status' => 'duplicate', 'delivery_id' => $deliveryId]);
+        }
 
         Log::info("GitHub webhook received: {$event}", [
-            'repo' => $payload['repository']['full_name'] ?? 'unknown',
+            'repo' => $repository,
+            'delivery_id' => $deliveryId,
         ]);
 
-        // We only care about push events
+        // We only care about push events.
         if ($event !== 'push') {
             return response()->json(['status' => 'ignored', 'event' => $event]);
         }
 
-        // Find the site by repo URL
-        $repoFullName = $payload['repository']['full_name'] ?? null;
-        $repoCloneUrl = $payload['repository']['clone_url'] ?? null;
-        $ref = $payload['ref'] ?? '';
+        $ref = (string) ($payload['ref'] ?? '');
+        $branch = str_starts_with($ref, 'refs/heads/')
+            ? substr($ref, strlen('refs/heads/'))
+            : '';
 
-        if (! $repoFullName) {
-            return response()->json(['error' => 'Missing repository info'], 400);
+        if ($branch === '') {
+            return response()->json(['error' => 'Missing branch ref'], 400);
         }
 
-        // Find matching site(s)
         $sites = Site::query()
             ->where('is_active', true)
-            ->where(function ($q) use ($repoFullName, $repoCloneUrl) {
-                $q->where('repo_url', 'like', "%{$repoFullName}%");
-                if ($repoCloneUrl) {
-                    $q->orWhere('repo_url', $repoCloneUrl);
-                }
-            })
-            ->get();
+            ->get()
+            ->filter(fn (Site $site) => $site->normalizedGithubRepository() === $repository)
+            ->values();
 
         if ($sites->isEmpty()) {
-            Log::info("No matching site found for repo [{$repoFullName}]");
+            Log::info("No matching site found for repo [{$repository}]");
 
             return response()->json(['status' => 'no_matching_site']);
         }
 
         $dispatched = 0;
-
         foreach ($sites as $site) {
-            // Only sync if the push was to the site's configured branch
-            $branch = str_replace('refs/heads/', '', $ref);
-
             if ($branch !== $site->branch) {
                 Log::info("Webhook push to [{$branch}] ignored for site [{$site->slug}] (configured: {$site->branch})");
                 continue;
@@ -107,5 +123,36 @@ class WebhookController extends Controller
         $expected = 'sha256=' . hash_hmac('sha256', $payload, $secret);
 
         return hash_equals($expected, $signature);
+    }
+
+    private function recordDelivery(
+        string $provider,
+        string $deliveryId,
+        string $event,
+        string $repository,
+    ): bool {
+        try {
+            WebhookDelivery::create([
+                'provider' => $provider,
+                'delivery_id' => $deliveryId,
+                'event' => $event,
+                'repository' => $repository,
+                'received_at' => now(),
+            ]);
+
+            return true;
+        } catch (QueryException $e) {
+            // Duplicate provider+delivery_id pair.
+            if ((string) $e->getCode() === '23000') {
+                Log::info('Duplicate webhook delivery ignored', [
+                    'provider' => $provider,
+                    'delivery_id' => $deliveryId,
+                ]);
+
+                return false;
+            }
+
+            throw $e;
+        }
     }
 }

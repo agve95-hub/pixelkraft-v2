@@ -16,6 +16,7 @@ class Site extends Model
         'slug',
         'repo_url',
         'branch',
+        'deploy_on_webhook',
         'github_token',
         'project_type',
         'deployment_mode',
@@ -50,6 +51,7 @@ class Site extends Model
             'last_deployed_at' => 'datetime',
             'last_synced_at'  => 'datetime',
             'is_active'       => 'boolean',
+            'deploy_on_webhook' => 'boolean',
         ];
     }
 
@@ -94,6 +96,48 @@ class Site extends Model
             'owner' => trim(dirname($path), '/'),
             'repo'  => basename($path, '.git'),
         ];
+    }
+
+    public function normalizedGithubRepository(): ?string
+    {
+        return self::normalizeGithubRepository($this->repo_url);
+    }
+
+    public static function normalizeGithubRepository(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        // Already owner/repo.
+        if (preg_match('/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/', $value)) {
+            return strtolower($value);
+        }
+
+        // Handle SSH GitHub URLs: git@github.com:owner/repo.git
+        if (preg_match('/^git@github\.com:(.+)$/i', $value, $matches)) {
+            $path = trim($matches[1], '/');
+        } else {
+            $parsed = parse_url($value);
+            $host = strtolower((string) ($parsed['host'] ?? ''));
+
+            if ($host !== '' && ! str_ends_with($host, 'github.com')) {
+                return null;
+            }
+
+            $path = trim((string) ($parsed['path'] ?? ''), '/');
+        }
+
+        $path = preg_replace('/\.git$/i', '', $path) ?? $path;
+        $segments = array_values(array_filter(explode('/', $path)));
+
+        if (count($segments) < 2) {
+            return null;
+        }
+
+        return strtolower($segments[0] . '/' . $segments[1]);
     }
 
     // ── Relationships ───────────────────────────
