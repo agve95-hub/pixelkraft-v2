@@ -46,6 +46,7 @@
         "setup": [
             "composer install",
             "@ensure-env",
+            "@ensure-db",
             "@php artisan migrate --force",
             "npm install",
             "npm run build"
@@ -79,6 +80,9 @@
         "ensure-env": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php -r \"\\$env = @file_get_contents('.env') ?: ''; if (!preg_match('/^APP_KEY=.+$/m', \\$env)) { passthru('php artisan key:generate --ansi --force'); }\""
+        ],
+        "ensure-db": [
+            "@php -r \"\\$env = @file_get_contents('.env') ?: ''; preg_match('/^DB_CONNECTION=(.+)$/m', \\$env, \\$m); \\$conn = trim(\\$m[1] ?? ''); if (\\$conn === 'sqlite') { if (!is_dir('database')) mkdir('database', 0755, true); if (!file_exists('database/database.sqlite')) touch('database/database.sqlite'); }\""
         ]
     },
     "extra": {
