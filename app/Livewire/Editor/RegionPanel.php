@@ -22,7 +22,7 @@ class RegionPanel extends Component
         $markerId = $detector->generateMarkerId($region);
         $detector->confirmAsEditable($region, $markerId);
 
-        $this->dispatch('region-updated', regionId: $regionId);
+        $this->dispatch('region-updated', regionId: $regionId)->to(VisualEditor::class);
     }
 
     public function confirmStatic(string $regionId): void
@@ -30,7 +30,7 @@ class RegionPanel extends Component
         $region = $this->resolveRegion($regionId);
         app(RegionDetector::class)->confirmAsStatic($region);
 
-        $this->dispatch('region-updated', regionId: $regionId);
+        $this->dispatch('region-updated', regionId: $regionId)->to(VisualEditor::class);
     }
 
     public function toggleRegion(string $regionId): void
@@ -46,7 +46,7 @@ class RegionPanel extends Component
 
     public function selectRegion(string $regionId): void
     {
-        $this->dispatch('region-selected', regionId: $regionId);
+        $this->dispatch('region-selected', regionId: $regionId)->to(VisualEditor::class);
     }
 
     public function render()

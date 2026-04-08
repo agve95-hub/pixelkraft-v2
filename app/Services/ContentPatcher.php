@@ -41,6 +41,7 @@ class ContentPatcher
 
         $originalContent = File::get($fullPath);
         $changedFiles = [];
+        $contentChanged = trim((string) $region->current_content) !== trim($newContent);
 
         $patched = match ($sourceType) {
             'html', 'template' => $this->patchHtml($originalContent, $region, $newContent),
@@ -57,8 +58,12 @@ class ContentPatcher
 
             Log::info("Patched [{$targetFile}] for region [{$region->selector}]");
         }
+        // Do not silently accept a "save" when no source edit was applied.
+        if ($patched === $originalContent && $contentChanged) {
+            throw new \RuntimeException('pixelkraft could not map this edit back to source code safely. Try a smaller element or switch to Code mode.');
+        }
 
-        // Update the region's current content
+        // Update region snapshot only after a successful source update (or true no-op).
         $region->update(['current_content' => $newContent]);
 
         return $changedFiles;

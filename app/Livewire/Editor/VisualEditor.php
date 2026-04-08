@@ -12,6 +12,7 @@ use App\Services\GitSyncService;
 use App\Services\SiteSupportService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class VisualEditor extends Component
@@ -31,12 +32,6 @@ class VisualEditor extends Component
     public string $codeContent = '';
     public string $codeFilePath = '';
 
-    protected $listeners = [
-        'region-selected' => 'onRegionSelected',
-        'region-updated'  => '$refresh',
-        'inline-edit-saved' => 'onInlineEditSaved',
-    ];
-
     public function mount(string $siteId, string $pageId): void
     {
         $this->siteId = $siteId;
@@ -53,6 +48,7 @@ class VisualEditor extends Component
         $this->loadCodeContent();
     }
 
+    #[On('region-selected')]
     public function onRegionSelected(string $regionId): void
     {
         $region = $this->findRegion($regionId);
@@ -66,10 +62,17 @@ class VisualEditor extends Component
         }
     }
 
+    #[On('inline-edit-saved')]
     public function onInlineEditSaved(string $regionId, string $newContent): void
     {
         $this->selectedRegionId = $regionId;
         $this->editContent = $newContent;
+    }
+
+    #[On('region-updated')]
+    public function onRegionUpdated(): void
+    {
+        // Trigger a re-render so editability counts/badges stay in sync.
     }
 
     public function toggleMode(): void
@@ -154,7 +157,7 @@ class VisualEditor extends Component
             if (! empty($changedFiles)) {
                 $message = $this->commitMessage ?: $this->generateCommitMessage();
 
-                $sha = $git->commitAndPush($site, $changedFiles, $message);
+                $git->commitAndPush($site, $changedFiles, $message);
 
                 $site->update(['last_synced_at' => now()]);
                 app(\App\Services\ParserService::class)->parseSinglePage($site, $page->file_path);
@@ -187,6 +190,12 @@ class VisualEditor extends Component
         } finally {
             $this->isSaving = false;
         }
+    }
+
+    #[On('region-updated')]
+    public function refreshEditor(): void
+    {
+        // Region classification changed in sibling panel; rerender counts/editability badges.
     }
 
     public function render()
