@@ -1,4 +1,4 @@
-<div>
+<div wire:poll.15s>
     <flux:card>
         <flux:heading size="sm" class="mb-4">Recent Activity</flux:heading>
 
@@ -37,6 +37,7 @@
             @empty
                 <div class="py-8 text-center">
                     <flux:subheading>No deploy activity yet</flux:subheading>
+                    <flux:text size="sm" class="mt-1">Trigger your first deploy from a site detail page.</flux:text>
                 </div>
             @endforelse
         </div>
