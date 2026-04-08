@@ -38,7 +38,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'github_webhook_secret' => env('GITHUB_WEBHOOK_SECRET'),
-    'github_webhook_require_signature' => env('GITHUB_WEBHOOK_REQUIRE_SIGNATURE', ! app()->environment('local')),
+    'github_webhook_require_signature' => env('GITHUB_WEBHOOK_REQUIRE_SIGNATURE', env('APP_ENV', 'production') !== 'local'),
 
     /*
     |--------------------------------------------------------------------------

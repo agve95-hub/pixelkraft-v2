@@ -33,6 +33,12 @@ class EditorPreviewController extends Controller
             }
 
             if ($preview['mode'] !== 'file') {
+                $fallbackPreview = $this->renderSourceFallbackPreview($site, $page);
+
+                if ($fallbackPreview !== null) {
+                    return $this->htmlResponse($fallbackPreview);
+                }
+
                 return $this->htmlResponse($this->renderUnavailablePreview($site, $page));
             }
 
@@ -319,6 +325,107 @@ class EditorPreviewController extends Controller
 </body>
 </html>
 HTML;
+    }
+
+    private function renderSourceFallbackPreview(Site $site, Page $page): ?string
+    {
+        $path = "{$site->repo_path}/{$page->file_path}";
+        if (! File::exists($path)) {
+            return null;
+        }
+
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        if (! in_array($extension, ['jsx', 'tsx', 'vue', 'svelte', 'astro', 'md', 'mdx'], true)) {
+            return null;
+        }
+
+        $source = File::get($path);
+        $snippets = $this->extractSourceSnippets($source);
+
+        if (empty($snippets)) {
+            return null;
+        }
+
+        $sections = collect($snippets)
+            ->map(function (string $snippet, int $index) {
+                $safeSnippet = e($snippet);
+                $label = $index + 1;
+
+                return <<<HTML
+<section data-pk-fallback-snippet="{$label}" style="padding:14px 16px;border:1px solid #27272a;border-radius:10px;background:#111827;">
+    <p style="margin:0;color:#e4e4e7;line-height:1.45;">{$safeSnippet}</p>
+</section>
+HTML;
+            })
+            ->implode("\n");
+
+        $filePath = e($page->file_path);
+        $projectType = e($site->project_type);
+
+        return <<<HTML
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Source fallback preview</title>
+</head>
+<body style="margin:0;background:#09090b;color:#d4d4d8;font-family:system-ui,sans-serif;padding:20px;">
+    <main data-pk-fallback-preview="true" style="max-width:920px;margin:0 auto;display:grid;gap:12px;">
+        <div style="border:1px solid #27272a;border-radius:12px;background:#18181b;padding:14px 16px;">
+            <h1 style="margin:0;font-size:16px;color:#fafafa;">Source fallback preview</h1>
+            <p style="margin:8px 0 0;color:#a1a1aa;font-size:13px;line-height:1.5;">
+                Live built output is unavailable for <code style="color:#a78bfa;">{$filePath}</code>.
+                This fallback extracts editable text snippets from the <code style="color:#a78bfa;">{$projectType}</code> source so Visual mode can still map and edit content.
+            </p>
+        </div>
+        {$sections}
+    </main>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractSourceSnippets(string $source): array
+    {
+        $source = preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', $source) ?? $source;
+        $source = preg_replace('/<style\b[^>]*>.*?<\/style>/is', ' ', $source) ?? $source;
+
+        $matches = [];
+        preg_match_all('/>\s*([^<>{}\n][^<>{}\n]{3,200})\s*</u', $source, $tagTextMatches);
+        preg_match_all('/["\']([^"\']{4,200})["\']/u', $source, $quotedMatches);
+
+        $candidates = array_merge($tagTextMatches[1] ?? [], $quotedMatches[1] ?? []);
+
+        foreach ($candidates as $candidate) {
+            $snippet = trim(html_entity_decode((string) $candidate, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $snippet = preg_replace('/\s+/u', ' ', $snippet) ?? $snippet;
+
+            if ($snippet === '' || mb_strlen($snippet) < 4) {
+                continue;
+            }
+
+            if (preg_match('/^(import|export|const|let|var|function|return|class|if|else|for|while)\b/i', $snippet)) {
+                continue;
+            }
+
+            if (preg_match('/^[#./@:_-]+$/', $snippet)) {
+                continue;
+            }
+
+            $matches[] = $snippet;
+        }
+
+        $unique = [];
+        foreach ($matches as $snippet) {
+            $key = mb_strtolower($snippet);
+            if (! array_key_exists($key, $unique)) {
+                $unique[$key] = $snippet;
+            }
+        }
+
+        return array_slice(array_values($unique), 0, 80);
     }
 
     private function renderFailurePreview(Site $site, Page $page, \Throwable $e): string

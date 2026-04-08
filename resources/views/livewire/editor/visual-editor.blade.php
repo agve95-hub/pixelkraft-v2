@@ -4,7 +4,7 @@
         previewRegions: @js($previewRegions),
         selectedRegionId: @js($selectedRegion?->id),
     })"
-    x-on:highlight-region.window="highlightRegion($event.detail.selector)"
+    x-on:highlight-region.window="highlightRegion($event.detail.selector, $event.detail.regionId, $event.detail.content)"
     x-on:reload-iframe.window="reloadIframe()"
 >
     {{-- Toolbar --}}
@@ -65,7 +65,32 @@
         >
             {{ $debugTelemetryEnabled ? 'Debug On' : 'Debug' }}
         </button>
+
+        <button
+            wire:click="reparsePage"
+            class="flux-btn-ghost text-xs !py-1.5"
+            wire:loading.attr="disabled"
+            wire:target="reparsePage"
+            title="Re-parse this page from source"
+        >
+            Parse & Refresh
+        </button>
     </div>
+
+    @if (session()->has('success') || session()->has('error'))
+        <div class="px-4 py-2 border-b border-zinc-800 bg-zinc-900/40">
+            @if (session()->has('success'))
+                <div class="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if (session()->has('error'))
+                <div class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300 mt-2">
+                    {{ session('error') }}
+                </div>
+            @endif
+        </div>
+    @endif
 
     {{-- Main editor area --}}
     <div class="flex flex-1 overflow-hidden">
@@ -224,18 +249,23 @@
             {{-- ── Code Mode ───────────────────── --}}
             <div class="flex-1 flex flex-col bg-zinc-950">
                 {{-- File path header --}}
-                <div class="flex items-center gap-2 px-4 py-2 border-b border-zinc-800 bg-zinc-900/30">
+                    <div class="flex items-center gap-2 px-4 py-2 border-b border-zinc-800 bg-zinc-900/30">
                     <svg class="h-4 w-4 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
-                    <span class="mono text-xs text-zinc-400">{{ $codeFilePath }}</span>
+                        <span class="mono text-xs text-zinc-400">{{ $codeFilePath }}</span>
+                        <span class="ml-auto rounded border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">{{ $codeLanguage }}</span>
                 </div>
 
-                {{-- Code editor textarea (CodeMirror in Phase 3.3) --}}
-                <div class="flex-1 overflow-hidden">
-                    <textarea
-                        wire:model.live.debounce.500ms="codeContent"
-                        class="w-full h-full bg-zinc-950 text-zinc-200 mono text-sm p-4 resize-none border-0 focus:outline-none focus:ring-0"
-                        spellcheck="false"
-                    ></textarea>
+                    {{-- Code editor textarea --}}
+                    <div class="flex-1 overflow-hidden">
+                        <textarea
+                            wire:model.blur="codeContent"
+                            class="w-full h-full bg-zinc-950 text-zinc-200 mono text-sm p-4 resize-none border-0 focus:outline-none focus:ring-0 leading-6"
+                            spellcheck="false"
+                            autocapitalize="off"
+                            autocomplete="off"
+                            autocorrect="off"
+                            wrap="off"
+                        ></textarea>
                 </div>
             </div>
         @endif
@@ -357,12 +387,48 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     iframeLoading: true,
     previewRegions,
     selectedRegionId,
+    lastRegionLookupMap: {},
     hoveredRegionElement: null,
     tooltip: null,
+    iframeBootstrapped: false,
+
+    init() {
+        const iframe = this.$refs.previewFrame;
+        if (!iframe) {
+            return;
+        }
+
+        const onLoad = () => this.onIframeLoad();
+        iframe.addEventListener('load', onLoad);
+
+        // Some previews load before Alpine binds x-on:load; recover by checking readyState.
+        queueMicrotask(() => {
+            this.bootstrapIframeIfReady();
+        });
+        setTimeout(() => this.bootstrapIframeIfReady(), 60);
+        setTimeout(() => this.bootstrapIframeIfReady(), 180);
+    },
+
+    bootstrapIframeIfReady() {
+        const iframe = this.$refs.previewFrame;
+        const doc = iframe?.contentDocument;
+        if (!doc) {
+            return;
+        }
+
+        if (doc.readyState === 'interactive' || doc.readyState === 'complete') {
+            this.onIframeLoad();
+        }
+    },
 
     onIframeLoad() {
+        if (this.iframeBootstrapped) {
+            return;
+        }
+
         this.iframeLoading = false;
         this.injectOverlayScript();
+        this.iframeBootstrapped = true;
     },
 
     injectOverlayScript() {
@@ -370,6 +436,17 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         if (!iframe || !iframe.contentDocument) return;
 
         const doc = iframe.contentDocument;
+        if (!doc.body) {
+            setTimeout(() => this.injectOverlayScript(), 30);
+            return;
+        }
+
+        if (doc.documentElement.hasAttribute('data-pk-overlay-ready')) {
+            this.decoratePreviewRegions(doc);
+            return;
+        }
+
+        doc.documentElement.setAttribute('data-pk-overlay-ready', 'true');
 
         const style = doc.createElement('style');
         style.textContent = `
@@ -425,6 +502,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         doc.body.appendChild(this.tooltip);
 
         this.decoratePreviewRegions(doc);
+        setTimeout(() => this.decoratePreviewRegions(doc), 40);
 
         doc.addEventListener('click', (e) => {
             const regionElement = this.findRegionElement(e.target);
@@ -469,26 +547,34 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }, true);
     },
 
-    highlightRegion(selector) {
+    highlightRegion(selector, regionId = null, regionContent = '') {
         const iframe = this.$refs.previewFrame;
         if (!iframe || !iframe.contentDocument) return;
 
         const doc = iframe.contentDocument;
+        const region = regionId ? this.previewRegions.find((item) => item.id === regionId) : null;
 
         // Clear previous
         doc.querySelectorAll('[data-pk-selected]').forEach(n => n.removeAttribute('data-pk-selected'));
 
-        try {
-            const el = doc.querySelector(selector);
-            if (el) {
-                this.selectRegionElement(el, false);
-            }
-        } catch (e) {
-            // Invalid selector, ignore
+        const bySelector = this.findRegionBySelector(doc, selector);
+        const byId = regionId ? doc.querySelector(`[data-pk-region-id="${regionId}"]`) : null;
+        const byText = region
+            ? this.findRegionFallbackElement(doc, region)
+            : (regionContent ? this.findRegionByTextContent(doc, regionContent) : null);
+
+        if (byText && region) {
+            this.markRegionElement(byText, region);
+        }
+        const el = bySelector || byId || byText;
+
+        if (el) {
+            this.selectRegionElement(el, false);
         }
     },
 
     decoratePreviewRegions(doc) {
+        this.lastRegionLookupMap = {};
         const seenRegionIds = new Set();
         this.previewRegions.forEach((region) => {
             if (seenRegionIds.has(region.id)) {
@@ -496,22 +582,21 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             }
 
             seenRegionIds.add(region.id);
+            let matched = false;
             try {
                 const elements = doc.querySelectorAll(region.selector);
-
                 elements.forEach((element) => {
-                    if (!(element instanceof HTMLElement)) {
-                        return;
-                    }
-
-                    element.setAttribute('data-pk-region', '');
-                    element.setAttribute('data-pk-region-id', region.id);
-                    element.setAttribute('data-pk-editable', region.editable ? 'true' : 'false');
-                    element.setAttribute('data-pk-region-type', region.type);
-                    element.setAttribute('data-pk-region-label', region.content || region.type);
+                    matched = this.markRegionElement(element, region) || matched;
                 });
             } catch (e) {
-                // Invalid selector, ignore
+                // Invalid selector, ignore; fallback below
+            }
+
+            if (!matched) {
+                const fallbackElement = this.findRegionFallbackElement(doc, region);
+                if (fallbackElement) {
+                    this.markRegionElement(fallbackElement, region);
+                }
             }
         });
 
@@ -532,6 +617,153 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
 
         return null;
+    },
+
+    findRegionBySelector(doc, selector) {
+        try {
+            return doc.querySelector(selector);
+        } catch (e) {
+            return null;
+        }
+    },
+
+    findRegionByTextContent(doc, content) {
+        const needle = this.normalizeText(content || '');
+        if (!needle) {
+            return null;
+        }
+
+        const regionNodes = this.collectCandidateElements(doc);
+        let best = null;
+        let bestScore = 0;
+
+        for (const node of regionNodes) {
+            if (!(node instanceof HTMLElement)) {
+                continue;
+            }
+
+            const text = this.normalizeText(node.innerText || node.textContent || '');
+            if (!text) {
+                continue;
+            }
+
+            let score = 0;
+            if (text === needle) {
+                score = 3;
+            } else if (text.includes(needle) || needle.includes(text)) {
+                score = 2;
+            } else if (this.textSimilarity(text, needle) >= 0.7) {
+                score = 1;
+            }
+
+            if (score > bestScore) {
+                best = node;
+                bestScore = score;
+            }
+        }
+
+        return best;
+    },
+
+    findRegionFallbackElement(doc, region) {
+        const needle = this.normalizeText(region.raw_content || region.content || '');
+        if (!needle) {
+            return null;
+        }
+
+        const candidates = this.collectCandidateElements(doc);
+        let best = null;
+        let bestScore = 0;
+
+        for (const node of candidates) {
+            if (!(node instanceof HTMLElement)) {
+                continue;
+            }
+
+            const text = this.normalizeText(node.innerText || node.textContent || '');
+            if (!text) {
+                continue;
+            }
+
+            let score = 0;
+            if (text === needle) {
+                score = 4;
+            } else if (text.includes(needle)) {
+                score = 3;
+            } else if (needle.includes(text) && text.length >= 6) {
+                score = 2;
+            } else {
+                const similarity = this.textSimilarity(text, needle);
+                if (similarity >= 0.72) {
+                    score = 1 + similarity;
+                }
+            }
+
+            if (node.hasAttribute('data-pk-region-id') && node.getAttribute('data-pk-region-id') !== region.id) {
+                score -= 1;
+            }
+
+            if (text.length > needle.length * 6) {
+                score -= 0.3;
+            }
+
+            if (score > bestScore) {
+                best = node;
+                bestScore = score;
+            }
+        }
+
+        return bestScore >= 1 ? best : null;
+    },
+
+    markRegionElement(element, region) {
+        if (!(element instanceof HTMLElement)) {
+            return false;
+        }
+
+        const existing = element.getAttribute('data-pk-region-id');
+        if (existing && existing !== region.id) {
+            return false;
+        }
+
+        element.setAttribute('data-pk-region', '');
+        element.setAttribute('data-pk-region-id', region.id);
+        element.setAttribute('data-pk-editable', region.editable ? 'true' : 'false');
+        element.setAttribute('data-pk-region-type', region.type);
+        element.setAttribute('data-pk-region-label', region.content || region.type);
+        this.lastRegionLookupMap[region.id] = element;
+
+        return true;
+    },
+
+    collectCandidateElements(doc) {
+        return Array.from(
+            doc.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,a,button,label,blockquote,figcaption,span,div,section,article')
+        );
+    },
+
+    normalizeText(value) {
+        return String(value || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
+    },
+
+    textSimilarity(a, b) {
+        const aTokens = new Set(this.normalizeText(a).split(/\s+/).filter(Boolean));
+        const bTokens = new Set(this.normalizeText(b).split(/\s+/).filter(Boolean));
+        if (!aTokens.size || !bTokens.size) {
+            return 0;
+        }
+
+        let overlap = 0;
+        for (const token of aTokens) {
+            if (bTokens.has(token)) {
+                overlap++;
+            }
+        }
+
+        return overlap / Math.max(aTokens.size, bTokens.size);
     },
 
     clearHoveredRegion() {
@@ -591,7 +823,8 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return;
         }
 
-        const element = doc.querySelector(`[data-pk-region-id="${this.selectedRegionId}"]`);
+        const element = this.lastRegionLookupMap[this.selectedRegionId]
+            || doc.querySelector(`[data-pk-region-id="${this.selectedRegionId}"]`);
 
         if (element) {
             this.selectRegionElement(element, false);
@@ -600,6 +833,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
 
     reloadIframe() {
         this.iframeLoading = true;
+        this.iframeBootstrapped = false;
         const iframe = this.$refs.previewFrame;
         if (!iframe) return;
 

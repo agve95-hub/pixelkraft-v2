@@ -33,6 +33,7 @@ class VisualEditor extends Component
     // Code editor state
     public string $codeContent = '';
     public string $codeFilePath = '';
+    public string $codeLanguage = 'plaintext';
 
     public function mount(string $siteId, string $pageId): void
     {
@@ -46,6 +47,7 @@ class VisualEditor extends Component
         $this->mode = $profile['default_mode'];
 
         $this->codeFilePath = $page->file_path;
+        $this->codeLanguage = $this->detectCodeLanguage($this->codeFilePath);
         $this->debugTelemetryEnabled = (bool) request()->boolean('debug');
         $this->resetDebugTelemetry();
 
@@ -66,7 +68,12 @@ class VisualEditor extends Component
             $this->debugTelemetry['selected_region_editable'] = app(ContentPatcher::class)->canVisuallyEditRegion($region);
 
             // Tell the iframe to highlight this element
-            $this->dispatch('highlight-region', selector: $region->selector);
+            $this->dispatch(
+                'highlight-region',
+                selector: $region->selector,
+                regionId: $region->id,
+                content: $region->current_content ?? ''
+            );
         }
     }
 
@@ -92,12 +99,36 @@ class VisualEditor extends Component
 
         if ($this->mode === 'code') {
             $this->loadCodeContent();
+            $this->codeLanguage = $this->detectCodeLanguage($this->codeFilePath);
         }
     }
 
     public function updateEditContent(string $content): void
     {
         $this->editContent = $content;
+    }
+
+    public function reparsePage(): void
+    {
+        try {
+            $site = $this->resolveSite();
+            $page = $this->resolvePage();
+
+            app(\App\Services\ParserService::class)->parseSinglePage($site, $page->file_path);
+            $this->debugTelemetry['last_action'] = 'reparse_page';
+            $this->debugTelemetry['last_error'] = null;
+
+            if ($this->selectedRegionId && ! $this->findRegion($this->selectedRegionId)) {
+                $this->selectedRegionId = null;
+                $this->editContent = '';
+            }
+
+            session()->flash('success', 'Page was re-parsed from source. Region mapping has been refreshed.');
+            $this->dispatch('reload-iframe');
+        } catch (\Throwable $e) {
+            $this->debugTelemetry['last_error'] = $e->getMessage();
+            session()->flash('error', 'Re-parse failed: ' . $e->getMessage());
+        }
     }
 
     public function openSaveModal(): void
@@ -271,7 +302,8 @@ class VisualEditor extends Component
                     'selector' => $region->selector,
                     'type' => $region->region_type,
                     'editable' => $patcher->canVisuallyEditRegion($region),
-                    'content' => Str::limit(trim(strip_tags($region->current_content ?? '')), 80),
+                    'content' => Str::limit(trim(strip_tags($region->current_content ?? '')), 120),
+                    'raw_content' => Str::limit(trim((string) ($region->current_content ?? '')), 400),
                 ];
             })
             ->values();
@@ -296,6 +328,7 @@ class VisualEditor extends Component
             'editorProfile' => $editorProfile,
             'debugTelemetryEnabled' => $this->debugTelemetryEnabled,
             'debugTelemetry' => $this->debugTelemetry,
+            'codeLanguage' => $this->codeLanguage,
         ]);
     }
 
@@ -415,5 +448,31 @@ class VisualEditor extends Component
             'page_id' => $this->pageId,
             'page_file_path' => $this->codeFilePath,
         ];
+    }
+
+    private function detectCodeLanguage(string $path): string
+    {
+        $normalized = strtolower(trim($path));
+
+        if (str_ends_with($normalized, '.blade.php')) {
+            return 'blade';
+        }
+
+        $ext = strtolower((string) pathinfo($normalized, PATHINFO_EXTENSION));
+
+        return match ($ext) {
+            'html', 'htm' => 'html',
+            'js', 'mjs', 'cjs' => 'javascript',
+            'ts', 'tsx' => 'typescript',
+            'jsx' => 'jsx',
+            'css', 'scss', 'sass', 'less' => 'css',
+            'php' => 'php',
+            'json' => 'json',
+            'md', 'mdx', 'markdown' => 'markdown',
+            'vue' => 'vue',
+            'svelte' => 'svelte',
+            'astro' => 'astro',
+            default => 'plaintext',
+        };
     }
 }
