@@ -1,272 +1,149 @@
-<div class="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
-    <form wire:submit="save" class="space-y-6">
+<div>
+    <form wire:submit="save" class="space-y-8">
         @if (! $metaEditingSupported)
-            <div class="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-4 text-sm text-amber-100">
+            <div class="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-800 dark:text-amber-100">
                 {{ $metaEditingNotice }}
             </div>
         @endif
 
-        <div class="card space-y-5">
-            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        {{-- Page SEO section --}}
+        <div class="space-y-5">
+            <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-lg font-semibold text-zinc-100">Page SEO</h2>
-                    <p class="mt-1 text-sm text-zinc-400">
-                        Start with the search result title and description. Those are the two fields that matter most.
-                    </p>
+                    <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">Page SEO</h2>
+                    <p class="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">Start with the focus keyword, title, and description — these matter most for ranking.</p>
                 </div>
-
-                <div class="flex gap-3">
-                    <button type="button" wire:click="runAnalysis" class="flux-btn-secondary text-sm">Re-analyze</button>
-                    <button type="submit" class="flux-btn-primary text-sm" @disabled(! $metaEditingSupported)>Save Page SEO</button>
-                </div>
+                <button type="button" wire:click="runAnalysis" class="inline-flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition">
+                    <flux:icon name="arrow-path" class="size-3.5" />
+                    Re-analyze
+                </button>
             </div>
 
-            <div class="grid gap-4 lg:grid-cols-2">
+            <div class="grid gap-5 sm:grid-cols-2">
                 <div>
-                    <label class="flux-label">Focus keyword</label>
-                    <input
-                        type="text"
+                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Focus keyword</label>
+                    <flux:input
                         wire:model.live.debounce.300ms="focusKeyword"
-                        class="flux-input text-sm"
-                        placeholder="e.g. ai website builder"
-                        @disabled(! $metaEditingSupported)
-                    >
-                    <p class="mt-2 text-xs text-zinc-500">Used for SEO scoring guidance (title + description targeting).</p>
+                        placeholder="e.g. brand design"
+                        :disabled="! $metaEditingSupported"
+                    />
+                    <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">Used for scoring guidance (title + description targeting).</p>
                 </div>
 
                 <div>
-                    <label class="flux-label">SEO title</label>
-                    <input
-                        type="text"
-                        wire:model.live="title"
-                        class="flux-input text-sm"
-                        placeholder="Page title that people see in search results"
-                        @disabled(! $metaEditingSupported)
-                    >
-                    <div class="mt-2 flex items-center justify-between text-xs">
-                        <p class="text-zinc-500">Aim for 30 to 60 characters.</p>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">SEO title</label>
                         <span @class([
-                            'mono',
+                            'text-xs tabular-nums font-mono',
                             'text-emerald-500' => mb_strlen($title) >= 30 && mb_strlen($title) <= 60,
-                            'text-amber-500' => mb_strlen($title) > 0 && (mb_strlen($title) < 30 || mb_strlen($title) > 60),
-                            'text-zinc-600' => mb_strlen($title) === 0,
+                            'text-red-500' => mb_strlen($title) > 0 && (mb_strlen($title) < 30 || mb_strlen($title) > 60),
+                            'text-zinc-400' => mb_strlen($title) === 0,
                         ])>{{ mb_strlen($title) }}/60</span>
                     </div>
-                </div>
-
-                <div>
-                    <label class="flux-label">Canonical URL</label>
-                    <input
-                        type="url"
-                        wire:model="canonicalUrl"
-                        class="flux-input text-sm mono"
-                        placeholder="https://example.com/page"
-                        @disabled(! $metaEditingSupported)
-                    >
-                    <p class="mt-2 text-xs text-zinc-500">Use this when one page should be treated as the main version.</p>
+                    <flux:input
+                        wire:model.live="title"
+                        placeholder="Page title shown in search results"
+                        :disabled="! $metaEditingSupported"
+                    />
+                    <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">Aim for 30–60 characters. This appears as the blue link in Google.</p>
                 </div>
             </div>
 
             <div>
-                <label class="flux-label">Meta description</label>
-                <textarea
-                    wire:model.live="metaDescription"
-                    rows="4"
-                    class="flux-input text-sm resize-y"
-                    placeholder="A clear summary that tells people what this page is about."
-                    @disabled(! $metaEditingSupported)
-                ></textarea>
-                <div class="mt-2 flex items-center justify-between text-xs">
-                    <p class="text-zinc-500">Aim for 120 to 155 characters.</p>
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Canonical URL</label>
+                <flux:input
+                    type="url"
+                    wire:model="canonicalUrl"
+                    placeholder="https://example.com/"
+                    :disabled="! $metaEditingSupported"
+                    class="font-mono"
+                />
+                <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">Use when one page should be treated as the main version (avoids duplicate content).</p>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Meta description</label>
                     <span @class([
-                        'mono',
+                        'text-xs tabular-nums font-mono',
                         'text-emerald-500' => mb_strlen($metaDescription) >= 120 && mb_strlen($metaDescription) <= 155,
-                        'text-amber-500' => mb_strlen($metaDescription) > 0 && (mb_strlen($metaDescription) < 120 || mb_strlen($metaDescription) > 155),
-                        'text-zinc-600' => mb_strlen($metaDescription) === 0,
+                        'text-red-500' => mb_strlen($metaDescription) > 0 && (mb_strlen($metaDescription) < 120 || mb_strlen($metaDescription) > 155),
+                        'text-zinc-400' => mb_strlen($metaDescription) === 0,
                     ])>{{ mb_strlen($metaDescription) }}/155</span>
                 </div>
+                <flux:textarea
+                    wire:model.live="metaDescription"
+                    rows="3"
+                    placeholder="A clear summary that tells people what this page is about."
+                    :disabled="! $metaEditingSupported"
+                />
+                <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">Aim for 120–155 characters. This is the snippet shown below the title in search results.</p>
             </div>
 
             <div>
-                <label class="flux-label">Keywords</label>
-                <input
-                    type="text"
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Keywords</label>
+                <flux:input
                     wire:model="metaKeywords"
-                    class="flux-input text-sm"
                     placeholder="keyword one, keyword two, keyword three"
-                    @disabled(! $metaEditingSupported)
-                >
-                <p class="mt-2 text-xs text-zinc-500">Optional. Keep this short and useful.</p>
+                    :disabled="! $metaEditingSupported"
+                />
+                <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">Optional. Keep short and relevant — most search engines ignore this, but some tools use it.</p>
             </div>
         </div>
 
-        <div class="card space-y-5">
+        <flux:separator />
+
+        {{-- Social sharing section --}}
+        <div class="space-y-5">
             <div>
-                <h2 class="text-lg font-semibold text-zinc-100">Social sharing</h2>
-                <p class="mt-1 text-sm text-zinc-400">
-                    These fields control how the page looks when someone shares it in chat apps or on social platforms.
-                </p>
+                <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">Social sharing</h2>
+                <p class="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">Controls how the page appears when shared on social platforms, Slack, Discord, etc.</p>
             </div>
 
-            <div class="grid gap-4 lg:grid-cols-2">
+            <div class="grid gap-5 sm:grid-cols-2">
                 <div>
-                    <label class="flux-label">Social title</label>
-                    <input
-                        type="text"
+                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Social title</label>
+                    <flux:input
                         wire:model.live="ogTitle"
-                        class="flux-input text-sm"
-                        placeholder="{{ $title ?: 'Use the SEO title' }}"
-                        @disabled(! $metaEditingSupported)
-                    >
-                    <p class="mt-2 text-xs text-zinc-500">Leave blank to fall back to the SEO title.</p>
+                        placeholder="{{ $title ?: 'Same as SEO title' }}"
+                        :disabled="! $metaEditingSupported"
+                    />
+                    <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">og:title — leave blank to use the SEO title.</p>
                 </div>
 
                 <div>
-                    <label class="flux-label">Social image URL</label>
-                    <input
-                        type="url"
+                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Social image URL</label>
+                    <flux:input
                         wire:model.live="ogImage"
-                        class="flux-input text-sm mono"
-                        placeholder="https://example.com/og-image.jpg"
-                        @disabled(! $metaEditingSupported)
-                    >
-                    <p class="mt-2 text-xs text-zinc-500">Best size: 1200 x 630.</p>
+                        placeholder="images/og-image.svg"
+                        :disabled="! $metaEditingSupported"
+                        class="font-mono"
+                    />
+                    <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">og:image — recommended 1200 &times; 630px</p>
                 </div>
             </div>
 
             <div>
-                <label class="flux-label">Social description</label>
-                <textarea
+                <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Social description</label>
+                <flux:textarea
                     wire:model.live="ogDescription"
                     rows="3"
-                    class="flux-input text-sm resize-y"
-                    placeholder="{{ $metaDescription ?: 'Use the SEO description' }}"
-                    @disabled(! $metaEditingSupported)
-                ></textarea>
-                <p class="mt-2 text-xs text-zinc-500">Leave blank to fall back to the meta description.</p>
+                    placeholder="{{ $metaDescription ?: 'Same as meta description' }}"
+                    :disabled="! $metaEditingSupported"
+                />
+                <p class="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">og:description — leave blank to use the meta description.</p>
             </div>
+        </div>
 
-            <div class="flex gap-3">
-                <button type="submit" class="flux-btn-primary text-sm" @disabled(! $metaEditingSupported)>Save Page SEO</button>
-                <button type="button" wire:click="runAnalysis" class="flux-btn-secondary text-sm">Re-analyze</button>
-            </div>
+        {{-- Bottom actions --}}
+        <div class="flex items-center justify-center gap-4 pt-2 pb-4">
+            <flux:button type="submit" variant="primary" icon="bookmark" :disabled="! $metaEditingSupported">
+                Save page SEO
+            </flux:button>
+            <button type="button" wire:click="runAnalysis" class="inline-flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition">
+                <flux:icon name="arrow-path" class="size-3.5" />
+                Re-analyze
+            </button>
         </div>
     </form>
-
-    <div class="space-y-6">
-        <div class="card space-y-4">
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <h2 class="text-lg font-semibold text-zinc-100">SEO health</h2>
-                    <p class="mt-1 text-sm text-zinc-400">Use this to see what matters next, not every possible metric at once.</p>
-                </div>
-
-                <div class="text-right">
-                    <p @class([
-                        'text-3xl font-bold mono',
-                        'text-emerald-400' => ($analysis['score'] ?? 0) >= 80,
-                        'text-amber-400' => ($analysis['score'] ?? 0) >= 50 && ($analysis['score'] ?? 0) < 80,
-                        'text-red-400' => ($analysis['score'] ?? 0) < 50,
-                    ])>{{ $analysis['score'] ?? 0 }}/100</p>
-                    <p class="text-xs text-zinc-500">Current score</p>
-                </div>
-            </div>
-
-            @if (!empty($analysis['highlights']))
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-3 py-2.5">
-                        <p class="text-[11px] uppercase tracking-wide text-zinc-500">Word Count</p>
-                        <p class="mt-1 text-lg font-semibold mono text-zinc-100">{{ number_format($analysis['highlights']['word_count'] ?? 0) }}</p>
-                    </div>
-                    <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-3 py-2.5">
-                        <p class="text-[11px] uppercase tracking-wide text-zinc-500">H1 Tags</p>
-                        <p class="mt-1 text-lg font-semibold mono text-zinc-100">{{ number_format($analysis['highlights']['h1_count'] ?? 0) }}</p>
-                    </div>
-                    <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-3 py-2.5">
-                        <p class="text-[11px] uppercase tracking-wide text-zinc-500">Images Missing Alt</p>
-                        <p class="mt-1 text-lg font-semibold mono text-zinc-100">{{ number_format($analysis['highlights']['img_missing_alt'] ?? 0) }}</p>
-                    </div>
-                    <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 px-3 py-2.5">
-                        <p class="text-[11px] uppercase tracking-wide text-zinc-500">Internal Links</p>
-                        <p class="mt-1 text-lg font-semibold mono text-zinc-100">{{ number_format($analysis['highlights']['internal_link_count'] ?? 0) }}</p>
-                    </div>
-                </div>
-            @endif
-
-            <div class="h-2 rounded-full bg-zinc-800 overflow-hidden">
-                <div
-                    @class([
-                        'h-full rounded-full transition-all duration-500',
-                        'bg-emerald-500' => ($analysis['score'] ?? 0) >= 80,
-                        'bg-amber-500' => ($analysis['score'] ?? 0) >= 50 && ($analysis['score'] ?? 0) < 80,
-                        'bg-red-500' => ($analysis['score'] ?? 0) < 50,
-                    ])
-                    style="width: {{ $analysis['score'] ?? 0 }}%"
-                ></div>
-            </div>
-
-            @if (!empty($analysis['suggestions']))
-                <div class="space-y-2">
-                    @foreach ($analysis['suggestions'] as $suggestion)
-                        <div @class([
-                            'rounded-xl border px-3 py-3 text-sm',
-                            'border-red-500/20 bg-red-500/5 text-red-300' => $suggestion['severity'] === 'error',
-                            'border-amber-500/20 bg-amber-500/5 text-amber-200' => $suggestion['severity'] === 'warning',
-                            'border-blue-500/20 bg-blue-500/5 text-blue-200' => $suggestion['severity'] === 'info',
-                        ])>
-                            {{ $suggestion['message'] }}
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-3 text-sm text-emerald-300">
-                    All core SEO checks passed.
-                </div>
-            @endif
-        </div>
-
-        <div class="card space-y-4">
-            <div>
-                <h2 class="text-lg font-semibold text-zinc-100">Search preview</h2>
-                <p class="mt-1 text-sm text-zinc-400">This is roughly how your page can appear in Google.</p>
-            </div>
-
-            <div class="rounded-xl bg-white p-4">
-                <p class="truncate text-sm leading-snug text-[#1a0dab]" style="font-family: Arial, sans-serif;">
-                    {{ $title ?: 'Page title' }}
-                </p>
-                <p class="mt-1 truncate text-xs text-[#006621]" style="font-family: Arial, sans-serif;">
-                    {{ $page->site?->domain ?? 'example.com' }}{{ $page->url_path ?? '/' }}
-                </p>
-                <p class="mt-2 text-xs leading-5 text-[#545454]" style="font-family: Arial, sans-serif;">
-                    {{ $metaDescription ?: 'Add a meta description to control how this page appears in search results.' }}
-                </p>
-            </div>
-        </div>
-
-        <div class="card space-y-4">
-            <div>
-                <h2 class="text-lg font-semibold text-zinc-100">Social preview</h2>
-                <p class="mt-1 text-sm text-zinc-400">This is the card people usually see when the page gets shared.</p>
-            </div>
-
-            <div class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
-                @if ($ogImage)
-                    <div class="h-48 overflow-hidden bg-zinc-900">
-                        <img src="{{ $ogImage }}" alt="" class="h-full w-full object-cover">
-                    </div>
-                @else
-                    <div class="flex h-48 items-center justify-center bg-zinc-900 text-sm text-zinc-500">
-                        No social image set yet
-                    </div>
-                @endif
-
-                <div class="space-y-1 p-4">
-                    <p class="text-[11px] uppercase tracking-wider text-zinc-500">{{ $page->site?->domain ?? 'example.com' }}</p>
-                    <p class="text-base font-medium text-zinc-100">{{ $ogTitle ?: $title ?: 'Page title' }}</p>
-                    <p class="text-sm leading-6 text-zinc-400">{{ $ogDescription ?: $metaDescription ?: 'Add a social description for better sharing previews.' }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>

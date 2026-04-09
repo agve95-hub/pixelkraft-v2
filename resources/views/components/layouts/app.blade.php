@@ -13,6 +13,10 @@
 </head>
 <body class="min-h-screen bg-white dark:bg-zinc-800 antialiased">
 
+    @php
+        $navSites = \App\Models\Site::select('id', 'name', 'slug', 'deploy_status')->orderBy('name')->get();
+    @endphp
+
     <flux:sidebar sticky collapsible="mobile" class="bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-700">
         <flux:sidebar.header>
             <flux:sidebar.brand href="{{ route('dashboard') }}" name="pixelkraft" />
@@ -20,27 +24,47 @@
         </flux:sidebar.header>
 
         <flux:sidebar.nav>
-            <flux:sidebar.group expandable heading="Workspace" class="grid">
-                <flux:sidebar.item icon="home" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')">Dashboard</flux:sidebar.item>
-                <flux:sidebar.item icon="globe-alt" href="{{ route('sites.index') }}" :current="request()->routeIs('sites.*')">Sites</flux:sidebar.item>
-                <flux:sidebar.item icon="chart-bar" href="{{ route('analytics') }}" :current="request()->routeIs('analytics')">Analytics</flux:sidebar.item>
+            <flux:sidebar.item icon="home" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')">Dashboard</flux:sidebar.item>
+        </flux:sidebar.nav>
+
+        <flux:sidebar.nav>
+            <flux:sidebar.group heading="Projects" class="grid">
+                <flux:sidebar.item icon="globe-alt" href="{{ route('sites.index') }}" :current="request()->routeIs('sites.index')">All sites</flux:sidebar.item>
+                @foreach ($navSites as $navSite)
+                    <flux:sidebar.item
+                        href="{{ route('sites.show', $navSite) }}"
+                        :current="request()->routeIs('sites.show') && request()->route('site')?->id === $navSite->id"
+                    >
+                        <x-slot:icon>
+                            <span @class([
+                                'size-2 rounded-full shrink-0',
+                                'bg-lime-500' => $navSite->deploy_status === 'live',
+                                'bg-amber-400' => in_array($navSite->deploy_status, ['deploying', 'queued']),
+                                'bg-red-500' => $navSite->deploy_status === 'failed',
+                                'bg-zinc-400' => !in_array($navSite->deploy_status, ['live', 'deploying', 'queued', 'failed']),
+                            ])></span>
+                        </x-slot:icon>
+                        {{ $navSite->name }}
+                    </flux:sidebar.item>
+                @endforeach
             </flux:sidebar.group>
-            <flux:sidebar.group expandable heading="Marketing" class="grid">
-                <flux:sidebar.item icon="inbox" href="{{ route('inbox') }}" :current="request()->routeIs('inbox')">Form Inbox</flux:sidebar.item>
-                <flux:sidebar.item icon="users" href="{{ route('subscribers') }}" :current="request()->routeIs('subscribers')">Subscribers</flux:sidebar.item>
-                <flux:sidebar.item icon="envelope" href="{{ route('newsletters') }}" :current="request()->routeIs('newsletters')">Newsletters</flux:sidebar.item>
-            </flux:sidebar.group>
+
+            <div class="px-3 pt-1">
+                <flux:button href="{{ route('sites.create') }}" variant="subtle" size="sm" icon="plus" class="w-full justify-start">New project</flux:button>
+            </div>
         </flux:sidebar.nav>
 
         <flux:sidebar.spacer />
 
         <flux:sidebar.nav>
-            <flux:sidebar.item icon="server-stack" href="{{ route('system.diagnostics') }}" :current="request()->routeIs('system.diagnostics')">System</flux:sidebar.item>
             <flux:sidebar.item icon="cog-6-tooth" href="{{ route('settings') }}" :current="request()->routeIs('settings')">Settings</flux:sidebar.item>
         </flux:sidebar.nav>
 
         <flux:dropdown position="top" align="start" class="max-lg:hidden">
-            <flux:sidebar.profile name="{{ auth()->user()->name }}" />
+            <flux:sidebar.profile
+                name="{{ auth()->user()->name }}"
+                avatar="{{ 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=6d28d9&color=fff&size=64&font-size=0.4&bold=true' }}"
+            />
             <flux:menu>
                 <flux:menu.item href="{{ route('system.diagnostics') }}" icon="server-stack">System</flux:menu.item>
                 <flux:menu.separator />
@@ -54,11 +78,13 @@
 
     <flux:header class="lg:hidden">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-        <flux:button href="{{ route('sites.create') }}" size="sm" variant="ghost" icon="plus" class="max-sm:hidden">New Site</flux:button>
-        @livewire('layout.notification-bell')
         <flux:spacer />
+        @livewire('layout.notification-bell')
         <flux:dropdown position="top" align="start">
-            <flux:profile name="{{ auth()->user()->name }}" />
+            <flux:profile
+                name="{{ auth()->user()->name }}"
+                avatar="{{ 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=6d28d9&color=fff&size=64&font-size=0.4&bold=true' }}"
+            />
             <flux:menu>
                 <flux:menu.item href="{{ route('system.diagnostics') }}" icon="server-stack">System</flux:menu.item>
                 <flux:menu.separator />
