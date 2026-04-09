@@ -29,7 +29,10 @@ class BlogEditRouteTest extends TestCase
             'body' => 'Body',
         ]);
 
-        $response = $this->actingAs($user)->get(route('blog.edit', [$site, $post]));
+        $response = $this->actingAs($user)->get(route('blog.edit', [
+            'site' => $site,
+            'blogPost' => $post,
+        ]));
 
         $response->assertOk();
     }
@@ -57,7 +60,10 @@ class BlogEditRouteTest extends TestCase
             'body' => 'Body',
         ]);
 
-        $response = $this->actingAs($user)->get(route('blog.edit', [$site, $foreignPost]));
+        $response = $this->actingAs($user)->get(route('blog.edit', [
+            'site' => $site,
+            'blogPost' => $foreignPost,
+        ]));
 
         $response->assertNotFound();
     }
