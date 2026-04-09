@@ -3,7 +3,7 @@
         <p class="text-xs font-semibold uppercase tracking-wider text-zinc-300">Layers</p>
         <p class="mt-1 text-[11px] text-zinc-500">
             @if ($editorProfile['visual_editing_supported'])
-                {{ $visualEditableCount }} editable layer{{ $visualEditableCount === 1 ? '' : 's' }}. Click a layer to focus it in preview.
+                {{ $visualEditableCount }} editable layer{{ $visualEditableCount === 1 ? '' : 's' }}. Click a row to focus it in canvas.
             @else
                 Code-first page. Layers help you locate elements before editing source.
             @endif
@@ -17,7 +17,7 @@
                     type="button"
                     wire:click="$set('filter', '{{ $tab }}')"
                     @class([
-                        'rounded px-2 py-1 text-[11px] font-medium transition',
+                        'rounded-md px-2 py-1 text-[11px] font-medium transition',
                         'bg-violet-500/20 text-violet-200 border border-violet-500/30' => $filter === $tab,
                         'border border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200' => $filter !== $tab,
                     ])
@@ -29,9 +29,9 @@
         </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto bg-zinc-950/40">
         <div class="border-b border-zinc-800/80 bg-zinc-950/60 px-3 py-2 text-[10px] text-zinc-500">
-            Nested tree follows canvas structure top-to-bottom.
+            Hierarchy mirrors what you see in canvas.
         </div>
         @forelse ($regions as $region)
             @php
@@ -42,47 +42,60 @@
                 $tagName = preg_replace('/[^a-z0-9_-].*/', '', (string) $normalizedSegment) ?: 'element';
                 $tagToken = '<' . $tagName . '>';
                 $level = max(0, count($segments ?? []) - 1);
+                $depth = min($level, 8);
+                $label = Str::limit(strip_tags($region->current_content ?? ''), 46) ?: '(empty)';
+                $isVisual = (bool) ($visualEditability[$region->id] ?? false);
             @endphp
             <button
                 type="button"
                 wire:key="layer-{{ $region->id }}"
                 wire:click="selectRegion('{{ $region->id }}')"
+                data-layer-row
+                data-layer-region-id="{{ $region->id }}"
+                data-layer-selector="{{ $region->selector }}"
                 @class([
-                    'group w-full border-b border-zinc-800 px-3 py-2.5 text-left transition',
-                    'bg-violet-500/10 ring-1 ring-inset ring-violet-500/40' => $selectedRegionId === $region->id,
-                    'hover:bg-zinc-800/50' => $selectedRegionId !== $region->id,
+                    'group relative block w-full border-b border-zinc-800/70 py-2 pr-2 text-left transition',
+                    'bg-violet-500/15 ring-1 ring-inset ring-violet-500/55' => $selectedRegionId === $region->id,
+                    'hover:bg-zinc-800/55' => $selectedRegionId !== $region->id,
                 ])
-                style="padding-left: {{ 12 + min($level, 5) * 10 }}px;"
+                style="padding-left: {{ 12 + ($depth * 14) }}px;"
+                title="{{ $region->selector }}"
             >
-                <div
-                    class="absolute left-0 top-0 bottom-0 w-px bg-fuchsia-500/35"
-                    style="left: {{ 8 + min($level, 6) * 14 }}px;"
-                    aria-hidden="true"
-                ></div>
-                <div class="flex items-center justify-between gap-2">
-                    <p class="truncate text-xs font-medium text-zinc-200">
-                        {{ Str::limit(strip_tags($region->current_content ?? ''), 42) ?: '(empty)' }}
+                @if ($depth > 0)
+                    @for ($i = 1; $i <= $depth; $i++)
+                        <span
+                            class="pointer-events-none absolute top-0 bottom-0 w-px bg-zinc-700/70"
+                            style="left: {{ 10 + (($i - 1) * 14) }}px;"
+                            aria-hidden="true"
+                        ></span>
+                    @endfor
+                    <span
+                        class="pointer-events-none absolute h-px bg-zinc-600/80"
+                        style="left: {{ 10 + (($depth - 1) * 14) }}px; width: 10px; top: 19px;"
+                        aria-hidden="true"
+                    ></span>
+                @endif
+
+                <div class="flex items-center gap-2">
+                    <span
+                        class="shrink-0 rounded border border-fuchsia-500/45 bg-fuchsia-500/10 px-1.5 py-0.5 font-mono text-[10px] text-fuchsia-200"
+                    >{{ $tagToken }}</span>
+                    <p class="min-w-0 flex-1 truncate text-[12px] font-medium leading-5 text-zinc-100">
+                        {{ $label }}
                     </p>
                     <span
                         @class([
-                            'rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-                            'border-violet-500/40 bg-violet-500/10 text-violet-200' => ($visualEditability[$region->id] ?? false),
-                            'border-amber-500/40 bg-amber-500/10 text-amber-200' => ! ($visualEditability[$region->id] ?? false),
+                            'shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+                            'border-violet-500/40 bg-violet-500/10 text-violet-200' => $isVisual,
+                            'border-amber-500/40 bg-amber-500/10 text-amber-200' => ! $isVisual,
                         ])
                     >
-                        {{ ($visualEditability[$region->id] ?? false) ? 'visual' : 'code' }}
+                        {{ $isVisual ? 'visual' : 'code' }}
                     </span>
                 </div>
 
-                <div class="mt-1 flex items-center gap-2">
-                    <span class="rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1.5 py-0.5 font-mono text-[10px] text-fuchsia-200">{{ $tagToken }}</span>
+                <div class="mt-1 pl-0.5">
                     <p class="truncate font-mono text-[10px] text-zinc-500">{{ $region->selector }}</p>
-                </div>
-
-                <div class="mt-2 flex items-center gap-1.5 text-[10px] text-zinc-400">
-                    <span class="rounded border border-zinc-700 px-1.5 py-0.5">{{ $region->region_type }}</span>
-                    <span class="rounded border border-zinc-700 px-1.5 py-0.5">{{ $region->is_static ? 'static' : 'dynamic' }}</span>
-                    <span class="rounded border border-zinc-700 px-1.5 py-0.5">{{ $region->detection_method }}</span>
                 </div>
             </button>
         @empty

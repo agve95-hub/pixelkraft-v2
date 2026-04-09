@@ -6,6 +6,9 @@
     })"
     x-on:highlight-region.window="highlightRegion($event.detail.selector, $event.detail.regionId, $event.detail.content)"
     x-on:reload-iframe.window="reloadIframe()"
+    x-on:mouseover.capture="onLayerRowHover($event)"
+    x-on:mouseout.capture="onLayerRowOut($event)"
+    x-on:click.capture="onLayerRowClick($event)"
 >
     <div class="flex flex-wrap items-center gap-2 border-b border-zinc-800 bg-zinc-900/60 px-4 py-2">
         <a href="{{ route('sites.show', $site) }}" class="flux-btn-ghost text-xs !px-2 !py-1.5" title="Back to site">
@@ -267,6 +270,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     iframeBootstrapped: false,
     showLayers: true,
     bordersVisible: true,
+    layerSyncQueued: false,
 
     init() {
         const iframe = this.$refs.previewFrame;
@@ -279,6 +283,111 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         queueMicrotask(() => this.bootstrapIframeIfReady());
         setTimeout(() => this.bootstrapIframeIfReady(), 80);
         setTimeout(() => this.bootstrapIframeIfReady(), 220);
+    },
+
+    onLayerRowHover(event) {
+        const row = event.target?.closest?.('[data-layer-row]');
+        if (!row) {
+            return;
+        }
+
+        const regionId = row.getAttribute('data-layer-region-id');
+        if (!regionId) {
+            return;
+        }
+
+        const element = this.lastRegionLookupMap[regionId]
+            || this.$refs.previewFrame?.contentDocument?.querySelector(`[data-pk-region-id="${regionId}"]`);
+        if (!this.isElementNode(element)) {
+            return;
+        }
+
+        if (this.hoveredRegionElement && this.hoveredRegionElement !== element) {
+            this.hoveredRegionElement.removeAttribute('data-pk-hover');
+        }
+
+        this.hoveredRegionElement = element;
+        if (!element.hasAttribute('data-pk-selected') && element !== this.inlineEditingElement) {
+            element.setAttribute('data-pk-hover', '');
+        }
+        this.updateOverlayPosition(this.hoverOverlay, element);
+        this.showTooltip(element);
+    },
+
+    onLayerRowOut(event) {
+        const row = event.target?.closest?.('[data-layer-row]');
+        if (!row) {
+            return;
+        }
+
+        const related = event.relatedTarget;
+        const relatedRow = related?.closest?.('[data-layer-row]');
+        if (relatedRow === row) {
+            return;
+        }
+
+        this.clearHoveredRegion();
+    },
+
+    onLayerRowClick(event) {
+        const row = event.target?.closest?.('[data-layer-row]');
+        if (!row) {
+            return;
+        }
+
+        const regionId = row.getAttribute('data-layer-region-id');
+        if (!regionId) {
+            return;
+        }
+
+        this.queueLayerSync(regionId, false);
+    },
+
+    queueLayerSync(regionId = null, forceScroll = false) {
+        if (regionId) {
+            this.selectedRegionId = regionId;
+        }
+
+        if (this.layerSyncQueued) {
+            return;
+        }
+
+        this.layerSyncQueued = true;
+        requestAnimationFrame(() => {
+            this.layerSyncQueued = false;
+            this.syncLayerFocus(forceScroll);
+        });
+    },
+
+    syncLayerFocus(forceScroll = false) {
+        const allRows = Array.from(this.$el.querySelectorAll('[data-layer-row]'));
+        if (allRows.length === 0) {
+            return;
+        }
+
+        for (const row of allRows) {
+            const isActive = row.getAttribute('data-layer-region-id') === this.selectedRegionId;
+            row.classList.toggle('ring-1', isActive);
+            row.classList.toggle('ring-violet-500/55', isActive);
+            row.classList.toggle('bg-violet-500/15', isActive);
+        }
+
+        if (forceScroll) {
+            this.scrollLayerRowIntoView(this.selectedRegionId);
+        }
+    },
+
+    scrollLayerRowIntoView(regionId) {
+        if (!regionId) {
+            return;
+        }
+
+        const row = this.$el.querySelector(`[data-layer-row][data-layer-region-id="${regionId}"]`);
+        if (!row) {
+            return;
+        }
+
+        row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     },
 
     bootstrapIframeIfReady() {
@@ -385,12 +494,6 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     outline-offset: 2px !important;
                     background: rgba(236, 72, 153, 0.12) !important;
                     box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.4), 0 0 0 2px rgba(236, 72, 153, 0.75) !important;
-                }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"]::before,
-                html[data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"]::before {
-                    content: "selected";
-                    color: #fff1f2;
-                    background: rgba(190, 24, 93, 0.98);
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"]::before,
                 html[data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"]::before {
@@ -551,8 +654,21 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         this.refreshOverlayPositions();
     },
 
+    isElementNode(element) {
+        if (!element || element.nodeType !== 1) {
+            return false;
+        }
+
+        const view = element.ownerDocument?.defaultView;
+        if (view?.HTMLElement) {
+            return element instanceof view.HTMLElement;
+        }
+
+        return typeof element.getAttribute === 'function';
+    },
+
     applyRegionOutlineStyles(element) {
-        if (!(element instanceof HTMLElement)) {
+        if (!this.isElementNode(element)) {
             return;
         }
 
@@ -583,7 +699,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     },
 
     isInlineCapable(element) {
-        if (!(element instanceof HTMLElement)) {
+        if (!this.isElementNode(element)) {
             return false;
         }
 
@@ -597,7 +713,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     },
 
     startInlineEditing(element, firstChar = null) {
-        if (!(element instanceof HTMLElement) || !this.isRegionEditable(element) || !this.isInlineCapable(element)) {
+        if (!this.isElementNode(element) || !this.isRegionEditable(element) || !this.isInlineCapable(element)) {
             return;
         }
 
@@ -683,7 +799,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     },
 
     syncRegionContent(element) {
-        if (!(element instanceof HTMLElement)) {
+        if (!this.isElementNode(element)) {
             return;
         }
 
@@ -799,7 +915,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         let best = null;
         let bestScore = 0;
         for (const node of candidates) {
-            if (!(node instanceof HTMLElement)) {
+            if (!this.isElementNode(node)) {
                 continue;
             }
 
@@ -837,7 +953,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         let bestScore = 0;
 
         for (const node of candidates) {
-            if (!(node instanceof HTMLElement)) {
+            if (!this.isElementNode(node)) {
                 continue;
             }
 
@@ -878,7 +994,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     },
 
     markRegionElement(element, region) {
-        if (!(element instanceof HTMLElement)) {
+        if (!this.isElementNode(element)) {
             return false;
         }
 
@@ -941,6 +1057,21 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
     },
 
+    focusLayerRow(regionId, forceScroll = false) {
+        if (!regionId) {
+            return;
+        }
+
+        const row = this.$el.querySelector(`[data-layer-row][data-layer-region-id="${regionId}"]`);
+        if (!row) {
+            return;
+        }
+
+        if (forceScroll) {
+            row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    },
+
     showTooltip(element) {
         if (!this.tooltip) {
             return;
@@ -958,7 +1089,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
 
     selectRegionElement(element, notifyLivewire = true) {
         const doc = this.$refs.previewFrame?.contentDocument;
-        if (!doc || !(element instanceof HTMLElement)) {
+        if (!doc || !this.isElementNode(element)) {
             return;
         }
 
@@ -968,6 +1099,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         this.selectedRegionId = element.getAttribute('data-pk-region-id');
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         this.updateOverlayPosition(this.selectedOverlay, element);
+        this.queueLayerSync(this.selectedRegionId, false);
 
         if (notifyLivewire && this.selectedRegionId) {
             this.$wire.onRegionSelected(this.selectedRegionId);
@@ -1027,7 +1159,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     },
 
     updateOverlayPosition(overlay, element) {
-        if (!overlay || !(element instanceof HTMLElement) || !this.bordersVisible) {
+        if (!overlay || !this.isElementNode(element) || !this.bordersVisible) {
             if (overlay) {
                 overlay.style.display = 'none';
             }
