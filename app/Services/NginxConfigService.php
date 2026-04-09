@@ -32,6 +32,7 @@ class NginxConfigService
 
         // Create symlink in sites-enabled
         $enabledPath = $this->getEnabledPath($site);
+        File::ensureDirectoryExists(dirname($enabledPath), 0755, true);
 
         if (! File::exists($enabledPath)) {
             symlink($configPath, $enabledPath);
@@ -106,9 +107,11 @@ class NginxConfigService
         $config = $this->renderStagingTemplate($site, $stagingDomain, $stagingPath);
 
         $configPath = config('pixelkraft.nginx_sites_path') . "/staging-{$site->slug}.conf";
+        File::ensureDirectoryExists(dirname($configPath), 0755, true);
         File::put($configPath, $config);
 
         $enabledDir = str_replace('sites-available', 'sites-enabled', config('pixelkraft.nginx_sites_path'));
+        File::ensureDirectoryExists($enabledDir, 0755, true);
         $enabledPath = "{$enabledDir}/staging-{$site->slug}.conf";
 
         if (! File::exists($enabledPath)) {
