@@ -74,7 +74,17 @@ class RegionPanel extends Component
             default       => $query,
         };
 
-        $regions = $query->orderBy('confidence_score', 'desc')->get();
+        $regions = $query->get()
+            ->sortBy(function (EditableRegion $region) {
+                return $this->regionSortKey($region);
+            })
+            ->values();
+
+        $regionTags = $regions
+            ->mapWithKeys(fn (EditableRegion $region) => [
+                $region->id => $this->extractHtmlTagFromSelector($region->selector),
+            ])
+            ->all();
         $visualEditability = $regions
             ->mapWithKeys(fn (EditableRegion $region) => [
                 $region->id => $editorProfile['visual_editing_supported'] && $patcher->canVisuallyEditRegion($region),
@@ -99,6 +109,7 @@ class RegionPanel extends Component
             'counts'        => $counts,
             'visualEditability' => $visualEditability,
             'visualEditableCount' => $visualEditableCount,
+            'regionTags' => $regionTags,
             'editorProfile' => $editorProfile,
         ]);
     }
@@ -109,5 +120,43 @@ class RegionPanel extends Component
             ->whereKey($regionId)
             ->where('page_id', $this->pageId)
             ->firstOrFail();
+    }
+
+    private function regionSortKey(EditableRegion $region): int
+    {
+        $lineStart = data_get($region->source_location, 'line_start');
+        if (is_numeric($lineStart) && (int) $lineStart > 0) {
+            return (int) $lineStart;
+        }
+
+        $selector = (string) $region->selector;
+        preg_match_all('/:nth-of-type\((\d+)\)/', $selector, $matches);
+        $indexes = array_map(static fn ($value) => (int) $value, $matches[1] ?? []);
+
+        if (! empty($indexes)) {
+            $key = 0;
+            foreach (array_slice($indexes, 0, 5) as $index) {
+                $key = ($key * 100) + $index;
+            }
+
+            // Keep selector-derived order after source line order.
+            return 100000 + $key;
+        }
+
+        return 900000 + ($region->created_at?->getTimestamp() ?? 0);
+    }
+
+    private function extractHtmlTagFromSelector(string $selector): string
+    {
+        $segment = trim((string) str($selector)->explode('>')->last());
+        if ($segment === '') {
+            return 'div';
+        }
+
+        if (preg_match('/^([a-zA-Z][a-zA-Z0-9-]*)/', $segment, $matches) === 1) {
+            return strtolower($matches[1]);
+        }
+
+        return 'div';
     }
 }

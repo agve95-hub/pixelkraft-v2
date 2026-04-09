@@ -344,10 +344,10 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     border-radius: 4px !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-editable="true"] {
-                    outline: 2px dashed rgba(236, 72, 153, 0.9) !important;
-                    outline-offset: 2px !important;
-                    box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.45) !important;
-                    background: rgba(236, 72, 153, 0.06) !important;
+                    outline: 1px solid rgba(244, 114, 182, 0.42) !important;
+                    outline-offset: 1px !important;
+                    box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.2) !important;
+                    background: rgba(244, 114, 182, 0.03) !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-editable="false"] {
                     outline: 2px dashed rgba(245, 158, 11, 0.85) !important;
@@ -356,7 +356,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     background: rgba(245, 158, 11, 0.05) !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region]::before {
-                    content: attr(data-pk-region-role);
+                    content: attr(data-pk-region-tag);
                     position: absolute;
                     top: 0;
                     left: 0;
@@ -386,10 +386,10 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     cursor: not-allowed !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="true"] {
-                    outline: 3px solid rgba(244, 114, 182, 1) !important;
+                    outline: 2px solid rgba(244, 114, 182, 0.98) !important;
                     outline-offset: 2px !important;
-                    background: rgba(244, 114, 182, 0.18) !important;
-                    box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.55) !important;
+                    background: rgba(244, 114, 182, 0.12) !important;
+                    box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.4), 0 0 0 1px rgba(244, 114, 182, 0.45) !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="false"] {
                     outline: 3px solid rgba(245, 158, 11, 1) !important;
@@ -402,6 +402,12 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     outline-offset: 2px !important;
                     background: rgba(236, 72, 153, 0.14) !important;
                     box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.8) !important;
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"]::before,
+                html[data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"]::before {
+                    content: "selected";
+                    color: #fff1f2;
+                    background: rgba(190, 24, 93, 0.98);
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="false"] {
                     outline: 2px solid rgba(245, 158, 11, 0.95) !important;
@@ -898,6 +904,8 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         element.setAttribute('data-pk-region-type', region.type);
         element.setAttribute('data-pk-region-label', region.content || region.type);
         element.setAttribute('data-pk-region-role', region.editable ? 'editable' : 'code');
+        const tagLabel = `<${String(element.tagName || '').toLowerCase()}>`;
+        element.setAttribute('data-pk-region-tag', tagLabel);
         this.applyRegionOutlineStyles(element);
         this.lastRegionLookupMap[region.id] = element;
 

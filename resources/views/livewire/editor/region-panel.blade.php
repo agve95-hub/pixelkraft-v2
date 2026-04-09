@@ -31,6 +31,15 @@
 
     <div class="flex-1 overflow-y-auto">
         @forelse ($regions as $region)
+            @php
+                $path = trim((string) ($region->selector ?? ''));
+                $segments = $path !== '' ? preg_split('/\s*>\s*/', $path) : [];
+                $lastSegment = $segments && count($segments) ? $segments[count($segments) - 1] : '';
+                $normalizedSegment = preg_replace('/\s+/', '', strtolower((string) $lastSegment));
+                $tagName = preg_replace('/[^a-z0-9_-].*/', '', (string) $normalizedSegment) ?: 'element';
+                $tagToken = '<' . $tagName . '>';
+                $level = max(0, count($segments ?? []) - 1);
+            @endphp
             <button
                 type="button"
                 wire:key="layer-{{ $region->id }}"
@@ -40,6 +49,7 @@
                     'bg-violet-500/10 ring-1 ring-inset ring-violet-500/40' => $selectedRegionId === $region->id,
                     'hover:bg-zinc-800/50' => $selectedRegionId !== $region->id,
                 ])
+                style="padding-left: {{ 12 + min($level, 5) * 10 }}px;"
             >
                 <div class="flex items-center justify-between gap-2">
                     <p class="truncate text-xs font-medium text-zinc-200">
@@ -56,7 +66,10 @@
                     </span>
                 </div>
 
-                <p class="mt-1 truncate font-mono text-[10px] text-zinc-500">{{ $region->selector }}</p>
+                <div class="mt-1 flex items-center gap-2">
+                    <span class="rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1.5 py-0.5 font-mono text-[10px] text-fuchsia-200">{{ $tagToken }}</span>
+                    <p class="truncate font-mono text-[10px] text-zinc-500">{{ $region->selector }}</p>
+                </div>
 
                 <div class="mt-2 flex items-center gap-1.5 text-[10px] text-zinc-400">
                     <span class="rounded border border-zinc-700 px-1.5 py-0.5">{{ $region->region_type }}</span>
