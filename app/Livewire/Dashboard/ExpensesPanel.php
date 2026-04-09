@@ -3,11 +3,12 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\Site;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class ExpensesPanel extends Component
 {
-    public function render()
+    public function render(): View
     {
         $sites = Site::query()->withCount('pages')->orderBy('name')->get();
 

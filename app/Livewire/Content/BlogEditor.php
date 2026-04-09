@@ -5,8 +5,8 @@ namespace App\Livewire\Content;
 use App\Models\BlogPost;
 use App\Models\ContentTemplate;
 use App\Models\Site;
-use App\Services\ContentPatcher;
 use App\Services\GitSyncService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -140,7 +140,7 @@ class BlogEditor extends Component
         session()->flash('success', $this->postId ? 'Post updated.' : 'Post created.');
     }
 
-    public function render()
+    public function render(): View
     {
         $templates = ContentTemplate::query()
             ->where(fn ($q) => $q->where('site_id', $this->siteId)->orWhereNull('site_id'))

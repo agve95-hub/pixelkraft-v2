@@ -3,11 +3,12 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\Page;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class SeoIssuesPanel extends Component
 {
-    public function render()
+    public function render(): View
     {
         $issues = collect();
 

@@ -2,13 +2,13 @@
 
 namespace App\Livewire\Dashboard;
 
-use App\Models\Notification;
 use App\Models\Site;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class UpcomingPanel extends Component
 {
-    public function render()
+    public function render(): View
     {
         $upcoming = collect();
 

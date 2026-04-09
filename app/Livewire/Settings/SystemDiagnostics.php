@@ -4,6 +4,7 @@ namespace App\Livewire\Settings;
 
 use App\Models\Site;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Redis;
@@ -12,7 +13,7 @@ use Livewire\Component;
 
 class SystemDiagnostics extends Component
 {
-    public function render()
+    public function render(): View
     {
         $snapshot = $this->buildSnapshot();
 

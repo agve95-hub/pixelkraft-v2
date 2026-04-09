@@ -5,6 +5,7 @@ namespace App\Livewire\Email;
 use App\Models\NewsletterCampaign;
 use App\Models\NewsletterSubscriber;
 use App\Models\Site;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class CampaignEditor extends Component
@@ -93,7 +94,7 @@ class CampaignEditor extends Component
         $this->resetForm();
     }
 
-    public function render()
+    public function render(): View
     {
         $sites = Site::where('is_active', true)->orderBy('name')->get();
 

@@ -4,8 +4,7 @@ namespace App\Livewire\Content;
 
 use App\Models\ProductListing;
 use App\Models\Site;
-use App\Services\GitSyncService;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class ProductEditor extends Component
@@ -109,7 +108,7 @@ class ProductEditor extends Component
         session()->flash('success', $this->productId ? 'Product updated.' : 'Product created.');
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.content.product-editor');
     }

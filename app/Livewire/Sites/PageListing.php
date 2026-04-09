@@ -3,6 +3,7 @@
 namespace App\Livewire\Sites;
 
 use App\Models\Page;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class PageListing extends Component
@@ -22,7 +23,7 @@ class PageListing extends Component
         }
     }
 
-    public function render()
+    public function render(): View
     {
         $pages = Page::query()
             ->where('site_id', $this->siteId)

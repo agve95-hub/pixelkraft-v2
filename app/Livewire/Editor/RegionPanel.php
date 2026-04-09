@@ -7,6 +7,7 @@ use App\Models\Page;
 use App\Services\ContentPatcher;
 use App\Services\RegionDetector;
 use App\Services\SiteSupportService;
+use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -58,7 +59,7 @@ class RegionPanel extends Component
         $this->selectedRegionId = $regionId;
     }
 
-    public function render()
+    public function render(): View
     {
         $page = Page::with('site')->findOrFail($this->pageId);
         $patcher = app(ContentPatcher::class);

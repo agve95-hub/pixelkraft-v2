@@ -8,6 +8,7 @@ use App\Models\Page;
 use App\Models\Site;
 use App\Models\UptimeCheck;
 use App\Services\AnalyticsAggregator;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
@@ -16,7 +17,7 @@ class UnifiedDashboard extends Component
     public ?string $siteId = null;
     public int $days = 30;
 
-    public function render()
+    public function render(): View
     {
         $aggregator = app(AnalyticsAggregator::class);
         $activeSites = Site::query()
