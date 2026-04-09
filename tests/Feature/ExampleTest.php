@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -24,7 +25,7 @@ class ExampleTest extends TestCase
      */
     public function test_sites_create_renders_for_authenticated_users(): void
     {
-        $user = new \App\Models\User();
+        $user = new User;
         $user->id = 'test-user';
 
         $response = $this->actingAs($user)->get('/dashboard/sites/create');

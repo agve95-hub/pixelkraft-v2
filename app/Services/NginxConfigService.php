@@ -73,6 +73,7 @@ class NginxConfigService
 
         if (! $result->successful()) {
             Log::error('Nginx config test failed', ['output' => $result->output()]);
+
             return false;
         }
 
@@ -91,7 +92,7 @@ class NginxConfigService
         $result = Process::run('sudo systemctl reload nginx');
 
         if (! $result->successful()) {
-            throw new \RuntimeException('Failed to reload Nginx: ' . $result->errorOutput());
+            throw new \RuntimeException('Failed to reload Nginx: '.$result->errorOutput());
         }
 
         Log::info('Nginx reloaded successfully.');
@@ -106,7 +107,7 @@ class NginxConfigService
 
         $config = $this->renderStagingTemplate($site, $stagingDomain, $stagingPath);
 
-        $configPath = config('pixelkraft.nginx_sites_path') . "/staging-{$site->slug}.conf";
+        $configPath = config('pixelkraft.nginx_sites_path')."/staging-{$site->slug}.conf";
         File::ensureDirectoryExists(dirname($configPath), 0755, true);
         File::put($configPath, $config);
 
@@ -126,7 +127,7 @@ class NginxConfigService
      */
     public function removeStagingConfig(Site $site): void
     {
-        $configPath = config('pixelkraft.nginx_sites_path') . "/staging-{$site->slug}.conf";
+        $configPath = config('pixelkraft.nginx_sites_path')."/staging-{$site->slug}.conf";
         $enabledDir = str_replace('sites-available', 'sites-enabled', config('pixelkraft.nginx_sites_path'));
         $enabledPath = "{$enabledDir}/staging-{$site->slug}.conf";
 
@@ -287,7 +288,7 @@ NGINX;
 
     private function getConfigPath(Site $site): string
     {
-        return config('pixelkraft.nginx_sites_path') . "/{$site->slug}.conf";
+        return config('pixelkraft.nginx_sites_path')."/{$site->slug}.conf";
     }
 
     private function getEnabledPath(Site $site): string
