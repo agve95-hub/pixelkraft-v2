@@ -344,10 +344,10 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     border-radius: 4px !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-editable="true"] {
-                    outline: 2px dashed rgba(79, 70, 229, 0.75) !important;
+                    outline: 2px dashed rgba(236, 72, 153, 0.9) !important;
                     outline-offset: 2px !important;
-                    box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.35) !important;
-                    background: rgba(79, 70, 229, 0.04) !important;
+                    box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.45) !important;
+                    background: rgba(236, 72, 153, 0.06) !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-editable="false"] {
                     outline: 2px dashed rgba(245, 158, 11, 0.85) !important;
@@ -372,8 +372,8 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     pointer-events: none;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-editable="true"]::before {
-                    color: #e0e7ff;
-                    background: rgba(67, 56, 202, 0.95);
+                    color: #fdf2f8;
+                    background: rgba(190, 24, 93, 0.95);
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-editable="false"]::before {
                     color: #ffedd5;
@@ -386,10 +386,10 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     cursor: not-allowed !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="true"] {
-                    outline: 3px solid rgba(129, 140, 248, 1) !important;
+                    outline: 3px solid rgba(244, 114, 182, 1) !important;
                     outline-offset: 2px !important;
-                    background: rgba(129, 140, 248, 0.18) !important;
-                    box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.45) !important;
+                    background: rgba(244, 114, 182, 0.18) !important;
+                    box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.55) !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="false"] {
                     outline: 3px solid rgba(245, 158, 11, 1) !important;
@@ -398,10 +398,10 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.55) !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"] {
-                    outline: 2px solid rgba(99, 102, 241, 0.95) !important;
+                    outline: 2px solid rgba(236, 72, 153, 1) !important;
                     outline-offset: 2px !important;
-                    background: rgba(99, 102, 241, 0.12) !important;
-                    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.7) !important;
+                    background: rgba(236, 72, 153, 0.14) !important;
+                    box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.8) !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="false"] {
                     outline: 2px solid rgba(245, 158, 11, 0.95) !important;
@@ -410,10 +410,10 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.7) !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"] {
-                    outline: 2px solid rgba(34, 197, 94, 0.95) !important;
+                    outline: 2px solid rgba(219, 39, 119, 1) !important;
                     outline-offset: 2px !important;
-                    background: rgba(34, 197, 94, 0.1) !important;
-                    box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.4) !important;
+                    background: rgba(236, 72, 153, 0.18) !important;
+                    box-shadow: inset 0 0 0 1px rgba(219, 39, 119, 0.55), 0 0 0 1px rgba(244, 114, 182, 0.9) !important;
                 }
                 .pk-overlay-box {
                     position: fixed;
@@ -423,16 +423,16 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     display: none;
                 }
                 .pk-overlay-box--hover[data-pk-editable="true"] {
-                    border: 2px dashed rgba(79, 70, 229, 0.98);
-                    box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.45), inset 0 0 0 9999px rgba(79, 70, 229, 0.08);
+                    border: 2px dashed rgba(236, 72, 153, 0.98);
+                    box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.55), inset 0 0 0 9999px rgba(236, 72, 153, 0.08);
                 }
                 .pk-overlay-box--hover[data-pk-editable="false"] {
                     border: 2px dashed rgba(245, 158, 11, 1);
                     box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.55), inset 0 0 0 9999px rgba(245, 158, 11, 0.1);
                 }
                 .pk-overlay-box--selected[data-pk-editable="true"] {
-                    border: 2px solid rgba(67, 56, 202, 1);
-                    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.75), inset 0 0 0 9999px rgba(99, 102, 241, 0.12);
+                    border: 2px solid rgba(219, 39, 119, 1);
+                    box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.85), inset 0 0 0 9999px rgba(236, 72, 153, 0.14);
                 }
                 .pk-overlay-box--selected[data-pk-editable="false"] {
                     border: 2px solid rgba(217, 119, 6, 1);
