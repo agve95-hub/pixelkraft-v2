@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\EditorPreviewController;
+use App\Models\BlogPost;
 use App\Models\Page;
 use App\Models\Site;
 use Illuminate\Support\Facades\Route;
@@ -34,7 +35,11 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     // Content
     Route::get('/sites/{site}/blog', fn (Site $site) => view('dashboard.content.blog-index', ['site' => $site]))->name('blog.index');
     Route::get('/sites/{site}/blog/create', fn (Site $site) => view('dashboard.content.blog-create', ['site' => $site]))->name('blog.create');
-    Route::get('/sites/{site}/blog/{post}/edit', fn (Site $site, $post) => view('dashboard.content.blog-edit', ['site' => $site, 'postId' => $post]))->name('blog.edit');
+    Route::get('/sites/{site}/blog/{blogPost}/edit', function (Site $site, BlogPost $blogPost) {
+        abort_unless($blogPost->site_id === $site->id, 404);
+
+        return view('dashboard.content.blog-edit', ['site' => $site, 'postId' => $blogPost->id]);
+    })->name('blog.edit');
     Route::get('/sites/{site}/products', fn (Site $site) => view('dashboard.content.product-index', ['site' => $site]))->name('products.index');
     Route::get('/sites/{site}/products/create', fn (Site $site) => view('dashboard.content.product-create', ['site' => $site]))->name('products.create');
     Route::get('/sites/{site}/templates', fn (Site $site) => view('dashboard.content.templates', ['site' => $site]))->name('templates.index');
