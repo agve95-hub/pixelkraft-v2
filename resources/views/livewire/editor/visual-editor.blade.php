@@ -41,23 +41,29 @@
         </div>
 
         <button
+            type="button"
             wire:click="reparsePage"
-            class="flux-btn-ghost text-xs !py-1.5"
+            class="flux-btn-ghost text-xs !px-2.5 !py-1.5"
             wire:loading.attr="disabled"
             wire:target="reparsePage"
-            title="Re-parse this page from source"
+            title="Refresh regions"
         >
-            Refresh Regions
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
         </button>
 
         <button
-            wire:click="openSaveModal"
+            wire:click="save"
             class="flux-btn-primary text-xs !py-1.5"
             wire:loading.attr="disabled"
-            wire:target="openSaveModal,save"
+            wire:target="save"
+            title="Save and push changes"
             @disabled($mode === 'visual' && ! $selectedRegionEditable)
         >
-            Save & Push
+            <span wire:loading.remove wire:target="save">Save & Push</span>
+            <span wire:loading wire:target="save" class="inline-flex items-center gap-1.5">
+                <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                Saving...
+            </span>
         </button>
     </div>
 
@@ -138,8 +144,8 @@
 
                 <div class="border-t border-zinc-800 bg-zinc-900/40 px-4 py-3">
                     @if (! $selectedRegion)
-                        <p class="text-sm text-zinc-300">Move over any highlighted element and type to edit, or click a layer to focus it.</p>
-                        <p class="mt-1 text-xs text-zinc-500">{{ $editorProfile['visual_hint'] }}</p>
+                        <p class="text-sm text-zinc-300">Hover to target, click inside the pink border, and type directly in the canvas.</p>
+                        <p class="mt-1 text-xs text-zinc-500">No detached edit box: the edit happens inside the selected visual element.</p>
                     @elseif (! $selectedRegionEditable)
                         <p class="text-sm text-amber-200">This layer is preview-only and cannot be safely patched from canvas mode.</p>
                         <div class="mt-2 flex items-center gap-2">
@@ -153,30 +159,7 @@
                                 <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-300">{{ $selectedRegion->region_type }}</span>
                                 <span class="truncate rounded border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-zinc-400">{{ $selectedRegion->selector }}</span>
                             </div>
-                            <p class="text-xs text-zinc-400">Click the element once in canvas and type directly there. Changes sync here instantly.</p>
-
-                            @if ($selectedRegion->region_type === 'image')
-                                <input
-                                    type="text"
-                                    wire:model.live="editContent"
-                                    class="flux-input font-mono text-xs"
-                                    placeholder="Image URL"
-                                >
-                            @elseif ($selectedRegion->region_type === 'link')
-                                <input
-                                    type="text"
-                                    wire:model.live="editContent"
-                                    class="flux-input text-sm"
-                                    placeholder="Link text or URL"
-                                >
-                            @else
-                                <textarea
-                                    wire:model.live="editContent"
-                                    rows="2"
-                                    class="flux-input resize-y text-sm"
-                                    placeholder="Inline edits appear here"
-                                ></textarea>
-                            @endif
+                            <p class="text-xs text-zinc-400">Click the element once in canvas and type directly inside that pink border.</p>
                         </div>
                     @endif
                 </div>
@@ -398,10 +381,16 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.55) !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"] {
-                    outline: 2px solid rgba(236, 72, 153, 1) !important;
+                    outline: 3px solid rgba(236, 72, 153, 1) !important;
                     outline-offset: 2px !important;
-                    background: rgba(236, 72, 153, 0.14) !important;
-                    box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.8) !important;
+                    background: rgba(236, 72, 153, 0.12) !important;
+                    box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.4), 0 0 0 2px rgba(236, 72, 153, 0.75) !important;
+                }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"]::before,
+                html[data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"]::before {
+                    content: "selected";
+                    color: #fff1f2;
+                    background: rgba(190, 24, 93, 0.98);
                 }
                 html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"]::before,
                 html[data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"]::before {
@@ -429,16 +418,16 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     display: none;
                 }
                 .pk-overlay-box--hover[data-pk-editable="true"] {
-                    border: 2px dashed rgba(236, 72, 153, 0.98);
-                    box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.55), inset 0 0 0 9999px rgba(236, 72, 153, 0.08);
+                    border: 2px solid rgba(244, 114, 182, 0.98);
+                    box-shadow: 0 0 0 1px rgba(244, 114, 182, 0.65), inset 0 0 0 9999px rgba(244, 114, 182, 0.05);
                 }
                 .pk-overlay-box--hover[data-pk-editable="false"] {
                     border: 2px dashed rgba(245, 158, 11, 1);
                     box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.55), inset 0 0 0 9999px rgba(245, 158, 11, 0.1);
                 }
                 .pk-overlay-box--selected[data-pk-editable="true"] {
-                    border: 2px solid rgba(219, 39, 119, 1);
-                    box-shadow: 0 0 0 1px rgba(236, 72, 153, 0.85), inset 0 0 0 9999px rgba(236, 72, 153, 0.14);
+                    border: 3px solid rgba(236, 72, 153, 1);
+                    box-shadow: 0 0 0 1px rgba(244, 114, 182, 0.9), inset 0 0 0 9999px rgba(236, 72, 153, 0.08);
                 }
                 .pk-overlay-box--selected[data-pk-editable="false"] {
                     border: 2px solid rgba(217, 119, 6, 1);

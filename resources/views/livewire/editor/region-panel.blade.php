@@ -30,6 +30,9 @@
     </div>
 
     <div class="flex-1 overflow-y-auto">
+        <div class="border-b border-zinc-800/80 bg-zinc-950/60 px-3 py-2 text-[10px] text-zinc-500">
+            Nested tree follows canvas structure top-to-bottom.
+        </div>
         @forelse ($regions as $region)
             @php
                 $path = trim((string) ($region->selector ?? ''));
@@ -51,6 +54,11 @@
                 ])
                 style="padding-left: {{ 12 + min($level, 5) * 10 }}px;"
             >
+                <div
+                    class="absolute left-0 top-0 bottom-0 w-px bg-fuchsia-500/35"
+                    style="left: {{ 8 + min($level, 6) * 14 }}px;"
+                    aria-hidden="true"
+                ></div>
                 <div class="flex items-center justify-between gap-2">
                     <p class="truncate text-xs font-medium text-zinc-200">
                         {{ Str::limit(strip_tags($region->current_content ?? ''), 42) ?: '(empty)' }}

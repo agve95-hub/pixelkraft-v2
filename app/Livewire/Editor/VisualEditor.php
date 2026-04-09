@@ -108,6 +108,25 @@ class VisualEditor extends Component
         $this->editContent = $content;
     }
 
+    public function saveNow(): void
+    {
+        if ($this->mode === 'visual') {
+            if (! $this->selectedRegionId) {
+                session()->flash('error', 'Select a highlighted element first, then edit it inline.');
+                return;
+            }
+
+            if (! $this->selectedRegionCanBeEdited()) {
+                session()->flash('error', $this->visualSaveErrorMessage());
+                return;
+            }
+        }
+
+        $this->commitMessage = $this->generateCommitMessage();
+        $this->deployAfterSave = true;
+        $this->save();
+    }
+
     public function reparsePage(): void
     {
         try {
