@@ -17,15 +17,15 @@ class ExampleTest extends TestCase
     }
 
     /**
-     * The legacy add-site route should redirect to the unified sites workspace.
+     * The add-site page renders successfully for authenticated users.
      */
-    public function test_sites_create_redirects_to_sites_index_anchor(): void
+    public function test_sites_create_renders_for_authenticated_users(): void
     {
         $user = new \App\Models\User();
         $user->id = 'test-user';
 
         $response = $this->actingAs($user)->get('/dashboard/sites/create');
 
-        $response->assertRedirect(route('sites.index') . '#add-site');
+        $response->assertStatus(200);
     }
 }

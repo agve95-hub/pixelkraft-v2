@@ -15,7 +15,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
     // Sites
     Route::get('/sites', fn () => view('dashboard.sites.index'))->name('sites.index');
-    Route::get('/sites/create', fn () => redirect()->to(route('sites.index') . '#add-site'))->name('sites.create');
+    Route::get('/sites/create', fn () => view('dashboard.sites.create'))->name('sites.create');
     Route::get('/sites/{site}', fn (Site $site) => view('dashboard.sites.show', ['site' => $site]))->name('sites.show');
     Route::get('/sites/{site}/settings', fn (Site $site) => view('dashboard.sites.settings', ['site' => $site]))->name('sites.settings');
     Route::get('/sites/{site}/files', fn (Site $site) => view('dashboard.sites.files', ['site' => $site]))->name('sites.files');
