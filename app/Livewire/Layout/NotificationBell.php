@@ -3,6 +3,7 @@
 namespace App\Livewire\Layout;
 
 use App\Models\Notification;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class NotificationBell extends Component
@@ -25,7 +26,7 @@ class NotificationBell extends Component
         $this->unreadCount = 0;
     }
 
-    public function render()
+    public function render(): View
     {
         $notifications = Notification::query()
             ->latest('created_at')

@@ -3,6 +3,7 @@
 namespace App\Livewire\Content;
 
 use App\Models\ContentTemplate;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class TemplateManager extends Component
@@ -90,7 +91,7 @@ class TemplateManager extends Component
         $this->fieldsSchema = '';
     }
 
-    public function render()
+    public function render(): View
     {
         $templates = ContentTemplate::query()
             ->where(fn ($q) => $q->where('site_id', $this->siteId)->orWhereNull('site_id'))

@@ -5,6 +5,8 @@ namespace App\Livewire\Seo;
 use App\Models\Page;
 use App\Services\GitSyncService;
 use App\Services\SiteSupportService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\File;
 use Livewire\Component;
 
 class SchemaEditor extends Component
@@ -125,7 +127,7 @@ class SchemaEditor extends Component
         };
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.seo.schema-editor', [
             'schemaEditingSupported' => $this->schemaEditingSupported,
@@ -144,11 +146,11 @@ class SchemaEditor extends Component
 
         $fullPath = "{$site->repo_path}/{$page->file_path}";
 
-        if (! file_exists($fullPath)) {
+        if (! File::exists($fullPath)) {
             throw new \RuntimeException('Source file not found.');
         }
 
-        $html = file_get_contents($fullPath);
+        $html = File::get($fullPath);
         $pattern = '/<script\s+type=["\']application\/ld\+json["\'][^>]*>.*?<\/script>/si';
 
         if ($json === '') {
@@ -163,7 +165,7 @@ class SchemaEditor extends Component
             }
         }
 
-        file_put_contents($fullPath, $html);
+        File::put($fullPath, $html);
         $git->commitAndPush($site, [$page->file_path], "Update schema markup for {$page->url_path}");
     }
 

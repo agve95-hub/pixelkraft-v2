@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DeployLog;
 use App\Models\Site;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
@@ -106,7 +107,7 @@ class SiteRuntimeService
         return $this->urlForPort($this->activePortFor($site) ?? $this->portFor($site));
     }
 
-    public function fetch(Site $site, string $path = '/', array $query = [])
+    public function fetch(Site $site, string $path = '/', array $query = []): ?Response
     {
         foreach ($this->candidatePorts($site) as $port) {
             try {
@@ -129,7 +130,7 @@ class SiteRuntimeService
     {
         $response = $this->fetch($site, $path);
 
-        return $response && $response->status() > 0 && $response->status() < 500;
+        return $response !== null && $response->status() > 0 && $response->status() < 500;
     }
 
     public function deploy(Site $site, DeployLog $log): void

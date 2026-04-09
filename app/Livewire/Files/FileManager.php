@@ -4,6 +4,7 @@ namespace App\Livewire\Files;
 
 use App\Models\Site;
 use App\Services\GitSyncService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -166,7 +167,7 @@ class FileManager extends Component
         return round($bytes / 1048576, 1) . ' MB';
     }
 
-    public function render()
+    public function render(): View
     {
         $site = Site::findOrFail($this->siteId);
         $entries = $this->getDirectoryEntries($site);

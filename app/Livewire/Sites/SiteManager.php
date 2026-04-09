@@ -4,6 +4,7 @@ namespace App\Livewire\Sites;
 
 use App\Jobs\CloneRepoJob;
 use App\Models\Site;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -146,7 +147,7 @@ class SiteManager extends Component
         $this->redirect(route('sites.index', ['site' => $site->id]), navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.sites.site-manager');
     }

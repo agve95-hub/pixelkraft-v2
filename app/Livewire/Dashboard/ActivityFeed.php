@@ -3,11 +3,12 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\DeployLog;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class ActivityFeed extends Component
 {
-    public function render()
+    public function render(): View
     {
         $activities = DeployLog::query()
             ->with('site')

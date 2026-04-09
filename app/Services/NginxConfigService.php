@@ -132,7 +132,7 @@ class NginxConfigService
 
     // ── Private ─────────────────────────────────
 
-    private function renderTemplate(Site $site, $redirects): string
+    private function renderTemplate(Site $site, iterable $redirects): string
     {
         $redirectBlock = '';
 

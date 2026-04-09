@@ -5,6 +5,7 @@ namespace App\Livewire\Sites;
 use App\Models\Site;
 use App\Services\SiteSupportService;
 use App\Services\SiteRuntimeService;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class SiteSettings extends Component
@@ -85,7 +86,7 @@ class SiteSettings extends Component
         $this->redirect(route('sites.index'), navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         $site = Site::findOrFail($this->siteId);
 

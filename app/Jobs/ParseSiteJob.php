@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Notification;
+use App\Models\Page;
 use App\Models\Site;
 use App\Services\ParserService;
 use Illuminate\Bus\Queueable;
@@ -34,8 +35,9 @@ class ParseSiteJob implements ShouldQueue
 
             Log::info("ParseSiteJob completed for [{$this->site->slug}]: {$pageCount} pages");
 
-            // Compute SEO scores for all pages
-            $this->site->pages->each(function ($page) {
+            $this->site->load('pages');
+
+            $this->site->pages->each(function (Page $page) {
                 $page->update(['seo_score' => $this->computeSeoScore($page)]);
             });
 
@@ -59,7 +61,7 @@ class ParseSiteJob implements ShouldQueue
     /**
      * Compute a basic SEO score (0-100) for a page.
      */
-    private function computeSeoScore($page): int
+    private function computeSeoScore(Page $page): int
     {
         $score = 0;
 

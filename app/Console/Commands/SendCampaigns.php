@@ -7,6 +7,7 @@ use App\Models\NewsletterSubscriber;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 class SendCampaigns extends Command
 {
@@ -120,7 +121,7 @@ class SendCampaigns extends Command
         $replacements = [
             '{{email}}'            => $subscriber->email,
             '{{name}}'             => $subscriber->name ?? 'Subscriber',
-            '{{unsubscribe_url}}'  => url("/api/unsubscribe/{$subscriber->id}"),
+            '{{unsubscribe_url}}'  => URL::signedRoute('api.unsubscribe', ['subscriber' => $subscriber->id]),
         ];
 
         return str_replace(array_keys($replacements), array_values($replacements), $html);

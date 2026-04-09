@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Settings;
 
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class DiscordWebhook extends Component
@@ -42,7 +43,7 @@ class DiscordWebhook extends Component
         }
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.settings.discord-webhook');
     }

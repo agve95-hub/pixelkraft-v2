@@ -5,6 +5,7 @@ namespace App\Livewire\Seo;
 use App\Models\Site;
 use App\Services\GitSyncService;
 use App\Services\SiteRuntimeService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Livewire\Component;
 
@@ -72,7 +73,7 @@ class RobotsTxtEditor extends Component
         };
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.seo.robots-txt-editor');
     }
