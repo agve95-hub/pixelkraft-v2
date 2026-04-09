@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\CloneRepoJob;
 use App\Jobs\DeploySiteJob;
 use App\Jobs\ParseSiteJob;
 use App\Models\DeployLog;
@@ -62,13 +61,20 @@ class SiteController extends Controller
             return response()->json(['error' => 'No snapshot available for this deploy'], 400);
         }
 
-        $deployer = app(DeployService::class);
-        $result = $deployer->rollback($site, $log);
+        try {
+            $deployer = app(DeployService::class);
+            $result = $deployer->rollback($site, $log);
 
-        return response()->json([
-            'status'  => $result->status,
-            'message' => "Rollback to {$log->snapshot_tag}: {$result->status}",
-        ]);
+            return response()->json([
+                'status'  => $result->status,
+                'message' => "Rollback to {$log->snapshot_tag}: {$result->status}",
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error'   => 'Rollback failed',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function pages(Site $site): JsonResponse

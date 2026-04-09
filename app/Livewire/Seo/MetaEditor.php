@@ -7,6 +7,8 @@ use App\Services\GitSyncService;
 use App\Services\NextMetadataPatcher;
 use App\Services\SeoAnalyzer;
 use App\Services\SiteSupportService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\File;
 use Livewire\Component;
 
 class MetaEditor extends Component
@@ -87,7 +89,7 @@ class MetaEditor extends Component
         $this->analysis = $analyzer->analyze($page, $this->focusKeyword);
     }
 
-    public function render()
+    public function render(): View
     {
         $page = Page::findOrFail($this->pageId);
 
@@ -108,11 +110,11 @@ class MetaEditor extends Component
 
         $fullPath = "{$site->repo_path}/{$page->file_path}";
 
-        if (! file_exists($fullPath)) {
+        if (! File::exists($fullPath)) {
             throw new \RuntimeException('Source file not found.');
         }
 
-        $html = file_get_contents($fullPath);
+        $html = File::get($fullPath);
 
         if ($this->metaEditingMode === 'next_metadata') {
             $html = app(NextMetadataPatcher::class)->patch($html, [
@@ -136,7 +138,7 @@ class MetaEditor extends Component
             throw new \RuntimeException($this->metaEditingNotice);
         }
 
-        file_put_contents($fullPath, $html);
+        File::put($fullPath, $html);
 
         $git = app(GitSyncService::class);
         $git->commitAndPush($site, [$page->file_path], "Update SEO meta for {$page->url_path}");

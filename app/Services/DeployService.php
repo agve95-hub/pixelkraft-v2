@@ -194,6 +194,12 @@ class DeployService
             $log->update(['status' => 'failed', 'duration_ms' => $duration]);
 
             $site->update(['deploy_status' => 'failed']);
+
+            Log::error("Rollback failed for [{$site->slug}]", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             throw $e;
         }
     }
@@ -309,89 +315,6 @@ class DeployService
 
     // ── Helpers ──────────────────────────────────
 
-    private function resolveOutputDir(Site $site): string
-    {
-        $repoPath = $site->repo_path;
-
-        if ($site->project_type === 'nextjs') {
-            return $this->resolveNextjsOutputDir($site);
-        }
-
-        // 1. User-configured output dir
-        if ($site->build_output_dir) {
-            $outputPath = "{$repoPath}/{$site->build_output_dir}";
-            if (File::isDirectory($outputPath)) {
-                return $outputPath;
-            }
-        }
-
-        // 2. Common framework build output directories
-        $candidates = ['dist', 'build', 'out', '_site', '.output/public', 'public'];
-        foreach ($candidates as $candidate) {
-            if (File::isDirectory("{$repoPath}/{$candidate}")) {
-                return "{$repoPath}/{$candidate}";
-            }
-        }
-
-        // 3. For plain static HTML with no build, serve from repo root
-        //    But only if this is actually a static_html project
-        if ($site->project_type === 'static_html' || $site->project_type === 'custom') {
-            return $repoPath;
-        }
-
-        throw new \RuntimeException(
-            "No deployable output directory found. Build the project first, or set the build output directory in site settings. " .
-            "Looked for: " . implode(', ', $candidates)
-        );
-    }
-
-    private function resolveNextjsOutputDir(Site $site): string
-    {
-        $repoPath = $site->repo_path;
-        $configuredOutputDir = $site->build_output_dir;
-
-        // 1. User configured a specific output dir (not .next)
-        if ($configuredOutputDir && $configuredOutputDir !== '.next') {
-            $configuredPath = "{$repoPath}/{$configuredOutputDir}";
-            if (File::isDirectory($configuredPath)) {
-                return $configuredPath;
-            }
-        }
-
-        // 2. Check common Next.js static export output directories
-        $staticCandidates = [
-            "{$repoPath}/out",
-            "{$repoPath}/dist",
-            "{$repoPath}/build",
-        ];
-
-        foreach ($staticCandidates as $candidate) {
-            if (File::isDirectory($candidate)) {
-                $dir = basename($candidate);
-                if ($site->build_output_dir !== $dir) {
-                    $site->update(['build_output_dir' => $dir]);
-                }
-                return $candidate;
-            }
-        }
-
-        // 3. If .next exists, the build succeeded but produced a server build
-        if (File::isDirectory("{$repoPath}/.next")) {
-            if ($this->runtime->usesRuntimeServer($site)) {
-                return "{$repoPath}/.next";
-            }
-
-            throw new \RuntimeException(
-                "Next.js produced a server build (.next) but pixelkraft needs a static export. " .
-                "Add `output: 'export'` to your next.config.mjs, then set build output directory to 'out' in site settings."
-            );
-        }
-
-        throw new \RuntimeException(
-            "No Next.js build output found. Run the build first, or check that the build command is correct."
-        );
-    }
-
     private function runCommand(
         string $command,
         string $cwd,
@@ -434,7 +357,7 @@ class DeployService
         ];
     }
 
-    private function openRepo(Site $site)
+    private function openRepo(Site $site): \CzProject\GitPhp\GitRepository
     {
         return (new \CzProject\GitPhp\Git())->open($site->repo_path);
     }

@@ -7,6 +7,7 @@ use App\Models\ContentTemplate;
 use App\Models\Site;
 use App\Services\GitSyncService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -165,16 +166,11 @@ class BlogEditor extends Component
             $outputPath = $post->output_path ?? "blog/{$post->slug}.html";
             $fullPath = "{$site->repo_path}/{$outputPath}";
 
-            // Ensure directory exists
-            $dir = dirname($fullPath);
-            if (! is_dir($dir)) {
-                mkdir($dir, 0755, true);
-            }
+            File::ensureDirectoryExists(dirname($fullPath));
 
-            // Render through template or generate basic HTML
             $html = $this->renderPost($post, $site);
 
-            file_put_contents($fullPath, $html);
+            File::put($fullPath, $html);
 
             // Update output path on post
             $post->update(['output_path' => $outputPath]);

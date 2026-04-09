@@ -10,6 +10,8 @@ use App\Models\Site;
 use App\Services\ContentPatcher;
 use App\Services\GitSyncService;
 use App\Services\SiteSupportService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
@@ -199,9 +201,9 @@ class VisualEditor extends Component
             $changedFiles = [];
 
             if ($this->mode === 'code') {
-                // Save code editor content directly to file
                 $fullPath = "{$site->repo_path}/{$this->codeFilePath}";
-                file_put_contents($fullPath, $this->codeContent);
+                File::ensureDirectoryExists(dirname($fullPath));
+                File::put($fullPath, $this->codeContent);
                 $changedFiles[] = $this->codeFilePath;
                 $this->debugTelemetry['code_file_path'] = $this->codeFilePath;
                 $this->debugTelemetry['code_content_length'] = strlen($this->codeContent);
@@ -302,7 +304,7 @@ class VisualEditor extends Component
     {
         $this->resetDebugTelemetry();
     }
-    public function render()
+    public function render(): View
     {
         $site = $this->resolveSite();
         $page = Page::with('editableRegions')
@@ -358,7 +360,7 @@ class VisualEditor extends Component
         $site = $this->resolveSite();
         $fullPath = "{$site->repo_path}/{$this->codeFilePath}";
 
-        $this->codeContent = file_exists($fullPath) ? file_get_contents($fullPath) : '';
+        $this->codeContent = File::exists($fullPath) ? File::get($fullPath) : '';
     }
 
     private function buildPreviewUrl(Site $site, Page $page): string
