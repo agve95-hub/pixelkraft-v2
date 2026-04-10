@@ -13,41 +13,53 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      PROD_HOST: ${{ secrets.PROD_HOST != '' && secrets.PROD_HOST || vars.PROD_HOST }}
-      PROD_USER: ${{ secrets.PROD_USER != '' && secrets.PROD_USER || vars.PROD_USER }}
-      PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY != '' && secrets.PROD_SSH_KEY || vars.PROD_SSH_KEY }}
-      PROD_SSH_PASSWORD: ${{ secrets.PROD_SSH_PASSWORD != '' && secrets.PROD_SSH_PASSWORD || vars.PROD_SSH_PASSWORD }}
-      PROD_APP_DIR: ${{ secrets.PROD_APP_DIR != '' && secrets.PROD_APP_DIR || vars.PROD_APP_DIR }}
-      PROD_PORT: ${{ secrets.PROD_PORT != '' && secrets.PROD_PORT || vars.PROD_PORT || '22' }}
-      SSH_KEY_FALLBACK: ${{ secrets.PROD_SSH_PRIVATE_KEY != '' && secrets.PROD_SSH_PRIVATE_KEY || vars.PROD_SSH_PRIVATE_KEY }}
-      SSH_PRIVATE_KEY_FALLBACK: ${{ secrets.SSH_PRIVATE_KEY != '' && secrets.SSH_PRIVATE_KEY || vars.SSH_PRIVATE_KEY }}
-      SSH_KEY_SHORT_FALLBACK: ${{ secrets.SSH_KEY != '' && secrets.SSH_KEY || vars.SSH_KEY }}
-      SSH_PASSWORD_FALLBACK: ${{ secrets.PROD_PASSWORD != '' && secrets.PROD_PASSWORD || vars.PROD_PASSWORD }}
-      SSH_PASSWORD_GLOBAL_FALLBACK: ${{ secrets.SSH_PASSWORD != '' && secrets.SSH_PASSWORD || vars.SSH_PASSWORD }}
 
     steps:
-      - name: Validate deployment configuration
+      - name: Resolve and validate deployment configuration
+        id: deploy_config
         shell: bash
+        env:
+          S_PROD_HOST: ${{ secrets.PROD_HOST }}
+          V_PROD_HOST: ${{ vars.PROD_HOST }}
+          S_PROD_USER: ${{ secrets.PROD_USER }}
+          V_PROD_USER: ${{ vars.PROD_USER }}
+          S_PROD_APP_DIR: ${{ secrets.PROD_APP_DIR }}
+          V_PROD_APP_DIR: ${{ vars.PROD_APP_DIR }}
+          S_PROD_PORT: ${{ secrets.PROD_PORT }}
+          V_PROD_PORT: ${{ vars.PROD_PORT }}
+          S_PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+          V_PROD_SSH_KEY: ${{ vars.PROD_SSH_KEY }}
+          S_PROD_SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          V_PROD_SSH_PRIVATE_KEY: ${{ vars.PROD_SSH_PRIVATE_KEY }}
+          S_SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          V_SSH_PRIVATE_KEY: ${{ vars.SSH_PRIVATE_KEY }}
+          S_SSH_KEY: ${{ secrets.SSH_KEY }}
+          V_SSH_KEY: ${{ vars.SSH_KEY }}
+          S_PROD_SSH_PASSWORD: ${{ secrets.PROD_SSH_PASSWORD }}
+          V_PROD_SSH_PASSWORD: ${{ vars.PROD_SSH_PASSWORD }}
+          S_PROD_PASSWORD: ${{ secrets.PROD_PASSWORD }}
+          V_PROD_PASSWORD: ${{ vars.PROD_PASSWORD }}
+          S_SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          V_SSH_PASSWORD: ${{ vars.SSH_PASSWORD }}
         run: |
           set -euo pipefail
 
-          # Prefer explicit PROD_* names, then fall back to common legacy aliases.
-          if [ -z "${PROD_SSH_KEY:-}" ] && [ -n "${SSH_KEY_FALLBACK:-}" ]; then
-            echo "PROD_SSH_KEY=${SSH_KEY_FALLBACK}" >> "$GITHUB_ENV"
-          fi
-          if [ -z "${PROD_SSH_KEY:-}" ] && [ -n "${SSH_PRIVATE_KEY_FALLBACK:-}" ]; then
-            echo "PROD_SSH_KEY=${SSH_PRIVATE_KEY_FALLBACK}" >> "$GITHUB_ENV"
-          fi
-          if [ -z "${PROD_SSH_KEY:-}" ] && [ -n "${SSH_KEY_SHORT_FALLBACK:-}" ]; then
-            echo "PROD_SSH_KEY=${SSH_KEY_SHORT_FALLBACK}" >> "$GITHUB_ENV"
-          fi
-          if [ -z "${PROD_SSH_PASSWORD:-}" ] && [ -n "${SSH_PASSWORD_FALLBACK:-}" ]; then
-            echo "PROD_SSH_PASSWORD=${SSH_PASSWORD_FALLBACK}" >> "$GITHUB_ENV"
-          fi
-          if [ -z "${PROD_SSH_PASSWORD:-}" ] && [ -n "${SSH_PASSWORD_GLOBAL_FALLBACK:-}" ]; then
-            echo "PROD_SSH_PASSWORD=${SSH_PASSWORD_GLOBAL_FALLBACK}" >> "$GITHUB_ENV"
-          fi
+          pick_first_non_empty() {
+            for candidate in "$@"; do
+              if [ -n "$candidate" ]; then
+                printf '%s' "$candidate"
+                return 0
+              fi
+            done
+            printf ''
+          }
+
+          PROD_HOST="$(pick_first_non_empty "${S_PROD_HOST:-}" "${V_PROD_HOST:-}")"
+          PROD_USER="$(pick_first_non_empty "${S_PROD_USER:-}" "${V_PROD_USER:-}")"
+          PROD_APP_DIR="$(pick_first_non_empty "${S_PROD_APP_DIR:-}" "${V_PROD_APP_DIR:-}")"
+          PROD_PORT="$(pick_first_non_empty "${S_PROD_PORT:-}" "${V_PROD_PORT:-}" "22")"
+          PROD_SSH_KEY="$(pick_first_non_empty "${S_PROD_SSH_KEY:-}" "${V_PROD_SSH_KEY:-}" "${S_PROD_SSH_PRIVATE_KEY:-}" "${V_PROD_SSH_PRIVATE_KEY:-}" "${S_SSH_PRIVATE_KEY:-}" "${V_SSH_PRIVATE_KEY:-}" "${S_SSH_KEY:-}" "${V_SSH_KEY:-}")"
+          PROD_SSH_PASSWORD="$(pick_first_non_empty "${S_PROD_SSH_PASSWORD:-}" "${V_PROD_SSH_PASSWORD:-}" "${S_PROD_PASSWORD:-}" "${V_PROD_PASSWORD:-}" "${S_SSH_PASSWORD:-}" "${V_SSH_PASSWORD:-}")"
 
           missing=()
           for required in PROD_HOST PROD_USER PROD_APP_DIR; do
@@ -56,13 +68,7 @@ jobs:
             fi
           done
 
-          if [ -z "${PROD_SSH_KEY:-}" ] \
-            && [ -z "${SSH_KEY_FALLBACK:-}" ] \
-            && [ -z "${SSH_PRIVATE_KEY_FALLBACK:-}" ] \
-            && [ -z "${SSH_KEY_SHORT_FALLBACK:-}" ] \
-            && [ -z "${PROD_SSH_PASSWORD:-}" ] \
-            && [ -z "${SSH_PASSWORD_FALLBACK:-}" ] \
-            && [ -z "${SSH_PASSWORD_GLOBAL_FALLBACK:-}" ]; then
+          if [ -z "${PROD_SSH_KEY:-}" ] && [ -z "${PROD_SSH_PASSWORD:-}" ]; then
             missing+=("PROD_SSH_KEY (or PROD_SSH_PASSWORD)")
           fi
 
@@ -72,18 +78,29 @@ jobs:
             exit 1
           fi
 
+          {
+            echo "prod_host=$PROD_HOST"
+            echo "prod_user=$PROD_USER"
+            echo "prod_app_dir=$PROD_APP_DIR"
+            echo "prod_port=$PROD_PORT"
+            echo "prod_ssh_password=$PROD_SSH_PASSWORD"
+            echo "prod_ssh_key<<EOF"
+            echo "$PROD_SSH_KEY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ env.PROD_HOST }}
-          port: ${{ env.PROD_PORT }}
-          username: ${{ env.PROD_USER }}
-          key: ${{ env.PROD_SSH_KEY }}
-          password: ${{ env.PROD_SSH_PASSWORD }}
+          host: ${{ steps.deploy_config.outputs.prod_host }}
+          port: ${{ steps.deploy_config.outputs.prod_port }}
+          username: ${{ steps.deploy_config.outputs.prod_user }}
+          key: ${{ steps.deploy_config.outputs.prod_ssh_key }}
+          password: ${{ steps.deploy_config.outputs.prod_ssh_password }}
           script_stop: true
           script: |
             set -euo pipefail
-            cd "${{ env.PROD_APP_DIR }}"
+            cd "${{ steps.deploy_config.outputs.prod_app_dir }}"
 
             git fetch origin main
             git checkout main
