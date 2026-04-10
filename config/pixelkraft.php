@@ -130,4 +130,15 @@ return [
         'custom',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Project inbox (inbound webhook)
+    |--------------------------------------------------------------------------
+    |
+    | POST /api/inbox/{site-slug} with JSON body. When set, requests must send
+    | Authorization: Bearer {secret}. Leave empty in local dev to rely on throttle only.
+    |
+    */
+    'inbox_inbound_secret' => env('INBOX_INBOUND_SECRET'),
+
 ];

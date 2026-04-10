@@ -17,7 +17,14 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     // Sites
     Route::get('/sites', fn () => view('dashboard.sites.index'))->name('sites.index');
     Route::get('/sites/create', fn () => view('dashboard.sites.create'))->name('sites.create');
-    Route::get('/sites/{site}', fn (Site $site) => view('dashboard.sites.show', ['site' => $site]))->name('sites.show');
+    Route::get('/sites/{site}', function (Site $site) {
+        $site->loadCount([
+            'inboxMessages as inbox_unread_count' => fn ($q) => $q->where('direction', 'inbound')->where('is_read', false),
+        ]);
+
+        return view('dashboard.sites.show', ['site' => $site]);
+    })->name('sites.show');
+    Route::get('/sites/{site}/inbox', fn (Site $site) => view('dashboard.sites.inbox', ['site' => $site]))->name('sites.inbox');
     Route::get('/sites/{site}/settings', fn (Site $site) => view('dashboard.sites.settings', ['site' => $site]))->name('sites.settings');
     Route::get('/sites/{site}/files', fn (Site $site) => view('dashboard.sites.files', ['site' => $site]))->name('sites.files');
 
