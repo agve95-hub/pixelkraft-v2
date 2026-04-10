@@ -56,6 +56,7 @@ TSX);
         $response->assertOk();
         $response->assertSee('Source fallback preview', false);
         $response->assertSee('@feuerlauf', false);
+        $response->assertDontSee('Preview failed', false);
         $response->assertDontSee('Unknown modifier', false);
     }
 }
