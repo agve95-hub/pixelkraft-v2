@@ -31,7 +31,6 @@ Route::get('/unsubscribe/{subscriber}', function (\App\Models\NewsletterSubscrib
 Route::post('/inbox/{slug}', [InboxInboundController::class, 'store'])
     ->middleware('throttle:30,1')
     ->name('api.inbox.inbound');
-
 // ── Authenticated API (Sanctum) ─────────────────
 
 Route::middleware('auth:sanctum')->group(function () {
