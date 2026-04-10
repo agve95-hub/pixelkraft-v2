@@ -73,12 +73,17 @@ jobs:
           fi
 
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing deploy configuration: ${missing[*]}."
-            echo "::error::Set these as repository secrets or repository variables before deploying."
-            exit 1
+            echo "::warning::Missing deploy configuration: ${missing[*]}."
+            echo "::warning::Set these as repository secrets or repository variables to enable deployment."
+            {
+              echo "deploy_enabled=false"
+              echo "missing_config=${missing[*]}"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
           {
+            echo "deploy_enabled=true"
             echo "prod_host=$PROD_HOST"
             echo "prod_user=$PROD_USER"
             echo "prod_app_dir=$PROD_APP_DIR"
@@ -90,6 +95,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Deploy over SSH
+        if: ${{ steps.deploy_config.outputs.deploy_enabled == 'true' }}
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ steps.deploy_config.outputs.prod_host }}
@@ -119,3 +125,9 @@ jobs:
               systemctl reload nginx || true
               systemctl reload php-fpm || true
             fi
+
+      - name: Skip deployment (missing configuration)
+        if: ${{ steps.deploy_config.outputs.deploy_enabled != 'true' }}
+        run: |
+          echo "Production deployment skipped."
+          echo "Missing configuration: ${{ steps.deploy_config.outputs.missing_config }}"
