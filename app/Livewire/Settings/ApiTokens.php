@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Settings;
 
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class ApiTokens extends Component
@@ -25,7 +26,7 @@ class ApiTokens extends Component
         auth()->user()->tokens()->where('id', $tokenId)->delete();
     }
 
-    public function render()
+    public function render(): View
     {
         $tokens = auth()->user()->tokens()->orderBy('created_at', 'desc')->get();
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\FormSubmission;
 use App\Models\Notification;
 use App\Models\Site;
+use App\Models\SiteInboxMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -55,6 +56,28 @@ class FormSubmissionController extends Controller
                 siteId: $site->id,
                 data: ['submission_id' => $submission->id],
             );
+
+            $fromEmail = isset($data['email']) && filter_var($data['email'], FILTER_VALIDATE_EMAIL)
+                ? $data['email']
+                : null;
+            $fromName = null;
+            if (! empty($data['name']) && is_string($data['name'])) {
+                $fromName = trim($data['name']);
+            } elseif ($fromEmail) {
+                $fromName = explode('@', $fromEmail)[0];
+            }
+
+            SiteInboxMessage::create([
+                'site_id'    => $site->id,
+                'direction'  => 'inbound',
+                'from_email' => $fromEmail,
+                'from_name'  => $fromName,
+                'to_email'   => null,
+                'subject'    => SiteInboxMessage::subjectFromFormPayload($data, $submission->form_name),
+                'body'       => SiteInboxMessage::bodyFromFormPayload($data),
+                'is_read'    => false,
+                'source'     => 'form',
+            ]);
         }
 
         Log::info("Form submission received for [{$slug}]", [

@@ -5,6 +5,7 @@ namespace App\Livewire\Seo;
 use App\Models\Redirect;
 use App\Models\Site;
 use App\Services\NginxConfigService;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class RedirectManager extends Component
@@ -73,7 +74,7 @@ class RedirectManager extends Component
         $this->resetForm();
     }
 
-    public function render()
+    public function render(): View
     {
         $redirects = Redirect::where('site_id', $this->siteId)
             ->orderBy('from_path')

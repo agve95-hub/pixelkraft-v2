@@ -4,11 +4,12 @@ namespace App\Livewire\Dashboard;
 
 use App\Models\Page;
 use App\Models\Site;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class SiteHealthTable extends Component
 {
-    public function render()
+    public function render(): View
     {
         $sites = Site::query()
             ->withCount(['pages', 'notifications' => fn ($q) => $q->where('is_read', false)->whereIn('type', ['deploy_failed', 'uptime_down'])])

@@ -8,6 +8,7 @@ use App\Models\DeployLog;
 use App\Models\Site;
 use App\Services\DeployService;
 use App\Services\NginxConfigService;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class DeployControls extends Component
@@ -82,7 +83,7 @@ class DeployControls extends Component
         $this->viewingLogId = null;
     }
 
-    public function render()
+    public function render(): View
     {
         $site = Site::findOrFail($this->siteId);
 

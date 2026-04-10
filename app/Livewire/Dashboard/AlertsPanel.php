@@ -4,6 +4,7 @@ namespace App\Livewire\Dashboard;
 
 use App\Models\Notification;
 use App\Models\Site;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class AlertsPanel extends Component
@@ -13,7 +14,7 @@ class AlertsPanel extends Component
         Notification::where('id', $id)->update(['is_read' => true]);
     }
 
-    public function render()
+    public function render(): View
     {
         $alerts = Notification::query()
             ->unread()

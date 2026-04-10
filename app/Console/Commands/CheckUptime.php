@@ -23,6 +23,8 @@ class CheckUptime extends Command
         foreach ($sites as $site) {
             $startTime = microtime(true);
 
+            $degradedAfterMs = (int) config('pixelkraft.monitoring.uptime_degraded_after_ms', 3000);
+
             try {
                 $response = Http::timeout(15)->get("https://{$site->domain}");
                 $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
@@ -34,11 +36,17 @@ class CheckUptime extends Command
                 $statusCode = 0;
             }
 
+            $isDegraded = $isUp
+                && $responseTimeMs >= $degradedAfterMs
+                && $statusCode >= 200
+                && $statusCode < 300;
+
             UptimeCheck::create([
                 'site_id'          => $site->id,
                 'status_code'      => $statusCode,
                 'response_time_ms' => $responseTimeMs,
                 'is_up'            => $isUp,
+                'is_degraded'      => $isDegraded,
                 'checked_at'       => now(),
             ]);
 

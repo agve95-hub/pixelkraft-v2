@@ -4,6 +4,7 @@ namespace App\Livewire\Email;
 
 use App\Models\NewsletterSubscriber;
 use App\Models\Site;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -51,7 +52,7 @@ class SubscriberList extends Component
         NewsletterSubscriber::where('id', $id)->delete();
     }
 
-    public function render()
+    public function render(): View
     {
         $sites = Site::where('is_active', true)->orderBy('name')->get();
 

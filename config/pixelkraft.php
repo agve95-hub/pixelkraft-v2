@@ -90,6 +90,8 @@ return [
     */
     'monitoring' => [
         'uptime_interval_minutes' => 5,
+        /** Response time above this (ms) while still HTTP-successful counts as degraded (yellow) on uptime charts */
+        'uptime_degraded_after_ms' => (int) env('UPTIME_DEGRADED_AFTER_MS', 3000),
         'lighthouse_schedule' => 'weekly',
         'broken_links_schedule' => 'weekly',
         'analytics_sync_schedule' => 'daily',
@@ -97,7 +99,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Analytics
+    | Google Analytics Data API (GA4)
+    |--------------------------------------------------------------------------
+    |
+    | Service account JSON path. Grant the service account “Viewer” on the GA4
+    | property (Admin → Property access management). The dashboard uses organic
+    | search traffic only (session default channel group = Organic Search).
+    |
+    */
+    'google_analytics_credentials_path' => env('GOOGLE_ANALYTICS_CREDENTIALS_PATH', storage_path('app/google-credentials.json')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cloudflare API
     |--------------------------------------------------------------------------
     */
     'cloudflare_api_token' => env('CLOUDFLARE_API_TOKEN'),
@@ -129,5 +143,16 @@ return [
         'nuxt',
         'custom',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Project inbox (inbound webhook)
+    |--------------------------------------------------------------------------
+    |
+    | POST /api/inbox/{site-slug} with JSON body. When set, requests must send
+    | Authorization: Bearer {secret}. Leave empty in local dev to rely on throttle only.
+    |
+    */
+    'inbox_inbound_secret' => env('INBOX_INBOUND_SECRET'),
 
 ];

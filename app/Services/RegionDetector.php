@@ -123,7 +123,11 @@ class RegionDetector
     /**
      * Build a map of content that repeats across pages.
      */
-    private function buildRepeatMap($otherPages): array
+    /**
+     * @param  \Illuminate\Support\Collection<int, \App\Models\Page>  $otherPages
+     * @return array<string, int>
+     */
+    private function buildRepeatMap(iterable $otherPages): array
     {
         $contentCounts = [];
 

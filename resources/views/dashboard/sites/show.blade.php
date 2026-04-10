@@ -53,6 +53,12 @@
 
         {{-- Content Navigation --}}
         <div class="flex flex-wrap gap-2">
+            <flux:button href="{{ route('sites.inbox', $site) }}" variant="subtle" size="sm" icon="envelope">
+                Inbox
+                @if (($site->inbox_unread_count ?? 0) > 0)
+                    <flux:badge size="sm" color="lime" inset="top bottom">{{ $site->inbox_unread_count > 99 ? '99+' : $site->inbox_unread_count }}</flux:badge>
+                @endif
+            </flux:button>
             <flux:button href="{{ route('blog.index', $site) }}" variant="subtle" size="sm" icon="document-text">
                 Blog Posts <flux:badge size="sm" color="zinc" inset="top bottom">{{ $site->blogPosts()->count() }}</flux:badge>
             </flux:button>

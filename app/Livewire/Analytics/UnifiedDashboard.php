@@ -8,6 +8,7 @@ use App\Models\Page;
 use App\Models\Site;
 use App\Models\UptimeCheck;
 use App\Services\AnalyticsAggregator;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
@@ -16,7 +17,7 @@ class UnifiedDashboard extends Component
     public ?string $siteId = null;
     public int $days = 30;
 
-    public function render()
+    public function render(): View
     {
         $aggregator = app(AnalyticsAggregator::class);
         $activeSites = Site::query()
@@ -34,12 +35,17 @@ class UnifiedDashboard extends Component
             $siteVisitors = (int) $analytics['total_visitors'];
             $sitePageviews = (int) $analytics['total_pageviews'];
 
+            $trafficSource = $analytics['traffic_label'] === 'Organic search (Google)'
+                ? AnalyticsSnapshot::SOURCE_GOOGLE_ORGANIC
+                : null;
+
             $stats = [
                 'mode' => 'site',
                 'site_name' => $site->name,
+                'traffic_label' => $analytics['traffic_label'],
                 'total_visitors' => $siteVisitors,
                 'total_pageviews' => $sitePageviews,
-                'users_today' => $this->getUsersToday(collect([$site->id])),
+                'users_today' => $this->getUsersToday(collect([$site->id]), $trafficSource),
                 'daily' => $analytics['daily'],
                 'top_pages' => $this->hydrateTopPages($analytics['top_pages']),
                 'per_site' => [[
@@ -78,6 +84,7 @@ class UnifiedDashboard extends Component
             return [
                 'mode' => 'global',
                 'site_name' => null,
+                'traffic_label' => '—',
                 'total_visitors' => 0,
                 'total_pageviews' => 0,
                 'users_today' => 0,
@@ -92,7 +99,11 @@ class UnifiedDashboard extends Component
         }
 
         $siteIds = $sites->pluck('id');
-        $snapshots = $this->analyticsRowsForSites($siteIds);
+        $resolved = $this->resolveTrafficSnapshots($siteIds);
+        $snapshots = $resolved['snapshots'];
+        $trafficSource = $resolved['traffic_label'] === 'Organic search (Google)'
+            ? AnalyticsSnapshot::SOURCE_GOOGLE_ORGANIC
+            : null;
 
         $siteStats = $sites->map(function (Site $site) use ($snapshots): array {
             $siteRows = $snapshots->where('site_id', $site->id);
@@ -125,9 +136,10 @@ class UnifiedDashboard extends Component
         return [
             'mode' => 'global',
             'site_name' => null,
+            'traffic_label' => $resolved['traffic_label'],
             'total_visitors' => (int) $snapshots->sum('visitors'),
             'total_pageviews' => (int) $snapshots->sum('pageviews'),
-            'users_today' => $this->getUsersToday($siteIds),
+            'users_today' => $this->getUsersToday($siteIds, $trafficSource),
             'daily' => $daily,
             'top_pages' => $this->hydrateTopPages(
                 $snapshots
@@ -150,12 +162,40 @@ class UnifiedDashboard extends Component
         ];
     }
 
-    private function analyticsRowsForSites(Collection $siteIds): Collection
+    /**
+     * @return array{snapshots: Collection<int, array{site_id: string, page_id: string, date: string, visitors: int, pageviews: int}>, traffic_label: string}
+     */
+    private function resolveTrafficSnapshots(Collection $siteIds): array
     {
-        return AnalyticsSnapshot::query()
+        $organic = $this->rawAnalyticsRows($siteIds, AnalyticsSnapshot::SOURCE_GOOGLE_ORGANIC);
+        if ($organic->isEmpty()) {
+            return [
+                'snapshots' => $this->rawAnalyticsRows($siteIds, null),
+                'traffic_label' => 'All sources',
+            ];
+        }
+
+        return [
+            'snapshots' => $organic,
+            'traffic_label' => 'Organic search (Google)',
+        ];
+    }
+
+    /**
+     * @return Collection<int, array{site_id: string, page_id: string, date: string, visitors: int, pageviews: int}>
+     */
+    private function rawAnalyticsRows(Collection $siteIds, ?string $source): Collection
+    {
+        $query = AnalyticsSnapshot::query()
             ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
             ->whereIn('pages.site_id', $siteIds)
-            ->where('analytics_snapshots.date', '>=', now()->subDays($this->days)->toDateString())
+            ->where('analytics_snapshots.date', '>=', now()->subDays($this->days)->toDateString());
+
+        if ($source !== null) {
+            $query->where('analytics_snapshots.source', $source);
+        }
+
+        return $query
             ->selectRaw('pages.site_id, analytics_snapshots.page_id, analytics_snapshots.date, SUM(analytics_snapshots.visitors) as visitors, SUM(analytics_snapshots.pageviews) as pageviews')
             ->groupBy('pages.site_id', 'analytics_snapshots.page_id', 'analytics_snapshots.date')
             ->orderBy('analytics_snapshots.date')
@@ -169,13 +209,18 @@ class UnifiedDashboard extends Component
             ]);
     }
 
-    private function getUsersToday(Collection $siteIds): int
+    private function getUsersToday(Collection $siteIds, ?string $source = null): int
     {
-        return (int) AnalyticsSnapshot::query()
+        $query = AnalyticsSnapshot::query()
             ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
             ->whereIn('pages.site_id', $siteIds)
-            ->whereDate('analytics_snapshots.date', now()->toDateString())
-            ->sum('analytics_snapshots.visitors');
+            ->whereDate('analytics_snapshots.date', now()->toDateString());
+
+        if ($source !== null) {
+            $query->where('analytics_snapshots.source', $source);
+        }
+
+        return (int) $query->sum('analytics_snapshots.visitors');
     }
 
     private function hydrateTopPages(array $topPages): array
@@ -262,12 +307,55 @@ class UnifiedDashboard extends Component
             'p95_response_time' => $p95ResponseTime,
             'total_checks' => $totalChecks,
             'downtime_events' => $totalChecks - $upChecks,
+            'daily_bars' => $this->buildDailyUptimeBars($checks, $this->days),
+            'response_series' => $this->buildResponseTimeSeries($checks, $p95ResponseTime, $avgResponseTime),
             'recent' => $checks->take(-50)->map(fn ($c) => [
                 'is_up' => $c->is_up,
+                'is_degraded' => (bool) $c->is_degraded,
                 'response_time_ms' => $c->response_time_ms,
                 'checked_at' => $c->checked_at->format('H:i'),
             ])->values()->toArray(),
         ];
+    }
+
+    /**
+     * One status per calendar day for the uptime bar strip (matches external monitor day bars).
+     *
+     * @return list<array{date: string, status: string}>
+     */
+    private function buildDailyUptimeBars(Collection $checks, int $dayCount): array
+    {
+        $bars = [];
+        for ($i = $dayCount - 1; $i >= 0; $i--) {
+            $date = now()->subDays($i)->toDateString();
+            $dayChecks = $checks->filter(fn ($c) => $c->checked_at->toDateString() === $date);
+
+            if ($dayChecks->isEmpty()) {
+                $bars[] = ['date' => $date, 'status' => 'unknown'];
+            } elseif ($dayChecks->contains(fn ($c) => ! $c->is_up)) {
+                $bars[] = ['date' => $date, 'status' => 'down'];
+            } elseif ($dayChecks->contains(fn ($c) => $c->is_degraded)) {
+                $bars[] = ['date' => $date, 'status' => 'degraded'];
+            } else {
+                $bars[] = ['date' => $date, 'status' => 'up'];
+            }
+        }
+
+        return $bars;
+    }
+
+    /**
+     * @return list<array{ms: int, spike: bool, checked_at: string}>
+     */
+    private function buildResponseTimeSeries(Collection $checks, int $p95ResponseTime, int $avgResponseTime): array
+    {
+        $threshold = max($p95ResponseTime, (int) round($avgResponseTime * 2.5), 800);
+
+        return $checks->take(-72)->values()->map(fn ($c) => [
+            'ms' => (int) ($c->response_time_ms ?? 0),
+            'spike' => $c->is_up && ($c->response_time_ms ?? 0) >= $threshold,
+            'checked_at' => $c->checked_at->format('M j, H:i'),
+        ])->all();
     }
 
     private function getDeployStats(?string $siteId = null): array
@@ -324,6 +412,8 @@ class UnifiedDashboard extends Component
             'p95_response_time' => 0,
             'total_checks' => 0,
             'downtime_events' => 0,
+            'daily_bars' => $this->buildDailyUptimeBars(collect(), $this->days),
+            'response_series' => [],
             'recent' => [],
         ];
     }

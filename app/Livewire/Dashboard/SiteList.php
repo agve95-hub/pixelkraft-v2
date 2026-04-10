@@ -3,13 +3,14 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\Site;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class SiteList extends Component
 {
     public string $search = '';
 
-    public function render()
+    public function render(): View
     {
         $sites = Site::query()
             ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))

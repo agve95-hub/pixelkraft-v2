@@ -7,6 +7,7 @@ use App\Models\Page;
 use App\Services\ContentPatcher;
 use App\Services\RegionDetector;
 use App\Services\SiteSupportService;
+use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -58,7 +59,7 @@ class RegionPanel extends Component
         $this->selectedRegionId = $regionId;
     }
 
-    public function render()
+    public function render(): View
     {
         $page = Page::with('site')->findOrFail($this->pageId);
         $patcher = app(ContentPatcher::class);
@@ -85,6 +86,34 @@ class RegionPanel extends Component
                 $region->id => $this->extractHtmlTagFromSelector($region->selector),
             ])
             ->all();
+
+        $byAnchor = $regions->groupBy(
+            fn (EditableRegion $region) => $this->mainAnchorKey((string) ($region->selector ?? ''))
+        );
+
+        $groupOrder = [];
+        foreach ($regions as $region) {
+            $anchorKey = $this->mainAnchorKey((string) ($region->selector ?? ''));
+            if (! in_array($anchorKey, $groupOrder, true)) {
+                $groupOrder[] = $anchorKey;
+            }
+        }
+
+        $layerGroups = [];
+        foreach ($groupOrder as $anchorKey) {
+            /** @var \Illuminate\Support\Collection<int, EditableRegion> $groupRegions */
+            $groupRegions = $byAnchor->get($anchorKey, collect())->sortBy(
+                fn (EditableRegion $r) => $this->regionSortKey($r)
+            )->values();
+            $firstSelector = (string) ($groupRegions->first()?->selector ?? '');
+            $layerGroups[] = [
+                'key'       => $anchorKey,
+                'label'     => $this->mainAnchorLabel($firstSelector),
+                'token'     => $this->mainAnchorTagToken($firstSelector),
+                'regions'   => $groupRegions->all(),
+            ];
+        }
+
         $visualEditability = $regions
             ->mapWithKeys(fn (EditableRegion $region) => [
                 $region->id => $editorProfile['visual_editing_supported'] && $patcher->canVisuallyEditRegion($region),
@@ -106,6 +135,7 @@ class RegionPanel extends Component
 
         return view('livewire.editor.region-panel', [
             'regions'       => $regions,
+            'layerGroups'   => $layerGroups,
             'counts'        => $counts,
             'visualEditability' => $visualEditability,
             'visualEditableCount' => $visualEditableCount,
@@ -158,5 +188,67 @@ class RegionPanel extends Component
         }
 
         return 'div';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function selectorSegments(string $selector): array
+    {
+        $path = trim($selector);
+        if ($path === '') {
+            return [];
+        }
+
+        $parts = preg_split('/\s*>\s*/', $path);
+
+        return is_array($parts) ? array_values(array_filter(array_map('trim', $parts))) : [];
+    }
+
+    private function mainAnchorKey(string $selector): string
+    {
+        $segments = $this->selectorSegments($selector);
+        if ($segments === []) {
+            return '';
+        }
+
+        return preg_replace('/\s+/', '', strtolower($segments[0]));
+    }
+
+    private function mainAnchorLabel(string $selector): string
+    {
+        $segments = $this->selectorSegments($selector);
+        if ($segments === []) {
+            return 'Page root';
+        }
+
+        $first = $segments[0];
+
+        if (str_starts_with($first, '#')) {
+            return $first;
+        }
+
+        $normalized = preg_replace('/\s+/', '', strtolower($first));
+        $tagName = preg_replace('/[^a-z0-9_-].*/', '', $normalized);
+
+        return $tagName !== '' ? ucfirst($tagName) : $first;
+    }
+
+    private function mainAnchorTagToken(string $selector): string
+    {
+        $segments = $this->selectorSegments($selector);
+        if ($segments === []) {
+            return '<root>';
+        }
+
+        $first = $segments[0];
+        if (str_starts_with($first, '#')) {
+            return $first;
+        }
+
+        $normalized = preg_replace('/\s+/', '', strtolower($first));
+        $tagName = preg_replace('/[^a-z0-9_-].*/', '', $normalized) ?: 'element';
+
+        return '<'.$tagName.'>';
     }
 }

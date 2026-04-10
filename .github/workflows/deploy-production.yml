@@ -13,22 +13,46 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      PROD_HOST: ${{ secrets.PROD_HOST != '' && secrets.PROD_HOST || vars.PROD_HOST }}
+      PROD_USER: ${{ secrets.PROD_USER != '' && secrets.PROD_USER || vars.PROD_USER }}
+      PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY != '' && secrets.PROD_SSH_KEY || vars.PROD_SSH_KEY }}
+      PROD_APP_DIR: ${{ secrets.PROD_APP_DIR != '' && secrets.PROD_APP_DIR || vars.PROD_APP_DIR }}
 
     steps:
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          missing=()
+          for required in PROD_HOST PROD_USER PROD_SSH_KEY PROD_APP_DIR; do
+            if [ -z "${!required:-}" ]; then
+              missing+=("${required}")
+            fi
+          done
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing deploy configuration: ${missing[*]}."
+            echo "::error::Set these as repository secrets or repository variables before deploying."
+            exit 1
+          fi
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
+          host: ${{ env.PROD_HOST }}
+          username: ${{ env.PROD_USER }}
+          key: ${{ env.PROD_SSH_KEY }}
           script_stop: true
           script: |
             set -euo pipefail
-            cd "${{ secrets.PROD_APP_DIR }}"
+            cd "${{ env.PROD_APP_DIR }}"
 
-            git fetch --all
+            git fetch origin main
             git checkout main
-            git pull --ff-only origin main
+            git reset --hard origin/main
+            git clean -fd
 
             composer install --no-dev --optimize-autoloader
             php artisan migrate --force
