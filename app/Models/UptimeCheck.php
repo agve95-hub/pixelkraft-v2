@@ -16,6 +16,7 @@ class UptimeCheck extends Model
         'status_code',
         'response_time_ms',
         'is_up',
+        'is_degraded',
         'checked_at',
     ];
 
@@ -25,6 +26,7 @@ class UptimeCheck extends Model
             'status_code'      => 'integer',
             'response_time_ms' => 'integer',
             'is_up'            => 'boolean',
+            'is_degraded'      => 'boolean',
             'checked_at'       => 'datetime',
         ];
     }

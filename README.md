@@ -62,11 +62,13 @@ If you build sites with AI tools and manage more than a few repos, pixelkraft gi
 
 **Analytics And Monitoring**
 
-- Cloudflare analytics aggregation
+- **GA4 (organic / SEO)**: `pixelkraft:sync-analytics` pulls **Organic Search** traffic only (`sessionDefaultChannelGroup = Organic Search`) via the [Analytics Data API](https://developers.google.com/analytics/devguides/reporting/data/v1), matched to pages by `pagePath`. Requires a Google Cloud service account JSON and **Viewer** access on each GA4 property.
+- Cloudflare analytics aggregation (fallback when GA4 organic rows are absent)
 - Custom event tracking
+- Scheduled HTTP uptime checks with optional **degraded** state when responses are slow but still successful
 - Lighthouse and uptime monitoring hooks
 - Broken-link checking
-- Additional provider integrations are still being expanded
+- **External uptime (free tiers)**: [UptimeRobot](https://uptimerobot.com/) (50 monitors) and [Better Stack Uptime](https://betterstack.com/uptime) (10 monitors) expose APIs and status badges; pixelkraft can keep using the built-in `pixelkraft:check-uptime` command, or you can mirror external results into `uptime_checks` with a small custom sync if you outgrow ping-from-one-server limits.
 
 **Operations**
 
