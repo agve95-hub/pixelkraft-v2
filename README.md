@@ -110,20 +110,45 @@ See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint. It covers the
 
 ## Setup (Development)
 
+### Quick start
+
 ```bash
 git clone https://github.com/agve95-hub/pixelkraft.git
 cd pixelkraft
-composer install
-npm install
-cp .env.example .env
-php artisan key:generate
+composer setup
+```
 
-# Configure .env for MariaDB, Redis/Valkey, and service credentials
+`composer setup` installs PHP and Node dependencies, ensures `.env` exists, runs migrations, and builds assets.
 
-php artisan migrate
-php artisan horizon
-npm run dev
+### Run the development stack
+
+```bash
+composer dev
+```
+
+This starts Laravel, queue worker, logs (`pail`), and Vite in one command.
+
+### Configure environment values
+
+Set `.env` values for your database/cache/services before running full workflows:
+
+- `DB_CONNECTION` + DB credentials (MariaDB recommended)
+- `CACHE_STORE`, `QUEUE_CONNECTION`, and `SESSION_DRIVER` (`redis` / Valkey)
+- Optional external services (GitHub, Cloudflare, GA4, Resend, R2)
+
+If you prefer running services individually:
+
+```bash
 php artisan serve
+php artisan queue:listen --tries=1 --timeout=0
+php artisan pail --timeout=0
+npm run dev
+```
+
+### Run tests
+
+```bash
+composer test
 ```
 
 ## Deployment (Production VPS)
