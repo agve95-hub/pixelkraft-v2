@@ -5,8 +5,9 @@ namespace App\Livewire\Analytics;
 use App\Models\AnalyticsSnapshot;
 use App\Models\DeployLog;
 use App\Models\Page;
-use App\Models\Site;
 use App\Models\UptimeCheck;
+use App\Models\Site;
+use App\Support\SiteAccess;
 use App\Services\AnalyticsAggregator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -20,7 +21,7 @@ class UnifiedDashboard extends Component
     public function render(): View
     {
         $aggregator = app(AnalyticsAggregator::class);
-        $activeSites = Site::query()
+        $activeSites = SiteAccess::query()
             ->where('is_active', true)
             ->with('latestUptimeCheck')
             ->withCount('pages')
@@ -28,7 +29,7 @@ class UnifiedDashboard extends Component
             ->get();
 
         if ($this->siteId) {
-            $site = Site::with(['pages', 'latestUptimeCheck'])->findOrFail($this->siteId);
+            $site = SiteAccess::query()->with(['pages', 'latestUptimeCheck'])->findOrFail($this->siteId);
             $analytics = $aggregator->getSiteStats($site, $this->days);
             $uptime = $this->getUptimeStats($site);
             $deploy = $this->getDeployStats($site->id);

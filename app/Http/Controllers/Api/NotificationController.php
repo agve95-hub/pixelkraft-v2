@@ -4,13 +4,23 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use App\Models\Site;
 use Illuminate\Http\JsonResponse;
 
 class NotificationController extends Controller
 {
     public function index(): JsonResponse
     {
+        $user = request()->user();
+        $visibleSiteIds = Site::query()
+            ->visibleTo($user)
+            ->pluck('id');
+
         $notifications = Notification::query()
+            ->when(
+                ! $user?->isAdmin(),
+                fn ($query) => $query->whereIn('site_id', $visibleSiteIds)
+            )
             ->with('site:id,name,slug')
             ->latest('created_at')
             ->limit(50)
@@ -31,7 +41,18 @@ class NotificationController extends Controller
 
     public function markRead(string $id): JsonResponse
     {
-        $notification = Notification::findOrFail($id);
+        $user = request()->user();
+        $visibleSiteIds = Site::query()
+            ->visibleTo($user)
+            ->pluck('id');
+
+        $notification = Notification::query()
+            ->whereKey($id)
+            ->when(
+                ! $user?->isAdmin(),
+                fn ($query) => $query->whereIn('site_id', $visibleSiteIds)
+            )
+            ->firstOrFail();
         $notification->markAsRead();
 
         return response()->json(['status' => 'ok']);
@@ -39,7 +60,18 @@ class NotificationController extends Controller
 
     public function markAllRead(): JsonResponse
     {
-        Notification::unread()->update(['is_read' => true]);
+        $user = request()->user();
+        $visibleSiteIds = Site::query()
+            ->visibleTo($user)
+            ->pluck('id');
+
+        Notification::query()
+            ->unread()
+            ->when(
+                ! $user?->isAdmin(),
+                fn ($query) => $query->whereIn('site_id', $visibleSiteIds)
+            )
+            ->update(['is_read' => true]);
 
         return response()->json(['status' => 'ok']);
     }

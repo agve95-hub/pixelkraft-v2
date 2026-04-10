@@ -33,7 +33,7 @@ Route::post('/inbox/{slug}', [InboxInboundController::class, 'store'])
     ->name('api.inbox.inbound');
 // ── Authenticated API (Sanctum) ─────────────────
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'site.access'])->group(function () {
 
     // Sites
     Route::get('/sites', [SiteController::class, 'index'])->name('api.sites.index');

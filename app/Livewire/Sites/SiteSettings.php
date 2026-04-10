@@ -2,10 +2,10 @@
 
 namespace App\Livewire\Sites;
 
-use App\Models\Site;
 use App\Services\SiteSupportService;
 use App\Services\SiteRuntimeService;
 use Illuminate\Contracts\View\View;
+use App\Support\SiteAccess;
 use Livewire\Component;
 
 class SiteSettings extends Component
@@ -22,7 +22,7 @@ class SiteSettings extends Component
 
     public function mount(): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $runtime = $this->runtime();
         $this->name = $site->name;
         $this->domain = $site->domain ?? '';
@@ -62,7 +62,7 @@ class SiteSettings extends Component
             return;
         }
 
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $site->update([
             'name'             => $this->name,
             'domain'           => $this->domain ?: null,
@@ -79,7 +79,7 @@ class SiteSettings extends Component
 
     public function deleteSite(): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $site->delete();
 
         session()->flash('success', "Site '{$site->name}' deleted.");
@@ -88,7 +88,7 @@ class SiteSettings extends Component
 
     public function render(): View
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
 
         return view('livewire.sites.site-settings', [
             'supportProfile' => app(SiteSupportService::class)->siteProfile($site),

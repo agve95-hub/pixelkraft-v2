@@ -3,9 +3,9 @@
 namespace App\Livewire\Seo;
 
 use App\Models\Redirect;
-use App\Models\Site;
 use App\Services\NginxConfigService;
 use Illuminate\Contracts\View\View;
+use App\Support\SiteAccess;
 use Livewire\Component;
 
 class RedirectManager extends Component
@@ -17,6 +17,11 @@ class RedirectManager extends Component
     public int $statusCode = 301;
     public ?string $editingId = null;
 
+    private function siteIdOrFail(): string
+    {
+        return SiteAccess::findOrFail($this->siteId)->id;
+    }
+
     public function save(): void
     {
         $this->validate([
@@ -24,9 +29,13 @@ class RedirectManager extends Component
             'toPath'     => 'required|string|max:500',
             'statusCode' => 'required|in:301,302',
         ]);
+        $siteId = $this->siteIdOrFail();
 
         if ($this->editingId) {
-            $redirect = Redirect::findOrFail($this->editingId);
+            $redirect = Redirect::query()
+                ->whereKey($this->editingId)
+                ->where('site_id', $siteId)
+                ->firstOrFail();
             $redirect->update([
                 'from_path'   => $this->fromPath,
                 'to_path'     => $this->toPath,
@@ -34,7 +43,7 @@ class RedirectManager extends Component
             ]);
         } else {
             Redirect::create([
-                'site_id'     => $this->siteId,
+                'site_id'     => $siteId,
                 'from_path'   => $this->fromPath,
                 'to_path'     => $this->toPath,
                 'status_code' => $this->statusCode,
@@ -48,7 +57,10 @@ class RedirectManager extends Component
 
     public function edit(string $id): void
     {
-        $redirect = Redirect::findOrFail($id);
+        $redirect = Redirect::query()
+            ->whereKey($id)
+            ->where('site_id', $this->siteIdOrFail())
+            ->firstOrFail();
         $this->editingId = $id;
         $this->fromPath = $redirect->from_path;
         $this->toPath = $redirect->to_path;
@@ -57,14 +69,21 @@ class RedirectManager extends Component
 
     public function toggle(string $id): void
     {
-        $redirect = Redirect::findOrFail($id);
+        $redirect = Redirect::query()
+            ->whereKey($id)
+            ->where('site_id', $this->siteIdOrFail())
+            ->firstOrFail();
         $redirect->update(['is_active' => ! $redirect->is_active]);
         $this->regenerateNginx();
     }
 
     public function delete(string $id): void
     {
-        Redirect::findOrFail($id)->delete();
+        Redirect::query()
+            ->whereKey($id)
+            ->where('site_id', $this->siteIdOrFail())
+            ->firstOrFail()
+            ->delete();
         $this->regenerateNginx();
         session()->flash('success', 'Redirect deleted.');
     }
@@ -76,7 +95,7 @@ class RedirectManager extends Component
 
     public function render(): View
     {
-        $redirects = Redirect::where('site_id', $this->siteId)
+        $redirects = Redirect::where('site_id', $this->siteIdOrFail())
             ->orderBy('from_path')
             ->get();
 
@@ -96,7 +115,7 @@ class RedirectManager extends Component
     private function regenerateNginx(): void
     {
         try {
-            $site = Site::findOrFail($this->siteId);
+            $site = SiteAccess::findOrFail($this->siteId);
             if ($site->nginx_conf_path) {
                 app(NginxConfigService::class)->generateConfig($site);
                 app(NginxConfigService::class)->reloadNginx();

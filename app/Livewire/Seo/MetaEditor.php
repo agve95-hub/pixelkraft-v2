@@ -7,6 +7,7 @@ use App\Services\GitSyncService;
 use App\Services\NextMetadataPatcher;
 use App\Services\SeoAnalyzer;
 use App\Services\SiteSupportService;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Livewire\Component;
@@ -29,9 +30,23 @@ class MetaEditor extends Component
     public string $metaEditingMode = 'unsupported';
     public string $metaEditingNotice = '';
 
+    private ?string $resolvedSiteId = null;
+
+    private function resolvePage(): Page
+    {
+        $query = Page::query()->with('site')->whereKey($this->pageId);
+
+        if ($this->resolvedSiteId !== null) {
+            $query->where('site_id', $this->resolvedSiteId);
+        }
+
+        return $query->firstOrFail();
+    }
+
     public function mount(): void
     {
-        $page = Page::findOrFail($this->pageId);
+        $page = $this->resolvePage();
+        $this->resolvedSiteId = SiteAccess::findOrFail($page->site_id)->id;
 
         $this->title = $page->title ?? '';
         $this->metaDescription = $page->meta_description ?? '';
@@ -51,7 +66,8 @@ class MetaEditor extends Component
 
     public function save(): void
     {
-        $page = Page::findOrFail($this->pageId);
+        $page = $this->resolvePage();
+        SiteAccess::findOrFail($page->site_id);
         $this->refreshSupportState($page);
 
         if (! $this->metaEditingSupported) {
@@ -84,14 +100,14 @@ class MetaEditor extends Component
 
     public function runAnalysis(): void
     {
-        $page = Page::findOrFail($this->pageId);
+        $page = $this->resolvePage();
         $analyzer = app(SeoAnalyzer::class);
         $this->analysis = $analyzer->analyze($page, $this->focusKeyword);
     }
 
     public function render(): View
     {
-        $page = Page::findOrFail($this->pageId);
+        $page = $this->resolvePage();
 
         return view('livewire.seo.meta-editor', [
             'page' => $page,

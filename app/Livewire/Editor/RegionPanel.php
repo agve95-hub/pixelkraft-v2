@@ -4,6 +4,7 @@ namespace App\Livewire\Editor;
 
 use App\Models\EditableRegion;
 use App\Models\Page;
+use App\Support\SiteAccess;
 use App\Services\ContentPatcher;
 use App\Services\RegionDetector;
 use App\Services\SiteSupportService;
@@ -61,7 +62,11 @@ class RegionPanel extends Component
 
     public function render(): View
     {
-        $page = Page::with('site')->findOrFail($this->pageId);
+        $page = Page::query()
+            ->with('site')
+            ->whereKey($this->pageId)
+            ->whereHas('site', fn ($query) => $query->visibleTo(auth()->user()))
+            ->firstOrFail();
         $patcher = app(ContentPatcher::class);
         $support = app(SiteSupportService::class);
         $editorProfile = $support->editorProfile($page->site, $page);

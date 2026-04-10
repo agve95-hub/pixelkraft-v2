@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Dashboard;
 
-use App\Models\Site;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -12,7 +12,7 @@ class UpcomingPanel extends Component
     {
         $upcoming = collect();
 
-        $sslPending = Site::where('ssl_status', 'pending')->get();
+        $sslPending = SiteAccess::query()->where('ssl_status', 'pending')->get();
         foreach ($sslPending as $site) {
             $upcoming->push([
                 'icon' => 'shield-exclamation',
@@ -24,7 +24,11 @@ class UpcomingPanel extends Component
             ]);
         }
 
-        $noDomain = Site::whereNull('domain')->orWhere('domain', '')->get();
+        $noDomain = SiteAccess::query()
+            ->where(function ($query) {
+                $query->whereNull('domain')->orWhere('domain', '');
+            })
+            ->get();
         foreach ($noDomain as $site) {
             $upcoming->push([
                 'icon' => 'globe-alt',
@@ -45,7 +49,12 @@ class UpcomingPanel extends Component
             'overdue' => false,
         ]);
 
-        $noAnalytics = Site::whereNull('ga_property_id')->orWhere('ga_property_id', '')->limit(3)->get();
+        $noAnalytics = SiteAccess::query()
+            ->where(function ($query) {
+                $query->whereNull('ga_property_id')->orWhere('ga_property_id', '');
+            })
+            ->limit(3)
+            ->get();
         foreach ($noAnalytics as $site) {
             $upcoming->push([
                 'icon' => 'chart-bar',

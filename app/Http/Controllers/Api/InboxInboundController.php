@@ -17,8 +17,15 @@ class InboxInboundController extends Controller
     public function store(Request $request, string $slug): JsonResponse
     {
         $secret = config('pixelkraft.inbox_inbound_secret');
+        $requireSecret = (bool) config('pixelkraft.inbox_inbound_require_secret', ! app()->isLocal());
 
-        if (is_string($secret) && $secret !== '') {
+        if ($requireSecret && (! is_string($secret) || trim($secret) === '')) {
+            report(new \RuntimeException('Inbound inbox webhook is enabled without INBOX_INBOUND_SECRET.'));
+
+            return response()->json(['error' => 'Inbound inbox endpoint is not configured'], 503);
+        }
+
+        if (is_string($secret) && trim($secret) !== '') {
             $token = $request->bearerToken();
             if (! hash_equals($secret, (string) $token)) {
                 return response()->json(['error' => 'Unauthorized'], 401);

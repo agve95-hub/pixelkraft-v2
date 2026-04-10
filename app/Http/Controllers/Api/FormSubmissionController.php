@@ -34,14 +34,27 @@ class FormSubmissionController extends Controller
 
         RateLimiter::hit($key, 60);
 
-        $data = $request->except(['_token', '_method']);
+        $validated = $request->validate([
+            '_form_name' => ['nullable', 'string', 'max:100'],
+            '_hp' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'message' => ['nullable', 'string', 'max:10000'],
+            'body' => ['nullable', 'string', 'max:10000'],
+            'content' => ['nullable', 'string', 'max:10000'],
+        ]);
+
+        $data = array_merge(
+            $request->except(['_token', '_method']),
+            $validated,
+        );
 
         // Basic honeypot spam detection
         $isSpam = $this->detectSpam($request, $data);
 
         $submission = FormSubmission::create([
             'site_id'    => $site->id,
-            'form_name'  => $request->input('_form_name', 'contact'),
+            'form_name'  => (string) ($validated['_form_name'] ?? 'contact'),
             'data'       => $data,
             'ip_address' => $request->ip(),
             'is_spam'    => $isSpam,

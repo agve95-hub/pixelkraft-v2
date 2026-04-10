@@ -135,6 +135,15 @@ Set `.env` values for your database/cache/services before running full workflows
 - `DB_CONNECTION` + DB credentials (MariaDB recommended)
 - `CACHE_STORE`, `QUEUE_CONNECTION`, and `SESSION_DRIVER` (`redis` / Valkey)
 - Optional external services (GitHub, Cloudflare, GA4, Resend, R2)
+- Inbound form/inbox protection: `INBOX_INBOUND_REQUIRE_SECRET=true` and `INBOX_INBOUND_SECRET=<strong-random-token>`
+
+### Security and tenancy defaults
+
+- Site-scoped dashboard/API access is enforced for non-admin users. Admins can view all sites.
+- New sites are assigned to the current authenticated user (`sites.user_id`).
+- First registered account becomes `admin`; later registrations default to `editor`.
+- Horizon dashboard access is restricted to authenticated admins.
+- Public inbound endpoints support strict bearer-token enforcement via `INBOX_INBOUND_SECRET`.
 
 If you prefer running services individually:
 
@@ -149,6 +158,14 @@ npm run dev
 
 ```bash
 composer test
+```
+
+### Run quality checks
+
+```bash
+php artisan test
+npm run build
+php artisan migrate --pretend
 ```
 
 ## Deployment (Production VPS)
@@ -308,6 +325,12 @@ stopwaitsecs=3600
 ```
 
 ## Key Notes
+
+### Authorization behavior
+
+- Routes with `{site}` parameters are guarded so users can only resolve sites they can access.
+- If a user requests an unauthorized site UUID, the app returns `404` to avoid leaking tenant existence.
+- API and Livewire flows query only visible sites for the authenticated user.
 
 ### Managed site builds
 

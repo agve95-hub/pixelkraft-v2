@@ -3,6 +3,7 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\Site;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -10,7 +11,7 @@ class ExpensesPanel extends Component
 {
     public function render(): View
     {
-        $sites = Site::query()->withCount('pages')->orderBy('name')->get();
+        $sites = SiteAccess::query()->withCount('pages')->orderBy('name')->get();
 
         $siteExpenses = $sites->map(function (Site $site) {
             $baseCost = 4.99;

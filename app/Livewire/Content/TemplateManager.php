@@ -3,12 +3,14 @@
 namespace App\Livewire\Content;
 
 use App\Models\ContentTemplate;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class TemplateManager extends Component
 {
     public string $siteId;
+    private ?string $resolvedSiteId = null;
 
     // Form state
     public bool $showForm = false;
@@ -26,7 +28,14 @@ class TemplateManager extends Component
 
     public function edit(string $id): void
     {
-        $template = ContentTemplate::findOrFail($id);
+        $template = ContentTemplate::query()
+            ->whereKey($id)
+            ->where(function ($query): void {
+                $query
+                    ->where('site_id', $this->siteIdOrFail())
+                    ->orWhereNull('site_id');
+            })
+            ->firstOrFail();
         $this->editingId = $id;
         $this->name = $template->name;
         $this->type = $template->type;
@@ -37,6 +46,8 @@ class TemplateManager extends Component
 
     public function save(): void
     {
+        $siteId = $this->siteIdOrFail();
+
         $this->validate([
             'name'         => 'required|string|max:255',
             'type'         => 'required|in:page,section,component',
@@ -53,7 +64,7 @@ class TemplateManager extends Component
         }
 
         $data = [
-            'site_id'       => $this->siteId,
+            'site_id'       => $siteId,
             'name'          => $this->name,
             'type'          => $this->type,
             'html_template' => $this->htmlTemplate,
@@ -61,7 +72,11 @@ class TemplateManager extends Component
         ];
 
         if ($this->editingId) {
-            ContentTemplate::findOrFail($this->editingId)->update($data);
+            ContentTemplate::query()
+                ->whereKey($this->editingId)
+                ->where('site_id', $siteId)
+                ->firstOrFail()
+                ->update($data);
         } else {
             ContentTemplate::create($data);
         }
@@ -72,7 +87,11 @@ class TemplateManager extends Component
 
     public function delete(string $id): void
     {
-        ContentTemplate::findOrFail($id)->delete();
+        ContentTemplate::query()
+            ->whereKey($id)
+            ->where('site_id', $this->siteIdOrFail())
+            ->firstOrFail()
+            ->delete();
         session()->flash('success', 'Template deleted.');
     }
 
@@ -93,13 +112,24 @@ class TemplateManager extends Component
 
     public function render(): View
     {
+        $siteId = $this->siteIdOrFail();
+
         $templates = ContentTemplate::query()
-            ->where(fn ($q) => $q->where('site_id', $this->siteId)->orWhereNull('site_id'))
+            ->where(fn ($q) => $q->where('site_id', $siteId)->orWhereNull('site_id'))
             ->orderBy('name')
             ->get();
 
         return view('livewire.content.template-manager', [
             'templates' => $templates,
         ]);
+    }
+
+    private function siteIdOrFail(): string
+    {
+        if ($this->resolvedSiteId === null) {
+            $this->resolvedSiteId = SiteAccess::findOrFail($this->siteId)->id;
+        }
+
+        return $this->resolvedSiteId;
     }
 }

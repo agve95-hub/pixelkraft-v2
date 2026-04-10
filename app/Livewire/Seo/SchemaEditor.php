@@ -5,6 +5,7 @@ namespace App\Livewire\Seo;
 use App\Models\Page;
 use App\Services\GitSyncService;
 use App\Services\SiteSupportService;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Livewire\Component;
@@ -16,9 +17,17 @@ class SchemaEditor extends Component
     public bool $schemaEditingSupported = false;
     public string $schemaEditingNotice = '';
 
+    private function pageOrFail(): Page
+    {
+        return Page::query()
+            ->whereKey($this->pageId)
+            ->whereHas('site', fn ($query) => $query->visibleTo(auth()->user()))
+            ->firstOrFail();
+    }
+
     public function mount(): void
     {
-        $page = Page::findOrFail($this->pageId);
+        $page = $this->pageOrFail();
 
         $this->schemaJson = $page->schema_json
             ? json_encode($page->schema_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
@@ -28,7 +37,7 @@ class SchemaEditor extends Component
 
     public function save(): void
     {
-        $page = Page::findOrFail($this->pageId);
+        $page = $this->pageOrFail();
         $this->refreshSupportState($page);
 
         if (! $this->schemaEditingSupported) {
@@ -66,7 +75,7 @@ class SchemaEditor extends Component
 
     public function usePreset(string $preset): void
     {
-        $page = Page::with('site')->findOrFail($this->pageId);
+        $page = $this->pageOrFail()->load('site');
         $site = $page->site;
         $domain = $site->domain ?? 'example.com';
 

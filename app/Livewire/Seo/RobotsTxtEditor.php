@@ -7,6 +7,7 @@ use App\Services\GitSyncService;
 use App\Services\SiteRuntimeService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
+use App\Support\SiteAccess;
 use Livewire\Component;
 
 class RobotsTxtEditor extends Component
@@ -17,7 +18,7 @@ class RobotsTxtEditor extends Component
 
     public function mount(): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $path = $this->getRobotsPath($site);
 
         if ($path && File::exists($path)) {
@@ -30,7 +31,7 @@ class RobotsTxtEditor extends Component
 
     public function save(): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $git = app(GitSyncService::class);
 
         if (! $git->isCloned($site)) {
@@ -63,7 +64,7 @@ class RobotsTxtEditor extends Component
 
     public function usePreset(string $preset): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
 
         $this->content = match ($preset) {
             'allow_all' => "User-agent: *\nAllow: /\n\nSitemap: https://{$site->domain}/sitemap.xml",

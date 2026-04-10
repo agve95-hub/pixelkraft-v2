@@ -9,6 +9,7 @@ use App\Services\GitSyncService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use App\Support\SiteAccess;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -40,6 +41,7 @@ class BlogEditor extends Component
     public string $outputPath = '';
 
     public bool $autoSlug = true;
+    private ?string $resolvedSiteId = null;
 
     protected $rules = [
         'title'          => 'required|string|max:255',
@@ -56,8 +58,13 @@ class BlogEditor extends Component
 
     public function mount(): void
     {
+        $this->resolvedSiteId = SiteAccess::findOrFail($this->siteId)->id;
+
         if ($this->postId) {
-            $post = BlogPost::findOrFail($this->postId);
+            $post = BlogPost::query()
+                ->whereKey($this->postId)
+                ->where('site_id', $this->resolvedSiteId)
+                ->firstOrFail();
             $this->title = $post->title;
             $this->slug = $post->slug;
             $this->body = $post->body;
@@ -103,10 +110,11 @@ class BlogEditor extends Component
     {
         $this->validate();
 
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
+        $this->resolvedSiteId = $site->id;
 
         $data = [
-            'site_id'         => $this->siteId,
+            'site_id'         => $this->resolvedSiteId,
             'title'           => $this->title,
             'slug'            => $this->slug,
             'body'            => $this->body,
@@ -127,7 +135,10 @@ class BlogEditor extends Component
         }
 
         if ($this->postId) {
-            $post = BlogPost::findOrFail($this->postId);
+            $post = BlogPost::query()
+                ->whereKey($this->postId)
+                ->where('site_id', $this->resolvedSiteId)
+                ->firstOrFail();
             $post->update($data);
         } else {
             $post = BlogPost::create($data);
@@ -143,8 +154,10 @@ class BlogEditor extends Component
 
     public function render(): View
     {
+        $this->resolvedSiteId ??= SiteAccess::findOrFail($this->siteId)->id;
+
         $templates = ContentTemplate::query()
-            ->where(fn ($q) => $q->where('site_id', $this->siteId)->orWhereNull('site_id'))
+            ->where(fn ($q) => $q->where('site_id', $this->resolvedSiteId)->orWhereNull('site_id'))
             ->where('type', 'page')
             ->get();
 

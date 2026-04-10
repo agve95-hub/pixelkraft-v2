@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Sites;
 
-use App\Models\Site;
 use App\Models\SiteInboxMessage;
 use Illuminate\Support\Facades\Mail;
+use App\Support\SiteAccess;
 use Livewire\Component;
 
 class SiteInbox extends Component
@@ -24,13 +24,13 @@ class SiteInbox extends Component
     public function mount(string $siteId): void
     {
         $this->siteId = $siteId;
-        $site = Site::findOrFail($siteId);
+        $site = SiteAccess::findOrFail($siteId);
         $this->composeTo = (string) ($site->client_email ?? '');
     }
 
     public function openComposer(): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         if ($this->composeTo === '') {
             $this->composeTo = (string) ($site->client_email ?? '');
         }
@@ -50,7 +50,7 @@ class SiteInbox extends Component
             'composeBody'    => 'required|string|max:50000',
         ]);
 
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
 
         $fromAddress = config('mail.from.address');
         $fromName = $site->name . ' — ' . config('app.name');
@@ -90,6 +90,8 @@ class SiteInbox extends Component
 
     public function selectMessage(string $id): void
     {
+        $site = SiteAccess::findOrFail($this->siteId);
+
         if ($this->selectedId === $id) {
             $this->selectedId = null;
 
@@ -98,7 +100,10 @@ class SiteInbox extends Component
 
         $this->selectedId = $id;
 
-        $msg = SiteInboxMessage::where('site_id', $this->siteId)->where('id', $id)->first();
+        $msg = SiteInboxMessage::query()
+            ->where('site_id', $site->id)
+            ->whereKey($id)
+            ->first();
 
         if ($msg && $msg->direction === 'inbound' && ! $msg->is_read) {
             $msg->update(['is_read' => true]);
@@ -107,7 +112,7 @@ class SiteInbox extends Component
 
     public function render()
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
 
         $messages = SiteInboxMessage::where('site_id', $site->id)
             ->latest('created_at')
