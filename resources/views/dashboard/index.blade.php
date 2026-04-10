@@ -40,7 +40,7 @@
 
         $activeSites = \App\Models\Site::query()
             ->with([
-                'latestUptimeCheck:id,site_id,is_up,is_degraded,response_time_ms,checked_at',
+                'latestUptimeCheck',
                 'pages:id,site_id,title,meta_description,seo_score',
             ])
             ->withCount('pages')
