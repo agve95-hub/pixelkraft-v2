@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\EditorPreviewController;
+use App\Models\BlogPost;
 use App\Models\Page;
 use App\Models\Site;
 use Illuminate\Support\Facades\Route;
@@ -16,7 +17,14 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     // Sites
     Route::get('/sites', fn () => view('dashboard.sites.index'))->name('sites.index');
     Route::get('/sites/create', fn () => view('dashboard.sites.create'))->name('sites.create');
-    Route::get('/sites/{site}', fn (Site $site) => view('dashboard.sites.show', ['site' => $site]))->name('sites.show');
+    Route::get('/sites/{site}', function (Site $site) {
+        $site->loadCount([
+            'inboxMessages as inbox_unread_count' => fn ($q) => $q->where('direction', 'inbound')->where('is_read', false),
+        ]);
+
+        return view('dashboard.sites.show', ['site' => $site]);
+    })->name('sites.show');
+    Route::get('/sites/{site}/inbox', fn (Site $site) => view('dashboard.sites.inbox', ['site' => $site]))->name('sites.inbox');
     Route::get('/sites/{site}/settings', fn (Site $site) => view('dashboard.sites.settings', ['site' => $site]))->name('sites.settings');
     Route::get('/sites/{site}/files', fn (Site $site) => view('dashboard.sites.files', ['site' => $site]))->name('sites.files');
 
@@ -34,7 +42,11 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     // Content
     Route::get('/sites/{site}/blog', fn (Site $site) => view('dashboard.content.blog-index', ['site' => $site]))->name('blog.index');
     Route::get('/sites/{site}/blog/create', fn (Site $site) => view('dashboard.content.blog-create', ['site' => $site]))->name('blog.create');
-    Route::get('/sites/{site}/blog/{post}/edit', fn (Site $site, $post) => view('dashboard.content.blog-edit', ['site' => $site, 'postId' => $post]))->name('blog.edit');
+    Route::get('/sites/{site}/blog/{blogPost}/edit', function (Site $site, BlogPost $blogPost) {
+        abort_unless($blogPost->site_id === $site->id, 404);
+
+        return view('dashboard.content.blog-edit', ['site' => $site, 'postId' => $blogPost->id]);
+    })->name('blog.edit');
     Route::get('/sites/{site}/products', fn (Site $site) => view('dashboard.content.product-index', ['site' => $site]))->name('products.index');
     Route::get('/sites/{site}/products/create', fn (Site $site) => view('dashboard.content.product-create', ['site' => $site]))->name('products.create');
     Route::get('/sites/{site}/templates', fn (Site $site) => view('dashboard.content.templates', ['site' => $site]))->name('templates.index');

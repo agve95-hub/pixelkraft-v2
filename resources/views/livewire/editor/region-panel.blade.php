@@ -31,73 +31,90 @@
 
     <div class="flex-1 overflow-y-auto bg-zinc-950/40">
         <div class="border-b border-zinc-800/80 bg-zinc-950/60 px-3 py-2 text-[10px] text-zinc-500">
-            Hierarchy mirrors what you see in canvas.
+            Layers are grouped by the top-level selector (first segment). Nesting matches the canvas tree.
         </div>
-        @forelse ($regions as $region)
-            @php
-                $path = trim((string) ($region->selector ?? ''));
-                $segments = $path !== '' ? preg_split('/\s*>\s*/', $path) : [];
-                $lastSegment = $segments && count($segments) ? $segments[count($segments) - 1] : '';
-                $normalizedSegment = preg_replace('/\s+/', '', strtolower((string) $lastSegment));
-                $tagName = preg_replace('/[^a-z0-9_-].*/', '', (string) $normalizedSegment) ?: 'element';
-                $tagToken = '<' . $tagName . '>';
-                $level = max(0, count($segments ?? []) - 1);
-                $depth = min($level, 8);
-                $label = Str::limit(strip_tags($region->current_content ?? ''), 46) ?: '(empty)';
-                $isVisual = (bool) ($visualEditability[$region->id] ?? false);
-            @endphp
-            <button
-                type="button"
-                wire:key="layer-{{ $region->id }}"
-                wire:click="selectRegion('{{ $region->id }}')"
-                data-layer-row
-                data-layer-region-id="{{ $region->id }}"
-                data-layer-selector="{{ $region->selector }}"
-                @class([
-                    'group relative block w-full border-b border-zinc-800/70 py-2 pr-2 text-left transition',
-                    'bg-violet-500/15 ring-1 ring-inset ring-violet-500/55' => $selectedRegionId === $region->id,
-                    'hover:bg-zinc-800/55' => $selectedRegionId !== $region->id,
-                ])
-                style="padding-left: {{ 12 + ($depth * 14) }}px;"
-                title="{{ $region->selector }}"
-            >
-                @if ($depth > 0)
-                    @for ($i = 1; $i <= $depth; $i++)
-                        <span
-                            class="pointer-events-none absolute top-0 bottom-0 w-px bg-zinc-700/70"
-                            style="left: {{ 10 + (($i - 1) * 14) }}px;"
-                            aria-hidden="true"
-                        ></span>
-                    @endfor
+        @forelse ($layerGroups as $group)
+            <div wire:key="layer-group-{{ $loop->index }}" class="border-b border-zinc-800/80">
+                <div
+                    class="sticky top-0 z-10 flex items-center gap-2 border-b border-zinc-800/60 bg-zinc-900/95 px-3 py-2 backdrop-blur-sm"
+                    role="presentation"
+                >
                     <span
-                        class="pointer-events-none absolute h-px bg-zinc-600/80"
-                        style="left: {{ 10 + (($depth - 1) * 14) }}px; width: 10px; top: 19px;"
-                        aria-hidden="true"
-                    ></span>
-                @endif
-
-                <div class="flex items-center gap-2">
-                    <span
-                        class="shrink-0 rounded border border-fuchsia-500/45 bg-fuchsia-500/10 px-1.5 py-0.5 font-mono text-[10px] text-fuchsia-200"
-                    >{{ $tagToken }}</span>
-                    <p class="min-w-0 flex-1 truncate text-[12px] font-medium leading-5 text-zinc-100">
-                        {{ $label }}
-                    </p>
-                    <span
-                        @class([
-                            'shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
-                            'border-violet-500/40 bg-violet-500/10 text-violet-200' => $isVisual,
-                            'border-amber-500/40 bg-amber-500/10 text-amber-200' => ! $isVisual,
-                        ])
-                    >
-                        {{ $isVisual ? 'visual' : 'code' }}
+                        class="shrink-0 rounded border border-cyan-500/40 bg-cyan-500/10 px-1.5 py-0.5 font-mono text-[10px] text-cyan-200"
+                    >{{ $group['token'] }}</span>
+                    <span class="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+                        {{ $group['label'] }}
                     </span>
+                    <span class="shrink-0 font-mono text-[10px] text-zinc-500">{{ count($group['regions']) }}</span>
                 </div>
 
-                <div class="mt-1 pl-0.5">
-                    <p class="truncate font-mono text-[10px] text-zinc-500">{{ $region->selector }}</p>
-                </div>
-            </button>
+                @foreach ($group['regions'] as $region)
+                    @php
+                        $path = trim((string) ($region->selector ?? ''));
+                        $segments = $path !== '' ? preg_split('/\s*>\s*/', $path) : [];
+                        $lastSegment = $segments && count($segments) ? $segments[count($segments) - 1] : '';
+                        $normalizedSegment = preg_replace('/\s+/', '', strtolower((string) $lastSegment));
+                        $tagName = preg_replace('/[^a-z0-9_-].*/', '', (string) $normalizedSegment) ?: 'element';
+                        $tagToken = '<' . $tagName . '>';
+                        $level = max(0, count($segments ?? []) - 1);
+                        $depth = min($level, 8);
+                        $label = Str::limit(strip_tags($region->current_content ?? ''), 46) ?: '(empty)';
+                        $isVisual = (bool) ($visualEditability[$region->id] ?? false);
+                    @endphp
+                    <button
+                        type="button"
+                        wire:key="layer-{{ $region->id }}"
+                        wire:click="selectRegion('{{ $region->id }}')"
+                        data-layer-row
+                        data-layer-region-id="{{ $region->id }}"
+                        data-layer-selector="{{ $region->selector }}"
+                        @class([
+                            'group relative block w-full border-b border-zinc-800/50 py-2 pr-2 text-left transition last:border-b-0',
+                            'bg-violet-500/15 ring-1 ring-inset ring-violet-500/55' => $selectedRegionId === $region->id,
+                            'hover:bg-zinc-800/55' => $selectedRegionId !== $region->id,
+                        ])
+                        style="padding-left: {{ 12 + ($depth * 14) }}px;"
+                        title="{{ $region->selector }}"
+                    >
+                        @if ($depth > 0)
+                            @for ($i = 1; $i <= $depth; $i++)
+                                <span
+                                    class="pointer-events-none absolute top-0 bottom-0 w-px bg-zinc-700/70"
+                                    style="left: {{ 10 + (($i - 1) * 14) }}px;"
+                                    aria-hidden="true"
+                                ></span>
+                            @endfor
+                            <span
+                                class="pointer-events-none absolute h-px bg-zinc-600/80"
+                                style="left: {{ 10 + (($depth - 1) * 14) }}px; width: 10px; top: 19px;"
+                                aria-hidden="true"
+                            ></span>
+                        @endif
+
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="shrink-0 rounded border border-fuchsia-500/45 bg-fuchsia-500/10 px-1.5 py-0.5 font-mono text-[10px] text-fuchsia-200"
+                            >{{ $tagToken }}</span>
+                            <p class="min-w-0 flex-1 truncate text-[12px] font-medium leading-5 text-zinc-100">
+                                {{ $label }}
+                            </p>
+                            <span
+                                @class([
+                                    'shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wide',
+                                    'border-violet-500/40 bg-violet-500/10 text-violet-200' => $isVisual,
+                                    'border-amber-500/40 bg-amber-500/10 text-amber-200' => ! $isVisual,
+                                ])
+                            >
+                                {{ $isVisual ? 'visual' : 'code' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-1 pl-0.5">
+                            <p class="truncate font-mono text-[10px] text-zinc-500">{{ $region->selector }}</p>
+                        </div>
+                    </button>
+                @endforeach
+            </div>
         @empty
             <div class="px-3 py-8 text-center text-sm text-zinc-500">
                 No layers yet. Parse this page first.

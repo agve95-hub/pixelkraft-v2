@@ -204,6 +204,30 @@ class Site extends Model
         return $this->hasMany(FormSubmission::class);
     }
 
+    public function inboxMessages()
+    {
+        return $this->hasMany(SiteInboxMessage::class);
+    }
+
+    public function clientDisplayName(): string
+    {
+        $name = trim(trim((string) $this->client_first_name) . ' ' . trim((string) $this->client_last_name));
+
+        if ($name !== '') {
+            return $name;
+        }
+
+        if (! empty($this->client_company)) {
+            return (string) $this->client_company;
+        }
+
+        if (! empty($this->client_email)) {
+            return (string) $this->client_email;
+        }
+
+        return 'Client';
+    }
+
     public function newsletterSubscribers()
     {
         return $this->hasMany(NewsletterSubscriber::class);

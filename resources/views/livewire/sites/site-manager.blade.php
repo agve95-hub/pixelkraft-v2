@@ -1,4 +1,4 @@
-<div class="w-full max-w-3xl mx-auto">
+<div class="w-full max-w-3xl">
     <div class="mb-8">
         <flux:button href="{{ route('sites.index') }}" variant="subtle" size="sm" icon="arrow-left" class="mb-4">
             Back to sites
@@ -9,14 +9,11 @@
 
     <form wire:submit="create" class="space-y-10">
 
-        {{-- 1 ─ Client information --}}
+        {{-- 1 — Client information --}}
         <section class="space-y-6">
             <div class="flex items-center gap-3">
                 <span class="flex items-center justify-center size-7 rounded-full bg-emerald-600 text-white text-xs font-bold shrink-0">1</span>
-                <div>
-                    <flux:heading size="lg">Client information</flux:heading>
-                    <flux:subheading>Who is this project for?</flux:subheading>
-                </div>
+                <flux:heading size="lg">Client information</flux:heading>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -27,7 +24,7 @@
                 </flux:field>
                 <flux:field>
                     <flux:label>Last name</flux:label>
-                    <flux:input wire:model="clientLastName" placeholder="Arbo" />
+                    <flux:input wire:model="clientLastName" placeholder="Artho" />
                     <flux:error name="clientLastName" />
                 </flux:field>
             </div>
@@ -66,14 +63,11 @@
 
         <flux:separator />
 
-        {{-- 2 ─ Project setup --}}
+        {{-- 2 — Project setup --}}
         <section class="space-y-6">
             <div class="flex items-center gap-3">
                 <span class="flex items-center justify-center size-7 rounded-full bg-emerald-600 text-white text-xs font-bold shrink-0">2</span>
-                <div>
-                    <flux:heading size="lg">Project setup</flux:heading>
-                    <flux:subheading>Name your project and connect the codebase.</flux:subheading>
-                </div>
+                <flux:heading size="lg">Project setup</flux:heading>
             </div>
 
             <flux:field>
@@ -119,14 +113,11 @@
 
         <flux:separator />
 
-        {{-- 3 ─ Repository & deployment --}}
+        {{-- 3 — Repository & deployment --}}
         <section class="space-y-6">
             <div class="flex items-center gap-3">
                 <span class="flex items-center justify-center size-7 rounded-full bg-emerald-600 text-white text-xs font-bold shrink-0">3</span>
-                <div>
-                    <flux:heading size="lg">Repository & deployment</flux:heading>
-                    <flux:subheading>Connect the GitHub repo to enable deploys.</flux:subheading>
-                </div>
+                <flux:heading size="lg">Repository & deployment</flux:heading>
             </div>
 
             <flux:field>
@@ -149,23 +140,20 @@
             </div>
 
             <flux:field>
-                <flux:label badge="Required for private repos">GitHub personal access token</flux:label>
+                <flux:label badge="Optional">GitHub personal access token</flux:label>
                 <flux:input type="password" wire:model="githubToken" placeholder="ghp_xxxxxxxxxxxx" class="font-mono" viewable />
-                <flux:description>Encrypted at rest. Needs <code>repo</code> scope.</flux:description>
+                <flux:description>Encrypted at rest. Needs <code class="text-xs">repo</code> scope.</flux:description>
                 <flux:error name="githubToken" />
             </flux:field>
         </section>
 
         <flux:separator />
 
-        {{-- 4 ─ Domain & SSL --}}
+        {{-- 4 — Domain & SSL --}}
         <section class="space-y-6">
             <div class="flex items-center gap-3">
                 <span class="flex items-center justify-center size-7 rounded-full bg-emerald-600 text-white text-xs font-bold shrink-0">4</span>
-                <div>
-                    <flux:heading size="lg">Domain & SSL</flux:heading>
-                    <flux:subheading>Configure the production domain and certificate.</flux:subheading>
-                </div>
+                <flux:heading size="lg">Domain & SSL</flux:heading>
             </div>
 
             <flux:field>
@@ -202,149 +190,152 @@
 
         <flux:separator />
 
-        {{-- 5 ─ Integrations --}}
-        <section class="space-y-6">
-            <div class="flex items-center gap-3">
+        {{-- 5 — Integrations (optional sub-groups) --}}
+        <section class="space-y-8">
+            <div class="flex items-center gap-3 flex-wrap">
                 <span class="flex items-center justify-center size-7 rounded-full bg-emerald-600 text-white text-xs font-bold shrink-0">5</span>
-                <div>
+                <div class="flex items-center gap-2 flex-wrap">
                     <flux:heading size="lg">Integrations</flux:heading>
-                    <flux:subheading>Connect third-party services — all optional, can be added later.</flux:subheading>
+                    <flux:badge color="zinc" size="sm">Optional</flux:badge>
                 </div>
             </div>
 
-            <flux:field>
-                <flux:label badge="Optional">Google Analytics measurement ID</flux:label>
-                <flux:input wire:model="gaPropertyId" placeholder="G-XXXXXXXXXX" class="font-mono" />
-                <flux:description>Search → Google Analytics → Admin → Data streams.</flux:description>
-                <flux:error name="gaPropertyId" />
-            </flux:field>
-
-            <flux:field>
-                <flux:label badge="Optional">Google Search Console property</flux:label>
-                <flux:input wire:model="gscProperty" placeholder="https://www.example.com" />
-                <flux:description>Enables SEO crawl data and indexing status.</flux:description>
-                <flux:error name="gscProperty" />
-            </flux:field>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-6">
                 <flux:field>
-                    <flux:label badge="Optional">Google Tag Manager ID</flux:label>
-                    <flux:input wire:model="gtmId" placeholder="GTM-XXXXXXX" class="font-mono" />
-                    <flux:error name="gtmId" />
+                    <flux:label badge="Optional">Google Analytics measurement ID</flux:label>
+                    <flux:input wire:model="gaPropertyId" placeholder="G-XXXXXXXXXX" class="font-mono" />
+                    <flux:description>
+                        <a
+                            href="https://support.google.com/analytics/answer/9304153"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-emerald-600 dark:text-emerald-400 hover:underline"
+                        >Found in Google Analytics → Admin → Data streams</a>
+                    </flux:description>
+                    <flux:error name="gaPropertyId" />
                 </flux:field>
+
                 <flux:field>
-                    <flux:label badge="Optional">Google Ads ID</flux:label>
-                    <flux:input wire:model="googleAdsId" placeholder="AW-XXXXXXXXX" class="font-mono" />
-                    <flux:error name="googleAdsId" />
+                    <flux:label badge="Optional">Google Search Console property</flux:label>
+                    <flux:input wire:model="gscProperty" placeholder="https://www.example.com" />
+                    <flux:error name="gscProperty" />
                 </flux:field>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <flux:field>
+                        <flux:label badge="Optional">Google Tag Manager ID</flux:label>
+                        <flux:input wire:model="gtmId" placeholder="GTM-XXXXXXX" class="font-mono" />
+                        <flux:error name="gtmId" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label badge="Optional">Google Ads ID</flux:label>
+                        <flux:input wire:model="googleAdsId" placeholder="AW-XXXXXXXXX" class="font-mono" />
+                        <flux:error name="googleAdsId" />
+                    </flux:field>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <flux:field>
+                        <flux:label badge="Optional">Cloudflare API token</flux:label>
+                        <flux:input type="password" wire:model="cfApiToken" placeholder="API token" viewable />
+                        <flux:error name="cfApiToken" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label badge="Optional">Cloudflare Zone ID</flux:label>
+                        <flux:input wire:model="cfZoneId" placeholder="Zone ID" class="font-mono" />
+                        <flux:error name="cfZoneId" />
+                    </flux:field>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <flux:field>
-                    <flux:label badge="Optional">Cloudflare API token</flux:label>
-                    <flux:input type="password" wire:model="cfApiToken" placeholder="Bearer token" viewable />
-                    <flux:error name="cfApiToken" />
-                </flux:field>
-                <flux:field>
-                    <flux:label badge="Optional">Cloudflare Zone ID</flux:label>
-                    <flux:input wire:model="cfZoneId" placeholder="Zone ID" class="font-mono" />
-                    <flux:error name="cfZoneId" />
-                </flux:field>
-            </div>
-            <flux:description>For DNS and cache purge.</flux:description>
-        </section>
-
-        <flux:separator />
-
-        {{-- 6 ─ SMTP --}}
-        <section class="space-y-6">
-            <div class="flex items-center gap-3">
-                <span class="flex items-center justify-center size-7 rounded-full bg-emerald-600 text-white text-xs font-bold shrink-0">6</span>
+            <div class="space-y-6 pt-2 border-t border-zinc-200 dark:border-zinc-700">
                 <div>
-                    <flux:heading size="lg">SMTP relay / transactional email</flux:heading>
-                    <flux:subheading badge="Optional">Used for form submissions and client notifications.</flux:subheading>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <flux:heading size="sm">SMTP relay / transactional email</flux:heading>
+                        <flux:badge color="zinc" size="sm">Optional</flux:badge>
+                    </div>
+                    <flux:subheading class="mt-1">Used for form submissions and client notifications.</flux:subheading>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <flux:field>
+                        <flux:label badge="Optional">SMTP host</flux:label>
+                        <flux:input wire:model="smtpHost" placeholder="smtp.example.com" class="font-mono" />
+                        <flux:error name="smtpHost" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label badge="Optional">Port</flux:label>
+                        <flux:input type="number" wire:model="smtpPort" placeholder="587" />
+                        <flux:error name="smtpPort" />
+                    </flux:field>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <flux:field>
+                        <flux:label badge="Optional">SMTP username</flux:label>
+                        <flux:input wire:model="smtpUsername" placeholder="SMTP username" />
+                        <flux:error name="smtpUsername" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label badge="Optional">SMTP password</flux:label>
+                        <flux:input type="password" wire:model="smtpPassword" placeholder="SMTP password" viewable />
+                        <flux:error name="smtpPassword" />
+                    </flux:field>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <flux:field>
-                    <flux:label>SMTP host</flux:label>
-                    <flux:input wire:model="smtpHost" placeholder="SMTP host" class="font-mono" />
-                    <flux:error name="smtpHost" />
-                </flux:field>
-                <flux:field>
-                    <flux:label>Port (587)</flux:label>
-                    <flux:input type="number" wire:model="smtpPort" placeholder="587" />
-                    <flux:error name="smtpPort" />
-                </flux:field>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <flux:field>
-                    <flux:label>SMTP username</flux:label>
-                    <flux:input wire:model="smtpUsername" placeholder="SMTP username" />
-                    <flux:error name="smtpUsername" />
-                </flux:field>
-                <flux:field>
-                    <flux:label>SMTP password</flux:label>
-                    <flux:input type="password" wire:model="smtpPassword" placeholder="SMTP password" viewable />
-                    <flux:error name="smtpPassword" />
-                </flux:field>
-            </div>
-        </section>
-
-        <flux:separator />
-
-        {{-- 7 ─ Hosting / server access --}}
-        <section class="space-y-6">
-            <div class="flex items-center gap-3">
-                <span class="flex items-center justify-center size-7 rounded-full bg-emerald-600 text-white text-xs font-bold shrink-0">7</span>
-                <div>
-                    <flux:heading size="lg">Hosting / server access</flux:heading>
-                    <flux:subheading badge="Optional">Store credentials for deployment targets.</flux:subheading>
+            <div class="space-y-6 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <flux:heading size="sm">Hosting / server access</flux:heading>
+                    <flux:badge color="zinc" size="sm">Optional</flux:badge>
                 </div>
-            </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <flux:field>
-                    <flux:label>Hosting provider</flux:label>
-                    <flux:select wire:model="hostingProvider">
-                        <flux:select.option value="">—</flux:select.option>
-                        <flux:select.option value="hetzner">Hetzner</flux:select.option>
-                        <flux:select.option value="digitalocean">DigitalOcean</flux:select.option>
-                        <flux:select.option value="aws">AWS</flux:select.option>
-                        <flux:select.option value="vercel">Vercel</flux:select.option>
-                        <flux:select.option value="netlify">Netlify</flux:select.option>
-                        <flux:select.option value="other">Other</flux:select.option>
-                    </flux:select>
-                    <flux:error name="hostingProvider" />
-                </flux:field>
-                <flux:field>
-                    <flux:label>SSH host or panel URL</flux:label>
-                    <flux:input wire:model="sshHost" placeholder="SSH host or panel URL" />
-                    <flux:error name="sshHost" />
-                </flux:field>
-            </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <flux:field>
+                        <flux:label badge="Optional">Hosting provider</flux:label>
+                        <flux:select wire:model="hostingProvider">
+                            <flux:select.option value="">—</flux:select.option>
+                            <flux:select.option value="hetzner">Hetzner</flux:select.option>
+                            <flux:select.option value="digitalocean">DigitalOcean</flux:select.option>
+                            <flux:select.option value="aws">AWS</flux:select.option>
+                            <flux:select.option value="vercel">Vercel</flux:select.option>
+                            <flux:select.option value="netlify">Netlify</flux:select.option>
+                            <flux:select.option value="other">Other</flux:select.option>
+                        </flux:select>
+                        <flux:error name="hostingProvider" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label badge="Optional">SSH host or panel URL</flux:label>
+                        <flux:input wire:model="sshHost" placeholder="SSH host or panel URL" />
+                        <flux:error name="sshHost" />
+                    </flux:field>
+                </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <flux:field>
-                    <flux:label badge="Optional">FTP / SSH user</flux:label>
-                    <flux:input wire:model="ftpSshUser" placeholder="username" class="font-mono" />
-                    <flux:error name="ftpSshUser" />
-                </flux:field>
-                <flux:field>
-                    <flux:label badge="Optional">FTP / SSH password</flux:label>
-                    <flux:input type="password" wire:model="ftpSshPassword" placeholder="password" viewable />
-                    <flux:error name="ftpSshPassword" />
-                </flux:field>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <flux:field>
+                        <flux:label badge="Optional">FTP / SSH user</flux:label>
+                        <flux:input wire:model="ftpSshUser" placeholder="username" class="font-mono" />
+                        <flux:error name="ftpSshUser" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label badge="Optional">FTP / SSH password</flux:label>
+                        <flux:input type="password" wire:model="ftpSshPassword" placeholder="password" viewable />
+                        <flux:error name="ftpSshPassword" />
+                    </flux:field>
+                </div>
             </div>
         </section>
 
         <flux:separator />
 
         {{-- Actions --}}
-        <div class="flex items-center gap-3 pb-6">
-            <flux:button type="submit" variant="primary" wire:loading.attr="disabled">
+        <div class="flex flex-wrap items-center gap-3 pb-6">
+            <flux:button
+                type="submit"
+                variant="primary"
+                class="!bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950"
+                wire:loading.attr="disabled"
+            >
                 <span wire:loading.remove wire:target="create">Create project</span>
                 <span wire:loading wire:target="create">Creating...</span>
             </flux:button>

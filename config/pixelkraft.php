@@ -46,11 +46,11 @@ return [
     |--------------------------------------------------------------------------
     */
     'r2' => [
-        'key'      => env('R2_ACCESS_KEY_ID'),
-        'secret'   => env('R2_SECRET_ACCESS_KEY'),
-        'bucket'   => env('R2_BUCKET', 'pixelkraft-media'),
+        'key' => env('R2_ACCESS_KEY_ID'),
+        'secret' => env('R2_SECRET_ACCESS_KEY'),
+        'bucket' => env('R2_BUCKET', 'pixelkraft-media'),
         'endpoint' => env('R2_ENDPOINT'),
-        'url'      => env('R2_URL'),
+        'url' => env('R2_URL'),
     ],
 
     /*
@@ -61,7 +61,7 @@ return [
     'deploy' => [
         'max_concurrent_builds' => 2,
         'build_timeout_seconds' => 300,
-        'rollback_snapshots'    => 10,
+        'rollback_snapshots' => 10,
     ],
 
     /*
@@ -74,12 +74,12 @@ return [
     |
     */
     'runtime' => [
-        'host'                    => env('SITE_RUNTIME_HOST', '127.0.0.1'),
-        'port_start'              => (int) env('SITE_RUNTIME_PORT_START', 4100),
-        'port_span'               => (int) env('SITE_RUNTIME_PORT_SPAN', 2000),
-        'storage_path'            => env('SITE_RUNTIME_STORAGE_PATH', storage_path('app/runtime-sites')),
-        'pid_path'                => env('SITE_RUNTIME_PID_PATH', storage_path('app/runtime-pids')),
-        'log_path'                => env('SITE_RUNTIME_LOG_PATH', storage_path('logs/runtime-sites')),
+        'host' => env('SITE_RUNTIME_HOST', '127.0.0.1'),
+        'port_start' => (int) env('SITE_RUNTIME_PORT_START', 4100),
+        'port_span' => (int) env('SITE_RUNTIME_PORT_SPAN', 2000),
+        'storage_path' => env('SITE_RUNTIME_STORAGE_PATH', storage_path('app/runtime-sites')),
+        'pid_path' => env('SITE_RUNTIME_PID_PATH', storage_path('app/runtime-pids')),
+        'log_path' => env('SITE_RUNTIME_LOG_PATH', storage_path('logs/runtime-sites')),
         'startup_timeout_seconds' => (int) env('SITE_RUNTIME_STARTUP_TIMEOUT_SECONDS', 30),
     ],
 
@@ -89,18 +89,32 @@ return [
     |--------------------------------------------------------------------------
     */
     'monitoring' => [
-        'uptime_interval_minutes'  => 5,
-        'lighthouse_schedule'      => 'weekly',
-        'broken_links_schedule'    => 'weekly',
-        'analytics_sync_schedule'  => 'daily',
+        'uptime_interval_minutes' => 5,
+        /** Response time above this (ms) while still HTTP-successful counts as degraded (yellow) on uptime charts */
+        'uptime_degraded_after_ms' => (int) env('UPTIME_DEGRADED_AFTER_MS', 3000),
+        'lighthouse_schedule' => 'weekly',
+        'broken_links_schedule' => 'weekly',
+        'analytics_sync_schedule' => 'daily',
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Notifications
+    | Google Analytics Data API (GA4)
+    |--------------------------------------------------------------------------
+    |
+    | Service account JSON path. Grant the service account “Viewer” on the GA4
+    | property (Admin → Property access management). The dashboard uses organic
+    | search traffic only (session default channel group = Organic Search).
+    |
+    */
+    'google_analytics_credentials_path' => env('GOOGLE_ANALYTICS_CREDENTIALS_PATH', storage_path('app/google-credentials.json')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cloudflare API
     |--------------------------------------------------------------------------
     */
-    'discord_webhook_url' => env('DISCORD_WEBHOOK_URL'),
+    'cloudflare_api_token' => env('CLOUDFLARE_API_TOKEN'),
 
     /*
     |--------------------------------------------------------------------------
@@ -108,7 +122,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'backup' => [
-        'disk'           => env('BACKUP_DISK', 'r2'),
+        'disk' => env('BACKUP_DISK', 'r2'),
         'retention_days' => 30,
     ],
 
@@ -129,5 +143,16 @@ return [
         'nuxt',
         'custom',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Project inbox (inbound webhook)
+    |--------------------------------------------------------------------------
+    |
+    | POST /api/inbox/{site-slug} with JSON body. When set, requests must send
+    | Authorization: Bearer {secret}. Leave empty in local dev to rely on throttle only.
+    |
+    */
+    'inbox_inbound_secret' => env('INBOX_INBOUND_SECRET'),
 
 ];

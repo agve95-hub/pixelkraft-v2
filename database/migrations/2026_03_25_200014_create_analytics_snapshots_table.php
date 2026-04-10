@@ -12,7 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('page_id')->constrained()->cascadeOnDelete();
             $table->date('date');
-            $table->string('source'); // google_analytics|cloudflare
+            $table->string('source'); // google_analytics_organic|cloudflare|...
             $table->unsignedInteger('visitors')->default(0);
             $table->unsignedInteger('pageviews')->default(0);
             $table->float('bounce_rate')->nullable();

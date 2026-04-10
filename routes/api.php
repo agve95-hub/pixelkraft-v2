@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\FormSubmissionController;
+use App\Http\Controllers\Api\InboxInboundController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\WebhookController;
@@ -26,6 +27,10 @@ Route::get('/unsubscribe/{subscriber}', function (\App\Models\NewsletterSubscrib
     ]);
 })->name('api.unsubscribe')->middleware('signed');
 
+// Inbound project inbox (optional Bearer INBOX_INBOUND_SECRET)
+Route::post('/inbox/{slug}', [InboxInboundController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->name('api.inbox.inbound');
 // ── Authenticated API (Sanctum) ─────────────────
 
 Route::middleware('auth:sanctum')->group(function () {

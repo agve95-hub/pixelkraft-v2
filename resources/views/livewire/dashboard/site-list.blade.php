@@ -1,7 +1,7 @@
 <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <flux:input wire:model.live.debounce.300ms="search" placeholder="Search sites..." icon="magnifying-glass" class="max-w-xs" />
-        <flux:button href="{{ route('sites.create') }}" size="sm" variant="subtle" icon="plus">New site</flux:button>
+        <flux:button href="{{ route('sites.create') }}" size="sm" variant="subtle" icon="plus">Add new site</flux:button>
     </div>
 
     <flux:table>
@@ -58,7 +58,7 @@
                             <flux:icon name="globe-alt" variant="outline" class="size-10 text-zinc-400" />
                             <flux:heading>No sites yet</flux:heading>
                             <flux:text size="sm">Add your first site to get started.</flux:text>
-                            <flux:button href="#add-site" variant="primary" icon="plus" class="mt-2">Add your first site</flux:button>
+                            <flux:button href="{{ route('sites.create') }}" variant="primary" icon="plus" class="mt-2 !bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950">Add your first site</flux:button>
                         </div>
                     </flux:table.cell>
                 </flux:table.row>

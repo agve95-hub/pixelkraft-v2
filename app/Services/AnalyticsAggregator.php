@@ -5,6 +5,17 @@ namespace App\Services;
 use App\Models\AnalyticsSnapshot;
 use App\Models\Page;
 use App\Models\Site;
+use Google\Analytics\Data\V1beta\Client\BetaAnalyticsDataClient;
+use Google\Analytics\Data\V1beta\DateRange;
+use Google\Analytics\Data\V1beta\Dimension;
+use Google\Analytics\Data\V1beta\Filter;
+use Google\Analytics\Data\V1beta\FilterExpression;
+use Google\Analytics\Data\V1beta\Filter\StringFilter;
+use Google\Analytics\Data\V1beta\Filter\StringFilter\MatchType;
+use Google\Analytics\Data\V1beta\Metric;
+use Google\Analytics\Data\V1beta\RunReportRequest;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -40,8 +51,6 @@ class AnalyticsAggregator
             $synced += $this->syncCloudflare($site);
         }
 
-        // GA sync would use Google Analytics Data API (requires service account credentials)
-        // Implementation depends on google/analytics-data package
         if ($site->ga_property_id) {
             $synced += $this->syncGoogleAnalytics($site);
         }
@@ -50,53 +59,134 @@ class AnalyticsAggregator
     }
 
     /**
-     * Get aggregated stats for a site over a date range.
+     * Aggregated traffic for a site. Prefers GA4 organic (SEO) snapshots; falls back to any source.
+     *
+     * @return array{
+     *   total_visitors: int,
+     *   total_pageviews: int,
+     *   avg_bounce_rate: float,
+     *   avg_session_sec: int,
+     *   daily: list<array{date: string, visitors: int, pageviews: int}>,
+     *   top_pages: list<array{page_id: string, visitors: int, pageviews: int}>,
+     *   traffic_label: string
+     * }
      */
     public function getSiteStats(Site $site, int $days = 30): array
     {
         $pageIds = $site->pages()->pluck('id');
 
-        $snapshots = AnalyticsSnapshot::whereIn('page_id', $pageIds)
-            ->where('date', '>=', now()->subDays($days))
-            ->get();
+        $organic = $this->aggregateSnapshots($pageIds, $days, AnalyticsSnapshot::SOURCE_GOOGLE_ORGANIC);
+        $hasOrganic = $organic['total_visitors'] > 0 || count($organic['daily']) > 0;
 
-        return [
-            'total_visitors'  => $snapshots->sum('visitors'),
-            'total_pageviews' => $snapshots->sum('pageviews'),
-            'avg_bounce_rate' => round($snapshots->avg('bounce_rate') ?? 0, 1),
-            'avg_session_sec' => (int) ($snapshots->avg('avg_session_sec') ?? 0),
-            'daily' => $snapshots->groupBy('date')->map(fn ($group) => [
-                'date'      => $group->first()->date->format('Y-m-d'),
-                'visitors'  => $group->sum('visitors'),
-                'pageviews' => $group->sum('pageviews'),
-            ])->values()->toArray(),
-            'top_pages' => $snapshots->groupBy('page_id')->map(fn ($group) => [
-                'page_id'   => $group->first()->page_id,
-                'visitors'  => $group->sum('visitors'),
-                'pageviews' => $group->sum('pageviews'),
-            ])->sortByDesc('pageviews')->take(10)->values()->toArray(),
-        ];
+        if ($hasOrganic) {
+            $organic['traffic_label'] = 'Organic search (Google)';
+
+            return $organic;
+        }
+
+        $fallback = $this->aggregateSnapshots($pageIds, $days, null);
+        $fallback['traffic_label'] = 'All sources';
+
+        return $fallback;
     }
 
     /**
-     * Get stats for a single page.
+     * @return array{
+     *   total_visitors: int,
+     *   total_pageviews: int,
+     *   avg_bounce_rate: float,
+     *   avg_session_sec: int,
+     *   daily: list<array{date: string, visitors: int, pageviews: int}>,
+     *   top_pages: list<array{page_id: string, visitors: int, pageviews: int}>
+     * }
      */
     public function getPageStats(Page $page, int $days = 30): array
     {
-        $snapshots = $page->analyticsSnapshots()
-            ->where('date', '>=', now()->subDays($days))
-            ->orderBy('date')
-            ->get();
+        $organic = $this->aggregatePageSnapshots($page, $days, AnalyticsSnapshot::SOURCE_GOOGLE_ORGANIC);
+        if ($organic['total_visitors'] > 0 || count($organic['daily']) > 0) {
+            return $organic;
+        }
+
+        return $this->aggregatePageSnapshots($page, $days, null);
+    }
+
+    /**
+     * @param  Collection<int, string>  $pageIds
+     */
+    private function aggregateSnapshots(Collection $pageIds, int $days, ?string $source): array
+    {
+        if ($pageIds->isEmpty()) {
+            return [
+                'total_visitors'  => 0,
+                'total_pageviews' => 0,
+                'avg_bounce_rate' => 0.0,
+                'avg_session_sec' => 0,
+                'daily'           => [],
+                'top_pages'       => [],
+            ];
+        }
+
+        $query = AnalyticsSnapshot::whereIn('page_id', $pageIds)
+            ->where('date', '>=', now()->subDays($days));
+
+        if ($source !== null) {
+            $query->where('source', $source);
+        }
+
+        $snapshots = $query->get();
 
         return [
-            'total_visitors'  => $snapshots->sum('visitors'),
-            'total_pageviews' => $snapshots->sum('pageviews'),
-            'avg_bounce_rate' => round($snapshots->avg('bounce_rate') ?? 0, 1),
-            'daily' => $snapshots->groupBy('date')->map(fn ($group) => [
-                'date'      => $group->first()->date->format('Y-m-d'),
-                'visitors'  => $group->sum('visitors'),
-                'pageviews' => $group->sum('pageviews'),
-            ])->values()->toArray(),
+            'total_visitors'  => (int) $snapshots->sum('visitors'),
+            'total_pageviews' => (int) $snapshots->sum('pageviews'),
+            'avg_bounce_rate' => round((float) ($snapshots->avg('bounce_rate') ?? 0), 1),
+            'avg_session_sec' => (int) ($snapshots->avg('avg_session_sec') ?? 0),
+            'daily' => $snapshots->groupBy(fn ($s) => $s->date->format('Y-m-d'))
+                ->map(fn ($group) => [
+                    'date'      => $group->first()->date->format('Y-m-d'),
+                    'visitors'  => (int) $group->sum('visitors'),
+                    'pageviews' => (int) $group->sum('pageviews'),
+                ])
+                ->sortBy('date')
+                ->values()
+                ->all(),
+            'top_pages' => $snapshots->groupBy('page_id')
+                ->map(fn ($group) => [
+                    'page_id'   => (string) $group->first()->page_id,
+                    'visitors'  => (int) $group->sum('visitors'),
+                    'pageviews' => (int) $group->sum('pageviews'),
+                ])
+                ->sortByDesc('pageviews')
+                ->take(10)
+                ->values()
+                ->all(),
+        ];
+    }
+
+    private function aggregatePageSnapshots(Page $page, int $days, ?string $source): array
+    {
+        $query = $page->analyticsSnapshots()
+            ->where('date', '>=', now()->subDays($days))
+            ->orderBy('date');
+
+        if ($source !== null) {
+            $query->where('source', $source);
+        }
+
+        $snapshots = $query->get();
+
+        return [
+            'total_visitors'  => (int) $snapshots->sum('visitors'),
+            'total_pageviews' => (int) $snapshots->sum('pageviews'),
+            'avg_bounce_rate' => round((float) ($snapshots->avg('bounce_rate') ?? 0), 1),
+            'daily' => $snapshots->groupBy(fn ($s) => $s->date->format('Y-m-d'))
+                ->map(fn ($group) => [
+                    'date'      => $group->first()->date->format('Y-m-d'),
+                    'visitors'  => (int) $group->sum('visitors'),
+                    'pageviews' => (int) $group->sum('pageviews'),
+                ])
+                ->sortBy('date')
+                ->values()
+                ->all(),
         ];
     }
 
@@ -124,6 +214,7 @@ class AnalyticsAggregator
 
             if (! $response->successful()) {
                 Log::warning("Cloudflare API error for [{$site->slug}]", ['status' => $response->status()]);
+
                 return 0;
             }
 
@@ -136,7 +227,6 @@ class AnalyticsAggregator
             $visitors = $data['uniq']['uniques'] ?? 0;
             $pageviews = $data['sum']['requests'] ?? 0;
 
-            // Store as site-level snapshot (assign to homepage)
             $homepage = $site->pages()->where('url_path', '/')->first();
 
             if ($homepage) {
@@ -147,8 +237,8 @@ class AnalyticsAggregator
                         'source'  => 'cloudflare',
                     ],
                     [
-                        'visitors'  => $visitors,
-                        'pageviews' => $pageviews,
+                        'visitors'   => $visitors,
+                        'pageviews'  => $pageviews,
                         'created_at' => now(),
                     ]
                 );
@@ -184,24 +274,151 @@ class AnalyticsAggregator
         GRAPHQL;
     }
 
-    // ── Google Analytics ─────────────────────────
+    // ── Google Analytics (GA4) — organic / SEO ─────────────────────────
 
     private function syncGoogleAnalytics(Site $site): int
     {
-        // GA4 Data API integration
-        // Requires: composer require google/analytics-data
-        // Uses service account credentials from GOOGLE_ANALYTICS_CREDENTIALS_PATH
-        //
-        // This is a placeholder — full implementation requires:
-        // 1. Google Cloud service account with Analytics Data API access
-        // 2. Property linked to the service account
-        // 3. google/analytics-data PHP package
-        //
-        // The structure would fetch per-page metrics via the RunReport API
-        // and store them as AnalyticsSnapshot records.
+        $credentialsPath = config('pixelkraft.google_analytics_credentials_path');
+        $propertyId = $this->normalizeGaPropertyId($site->ga_property_id);
 
-        Log::info("GA sync placeholder for [{$site->slug}] — configure service account to enable");
+        if (! $credentialsPath || ! File::isReadable($credentialsPath) || ! $propertyId) {
+            Log::info("GA4 sync skipped for [{$site->slug}] — missing credentials or property ID");
 
-        return 0;
+            return 0;
+        }
+
+        $pagesByPath = $site->pages()->get()->keyBy(fn (Page $p) => $this->normalizePath($p->url_path));
+
+        if ($pagesByPath->isEmpty()) {
+            return 0;
+        }
+
+        try {
+            $client = new BetaAnalyticsDataClient([
+                'credentials' => $credentialsPath,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning("GA4 client init failed for [{$site->slug}]", ['error' => $e->getMessage()]);
+
+            return 0;
+        }
+
+        $startDate = now()->subDays(30)->format('Y-m-d');
+        $endDate = now()->subDay()->format('Y-m-d');
+
+        $organicFilter = new FilterExpression([
+            'filter' => new Filter([
+                'field_name' => 'sessionDefaultChannelGroup',
+                'string_filter' => new StringFilter([
+                    'match_type' => MatchType::EXACT,
+                    'value' => 'Organic Search',
+                ]),
+            ]),
+        ]);
+
+        $updated = 0;
+        $offset = 0;
+        $limit = 100_000;
+
+        try {
+            do {
+                $request = new RunReportRequest([
+                    'property' => 'properties/'.$propertyId,
+                    'date_ranges' => [
+                        new DateRange([
+                            'start_date' => $startDate,
+                            'end_date' => $endDate,
+                        ]),
+                    ],
+                    'dimensions' => [
+                        new Dimension(['name' => 'date']),
+                        new Dimension(['name' => 'pagePath']),
+                    ],
+                    'metrics' => [
+                        new Metric(['name' => 'activeUsers']),
+                        new Metric(['name' => 'screenPageViews']),
+                    ],
+                    'dimension_filter' => $organicFilter,
+                    'limit' => $limit,
+                    'offset' => $offset,
+                ]);
+
+                $response = $client->runReport($request);
+
+                $rowCount = count($response->getRows());
+                foreach ($response->getRows() as $row) {
+                    $dims = $row->getDimensionValues();
+                    $metrics = $row->getMetricValues();
+                    $dateRaw = $dims[0]->getValue();
+                    $pathRaw = $dims[1]->getValue() ?? '';
+
+                    $date = $this->gaDateToSql($dateRaw);
+                    $path = $this->normalizePath(rawurldecode($pathRaw));
+                    $page = $pagesByPath->get($path);
+
+                    if (! $page || ! $date) {
+                        continue;
+                    }
+
+                    $visitors = (int) ($metrics[0]->getValue() ?? 0);
+                    $pageviews = (int) ($metrics[1]->getValue() ?? 0);
+
+                    AnalyticsSnapshot::updateOrCreate(
+                        [
+                            'page_id' => $page->id,
+                            'date' => $date,
+                            'source' => AnalyticsSnapshot::SOURCE_GOOGLE_ORGANIC,
+                        ],
+                        [
+                            'visitors' => $visitors,
+                            'pageviews' => $pageviews,
+                            'created_at' => now(),
+                        ]
+                    );
+                    $updated++;
+                }
+
+                $offset += $rowCount;
+            } while ($rowCount === $limit);
+        } catch (\Throwable $e) {
+            Log::warning("GA4 Data API error for [{$site->slug}]", ['error' => $e->getMessage()]);
+
+            return 0;
+        }
+
+        return $updated;
+    }
+
+    private function normalizeGaPropertyId(?string $raw): ?string
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        $raw = trim($raw);
+        if (str_starts_with($raw, 'properties/')) {
+            $raw = substr($raw, strlen('properties/'));
+        }
+
+        return preg_match('/^\d+$/', $raw) ? $raw : null;
+    }
+
+    private function gaDateToSql(string $yyyymmdd): ?string
+    {
+        if (strlen($yyyymmdd) !== 8 || ! ctype_digit($yyyymmdd)) {
+            return null;
+        }
+
+        return substr($yyyymmdd, 0, 4).'-'.substr($yyyymmdd, 4, 2).'-'.substr($yyyymmdd, 6, 2);
+    }
+
+    private function normalizePath(string $path): string
+    {
+        $path = '/'.ltrim($path, '/');
+        if ($path !== '/') {
+            $path = rtrim($path, '/');
+        }
+
+        return $path === '' ? '/' : $path;
     }
 }

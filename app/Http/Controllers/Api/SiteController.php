@@ -137,6 +137,7 @@ class SiteController extends Controller
         if ($site->latestUptimeCheck) {
             $data['uptime'] = [
                 'is_up'            => $site->latestUptimeCheck->is_up,
+                'is_degraded'      => (bool) $site->latestUptimeCheck->is_degraded,
                 'response_time_ms' => $site->latestUptimeCheck->response_time_ms,
                 'checked_at'       => $site->latestUptimeCheck->checked_at?->toIso8601String(),
             ];

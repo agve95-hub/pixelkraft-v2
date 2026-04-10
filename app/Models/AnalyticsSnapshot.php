@@ -9,6 +9,9 @@ class AnalyticsSnapshot extends Model
 {
     use HasUuids;
 
+    /** GA4 organic search (SEO) channel — see AnalyticsAggregator::syncGoogleAnalytics */
+    public const SOURCE_GOOGLE_ORGANIC = 'google_analytics_organic';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -43,7 +46,7 @@ class AnalyticsSnapshot extends Model
 
     public function isFromGoogle(): bool
     {
-        return $this->source === 'google_analytics';
+        return str_starts_with((string) $this->source, 'google_analytics');
     }
 
     public function isFromCloudflare(): bool
