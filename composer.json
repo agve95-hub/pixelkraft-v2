@@ -101,12 +101,5 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true,
-    "repositories": [
-        {
-            "name": "flux-pro",
-            "type": "path",
-            "url": "/home/claude/flux-extract/flux-pro/flux-pro"
-        }
-    ]
+    "prefer-stable": true
 }

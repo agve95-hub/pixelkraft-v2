@@ -89,26 +89,16 @@ return [
     |--------------------------------------------------------------------------
     */
     'monitoring' => [
-<<<<<<< HEAD
         'uptime_interval_minutes' => 5,
+        /** Response time above this (ms) while still HTTP-successful counts as degraded (yellow) on uptime charts */
+        'uptime_degraded_after_ms' => (int) env('UPTIME_DEGRADED_AFTER_MS', 3000),
         'lighthouse_schedule' => 'weekly',
         'broken_links_schedule' => 'weekly',
         'analytics_sync_schedule' => 'daily',
-=======
-        'uptime_interval_minutes'  => 5,
-        /** Response time above this (ms) while still HTTP-successful counts as degraded (yellow) on uptime charts */
-        'uptime_degraded_after_ms' => (int) env('UPTIME_DEGRADED_AFTER_MS', 3000),
-        'lighthouse_schedule'      => 'weekly',
-        'broken_links_schedule'    => 'weekly',
-        'analytics_sync_schedule'  => 'daily',
->>>>>>> f1be754 (Analytics)
     ],
 
     /*
     |--------------------------------------------------------------------------
-<<<<<<< HEAD
-    | Analytics
-=======
     | Google Analytics Data API (GA4)
     |--------------------------------------------------------------------------
     |
@@ -121,8 +111,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Notifications
->>>>>>> f1be754 (Analytics)
+    | Cloudflare API
     |--------------------------------------------------------------------------
     */
     'cloudflare_api_token' => env('CLOUDFLARE_API_TOKEN'),
