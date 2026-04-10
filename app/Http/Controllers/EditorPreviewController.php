@@ -338,7 +338,6 @@ HTML;
         if (! in_array($extension, ['jsx', 'tsx', 'vue', 'svelte', 'astro', 'md', 'mdx'], true)) {
             return null;
         }
-
         $source = File::get($path);
         $snippets = $this->extractSourceSnippets($source);
 
@@ -410,7 +409,7 @@ HTML;
                 continue;
             }
 
-            if (preg_match('/^[#./@:_-]+$/', $snippet)) {
+            if (preg_match('~^[#./@:_-]+$~u', $snippet)) {
                 continue;
             }
 
@@ -446,4 +445,5 @@ HTML;
 </html>
 HTML;
     }
+
 }
