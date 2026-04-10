@@ -79,6 +79,14 @@
                         </span>
                     @endif
                 </flux:button>
+                <flux:button href="{{ route('sites.invoices', $site) }}" variant="subtle" size="sm" icon="document-text">
+                    Invoices
+                    @if (($site->invoices_unpaid_count ?? 0) > 0)
+                        <span class="inline-flex min-w-[1.2rem] items-center justify-center rounded bg-amber-500/20 px-1 py-0.5 text-[10px] font-semibold text-amber-300">
+                            {{ $site->invoices_unpaid_count > 99 ? '99+' : $site->invoices_unpaid_count }}
+                        </span>
+                    @endif
+                </flux:button>
                 <flux:button href="#deploy-controls" variant="subtle" size="sm" icon="clock">
                     {{ $site->deploy_logs_count }} deploy{{ $site->deploy_logs_count === 1 ? '' : 's' }}
                 </flux:button>
