@@ -9,6 +9,7 @@ use App\Services\SiteRuntimeService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class EditorPreviewController extends Controller
@@ -52,7 +53,13 @@ class EditorPreviewController extends Controller
 
             return $this->htmlResponse($html);
         } catch (\Throwable $e) {
-            return $this->htmlResponse($this->renderFailurePreview($site, $page, $e));
+            Log::warning('Editor preview failed to render page.', [
+                'site_id' => $site->id,
+                'page_id' => $page->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->htmlResponse($this->renderFailurePreview($site, $page));
         }
     }
 
@@ -427,9 +434,8 @@ HTML;
         return array_slice(array_values($unique), 0, 80);
     }
 
-    private function renderFailurePreview(Site $site, Page $page, \Throwable $e): string
+    private function renderFailurePreview(Site $site, Page $page): string
     {
-        $message = e($e->getMessage());
         $filePath = e($page->file_path);
         $siteName = e($site->name);
 
@@ -439,7 +445,7 @@ HTML;
     <div style="max-width:760px;background:#18181b;border:1px solid #3f3f46;border-radius:16px;padding:24px;line-height:1.6;">
         <h1 style="margin:0 0 12px;font-size:20px;color:#fafafa;">Preview failed</h1>
         <p style="margin:0 0 12px;">pixelkraft hit an internal preview error while rendering <code style="color:#a78bfa;">{$filePath}</code> for <code style="color:#a78bfa;">{$siteName}</code>.</p>
-        <pre style="margin:0;background:#09090b;border-radius:12px;padding:16px;overflow:auto;color:#fda4af;white-space:pre-wrap;">{$message}</pre>
+        <p style="margin:0;color:#fda4af;">The preview service encountered an internal error. Check application logs for details and try again.</p>
     </div>
 </body>
 </html>

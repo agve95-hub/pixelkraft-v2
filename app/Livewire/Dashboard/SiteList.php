@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Dashboard;
 
-use App\Models\Site;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -12,7 +12,7 @@ class SiteList extends Component
 
     public function render(): View
     {
-        $sites = Site::query()
+        $sites = SiteAccess::query()
             ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))
             ->withCount('pages')
             ->with('latestDeploy', 'latestUptimeCheck')

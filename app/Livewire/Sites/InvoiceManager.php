@@ -4,11 +4,11 @@ namespace App\Livewire\Sites;
 
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\Site;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Support\SiteAccess;
 use Livewire\Component;
 
 class InvoiceManager extends Component
@@ -80,7 +80,7 @@ class InvoiceManager extends Component
 
     public function resetCreateForm(): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $this->form_number = Invoice::nextNumberForSite($site);
         $this->form_invoice_date = now()->toDateString();
         $this->form_payment_terms = 'net30';
@@ -259,7 +259,7 @@ class InvoiceManager extends Component
         if (! $source) {
             return;
         }
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
 
         DB::transaction(function () use ($source, $site) {
             $new = $source->replicate([
@@ -296,7 +296,7 @@ class InvoiceManager extends Component
 
     public function saveInvoice(): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
 
         $this->validate([
             'form_number'           => ['required', 'string', 'max:64', Rule::unique('invoices', 'number')->where('site_id', $site->id)],
@@ -417,7 +417,7 @@ class InvoiceManager extends Component
 
     public function render()
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
 
         $invoices = $site->invoices()
             ->with('items')

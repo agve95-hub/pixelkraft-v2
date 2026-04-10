@@ -3,7 +3,7 @@
 namespace App\Livewire\Content;
 
 use App\Models\ProductListing;
-use App\Models\Site;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -35,8 +35,14 @@ class ProductEditor extends Component
 
     public function mount(): void
     {
+        $resolvedSiteId = SiteAccess::findOrFail($this->siteId)->id;
+        $this->siteId = $resolvedSiteId;
+
         if ($this->productId) {
-            $product = ProductListing::findOrFail($this->productId);
+            $product = ProductListing::query()
+                ->whereKey($this->productId)
+                ->where('site_id', $this->siteId)
+                ->firstOrFail();
             $this->name = $product->name;
             $this->description = $product->description ?? '';
             $this->price = $product->price;
@@ -84,6 +90,7 @@ class ProductEditor extends Component
     public function save(): void
     {
         $this->validate();
+        SiteAccess::findOrFail($this->siteId);
 
         $data = [
             'site_id'     => $this->siteId,
@@ -98,7 +105,10 @@ class ProductEditor extends Component
         ];
 
         if ($this->productId) {
-            $product = ProductListing::findOrFail($this->productId);
+            $product = ProductListing::query()
+                ->whereKey($this->productId)
+                ->where('site_id', $this->siteId)
+                ->firstOrFail();
             $product->update($data);
         } else {
             $product = ProductListing::create($data);

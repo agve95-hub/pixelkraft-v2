@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,7 @@ class Site extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
+        'user_id',
         'name',
         'slug',
         'client_first_name',
@@ -108,6 +110,9 @@ class Site extends Model
     protected static function booted(): void
     {
         static::creating(function (Site $site) {
+            if (empty($site->user_id) && auth()->check()) {
+                $site->user_id = (string) auth()->id();
+            }
             if (empty($site->slug)) {
                 $site->slug = Str::slug($site->name);
             }
@@ -199,6 +204,11 @@ class Site extends Model
         return $this->hasMany(Page::class);
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function blogPosts()
     {
         return $this->hasMany(BlogPost::class);
@@ -288,6 +298,28 @@ class Site extends Model
     public function latestUptimeCheck()
     {
         return $this->hasOne(UptimeCheck::class)->latestOfMany('checked_at');
+    }
+
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        return $query->where('user_id', $user->id);
+    }
+
+    public static function findVisibleOrFail(string $id, ?User $user = null): Site
+    {
+        $user ??= auth()->user();
+
+        return static::query()
+            ->visibleTo($user)
+            ->findOrFail($id);
     }
 
     private function cleanupFilesystemArtifacts(): void

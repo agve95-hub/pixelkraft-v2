@@ -4,7 +4,7 @@ namespace App\Livewire\Email;
 
 use App\Models\NewsletterCampaign;
 use App\Models\NewsletterSubscriber;
-use App\Models\Site;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -19,6 +19,23 @@ class CampaignEditor extends Component
     public ?string $scheduledAt = null;
 
     public bool $showEditor = false;
+    private ?array $visibleSiteIdsCache = null;
+
+    protected function visibleSiteIds(): array
+    {
+        if ($this->visibleSiteIdsCache === null) {
+            $this->visibleSiteIdsCache = SiteAccess::query()->pluck('id')->all();
+        }
+
+        return $this->visibleSiteIdsCache;
+    }
+
+    protected function ensureVisibleSiteSelection(): void
+    {
+        if ($this->siteId && ! in_array((string) $this->siteId, $this->visibleSiteIds(), true)) {
+            abort(404);
+        }
+    }
 
     public function mount(): void
     {
@@ -48,6 +65,8 @@ class CampaignEditor extends Component
             'status'  => 'required|in:draft,scheduled',
         ]);
 
+        abort_unless(in_array((string) $this->siteId, $this->visibleSiteIds(), true), 404);
+
         $data = [
             'site_id'      => $this->siteId,
             'subject'      => $this->subject,
@@ -57,7 +76,11 @@ class CampaignEditor extends Component
         ];
 
         if ($this->campaignId) {
-            NewsletterCampaign::findOrFail($this->campaignId)->update($data);
+            NewsletterCampaign::query()
+                ->whereKey($this->campaignId)
+                ->whereIn('site_id', $this->visibleSiteIds())
+                ->firstOrFail()
+                ->update($data);
         } else {
             $campaign = NewsletterCampaign::create($data);
             $this->campaignId = $campaign->id;
@@ -68,7 +91,10 @@ class CampaignEditor extends Component
 
     public function sendNow(string $id): void
     {
-        $campaign = NewsletterCampaign::findOrFail($id);
+        $campaign = NewsletterCampaign::query()
+            ->whereKey($id)
+            ->whereIn('site_id', $this->visibleSiteIds())
+            ->firstOrFail();
 
         $subscriberCount = NewsletterSubscriber::where('site_id', $campaign->site_id)
             ->where('status', 'active')
@@ -85,7 +111,11 @@ class CampaignEditor extends Component
 
     public function delete(string $id): void
     {
-        NewsletterCampaign::findOrFail($id)->delete();
+        NewsletterCampaign::query()
+            ->whereKey($id)
+            ->whereIn('site_id', $this->visibleSiteIds())
+            ->firstOrFail()
+            ->delete();
         session()->flash('success', 'Campaign deleted.');
     }
 
@@ -96,10 +126,13 @@ class CampaignEditor extends Component
 
     public function render(): View
     {
-        $sites = Site::where('is_active', true)->orderBy('name')->get();
+        $this->ensureVisibleSiteSelection();
+
+        $sites = SiteAccess::query()->where('is_active', true)->orderBy('name')->get();
 
         $campaigns = NewsletterCampaign::query()
             ->with('site')
+            ->whereIn('site_id', $this->visibleSiteIds())
             ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
             ->latest()
             ->limit(20)
@@ -113,7 +146,10 @@ class CampaignEditor extends Component
 
     private function loadCampaign(string $id): void
     {
-        $campaign = NewsletterCampaign::findOrFail($id);
+        $campaign = NewsletterCampaign::query()
+            ->whereKey($id)
+            ->whereIn('site_id', $this->visibleSiteIds())
+            ->firstOrFail();
         $this->campaignId = $id;
         $this->siteId = $campaign->site_id;
         $this->subject = $campaign->subject;

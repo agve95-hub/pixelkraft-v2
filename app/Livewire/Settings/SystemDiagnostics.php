@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Settings;
 
-use App\Models\Site;
+use App\Support\SiteAccess;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
@@ -221,7 +221,7 @@ class SystemDiagnostics extends Component
         $deployThreshold = now()->subMinutes(10);
 
         try {
-            $setup = Site::query()
+            $setup = SiteAccess::query()
                 ->whereNull('last_synced_at')
                 ->where('created_at', '<=', $setupThreshold)
                 ->latest('created_at')
@@ -236,7 +236,7 @@ class SystemDiagnostics extends Component
                 ])
                 ->all();
 
-            $deploy = Site::query()
+            $deploy = SiteAccess::query()
                 ->whereIn('deploy_status', ['building', 'deploying'])
                 ->where('updated_at', '<=', $deployThreshold)
                 ->latest('updated_at')

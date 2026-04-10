@@ -38,6 +38,8 @@ class CreateNewUser implements CreatesNewUsers
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
+            // Bootstrap flow: first account is admin, later signups default to editor.
+            'role' => User::query()->exists() ? 'editor' : 'admin',
         ]);
     }
 }

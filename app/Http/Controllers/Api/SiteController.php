@@ -16,6 +16,7 @@ class SiteController extends Controller
     public function index(): JsonResponse
     {
         $sites = Site::query()
+            ->visibleTo(request()->user())
             ->withCount('pages')
             ->with('latestDeploy', 'latestUptimeCheck')
             ->orderBy('name')
@@ -55,7 +56,9 @@ class SiteController extends Controller
 
     public function rollback(Site $site, string $logId): JsonResponse
     {
-        $log = DeployLog::where('site_id', $site->id)->findOrFail($logId);
+        $log = DeployLog::query()
+            ->where('site_id', $site->id)
+            ->findOrFail($logId);
 
         if (empty($log->snapshot_tag)) {
             return response()->json(['error' => 'No snapshot available for this deploy'], 400);
@@ -70,9 +73,11 @@ class SiteController extends Controller
                 'message' => "Rollback to {$log->snapshot_tag}: {$result->status}",
             ]);
         } catch (\Throwable $e) {
+            report($e);
+
             return response()->json([
                 'error'   => 'Rollback failed',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred while rolling back this deployment.',
             ], 500);
         }
     }

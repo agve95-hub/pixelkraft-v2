@@ -6,7 +6,6 @@ use App\Jobs\DeploySiteJob;
 use App\Models\ContentRevision;
 use App\Models\EditableRegion;
 use App\Models\Page;
-use App\Models\Site;
 use App\Services\ContentPatcher;
 use App\Services\GitSyncService;
 use App\Services\SiteSupportService;
@@ -14,6 +13,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Support\SiteAccess;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -388,35 +388,41 @@ class VisualEditor extends Component
 
     private function resolveSite(): Site
     {
-        return Site::findOrFail($this->siteId);
+        return SiteAccess::findOrFail($this->siteId);
     }
 
     private function resolvePage(): Page
     {
+        $site = $this->resolveSite();
+
         return Page::query()
             ->whereKey($this->pageId)
-            ->where('site_id', $this->siteId)
+            ->where('site_id', $site->id)
             ->firstOrFail();
     }
 
     private function resolveRegion(string $regionId): EditableRegion
     {
+        $site = $this->resolveSite();
+
         return EditableRegion::query()
             ->whereKey($regionId)
-            ->whereHas('page', function ($query) {
+            ->whereHas('page', function ($query) use ($site) {
                 $query->whereKey($this->pageId)
-                    ->where('site_id', $this->siteId);
+                    ->where('site_id', $site->id);
             })
             ->firstOrFail();
     }
 
     private function findRegion(string $regionId): ?EditableRegion
     {
+        $site = $this->resolveSite();
+
         return EditableRegion::query()
             ->whereKey($regionId)
-            ->whereHas('page', function ($query) {
+            ->whereHas('page', function ($query) use ($site) {
                 $query->whereKey($this->pageId)
-                    ->where('site_id', $this->siteId);
+                    ->where('site_id', $site->id);
             })
             ->first();
     }

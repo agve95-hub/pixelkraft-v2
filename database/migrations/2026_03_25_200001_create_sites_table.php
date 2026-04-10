@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('sites', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('repo_url');

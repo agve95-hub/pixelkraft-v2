@@ -2,11 +2,11 @@
 
 namespace App\Livewire\Files;
 
-use App\Models\Site;
 use App\Services\GitSyncService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use App\Support\SiteAccess;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -38,7 +38,7 @@ class FileManager extends Component
 
     public function viewFile(string $relativePath): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $relativePath = $this->normalizeRelativePath($relativePath);
         $fullPath = $this->resolveExistingPath($site, $relativePath);
 
@@ -62,7 +62,7 @@ class FileManager extends Component
             return;
         }
 
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $this->viewingFile = $this->normalizeRelativePath($this->viewingFile);
         $fullPath = $this->resolvePathWithinRepo($site, $this->viewingFile);
 
@@ -86,7 +86,7 @@ class FileManager extends Component
     {
         $this->validate(['uploadFile' => 'required|file|max:10240']);
 
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $this->currentPath = $this->normalizeRelativePath($this->currentPath);
         $targetDir = $this->currentPath
             ? $this->resolveExistingPath($site, $this->currentPath)
@@ -124,7 +124,7 @@ class FileManager extends Component
 
     public function deleteFile(string $relativePath): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $relativePath = $this->normalizeRelativePath($relativePath);
         $fullPath = $this->resolveExistingPath($site, $relativePath);
 
@@ -169,7 +169,7 @@ class FileManager extends Component
 
     public function render(): View
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
         $entries = $this->getDirectoryEntries($site);
 
         return view('livewire.files.file-manager', [

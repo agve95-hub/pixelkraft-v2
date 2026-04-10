@@ -3,7 +3,7 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\Notification;
-use App\Models\Site;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -11,20 +11,24 @@ class AlertsPanel extends Component
 {
     public function dismiss(string $id): void
     {
-        Notification::where('id', $id)->update(['is_read' => true]);
+        Notification::query()
+            ->whereKey($id)
+            ->whereHas('site', fn ($query) => $query->visibleTo(auth()->user()))
+            ->update(['is_read' => true]);
     }
 
     public function render(): View
     {
         $alerts = Notification::query()
             ->unread()
+            ->whereHas('site', fn ($query) => $query->visibleTo(auth()->user()))
             ->with('site')
             ->latest('created_at')
             ->limit(10)
             ->get();
 
         // SSL expiring soon
-        $sslExpiring = Site::query()
+        $sslExpiring = SiteAccess::query()
             ->where('ssl_status', 'active')
             ->whereNotNull('ssl_expires_at')
             ->where('ssl_expires_at', '<=', now()->addDays(14))

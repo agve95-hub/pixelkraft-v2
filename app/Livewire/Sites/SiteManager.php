@@ -105,6 +105,7 @@ class SiteManager extends Component
         $this->validate();
 
         $site = Site::create([
+            'user_id'           => auth()->id(),
             'name'              => $this->name,
             'slug'              => Str::slug($this->name),
             'client_first_name' => $this->clientFirstName ?: null,

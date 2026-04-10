@@ -154,5 +154,6 @@ return [
     |
     */
     'inbox_inbound_secret' => env('INBOX_INBOUND_SECRET'),
+    'inbox_inbound_require_secret' => env('INBOX_INBOUND_REQUIRE_SECRET', env('APP_ENV', 'production') !== 'local'),
 
 ];

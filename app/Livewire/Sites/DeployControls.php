@@ -5,10 +5,10 @@ namespace App\Livewire\Sites;
 use App\Jobs\DeploySiteJob;
 use App\Jobs\ProvisionSslJob;
 use App\Models\DeployLog;
-use App\Models\Site;
 use App\Services\DeployService;
 use App\Services\NginxConfigService;
 use Illuminate\Contracts\View\View;
+use App\Support\SiteAccess;
 use Livewire\Component;
 
 class DeployControls extends Component
@@ -19,7 +19,7 @@ class DeployControls extends Component
 
     public function deploy(): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
 
         DeploySiteJob::dispatch($site, 'manual');
 
@@ -28,7 +28,7 @@ class DeployControls extends Component
 
     public function setupDomain(): void
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
 
         if (empty($site->domain) || empty($site->deploy_path)) {
             session()->flash('error', 'Configure domain and deploy path in settings first.');
@@ -55,8 +55,10 @@ class DeployControls extends Component
 
     public function rollback(string $logId): void
     {
-        $site = Site::findOrFail($this->siteId);
-        $log = DeployLog::findOrFail($logId);
+        $site = SiteAccess::findOrFail($this->siteId);
+        $log = DeployLog::query()
+            ->where('site_id', $site->id)
+            ->findOrFail($logId);
 
         if (empty($log->snapshot_tag)) {
             session()->flash('error', 'No snapshot available for this deploy.');
@@ -85,7 +87,7 @@ class DeployControls extends Component
 
     public function render(): View
     {
-        $site = Site::findOrFail($this->siteId);
+        $site = SiteAccess::findOrFail($this->siteId);
 
         $deployLogs = $site->deployLogs()
             ->latest('created_at')
@@ -93,7 +95,7 @@ class DeployControls extends Component
             ->get();
 
         $viewingLog = $this->viewingLogId
-            ? DeployLog::find($this->viewingLogId)
+            ? $site->deployLogs()->find($this->viewingLogId)
             : null;
 
         return view('livewire.sites.deploy-controls', [
