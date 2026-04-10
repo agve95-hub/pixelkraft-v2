@@ -11,7 +11,7 @@
     @fluxAppearance
     @livewireStyles
 </head>
-<body class="min-h-screen bg-white dark:bg-zinc-800 antialiased">
+<body class="min-h-screen bg-white antialiased dark:bg-[#121212]">
 
     @php
         $navSites = \App\Models\Site::query()
@@ -20,13 +20,16 @@
                 'inboxMessages as unread_inbox_count' => function ($q) {
                     $q->where('direction', 'inbound')->where('is_read', false);
                 },
+                'invoices as unpaid_invoices_count' => function ($q) {
+                    $q->where('status', 'unpaid');
+                },
             ])
             ->orderBy('name')
             ->get();
         $activeSite = request()->route('site');
     @endphp
 
-    <flux:sidebar sticky collapsible="mobile" class="bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-700">
+    <flux:sidebar sticky collapsible="mobile" class="border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-[#0f0f0f]">
         <flux:sidebar.header>
             <flux:sidebar.brand href="{{ route('dashboard') }}" name="pixelkraft" />
             <flux:sidebar.collapse class="lg:hidden" />
@@ -72,6 +75,21 @@
                                     @endif
                                 </span>
                             </flux:sidebar.item>
+                            <flux:sidebar.item
+                                icon="document-text"
+                                href="{{ route('sites.invoices', $navSite) }}"
+                                :current="request()->routeIs('sites.invoices')"
+                                class="!py-1.5"
+                            >
+                                <span class="flex w-full min-w-0 items-center justify-between gap-2">
+                                    <span>Invoices</span>
+                                    @if (($navSite->unpaid_invoices_count ?? 0) > 0)
+                                        <span class="inline-flex min-w-[1.25rem] shrink-0 items-center justify-center rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400">
+                                            {{ $navSite->unpaid_invoices_count > 99 ? '99+' : $navSite->unpaid_invoices_count }}
+                                        </span>
+                                    @endif
+                                </span>
+                            </flux:sidebar.item>
                         </div>
                     @endif
                 @endforeach
@@ -97,7 +115,7 @@
         <flux:dropdown position="top" align="start" class="max-lg:hidden">
             <flux:sidebar.profile
                 name="{{ auth()->user()->name }}"
-                avatar="{{ 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=6d28d9&color=fff&size=64&font-size=0.4&bold=true' }}"
+                avatar="{{ 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=27272a&color=f4f4f5&size=64&font-size=0.4&bold=true&rounded=false' }}"
             />
             <flux:menu>
                 <flux:menu.item href="{{ route('system.diagnostics') }}" icon="server-stack">System</flux:menu.item>
@@ -117,7 +135,7 @@
         <flux:dropdown position="top" align="start">
             <flux:profile
                 name="{{ auth()->user()->name }}"
-                avatar="{{ 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=6d28d9&color=fff&size=64&font-size=0.4&bold=true' }}"
+                avatar="{{ 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=27272a&color=f4f4f5&size=64&font-size=0.4&bold=true&rounded=false' }}"
             />
             <flux:menu>
                 <flux:menu.item href="{{ route('system.diagnostics') }}" icon="server-stack">System</flux:menu.item>
@@ -128,7 +146,7 @@
         </flux:dropdown>
     </flux:header>
 
-    <flux:main>
+    <flux:main class="dark:bg-[#121212]">
         @if (session('success'))
             <div class="mb-6" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)">
                 <flux:callout variant="success" icon="check-circle" dismissible>{{ session('success') }}</flux:callout>

@@ -1,11 +1,16 @@
 <div wire:poll.60s>
-    <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 p-5">
-        <div class="flex items-center justify-between mb-4">
+    <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-5">
+        <div class="mb-4 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <flux:icon name="exclamation-triangle" class="size-4 text-amber-400" />
                 <h3 class="text-sm font-semibold text-zinc-100">Action needed</h3>
             </div>
-            <span class="text-xs text-zinc-500">{{ $alerts->count() + $sslExpiring->count() }} items</span>
+            @php
+                $alertTotal = $alerts->count() + $sslExpiring->count();
+            @endphp
+            @if ($alertTotal > 0)
+                <span class="text-xs text-zinc-500">{{ $alertTotal }} {{ Str::plural('item', $alertTotal) }}</span>
+            @endif
         </div>
 
         <div class="space-y-1 max-h-72 overflow-y-auto">

@@ -1,8 +1,8 @@
 <div wire:poll.15s>
-    <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 p-5">
-        <div class="flex items-center justify-between mb-4">
+    <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-5">
+        <div class="mb-4 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <flux:icon name="clock" class="size-4 text-zinc-500" />
+                <flux:icon name="arrow-path" class="size-4 text-zinc-500" />
                 <h3 class="text-sm font-semibold text-zinc-100">Recent activity</h3>
             </div>
         </div>

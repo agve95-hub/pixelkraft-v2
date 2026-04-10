@@ -1,5 +1,5 @@
 <div>
-    <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 p-5 h-full">
+    <div class="h-full rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-5">
         <div class="mb-4 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <flux:icon name="magnifying-glass" class="size-4 text-zinc-500" />
@@ -12,12 +12,12 @@
             @forelse ($issues as $issue)
                 <a
                     href="{{ route('seo.meta', [$issue['page']->site_id, $issue['page']->id]) }}"
-                    class="group flex items-start gap-3 rounded-xl border border-zinc-800/70 bg-zinc-950/60 px-3 py-2.5 transition hover:border-zinc-700 hover:bg-zinc-950"
+                    class="group flex items-start gap-3 rounded-lg border border-zinc-700/60 bg-[#141414] px-3 py-2.5 transition hover:border-zinc-600 hover:bg-zinc-950/80"
                 >
                     @if ($issue['severity'] === 'warning')
-                        <span class="mt-0.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase bg-amber-400/15 text-amber-300">Warning</span>
+                        <span class="mt-0.5 inline-flex rounded border border-zinc-600 bg-zinc-950 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-100">Warning</span>
                     @else
-                        <span class="mt-0.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase bg-sky-400/15 text-sky-300">Info</span>
+                        <span class="mt-0.5 inline-flex rounded border border-zinc-600 bg-zinc-950 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-300">Info</span>
                     @endif
                     <div class="min-w-0 flex-1">
                         <p class="text-sm text-zinc-100 transition group-hover:text-emerald-300">{{ $issue['message'] }}</p>

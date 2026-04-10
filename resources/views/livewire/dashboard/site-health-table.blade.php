@@ -1,7 +1,7 @@
 <div>
-    <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 p-5">
+    <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-5">
         <div class="mb-4 flex items-center gap-2">
-            <flux:icon name="server-stack" class="size-4 text-zinc-500" />
+            <flux:icon name="calendar" class="size-4 text-zinc-500" />
             <h3 class="text-sm font-semibold text-zinc-100">Site health</h3>
         </div>
 
@@ -32,7 +32,7 @@
                                     ])></span>
                                     <a href="{{ route('sites.show', $data['site']) }}" class="font-medium text-zinc-100 transition hover:text-teal-300">{{ $data['site']->name }}</a>
                                     @if ($data['site']->project_type)
-                                        <span class="text-[10px] text-zinc-500">{{ ucfirst($data['site']->project_type) }}</span>
+                                        <span class="inline-flex shrink-0 rounded-md border border-zinc-700/80 bg-zinc-900/80 px-2 py-0.5 text-[10px] font-medium text-zinc-300">{{ $data['site']->project_type_label }}</span>
                                     @endif
                                 </div>
                             </td>
@@ -53,7 +53,7 @@
                                 @if ($data['ssl_status'] === 'active')
                                     <span class="inline-flex rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-300">OK</span>
                                 @elseif ($data['ssl_status'] === 'pending')
-                                    <span class="inline-flex rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-300">Pending</span>
+                                    <span class="text-xs font-semibold text-zinc-100">Pending</span>
                                 @else
                                     <span class="text-xs text-zinc-500">—</span>
                                 @endif

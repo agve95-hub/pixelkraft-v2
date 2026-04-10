@@ -1,5 +1,5 @@
 <div>
-    <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 p-5 h-full">
+    <div class="h-full rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-5">
         <div class="mb-4 flex items-center justify-between">
             <h3 class="text-sm font-semibold text-zinc-100">Expenses</h3>
             <p class="text-xs tabular-nums text-zinc-500">&euro;{{ number_format($grandTotal, 2) }}</p>

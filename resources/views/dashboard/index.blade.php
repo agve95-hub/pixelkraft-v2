@@ -154,35 +154,35 @@
             <flux:button href="{{ route('sites.index') }}" variant="subtle" size="sm" class="!border-zinc-700 !bg-zinc-900/70 !text-zinc-200">View all sites</flux:button>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-            <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 px-4 py-3">
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
+            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
                 <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Sites</p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ $totalSites }}</p>
                 <p class="mt-0.5 text-xs text-emerald-400">All online</p>
             </div>
-            <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 px-4 py-3">
+            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
                 <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Uptime</p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ number_format($uptimePercent, 1) }}<span class="text-sm text-zinc-500">%</span></p>
             </div>
-            <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 px-4 py-3">
+            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
                 <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Pages</p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ $totalPages }}</p>
             </div>
-            <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 px-4 py-3">
+            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
                 <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Messages</p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ $unreadMessages }}</p>
                 @if ($unreadMessages > 0)
                     <p class="mt-0.5 text-xs text-sky-400">Unread</p>
                 @endif
             </div>
-            <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 px-4 py-3">
+            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
                 <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Errors</p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums {{ $errorCount > 0 ? 'text-red-400' : 'text-zinc-100' }}">{{ $errorCount }}</p>
                 @if ($errorCount > 0)
                     <p class="mt-0.5 text-xs text-red-400">Needs attention</p>
                 @endif
             </div>
-            <div class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 px-4 py-3">
+            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
                 <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">SEO Issues</p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums {{ $seoIssueCount > 0 ? 'text-amber-400' : 'text-zinc-100' }}">{{ $seoIssueCount }}</p>
                 @if ($seoIssueCount > 0)
@@ -191,7 +191,7 @@
             </div>
         </div>
 
-        <section class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 p-4 md:p-5">
+        <section class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-4 md:p-5">
             <div class="mb-3 flex items-start justify-between gap-4">
                 <div>
                     <p class="text-sm text-zinc-400">Traffic — All sites</p>
@@ -203,8 +203,8 @@
                 </div>
             </div>
 
-            <div class="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3">
-                <svg class="h-64 w-full" viewBox="0 0 {{ $vbW }} {{ $vbH }}" preserveAspectRatio="none" role="img" aria-label="Traffic trend for all sites">
+            <div class="rounded-lg border border-zinc-800/90 bg-[#141414] p-3">
+                <svg class="h-52 w-full" viewBox="0 0 {{ $vbW }} {{ $vbH }}" preserveAspectRatio="none" role="img" aria-label="Traffic trend for all sites">
                     @foreach ([0, 1, 2, 3] as $line)
                         <line x1="{{ $pad }}" y1="{{ $pad + (($line / 3) * $plotH) }}" x2="{{ $vbW - $pad }}" y2="{{ $pad + (($line / 3) * $plotH) }}" stroke="rgb(39 39 42)" stroke-width="1" vector-effect="non-scaling-stroke" />
                     @endforeach
@@ -224,7 +224,7 @@
             </div>
         </section>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
             @livewire('dashboard.alerts-panel')
             @livewire('dashboard.activity-feed')
         </div>
@@ -232,10 +232,10 @@
         @livewire('dashboard.site-health-table')
 
         @if ($siteInsights->isNotEmpty())
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            <div class="space-y-5">
                 @foreach ($siteInsights as $insight)
                     <div class="space-y-4">
-                        <section class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 p-4">
+                        <section class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-4">
                             <div class="mb-3 flex items-start justify-between gap-3">
                                 <p class="text-sm text-zinc-300">{{ $insight['site']->name }} — Uptime</p>
                                 <p class="text-sm font-semibold tabular-nums {{ $insight['uptime_percent'] >= 99.8 ? 'text-emerald-400' : ($insight['uptime_percent'] >= 99 ? 'text-amber-400' : 'text-red-400') }}">
@@ -260,7 +260,7 @@
                             </div>
                         </section>
 
-                        <section class="rounded-2xl border border-zinc-800/90 bg-zinc-900/85 p-4">
+                        <section class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-4">
                             <div class="mb-3 flex items-start justify-between gap-3">
                                 <p class="text-sm text-zinc-300">{{ $insight['site']->name }} — Response time</p>
                                 <p class="text-[11px] text-zinc-500 tabular-nums">avg {{ number_format($insight['avg_response']) }}ms &nbsp; p95 {{ number_format($insight['p95_response']) }}ms</p>
@@ -282,7 +282,7 @@
                                 }
                                 $responsePath = empty($rPoints) ? '' : 'M ' . implode(' L ', $rPoints);
                             @endphp
-                            <div class="rounded-xl border border-zinc-800 bg-zinc-950/80 p-2">
+                            <div class="rounded-lg border border-zinc-800/90 bg-[#141414] p-2">
                                 @if (empty($rPoints))
                                     <p class="py-6 text-center text-xs text-zinc-500">No response samples yet.</p>
                                 @else
@@ -300,7 +300,7 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
             @livewire('dashboard.seo-issues-panel')
             @livewire('dashboard.upcoming-panel')
             @livewire('dashboard.expenses-panel')

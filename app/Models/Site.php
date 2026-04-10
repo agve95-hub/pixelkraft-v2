@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -81,6 +82,25 @@ class Site extends Model
             'is_active'         => 'boolean',
             'deploy_on_webhook' => 'boolean',
         ];
+    }
+
+    protected function projectTypeLabel(): Attribute
+    {
+        return Attribute::get(function () {
+            return match ($this->project_type) {
+                'static_html' => 'Static HTML',
+                'react' => 'React',
+                'vue' => 'Vue',
+                'svelte' => 'Svelte',
+                'astro' => 'Astro',
+                'hugo' => 'Hugo',
+                'eleventy' => '11ty',
+                'nextjs' => 'Node.js',
+                'nuxt' => 'Nuxt',
+                'custom' => 'Custom',
+                default => Str::title(str_replace('_', ' ', (string) ($this->project_type ?: 'Project'))),
+            };
+        });
     }
 
     // ── Boot ────────────────────────────────────
@@ -251,6 +271,11 @@ class Site extends Model
     public function notifications()
     {
         return $this->hasMany(Notification::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
     }
 
     // ── Computed ─────────────────────────────────
