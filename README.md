@@ -1,45 +1,317 @@
-Act as a Principal Software Architect, Site Reliability Engineer (SRE), Chief Information Security Officer (CISO), and Lead UI/UX Engineer. I am providing you with the complete codebase for my project, an artisanal "Git-to-Render" CMS called Pixelkraft, built on PHP/Laravel.
-
-I do not just want a basic code review. I need an exhaustive, relentless audit designed to make this system absolutely bulletproof, highly available, and production-ready at an enterprise scale. It must not fail.
-
-Execute the audit sequentially across the following strict domains. For every flaw you find, you MUST provide the exact code to fix it, the architectural pattern to replace it, or the infrastructure strategy to mitigate it. Do not skip a single line of these instructions.
-
-### Phase 1: High Availability & System Resilience
-1. Single Points of Failure: Analyze the Git-to-Render pipeline. What happens if the Git provider (GitHub/GitLab) goes down? What happens if a webhook drops? Provide a robust queueing and retry architecture to guarantee no data loss.
-2. Concurrency & Race Conditions: Audit the repository parsing logic. What happens if two Git pushes happen within milliseconds? How is file locking or job atomic execution handled to prevent database or cache corruption?
-3. Memory Management: Identify any loops, file-parsing routines, or Markdown/AST generators that could cause memory leaks or CPU spikes when processing massive Git repositories. 
-
-### Phase 2: Advanced Caching & Edge Optimization
-1. Cache Invalidation Strategies: The hardest part of a Git-to-Render CMS is knowing exactly what to clear. Audit the current caching strategy. Propose a hyper-efficient, tag-based caching architecture (e.g., using Redis) where only the updated Markdown files and their related indexes are purged, keeping the rest of the site served from memory.
-2. Database Optimization: Identify missing indexes, N+1 query problems, and heavy database bottlenecks. Rewrite the offending Eloquent queries or propose raw SQL where Eloquent is too slow.
-
-### Phase 3: Hardcore Security & Penetration Testing
-1. Webhook Payload Verification: Audit how Git payloads are received. Write the code to ensure strict cryptographic verification of webhook signatures to prevent spoofing.
-2. SSRF & Path Traversal: Since this parses external Git files, do a deep dive for Server-Side Request Forgery (SSRF) vulnerabilities. Is it possible for a malicious Markdown file to trigger unauthorized internal server requests or read files outside the intended directory?
-3. Dependency Audit: Identify any known vulnerabilities in the approach used for the current Laravel configuration and PHP setup.
-
-### Phase 4: Code Quality & Framework Mastery
-1. SOLID Principles & Decoupling: Where is the code too tightly coupled? Identify controllers or models that are doing too much work. Extract this logic into Services, Actions, or Repositories and provide the refactored code.
-2. Strict Typing & Error Handling: Find areas lacking strict PHP typing (`declare(strict_types=1);`). Audit the Exception Handling—are errors failing silently? Provide a strategy for global exception catching that integrates with tools like Sentry or Datadog without exposing stack traces to the user.
-
-### Phase 5: UI/UX "Vibe" & Frontend Resilience
-1. Visual Consistency: Audit the frontend assets and Blade templates. Ensure the UI strictly adheres to a "vibe coding" aesthetic: minimalist Bento grid layouts, seamless dark themes, and perfect typography scaling using the Inter font. Point out any CSS/layout inconsistencies.
-2. Graceful Degradation & Error States: What does the user see when a Git pull fails or a markdown file is malformed? Design and suggest robust, beautiful error states (404, 500, parsing errors) that guide the user rather than abandoning them.
-3. Asynchronous UX: Where can we replace synchronous page loads with optimistic UI updates or Livewire/Inertia components to make the dashboard feel instantly responsive?
-
-### Phase 6: Technology Stack Brutality & Open-Source Leverage
-1. Language & Framework Viability: Is PHP/Laravel actually the optimal tool for the heavy-lifting parts of a Git-to-Render engine? Identify specific bottlenecks (e.g., AST parsing, Git tree walking) that should be ripped out and offloaded to microservices written in Go or Rust.
-2. The "Drop or Keep" Matrix: Ruthlessly audit every dependency in `composer.json` and `package.json`. Tell me exactly which packages are bloat, which are security risks, and which must be kept. 
-3. Open-Source Replacements: Stop me from reinventing the wheel. Identify any custom logic in this codebase that should be deleted and replaced with battle-tested open-source packages (e.g., swapping a custom search engine for Meilisearch/Typesense, or using a specific League package for Markdown instead of a custom parser).
-
-### Phase 7: Telemetry, Observability & "Path to Perfect" Production Roadmap
-1. SRE Observability: A system isn't production-ready if it's flying blind. Outline exactly how to implement OpenTelemetry, Prometheus, or Datadog to trace the exact millisecond latency of a Git webhook turning into a rendered page.
-2. CI/CD Pipeline: Outline the exact GitHub Actions or GitLab CI yaml structure needed to test, statically analyze (PHPStan/Pint), and deploy this codebase with zero downtime.
-3. Infrastructure Recommendations: Based on the code, what is the ideal hosting environment for maximum robustness? (e.g., Serverless via Laravel Vapor, Kubernetes, or balanced VPS clusters). 
-4. Final Verdict: What is the single biggest threat to this application crashing in production right now?
-
-Below is the repository structure and the file contents:
-
-[INSERT REPOSITORY TREE HERE]
-
-[INSERT ALL FILE CONTENTS HERE]
+<div align="center">
+# ⚡ pixelkraft
+**The Git-to-Render Site Operations Platform**
+*Push to Git. Pixelkraft handles everything else.*
+[![PHP](https://img.shields.io/badge/PHP-8.3+-8892BF?style=flat-square&logo=php&logoColor=white)](https://php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-12%2F13-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
+[![Livewire](https://img.shields.io/badge/Livewire-v4-FB70A9?style=flat-square)](https://livewire.laravel.com)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![MariaDB](https://img.shields.io/badge/MariaDB-11-003545?style=flat-square&logo=mariadb&logoColor=white)](https://mariadb.org)
+</div>
+---
+## What is Pixelkraft?
+Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and solo developers. It connects to your GitHub repositories and automates the entire lifecycle of a website — from the moment you push code to the second the page goes live.
+**One push. Everything happens automatically:**
+- Webhook received & verified (HMAC-SHA256)
+- Repository pulled via authenticated Git
+- Dependencies installed (npm / pnpm / yarn / bun — auto-detected)
+- Site built (`next build`, Vite, Hugo, Eleventy, etc.)
+- Assets optimized (images, HTML, lazy-loading)
+- Nginx config reloaded
+- SEO metadata analyzed and indexed
+- Analytics pipeline updated
+- Team notified
+---
+## Feature Set
+### 🚀 Git-to-Render Pipeline
+- GitHub webhook receiver with signature verification
+- Support for **static HTML, PHP, React, Vue, Svelte, Astro, Next.js, Nuxt, Hugo, Eleventy**
+- Automatic package manager detection (npm / pnpm / yarn / bun)
+- Build pipeline with timeout protection and output capture
+- Git conflict detection and smart rebase recovery
+- One-click rollback to any previous deploy (snapshot tags)
+### 🎨 Visual Content Editor
+- WYSIWYG editing directly on rendered pages in an iframe
+- CSS-selector-based and marker-based region detection
+- Patch-to-source: edits flow back to the actual HTML/JSX/Markdown files
+- Commit-on-save with full audit trail (GitOperation log)
+- Live source fallback preview for non-built framework files
+### 📊 Observability & Monitoring
+- Built-in uptime checks with P95 response times
+- Google Analytics v4 integration (organic traffic sync)
+- Broken link crawler
+- SEO issue tracker with per-page scoring
+- Deploy log with step-by-step millisecond timing
+### 💼 Agency Management Layer
+- Per-site client profiles (contact, company, billing)
+- Invoice management with PDF generation
+- Expense tracker per site
+- Newsletter subscriber management
+- Contact form submission inbox
+- Site-scoped notifications
+### 🔒 Security Architecture
+- All credentials encrypted at rest (`github_token`, `cf_api_token`, `smtp_password`, `ftp_ssh_password`)
+- HMAC-SHA256 webhook signature verification (constant-time `hash_equals`)
+- Role-based access control (admin / user)
+- Laravel Sanctum API tokens + Fortify 2FA
+- Redis-backed distributed locking on all Git operations (prevents race conditions)
+- Path traversal protection on asset serving
+---
+## Quick Start
+### Prerequisites
+| Requirement | Version |
+|---|---|
+| PHP | 8.3+ |
+| Composer | 2.x |
+| Node.js | 20+ |
+| Redis | 7+ |
+| MariaDB | 11+ (or MySQL 8+) |
+| Git | 2.38+ |
+### 1. Clone & Install
+```bash
+git clone https://github.com/your-org/pixelkraft.git
+cd pixelkraft
+composer run setup   # Installs deps, sets up .env, migrates DB, builds assets
+```
+The `setup` script handles:
+- `composer install`
+- `.env` creation from `.env.example`
+- App key generation
+- Database migration
+- `npm install && npm run build`
+### 2. Configure Environment
+```bash
+cp .env.example .env
+```
+**Minimum required configuration:**
+```env
+APP_NAME=pixelkraft
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://your-dashboard-domain.com
+# Database
+DB_CONNECTION=mariadb
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=pixelkraft
+DB_USERNAME=pixelkraft
+DB_PASSWORD=<strong-password>
+# Redis (REQUIRED for production — do not use file/database drivers in prod)
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+CACHE_STORE=redis
+SESSION_DRIVER=redis
+QUEUE_CONNECTION=redis
+# GitHub Webhook (REQUIRED — never leave blank in production)
+GITHUB_WEBHOOK_SECRET=<cryptographically-random-secret>
+GITHUB_WEBHOOK_REQUIRE_SIGNATURE=true
+# File paths
+REPOS_PATH=/var/www/pixelkraft/repos
+SITES_DEPLOY_PATH=/var/www/sites
+NGINX_SITES_PATH=/etc/nginx/sites-available
+```
+### 3. Start the Development Server
+```bash
+composer run dev
+```
+This starts concurrently:
+- `php artisan serve` — Laravel HTTP
+- `php artisan queue:listen --tries=1 --timeout=0` — Queue worker
+- `php artisan pail --timeout=0` — Real-time logs
+- `npm run dev` — Vite HMR
+### 4. Register the First User
+```bash
+php artisan tinker
+>>> \App\Models\User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => bcrypt('secure-password'), 'role' => 'admin']);
+```
+---
+## Production Deployment
+### Supervisor Configuration (Horizon)
+```ini
+; /etc/supervisor/conf.d/pixelkraft-horizon.conf
+[program:pixelkraft-horizon]
+process_name=%(program_name)s
+command=php /var/www/pixelkraft/artisan horizon
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/log/pixelkraft-horizon.log
+stopwaitsecs=3600
+```
+```bash
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start pixelkraft-horizon
+```
+### Nginx — Dashboard Vhost
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name dashboard.pixelkraft.io;
+    root /var/www/pixelkraft/public;
+    index index.php;
+    ssl_certificate /etc/letsencrypt/live/dashboard.pixelkraft.io/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dashboard.pixelkraft.io/privkey.pem;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; font-src 'self' https://fonts.bunny.net;" always;
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+    location ~ /\.(?!well-known) {
+        deny all;
+    }
+}
+```
+### Cron (Scheduler)
+```bash
+* * * * * www-data php /var/www/pixelkraft/artisan schedule:run >> /dev/null 2>&1
+```
+### Zero-Downtime Deploy Script
+```bash
+#!/bin/bash
+set -e
+APP_DIR=/var/www/pixelkraft
+cd $APP_DIR
+git pull origin main
+composer install --no-dev --no-interaction --optimize-autoloader
+npm ci
+npm run build
+php artisan migrate --force --graceful
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+php artisan horizon:terminate
+sudo systemctl reload php8.3-fpm
+sudo supervisorctl restart pixelkraft-horizon
+echo "✅ Deployment complete"
+```
+---
+## Architecture
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    GitHub Webhook (HMAC-SHA256)                  │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              WebhookController  (/api/webhooks/github)           │
+│  - Signature verification       - Duplicate check               │
+│  - Branch filtering             - Delivery recording            │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │ dispatch
+                          ▼
+┌──────────────────── git QUEUE ──────────────────────────────────┐
+│  SyncFromWebhookJob                                             │
+│  - GitSyncService::pull()   (with Redis distributed lock)       │
+│  - Conflict detection       - Rebase recovery                   │
+└──────┬──────────────────────────────────────────────────────────┘
+       │ dispatch
+       ├─────────────────────────────────────────────┐
+       ▼                                             ▼
+┌── parsing QUEUE ──┐                    ┌── deploy QUEUE ──────────┐
+│  ParseSiteJob     │                    │  DeploySiteJob + chain:  │
+│  - Page discovery │                    │  ProvisionEnvironmentJob  │
+│  - Metadata index │                    │  BuildSiteJob            │
+│  - SEO analysis   │                    │  InjectTrackingJob       │
+│  - Region detect  │                    │  ActivateReleaseJob      │
+└───────────────────┘                    └──────────────────────────┘
+```
+### Queue Architecture
+| Queue | Supervisor | Workers | Timeout | Purpose |
+|---|---|---|---|---|
+| `default` | supervisor-default | 3 | 120s | Emails, notifications |
+| `git` | supervisor-git | 2 | 300s | Clone, pull, push, tag |
+| `parsing` | supervisor-parsing | 2 | 600s | Page discovery, SEO, regions |
+| `deploy` | supervisor-deploy | 2 | 600s | Full build + activation |
+| `monitoring` | supervisor-monitoring | 3 | 300s | Uptime, crawl, analytics |
+### Supported Project Types
+| Type | Build | Parser | Runtime |
+|---|---|---|---|
+| `static_html` | None | StaticHtmlParser | Nginx file serve |
+| `php_site` | None | RenderedPhpParser | PHP-FPM |
+| `react` | npm run build | SpaComponentParser | Static or runtime |
+| `vue` | npm run build | SpaComponentParser | Static or runtime |
+| `svelte` | npm run build | SpaComponentParser | Static |
+| `astro` | npm run build | SsgOutputParser | Static |
+| `nextjs` | npm run build | SpaComponentParser | Node.js runtime |
+| `nuxt` | npm run build | SpaComponentParser | Node.js runtime |
+| `hugo` | hugo | SsgOutputParser | Static |
+| `eleventy` | npx @11ty/eleventy | SsgOutputParser | Static |
+| `custom` | Configurable | StaticHtmlParser | Configurable |
+---
+## Configuration Reference
+### `config/pixelkraft.php`
+| Key | Default | Description |
+|---|---|---|
+| `repos_path` | `storage/repos` | Where cloned repositories are stored |
+| `sites_deploy_path` | `/var/www/sites` | Where built sites are deployed |
+| `nginx_sites_path` | `/etc/nginx/sites-available` | Nginx vhost config directory |
+| `github_webhook_secret` | — | HMAC secret for webhook verification |
+| `github_webhook_require_signature` | `true` | Enforce signature verification |
+| `deploy.build_timeout_seconds` | `300` | Max build command duration |
+| `deploy.rollback_snapshots` | `10` | How many rollback points to keep |
+| `monitoring.uptime_interval_minutes` | `5` | Uptime check frequency |
+| `runtime.port_start` | `4100` | First port for runtime Node.js sites |
+| `runtime.startup_timeout_seconds` | `30` | Wait time for Node.js server to start |
+---
+## Security Checklist for Production
+Before going live, verify:
+- [ ] `APP_DEBUG=false` in production `.env`
+- [ ] `APP_ENV=production` in production `.env`
+- [ ] `GITHUB_WEBHOOK_SECRET` is set and cryptographically random (`openssl rand -hex 32`)
+- [ ] `GITHUB_WEBHOOK_REQUIRE_SIGNATURE=true`
+- [ ] `CACHE_STORE=redis` (never `file` or `database` in production)
+- [ ] `SESSION_DRIVER=redis`
+- [ ] `QUEUE_CONNECTION=redis`
+- [ ] All encrypted fields use a strong `APP_KEY` (`php artisan key:generate`)
+- [ ] `/horizon` dashboard is protected (auth middleware — admin users only)
+- [ ] Nginx TLS configured with certificate via Let's Encrypt / Certbot
+- [ ] `storage/` and `bootstrap/cache/` are writable by `www-data` only
+- [ ] PHP `expose_php = Off` in `php.ini`
+- [ ] MariaDB user has no `SUPER` privileges; only `SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER` on the pixelkraft DB
+- [ ] Redis is not publicly accessible (bind `127.0.0.1` only)
+- [ ] SSH access uses key-based authentication only; no password auth
+- [ ] Firewall: only ports 80, 443, and your SSH port are open
+---
+## Contributing
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Run the full test suite: `composer test`
+4. Run static analysis: `vendor/bin/phpstan analyse`
+5. Run code style: `vendor/bin/pint`
+6. Open a pull request
+### Development Utilities
+```bash
+# Run all tests
+php artisan test --parallel
+# Static analysis (requires phpstan/phpstan)
+vendor/bin/phpstan analyse
+# Code style (Pint)
+vendor/bin/pint
+# Inspect failed jobs
+php artisan horizon:list-failed
+# Re-queue stalled webhook deliveries
+php artisan pixelkraft:replay-webhooks --since="2 hours ago"
+# Prune old webhook deliveries
+php artisan pixelkraft:prune-webhooks --days=30
+# Clear all application caches
+php artisan cache:clear && php artisan config:clear && php artisan route:clear && php artisan view:clear
+```
+---
+## License
+This project is proprietary software. All rights reserved.
+---
+<div align="center">
+**Built with ❤️ using [Laravel](https://laravel.com) · [Livewire](https://livewire.laravel.com) · [Tailwind CSS](https://tailwindcss.com)**
+*pixelkraft — Artisanal Git-to-Render, at scale.*
+</div>
