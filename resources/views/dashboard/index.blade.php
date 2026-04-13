@@ -10,15 +10,23 @@
             default    => 'Good evening',
         };
 
-        $totalSites = \App\Models\Site::count();
-        $totalPages = \App\Models\Page::count();
-        $seoIssueCount = \App\Models\Page::where(function ($q) {
-            $q->whereNull('title')
-              ->orWhereNull('meta_description')
-              ->orWhere('seo_score', '<', 60);
-        })->count();
+        $visibleSiteIds = \App\Support\SiteAccess::query()->pluck('id');
+
+        $totalSites = $visibleSiteIds->count();
+        $totalPages = \App\Models\Page::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->count();
+        $seoIssueCount = \App\Models\Page::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->where(function ($q) {
+                $q->whereNull('title')
+                    ->orWhereNull('meta_description')
+                    ->orWhere('seo_score', '<', 60);
+            })
+            ->count();
 
         $latestChecks = \App\Models\UptimeCheck::query()
+            ->whereIn('site_id', $visibleSiteIds)
             ->select('site_id', \Illuminate\Support\Facades\DB::raw('MAX(checked_at) as last_check'))
             ->groupBy('site_id')
             ->get()
@@ -33,12 +41,18 @@
             $uptimePercent = round(($upCount / max(1, $latestChecks->count())) * 100, 1);
         }
 
-        $unreadMessages = \App\Models\FormSubmission::where('is_read', false)->where('is_spam', false)->count();
-        $errorCount = \App\Models\Notification::where('is_read', false)
+        $unreadMessages = \App\Models\FormSubmission::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->where('is_read', false)
+            ->where('is_spam', false)
+            ->count();
+        $errorCount = \App\Models\Notification::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->where('is_read', false)
             ->whereIn('type', ['deploy_failed', 'uptime_down', 'ssl_expiring'])
             ->count();
 
-        $activeSites = \App\Models\Site::query()
+        $activeSites = \App\Support\SiteAccess::query()
             ->with([
                 'latestUptimeCheck',
                 'pages:id,site_id,title,meta_description,seo_score',
