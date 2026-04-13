@@ -45,4 +45,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ContentRevision::class);
     }
+
+    public function editSessions()
+    {
+        return $this->hasMany(EditSession::class, 'started_by');
+    }
 }

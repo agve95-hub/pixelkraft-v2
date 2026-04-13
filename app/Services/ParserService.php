@@ -6,6 +6,7 @@ use App\Models\Page;
 use App\Models\Site;
 use App\Services\Parsers\ParsedPage;
 use App\Services\Parsers\ParserInterface;
+use App\Services\Parsers\RenderedPhpParser;
 use App\Services\Parsers\SpaComponentParser;
 use App\Services\Parsers\SsgOutputParser;
 use App\Services\Parsers\StaticHtmlParser;
@@ -16,6 +17,7 @@ class ParserService
     public function __construct(
         private StaticHtmlParser $staticParser,
         private SsgOutputParser $ssgParser,
+        private RenderedPhpParser $phpParser,
         private SpaComponentParser $spaParser,
     ) {}
 
@@ -80,6 +82,7 @@ class ParserService
     {
         return match ($site->project_type) {
             'static_html'          => $this->staticParser,
+            'php_site'             => $this->phpParser,
             'hugo', 'eleventy'     => $this->ssgParser,
             'astro'                => $this->shouldUseSsgParser($site) ? $this->ssgParser : $this->spaParser,
             'react', 'vue',
@@ -128,11 +131,14 @@ class ParserService
 
     private function syncEditableRegions(Page $page, array $regions): void
     {
-        $existingBySelector = $page->editableRegions()
-            ->get()
-            ->keyBy('selector');
+        $existingRegions = $page->editableRegions()->get();
+        $existingBySelector = $existingRegions->keyBy('selector');
+        $existingByMarker = $existingRegions
+            ->filter(fn ($region) => ! empty($region->marker_id))
+            ->keyBy('marker_id');
 
         $currentSelectors = [];
+        $currentMarkers = [];
 
         foreach ($regions as $region) {
             $selector = $region['selector'] ?? null;
@@ -141,12 +147,24 @@ class ParserService
             }
 
             $currentSelectors[] = $selector;
-            $existing = $existingBySelector->get($selector);
+            $markerId = $region['marker_id'] ?? null;
+            if ($markerId) {
+                $currentMarkers[] = $markerId;
+            }
+
+            $existing = $markerId
+                ? ($existingByMarker->get($markerId) ?? $existingBySelector->get($selector))
+                : $existingBySelector->get($selector);
 
             $attributes = [
+                'selector' => $selector,
+                'render_selector' => $region['render_selector'] ?? $selector,
                 'region_type' => $region['type'] ?? ($existing?->region_type ?? 'text'),
                 'current_content' => $region['content'] ?? null,
                 'source_location' => $region['source_location'] ?? null,
+                'dom_fingerprint' => $region['dom_fingerprint'] ?? null,
+                'source_anchor' => $region['source_anchor'] ?? null,
+                'last_verified_at' => now(),
             ];
 
             if (! $existing || $existing->detection_method === 'auto') {
@@ -161,14 +179,25 @@ class ParserService
                 $attributes['marker_id'] = $existing->marker_id;
             }
 
-            $page->editableRegions()->updateOrCreate(
-                ['selector' => $selector],
-                $attributes,
-            );
+            if ($existing) {
+                $existing->update($attributes);
+            } else {
+                $page->editableRegions()->create($attributes);
+            }
         }
 
         $selectorsToDelete = $existingBySelector
-            ->filter(fn ($region, string $selector) => $region->detection_method === 'auto' && ! in_array($selector, $currentSelectors, true))
+            ->filter(function ($region, string $selector) use ($currentSelectors, $currentMarkers) {
+                if ($region->detection_method !== 'auto') {
+                    return false;
+                }
+
+                if ($region->marker_id && in_array($region->marker_id, $currentMarkers, true)) {
+                    return false;
+                }
+
+                return ! in_array($selector, $currentSelectors, true);
+            })
             ->pluck('id');
 
         if ($selectorsToDelete->isNotEmpty()) {

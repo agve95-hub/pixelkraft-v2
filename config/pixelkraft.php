@@ -133,6 +133,7 @@ return [
     */
     'project_types' => [
         'static_html',
+        'php_site',
         'react',
         'vue',
         'svelte',

@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\EditSession;
+use App\Models\GitOperation;
 use App\Models\Site;
 use CzProject\GitPhp\Git;
-use CzProject\GitPhp\GitRepository;
 use CzProject\GitPhp\GitException;
+use CzProject\GitPhp\GitRepository;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
@@ -13,183 +15,219 @@ class GitSyncService
 {
     private Git $git;
 
-    public function __construct()
-    {
+    public function __construct(
+        private SiteLockService $locks,
+    ) {
         $this->git = new Git();
     }
 
-    /**
-     * Clone a repository for a site.
-     */
-    public function cloneRepo(Site $site): GitRepository
+    public function cloneRepo(Site $site, ?EditSession $session = null): GitRepository
     {
-        $repoPath = $site->repo_path;
+        return $this->locks->block($site, 'git', function () use ($site, $session) {
+            $repoPath = $site->repo_path;
+            $operation = $this->startOperation($site, 'clone', $session);
 
-        if (File::isDirectory($repoPath)) {
-            File::deleteDirectory($repoPath);
-        }
+            if (File::isDirectory($repoPath)) {
+                File::deleteDirectory($repoPath);
+            }
 
-        File::ensureDirectoryExists(dirname($repoPath), 0755, true);
+            File::ensureDirectoryExists(dirname($repoPath), 0755, true);
 
-        $authUrl = $this->buildAuthUrl($site);
-
-        Log::info("Cloning repo for site [{$site->slug}]", [
-            'repo_url' => $site->repo_url,
-            'branch'   => $site->branch,
-            'path'     => $repoPath,
-        ]);
-
-        $repo = $this->git->cloneRepository($authUrl, $repoPath, [
-            '-b' => $site->branch,
-            '--single-branch',
-            '--depth' => 50,
-        ]);
-
-        $site->update([
-            'last_synced_at' => now(),
-        ]);
-
-        return $repo;
-    }
-
-    /**
-     * Pull latest changes from remote.
-     * Returns true if new changes were pulled, false if already up to date.
-     */
-    public function pull(Site $site): bool
-    {
-        $repo = $this->openRepo($site);
-        $beforeSha = $this->getCurrentSha($repo);
-
-        $this->configureAuth($repo, $site);
-
-        try {
-            $repo->execute('pull', '--ff-only', 'origin', $site->branch);
-        } catch (GitException $e) {
-            if ($this->isConflict($e)) {
-                Log::warning("Merge conflict pulling site [{$site->slug}]", [
-                    'error' => $e->getMessage(),
+            try {
+                $authUrl = $this->buildAuthUrl($site);
+                $repo = $this->git->cloneRepository($authUrl, $repoPath, [
+                    '-b' => $site->branch,
+                    '--single-branch',
+                    '--depth' => 50,
                 ]);
-                $repo->execute('merge', '--abort');
-                throw new GitConflictException(
-                    "Merge conflict detected for site [{$site->slug}]. Remote changes conflict with local edits.",
-                    previous: $e
+
+                $site->update(['last_synced_at' => now()]);
+                $this->finishOperation($operation, 'success', output: "Cloned {$site->repo_url} into {$repoPath}");
+
+                return $repo;
+            } catch (\Throwable $e) {
+                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                throw $e;
+            }
+        });
+    }
+
+    public function pull(Site $site, ?EditSession $session = null): bool
+    {
+        return $this->locks->block($site, 'git', function () use ($site, $session) {
+            $repo = $this->openRepo($site);
+            $beforeSha = $this->getCurrentSha($repo);
+            $operation = $this->startOperation($site, 'pull', $session, [
+                'branch' => $site->branch,
+                'commit_sha' => $beforeSha,
+            ]);
+
+            $this->configureAuth($repo, $site);
+
+            try {
+                $output = $repo->execute('pull', '--ff-only', 'origin', $site->branch);
+                $afterSha = $this->getCurrentSha($repo);
+
+                $site->update(['last_synced_at' => now()]);
+                $this->finishOperation(
+                    $operation,
+                    'success',
+                    commitSha: $afterSha,
+                    output: $this->stringifyOutput($output)
                 );
+
+                return $beforeSha !== $afterSha;
+            } catch (GitException $e) {
+                if ($this->isConflict($e)) {
+                    try {
+                        $repo->execute('merge', '--abort');
+                    } catch (\Throwable) {
+                        // Ignore when no merge is in progress.
+                    }
+
+                    $this->finishOperation($operation, 'conflict', error: $e->getMessage());
+
+                    throw new GitConflictException(
+                        "Merge conflict detected for site [{$site->slug}]. Remote changes conflict with local edits.",
+                        previous: $e
+                    );
+                }
+
+                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                throw $e;
             }
-            throw $e;
-        }
-
-        $afterSha = $this->getCurrentSha($repo);
-
-        $site->update([
-            'last_synced_at' => now(),
-        ]);
-
-        return $beforeSha !== $afterSha;
+        });
     }
 
-    /**
-     * Stage files, commit, and push to remote.
-     */
-    public function commitAndPush(Site $site, array $files, string $message): string
+    public function commitAndPush(
+        Site $site,
+        array $files,
+        string $message,
+        ?EditSession $session = null,
+    ): string {
+        return $this->locks->block($site, 'git', function () use ($site, $files, $message, $session) {
+            $repo = $this->openRepo($site);
+            $this->configureAuth($repo, $site);
+
+            $operation = $this->startOperation($site, 'commit', $session, [
+                'branch' => $site->branch,
+                'working_branch' => $session?->working_branch,
+                'files' => array_values($files),
+            ]);
+
+            try {
+                $this->configureCommitIdentity($repo);
+
+                foreach ($files as $file) {
+                    $repo->addFile($file);
+                }
+
+                if (! $this->hasChanges($repo)) {
+                    $sha = $this->getCurrentSha($repo);
+                    $this->finishOperation($operation, 'noop', commitSha: $sha, output: 'No changes to commit.');
+                    return $sha;
+                }
+
+                $repo->commit($message);
+                $repo->execute('push', 'origin', $site->branch);
+
+                $sha = $this->getCurrentSha($repo);
+
+                $this->finishOperation($operation, 'success', commitSha: $sha, output: $message);
+
+                Log::info("Pushed commit for site [{$site->slug}]", [
+                    'sha' => $sha,
+                    'message' => $message,
+                    'files' => $files,
+                ]);
+
+                return $sha;
+            } catch (GitException $e) {
+                if ($this->isPushRejected($e)) {
+                    try {
+                        $sha = $this->pullRebaseAndPush($site, $repo);
+                        $this->finishOperation($operation, 'success', commitSha: $sha, output: 'Push rejected, recovered with pull --rebase.');
+                        return $sha;
+                    } catch (\Throwable $rebaseException) {
+                        $this->finishOperation($operation, 'conflict', error: $rebaseException->getMessage());
+                        throw $rebaseException;
+                    }
+                }
+
+                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                throw $e;
+            } catch (\Throwable $e) {
+                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                throw $e;
+            }
+        });
+    }
+
+    public function commitAllAndPush(Site $site, string $message, ?EditSession $session = null): string
     {
-        $repo = $this->openRepo($site);
-        $this->configureAuth($repo, $site);
+        return $this->locks->block($site, 'git', function () use ($site, $message, $session) {
+            $repo = $this->openRepo($site);
+            $this->configureAuth($repo, $site);
+            $operation = $this->startOperation($site, 'commit', $session, [
+                'branch' => $site->branch,
+                'working_branch' => $session?->working_branch,
+            ]);
 
-        // Stage specific files
-        foreach ($files as $file) {
-            $repo->addFile($file);
-        }
+            try {
+                $this->configureCommitIdentity($repo);
+                $repo->addAllChanges();
 
-        // Check if there are changes to commit
-        if (! $this->hasChanges($repo)) {
-            Log::info("No changes to commit for site [{$site->slug}]");
-            return $this->getCurrentSha($repo);
-        }
+                if (! $this->hasChanges($repo)) {
+                    $sha = $this->getCurrentSha($repo);
+                    $this->finishOperation($operation, 'noop', commitSha: $sha, output: 'No changes to commit.');
+                    return $sha;
+                }
 
-        $repo->commit($message);
+                $repo->commit($message);
+                $repo->execute('push', 'origin', $site->branch);
 
-        try {
-            $repo->execute('push', 'origin', $site->branch);
-        } catch (GitException $e) {
-            if ($this->isPushRejected($e)) {
-                Log::info("Push rejected for [{$site->slug}], attempting pull + rebase");
-                return $this->pullRebaseAndPush($site, $repo);
+                $sha = $this->getCurrentSha($repo);
+                $this->finishOperation($operation, 'success', commitSha: $sha, output: $message);
+
+                return $sha;
+            } catch (GitException $e) {
+                if ($this->isPushRejected($e)) {
+                    try {
+                        $sha = $this->pullRebaseAndPush($site, $repo);
+                        $this->finishOperation($operation, 'success', commitSha: $sha, output: 'Push rejected, recovered with pull --rebase.');
+                        return $sha;
+                    } catch (\Throwable $rebaseException) {
+                        $this->finishOperation($operation, 'conflict', error: $rebaseException->getMessage());
+                        throw $rebaseException;
+                    }
+                }
+
+                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                throw $e;
             }
-            throw $e;
-        }
-
-        $sha = $this->getCurrentSha($repo);
-
-        Log::info("Pushed commit for site [{$site->slug}]", [
-            'sha'     => $sha,
-            'message' => $message,
-            'files'   => $files,
-        ]);
-
-        return $sha;
+        });
     }
 
-    /**
-     * Stage all changed files, commit, and push.
-     */
-    public function commitAllAndPush(Site $site, string $message): string
-    {
-        $repo = $this->openRepo($site);
-        $this->configureAuth($repo, $site);
-
-        $repo->addAllChanges();
-
-        if (! $this->hasChanges($repo)) {
-            return $this->getCurrentSha($repo);
-        }
-
-        $repo->commit($message);
-
-        try {
-            $repo->execute('push', 'origin', $site->branch);
-        } catch (GitException $e) {
-            if ($this->isPushRejected($e)) {
-                return $this->pullRebaseAndPush($site, $repo);
-            }
-            throw $e;
-        }
-
-        $sha = $this->getCurrentSha($repo);
-
-        Log::info("Pushed all changes for site [{$site->slug}]", [
-            'sha'     => $sha,
-            'message' => $message,
-        ]);
-
-        return $sha;
-    }
-
-    /**
-     * Get the list of files changed between two commits.
-     */
     public function getChangedFiles(Site $site, string $fromSha, string $toSha): array
     {
         $repo = $this->openRepo($site);
-
         $output = $repo->execute('diff', '--name-only', $fromSha, $toSha);
 
-        return array_filter(array_map('trim', $output));
+        return array_values(array_filter(array_map('trim', $output)));
     }
 
-    /**
-     * Get current HEAD SHA.
-     */
+    public function currentCommitSha(Site $site): string
+    {
+        return $this->getCurrentSha($this->openRepo($site));
+    }
+
     public function getCurrentSha(GitRepository $repo): string
     {
         $output = $repo->execute('rev-parse', 'HEAD');
 
-        return trim($output[0] ?? '');
+        return trim((string) ($output[0] ?? ''));
     }
 
-    /**
-     * Get short log of recent commits.
-     */
     public function getRecentCommits(Site $site, int $limit = 10): array
     {
         $repo = $this->openRepo($site);
@@ -202,13 +240,13 @@ class GitSyncService
 
         $commits = [];
         foreach ($output as $line) {
-            $parts = explode('||', trim($line));
+            $parts = explode('||', trim((string) $line));
             if (count($parts) === 4) {
                 $commits[] = [
-                    'sha'     => $parts[0],
+                    'sha' => $parts[0],
                     'message' => $parts[1],
-                    'date'    => $parts[2],
-                    'author'  => $parts[3],
+                    'date' => $parts[2],
+                    'author' => $parts[3],
                 ];
             }
         }
@@ -216,35 +254,43 @@ class GitSyncService
         return $commits;
     }
 
-    /**
-     * Create a tag for rollback snapshots.
-     */
-    public function createTag(Site $site, string $tagName): void
+    public function createTag(Site $site, string $tagName, ?EditSession $session = null): void
     {
-        $repo = $this->openRepo($site);
-        $repo->createTag($tagName);
+        $this->locks->block($site, 'git', function () use ($site, $tagName, $session) {
+            $repo = $this->openRepo($site);
+            $operation = $this->startOperation($site, 'tag', $session, ['metadata' => ['tag' => $tagName]]);
+
+            try {
+                $repo->createTag($tagName);
+                $this->finishOperation($operation, 'success', output: "Created tag {$tagName}");
+            } catch (\Throwable $e) {
+                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                throw $e;
+            }
+        });
     }
 
-    /**
-     * Checkout a specific tag or commit for rollback.
-     */
-    public function checkout(Site $site, string $ref): void
+    public function checkout(Site $site, string $ref, ?EditSession $session = null): void
     {
-        $repo = $this->openRepo($site);
-        $repo->checkout($ref);
+        $this->locks->block($site, 'git', function () use ($site, $ref, $session) {
+            $repo = $this->openRepo($site);
+            $operation = $this->startOperation($site, 'checkout', $session, ['metadata' => ['ref' => $ref]]);
+
+            try {
+                $repo->checkout($ref);
+                $this->finishOperation($operation, 'success', output: "Checked out {$ref}");
+            } catch (\Throwable $e) {
+                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                throw $e;
+            }
+        });
     }
 
-    /**
-     * Check if the repo directory exists and is a valid git repo.
-     */
     public function isCloned(Site $site): bool
     {
         return File::isDirectory($site->repo_path . '/.git');
     }
 
-    /**
-     * Get all files in the repository, filtered by extension.
-     */
     public function listFiles(Site $site, ?array $extensions = null): array
     {
         $repoPath = $site->repo_path;
@@ -266,7 +312,6 @@ class GitSyncService
 
             $relativePath = str_replace($repoPath . '/', '', $file->getPathname());
 
-            // Skip hidden files and common non-content directories
             if ($this->shouldSkipPath($relativePath)) {
                 continue;
             }
@@ -282,8 +327,6 @@ class GitSyncService
 
         return $files;
     }
-
-    // ── Private Helpers ─────────────────────────
 
     private function openRepo(Site $site): GitRepository
     {
@@ -302,7 +345,7 @@ class GitSyncService
 
         $parsed = parse_url($site->repo_url);
         $host = $parsed['host'] ?? 'github.com';
-        $path = ltrim($parsed['path'] ?? '', '/');
+        $path = ltrim((string) ($parsed['path'] ?? ''), '/');
 
         return "https://x-access-token:{$site->github_token}@{$host}/{$path}";
     }
@@ -313,8 +356,13 @@ class GitSyncService
             return;
         }
 
-        $authUrl = $this->buildAuthUrl($site);
-        $repo->execute('remote', 'set-url', 'origin', $authUrl);
+        $repo->execute('remote', 'set-url', 'origin', $this->buildAuthUrl($site));
+    }
+
+    private function configureCommitIdentity(GitRepository $repo): void
+    {
+        $repo->execute('config', 'user.name', 'pixelkraft');
+        $repo->execute('config', 'user.email', 'pixelkraft@local');
     }
 
     private function hasChanges(GitRepository $repo): bool
@@ -350,7 +398,12 @@ class GitSyncService
 
             return $this->getCurrentSha($repo);
         } catch (GitException $e) {
-            $repo->execute('rebase', '--abort');
+            try {
+                $repo->execute('rebase', '--abort');
+            } catch (\Throwable) {
+                // Ignore when no rebase is in progress.
+            }
+
             throw new GitConflictException(
                 "Rebase conflict for site [{$site->slug}]. Manual resolution required.",
                 previous: $e
@@ -377,11 +430,47 @@ class GitSyncService
             }
         }
 
-        // Skip hidden files at root
-        if (str_starts_with($path, '.') && ! str_contains($path, '/')) {
-            return true;
+        return str_starts_with($path, '.') && ! str_contains($path, '/');
+    }
+
+    private function startOperation(Site $site, string $operation, ?EditSession $session = null, array $data = []): GitOperation
+    {
+        return GitOperation::create([
+            'site_id' => $site->id,
+            'edit_session_id' => $session?->id,
+            'operation' => $operation,
+            'status' => 'started',
+            'branch' => $data['branch'] ?? $site->branch,
+            'working_branch' => $data['working_branch'] ?? $session?->working_branch,
+            'commit_sha' => $data['commit_sha'] ?? null,
+            'files' => $data['files'] ?? null,
+            'metadata' => $data['metadata'] ?? null,
+            'started_at' => now(),
+        ]);
+    }
+
+    private function finishOperation(
+        GitOperation $operation,
+        string $status,
+        ?string $commitSha = null,
+        ?string $output = null,
+        ?string $error = null,
+    ): void {
+        $operation->update([
+            'status' => $status,
+            'commit_sha' => $commitSha ?: $operation->commit_sha,
+            'output_log' => $output,
+            'error_output' => $error,
+            'completed_at' => now(),
+        ]);
+    }
+
+    private function stringifyOutput(array|string|null $output): ?string
+    {
+        if (is_array($output)) {
+            return implode("\n", array_map(static fn ($line) => trim((string) $line), $output));
         }
 
-        return false;
+        return $output !== null ? trim((string) $output) : null;
     }
 }

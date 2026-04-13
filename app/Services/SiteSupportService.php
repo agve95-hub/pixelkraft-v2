@@ -94,7 +94,7 @@ class SiteSupportService
 
     public function supportsVisualEditing(Site $site, ?Page $page = null): bool
     {
-        if (in_array($site->project_type, ['static_html', 'hugo', 'eleventy'], true)) {
+        if (in_array($site->project_type, ['static_html', 'php_site', 'hugo', 'eleventy'], true)) {
             return true;
         }
 
@@ -150,7 +150,7 @@ class SiteSupportService
             return true;
         }
 
-        return in_array(pathinfo($normalized, PATHINFO_EXTENSION), ['html', 'htm', 'md', 'markdown', 'njk', 'liquid', 'twig'], true);
+        return in_array(pathinfo($normalized, PATHINFO_EXTENSION), ['html', 'htm', 'md', 'markdown', 'njk', 'liquid', 'twig', 'php'], true);
     }
 
     private function isHtmlHeadEditablePath(?string $path): bool
@@ -165,7 +165,7 @@ class SiteSupportService
             return true;
         }
 
-        return in_array(pathinfo($normalized, PATHINFO_EXTENSION), ['html', 'htm', 'njk', 'liquid', 'twig'], true);
+        return in_array(pathinfo($normalized, PATHINFO_EXTENSION), ['html', 'htm', 'njk', 'liquid', 'twig', 'php'], true);
     }
 
     private function isScriptLikePath(?string $path): bool

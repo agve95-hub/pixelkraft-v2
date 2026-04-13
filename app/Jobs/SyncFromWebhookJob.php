@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Jobs\DeploySiteJob;
 use App\Models\Notification;
 use App\Models\Site;
+use App\Models\WebhookDelivery;
 use App\Services\GitConflictException;
 use App\Services\GitSyncService;
 use Illuminate\Bus\Queueable;
@@ -24,6 +25,7 @@ class SyncFromWebhookJob implements ShouldQueue
     public function __construct(
         public Site $site,
         public array $payload = [],
+        public ?string $deliveryId = null,
     ) {
         $this->onQueue('git');
     }
@@ -42,6 +44,7 @@ class SyncFromWebhookJob implements ShouldQueue
             $hasChanges = $git->pull($this->site);
 
             if (! $hasChanges) {
+                $this->markDeliveryProcessed('ignored');
                 Log::info("SyncFromWebhookJob: no new changes for [{$this->site->slug}]");
                 return;
             }
@@ -55,6 +58,8 @@ class SyncFromWebhookJob implements ShouldQueue
                 DeploySiteJob::dispatch($this->site, 'webhook');
                 Log::info("SyncFromWebhookJob: dispatched deploy for [{$this->site->slug}]");
             }
+
+            $this->markDeliveryProcessed('processed');
 
         } catch (GitConflictException $e) {
             Log::error("SyncFromWebhookJob: conflict for [{$this->site->slug}]", [
@@ -71,6 +76,7 @@ class SyncFromWebhookJob implements ShouldQueue
                     'message' => $commitMessage,
                 ],
             );
+            $this->markDeliveryProcessed('conflict');
 
         } catch (\Throwable $e) {
             Log::error("SyncFromWebhookJob: failed for [{$this->site->slug}]", [
@@ -83,6 +89,7 @@ class SyncFromWebhookJob implements ShouldQueue
                 body: $e->getMessage(),
                 siteId: $this->site->id,
             );
+            $this->markDeliveryProcessed('failed');
 
             throw $e;
         }
@@ -91,5 +98,21 @@ class SyncFromWebhookJob implements ShouldQueue
     public function tags(): array
     {
         return ['webhook-sync', "site:{$this->site->id}"];
+    }
+
+    private function markDeliveryProcessed(string $status): void
+    {
+        if (! $this->deliveryId) {
+            return;
+        }
+
+        WebhookDelivery::query()
+            ->where('provider', 'github')
+            ->where('delivery_id', $this->deliveryId)
+            ->update([
+                'site_id' => $this->site->id,
+                'status' => $status,
+                'processed_at' => now(),
+            ]);
     }
 }

@@ -60,6 +60,7 @@
                         $depth = min($level, 8);
                         $label = Str::limit(strip_tags($region->current_content ?? ''), 46) ?: '(empty)';
                         $isVisual = (bool) ($visualEditability[$region->id] ?? false);
+                        $isManaged = $region->isConfirmed() || $region->hasVerifiedAnchor();
                     @endphp
                     <button
                         type="button"
@@ -111,6 +112,16 @@
 
                         <div class="mt-1 pl-0.5">
                             <p class="truncate font-mono text-[10px] text-zinc-500">{{ $region->selector }}</p>
+                            <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                <span @class([
+                                    'rounded border px-1.5 py-0.5 text-[10px]',
+                                    'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' => $isManaged,
+                                    'border-zinc-700 bg-zinc-900 text-zinc-400' => ! $isManaged,
+                                ])>{{ $isManaged ? 'managed' : 'auto' }}</span>
+                                @if ($region->is_static)
+                                    <span class="rounded border border-zinc-700 bg-zinc-900 px-1.5 py-0.5 text-[10px] text-zinc-400">locked</span>
+                                @endif
+                            </div>
                         </div>
                     </button>
                 @endforeach

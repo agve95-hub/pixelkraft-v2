@@ -13,6 +13,7 @@ class EditableRegion extends Model
     protected $fillable = [
         'page_id',
         'selector',
+        'render_selector',
         'marker_id',
         'region_type',
         'is_static',
@@ -20,6 +21,9 @@ class EditableRegion extends Model
         'confidence_score',
         'current_content',
         'source_location',
+        'dom_fingerprint',
+        'source_anchor',
+        'last_verified_at',
     ];
 
     protected function casts(): array
@@ -28,6 +32,9 @@ class EditableRegion extends Model
             'is_static'        => 'boolean',
             'confidence_score' => 'float',
             'source_location'  => 'array',
+            'dom_fingerprint'  => 'array',
+            'source_anchor'    => 'array',
+            'last_verified_at' => 'datetime',
         ];
     }
 
@@ -58,5 +65,11 @@ class EditableRegion extends Model
     public function hasHighConfidence(): bool
     {
         return $this->confidence_score >= 0.7;
+    }
+
+    public function hasVerifiedAnchor(): bool
+    {
+        return ! empty($this->marker_id)
+            || ! empty(data_get($this->source_anchor, 'context_hash'));
     }
 }

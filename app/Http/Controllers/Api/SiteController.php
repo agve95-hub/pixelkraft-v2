@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Jobs\CloneRepoJob;
 use App\Http\Controllers\Controller;
 use App\Jobs\DeploySiteJob;
 use App\Jobs\ParseSiteJob;
 use App\Models\DeployLog;
 use App\Models\Site;
+use App\Services\AnalyticsAggregator;
 use App\Services\DeployService;
+use App\Services\GitSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -36,6 +39,15 @@ class SiteController extends Controller
 
     public function sync(Site $site): JsonResponse
     {
+        if (! app(GitSyncService::class)->isCloned($site)) {
+            CloneRepoJob::dispatch($site);
+
+            return response()->json([
+                'status'  => 'dispatched',
+                'message' => "Clone + sync job dispatched for {$site->name}",
+            ]);
+        }
+
         ParseSiteJob::dispatch($site);
 
         return response()->json([
@@ -102,6 +114,21 @@ class SiteController extends Controller
         return response()->json(['data' => $pages]);
     }
 
+    public function analytics(Site $site, Request $request, AnalyticsAggregator $analytics): JsonResponse
+    {
+        $days = (int) $request->query('days', 30);
+        $days = in_array($days, [7, 30, 90], true) ? $days : 30;
+
+        return response()->json([
+            'data' => [
+                'traffic' => $analytics->getSiteStats($site, $days),
+                'events' => $analytics->summarizeSiteEvents($site, $days),
+                'current_release' => $site->currentDeploymentRelease()->first(),
+                'tracking_installation' => $site->activeTrackingInstallation()->first(),
+            ],
+        ]);
+    }
+
     public function deploys(Site $site): JsonResponse
     {
         $deploys = $site->deployLogs()
@@ -120,6 +147,48 @@ class SiteController extends Controller
             ]);
 
         return response()->json(['data' => $deploys]);
+    }
+
+    public function releases(Site $site): JsonResponse
+    {
+        $releases = $site->deploymentReleases()
+            ->latest('created_at')
+            ->limit(25)
+            ->get()
+            ->map(fn ($release) => [
+                'id' => $release->id,
+                'status' => $release->status,
+                'source_commit_sha' => $release->source_commit_sha,
+                'source_branch' => $release->source_branch,
+                'artifact_path' => $release->artifact_path,
+                'tracking_version' => $release->tracking_version,
+                'is_current' => $release->is_current,
+                'activated_at' => $release->activated_at?->toIso8601String(),
+                'created_at' => $release->created_at?->toIso8601String(),
+            ]);
+
+        return response()->json(['data' => $releases]);
+    }
+
+    public function gitOperations(Site $site): JsonResponse
+    {
+        $operations = $site->gitOperations()
+            ->latest('started_at')
+            ->limit(50)
+            ->get()
+            ->map(fn ($operation) => [
+                'id' => $operation->id,
+                'operation' => $operation->operation,
+                'status' => $operation->status,
+                'branch' => $operation->branch,
+                'working_branch' => $operation->working_branch,
+                'commit_sha' => $operation->commit_sha,
+                'files' => $operation->files,
+                'started_at' => $operation->started_at?->toIso8601String(),
+                'completed_at' => $operation->completed_at?->toIso8601String(),
+            ]);
+
+        return response()->json(['data' => $operations]);
     }
 
     private function formatSite(Site $site, bool $detailed = false): array

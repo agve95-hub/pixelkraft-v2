@@ -159,7 +159,9 @@ class ContentPatcher
     {
         // Strategy 1: If region has a marker, replace content between markers
         if ($region->marker_id) {
-            return $this->patchByMarker($html, $region->marker_id, $newContent);
+            $htmlWithMarkers = $this->ensurePkMarkers($html, $region);
+
+            return $this->patchByMarker($htmlWithMarkers, $region->marker_id, $newContent);
         }
 
         // Strategy 2: Replace by CSS selector
@@ -173,7 +175,7 @@ class ContentPatcher
     {
         $escapedId = preg_quote($markerId, '/');
 
-        $pattern = '/(<!--\s*cms:editable\s+id="' . $escapedId . '"[^>]*-->)\s*(.*?)\s*(<!--\s*\/cms:editable\s*-->)/s';
+        $pattern = '/(<!--\s*(?:cms:editable\s+id="' . $escapedId . '"[^>]*|pk:editable:start:' . $escapedId . '[^>]*)-->)\s*(.*?)\s*(<!--\s*(?:\/cms:editable|pk:editable:end:' . $escapedId . ')\s*-->)/s';
 
         return preg_replace($pattern, "$1\n{$newContent}\n$3", $html, 1);
     }
@@ -662,5 +664,29 @@ class ContentPatcher
         }
 
         return substr_replace($haystack, $replacement, $pos, strlen($needle));
+    }
+
+    private function ensurePkMarkers(string $html, EditableRegion $region): string
+    {
+        if (! $region->marker_id) {
+            return $html;
+        }
+
+        if (
+            str_contains($html, "pk:editable:start:{$region->marker_id}")
+            || str_contains($html, "cms:editable id=\"{$region->marker_id}\"")
+        ) {
+            return $html;
+        }
+
+        $currentContent = trim((string) $region->current_content);
+        if ($currentContent === '') {
+            return $html;
+        }
+
+        $open = "<!-- pk:editable:start:{$region->marker_id} type=\"{$region->region_type}\" -->";
+        $close = "<!-- pk:editable:end:{$region->marker_id} -->";
+
+        return $this->safeReplace($html, $currentContent, $open . "\n" . $currentContent . "\n" . $close);
     }
 }

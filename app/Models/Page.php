@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -59,6 +60,31 @@ class Page extends Model
     public function analyticsSnapshots()
     {
         return $this->hasMany(AnalyticsSnapshot::class);
+    }
+
+    public function analyticsEvents()
+    {
+        return $this->hasMany(AnalyticsEvent::class);
+    }
+
+    public function editSessions()
+    {
+        return $this->hasMany(EditSession::class);
+    }
+
+    public function seoIssues()
+    {
+        return $this->hasMany(SeoIssue::class);
+    }
+
+    protected function url(): Attribute
+    {
+        return Attribute::get(fn () => $this->url_path ?: '/');
+    }
+
+    protected function status(): Attribute
+    {
+        return Attribute::get(fn () => $this->is_published ? 'Published' : 'Draft');
     }
 
     // ── Helpers ──────────────────────────────────

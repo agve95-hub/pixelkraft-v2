@@ -20,6 +20,29 @@
             <p class="truncate font-mono text-[11px] text-zinc-500">{{ $page->url_path }}</p>
         </div>
 
+        <div class="hidden items-center gap-2 xl:flex">
+            <span class="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-[11px] text-zinc-300">
+                {{ auth()->user()?->isAdmin() ? 'Developer mode' : 'Editor mode' }}
+            </span>
+            @if ($editSession)
+                <span class="rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 font-mono text-[11px] text-cyan-200">
+                    {{ $editSession->working_branch }}
+                </span>
+                <span @class([
+                    'rounded border px-2 py-1 text-[11px]',
+                    'border-red-500/30 bg-red-500/10 text-red-200' => $editSession->status === 'conflicted',
+                    'border-zinc-700 bg-zinc-800 text-zinc-300' => $editSession->status !== 'conflicted',
+                ])>
+                    {{ ucfirst($editSession->status) }}
+                </span>
+            @endif
+            @if ($currentRelease)
+                <span class="rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200">
+                    Release {{ \Illuminate\Support\Str::limit($currentRelease->source_commit_sha ?: $currentRelease->id, 8, '') }}
+                </span>
+            @endif
+        </div>
+
         <div class="flex items-center rounded-lg border border-zinc-700 bg-zinc-800 p-0.5">
             <button
                 wire:click="setMode('visual')"
@@ -85,6 +108,21 @@
         </div>
     @endif
 
+    @if ($editSession?->status === 'conflicted')
+        <div class="border-b border-red-500/20 bg-red-500/5 px-4 py-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-red-200">This edit session is conflicted.</p>
+                    <p class="mt-1 text-xs text-red-100/80">
+                        pixelkraft detected newer repo changes while saving. Review the layer in Code mode or start a fresh session before making more visual edits.
+                    </p>
+                </div>
+                <button wire:click="setMode('code')" class="flux-btn-secondary text-xs">Open Code Mode</button>
+                <button wire:click="startFreshSession" class="flux-btn-primary text-xs">Start Fresh Session</button>
+            </div>
+        </div>
+    @endif
+
     <div class="flex min-h-0 flex-1 overflow-hidden">
         @if ($mode === 'visual')
             <aside
@@ -112,6 +150,12 @@
                         <span x-text="bordersVisible ? 'Borders: On' : 'Borders: Off'"></span>
                     </button>
 
+                    <div class="flex items-center rounded-md border border-zinc-700 bg-zinc-900 p-0.5">
+                        <button type="button" x-on:click="setViewport('desktop')" :class="viewport === 'desktop' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-400'" class="rounded px-2 py-1 text-[11px]">Desktop</button>
+                        <button type="button" x-on:click="setViewport('tablet')" :class="viewport === 'tablet' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-400'" class="rounded px-2 py-1 text-[11px]">Tablet</button>
+                        <button type="button" x-on:click="setViewport('mobile')" :class="viewport === 'mobile' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-400'" class="rounded px-2 py-1 text-[11px]">Mobile</button>
+                    </div>
+
                     <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300">
                         {{ $patchableRegionCount }}/{{ $previewRegionCount }} visual-editable
                     </span>
@@ -124,15 +168,22 @@
                     @endif
                 </div>
 
-                <div class="relative min-h-0 flex-1">
-                    <iframe
-                        x-ref="previewFrame"
-                        src="{{ $previewUrl }}"
-                        class="h-full w-full border-0"
-                        sandbox="allow-same-origin allow-scripts"
-                        x-on:load="onIframeLoad()"
-                        x-on:error="iframeLoading = false"
-                    ></iframe>
+                <div class="relative min-h-0 flex-1 overflow-auto bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.12),transparent_38%),linear-gradient(to_bottom,rgba(24,24,27,0.35),rgba(9,9,11,0.96))]">
+                    <div class="flex min-h-full items-start justify-center px-4 py-6">
+                        <div
+                            class="w-full overflow-hidden rounded-2xl border border-zinc-800 bg-white shadow-[0_30px_90px_rgba(0,0,0,0.45)] transition-all duration-200"
+                            :style="viewportStyle()"
+                        >
+                            <iframe
+                                x-ref="previewFrame"
+                                src="{{ $previewUrl }}"
+                                class="h-[calc(100vh-15rem)] w-full border-0 bg-white"
+                                sandbox="allow-same-origin allow-scripts"
+                                x-on:load="onIframeLoad()"
+                                x-on:error="iframeLoading = false"
+                            ></iframe>
+                        </div>
+                    </div>
 
                     <div
                         x-show="iframeLoading"
@@ -166,7 +217,177 @@
                         </div>
                     @endif
                 </div>
+
+                <div class="border-t border-zinc-800 bg-zinc-950/60 px-4 py-3">
+                    <div class="flex flex-wrap items-center gap-2 text-[11px]">
+                        @if ($editSession)
+                            <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-300">
+                                Session {{ \Illuminate\Support\Str::limit($editSession->id, 8, '') }}
+                            </span>
+                            <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-400">
+                                Base {{ $editSession->base_commit_sha ? \Illuminate\Support\Str::limit($editSession->base_commit_sha, 8, '') : 'n/a' }}
+                            </span>
+                        @endif
+
+                        @foreach ($recentGitOperations as $operation)
+                            <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-400">
+                                {{ $operation->operation }}: {{ $operation->status }}
+                            </span>
+                        @endforeach
+                    </div>
+                </div>
             </div>
+
+            <aside class="hidden h-full w-[23rem] shrink-0 border-l border-zinc-800 bg-zinc-900 xl:flex xl:flex-col">
+                <div class="border-b border-zinc-800 px-3 py-3">
+                    <div class="grid grid-cols-4 gap-1">
+                        <button type="button" x-on:click="rightPanelTab = 'props'" :class="rightPanelTab === 'props' ? 'bg-violet-500/20 text-violet-200 border-violet-500/30' : 'border-zinc-700 text-zinc-400'" class="rounded-md border px-2 py-1 text-[11px] font-medium">Props</button>
+                        <button type="button" x-on:click="rightPanelTab = 'seo'" :class="rightPanelTab === 'seo' ? 'bg-violet-500/20 text-violet-200 border-violet-500/30' : 'border-zinc-700 text-zinc-400'" class="rounded-md border px-2 py-1 text-[11px] font-medium">SEO</button>
+                        <button type="button" x-on:click="rightPanelTab = 'history'" :class="rightPanelTab === 'history' ? 'bg-violet-500/20 text-violet-200 border-violet-500/30' : 'border-zinc-700 text-zinc-400'" class="rounded-md border px-2 py-1 text-[11px] font-medium">History</button>
+                        <button type="button" x-on:click="rightPanelTab = 'code'" :class="rightPanelTab === 'code' ? 'bg-violet-500/20 text-violet-200 border-violet-500/30' : 'border-zinc-700 text-zinc-400'" class="rounded-md border px-2 py-1 text-[11px] font-medium">Code</button>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-3 py-3 text-sm">
+                    <div x-show="rightPanelTab === 'props'" class="space-y-3">
+                        <div class="dash-card">
+                            <div class="dash-card-title">Selected layer</div>
+                            @if ($selectedRegion)
+                                <div class="mt-3 space-y-2">
+                                    <div class="rounded border border-zinc-700 bg-zinc-950 px-3 py-2">
+                                        <div class="text-[11px] uppercase tracking-wide text-zinc-500">Type</div>
+                                        <div class="mt-1 text-zinc-100">{{ $selectedRegion->region_type }}</div>
+                                    </div>
+                                    <div class="rounded border border-zinc-700 bg-zinc-950 px-3 py-2">
+                                        <div class="text-[11px] uppercase tracking-wide text-zinc-500">Selector</div>
+                                        <div class="mt-1 break-all font-mono text-[11px] text-zinc-300">{{ $selectedRegion->selector }}</div>
+                                    </div>
+                                    <div class="rounded border border-zinc-700 bg-zinc-950 px-3 py-2">
+                                        <div class="text-[11px] uppercase tracking-wide text-zinc-500">Region status</div>
+                                        <div class="mt-1 text-zinc-100">{{ $selectedRegionEditable ? 'Visual editable' : 'Code-first / preview only' }}</div>
+                                    </div>
+                                    <div class="rounded border border-zinc-700 bg-zinc-950 px-3 py-2">
+                                        <div class="text-[11px] uppercase tracking-wide text-zinc-500">Management</div>
+                                        <div class="mt-1 flex flex-wrap items-center gap-2">
+                                            @if ($selectedRegionManagement['managed'])
+                                                <span class="rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200">managed</span>
+                                            @else
+                                                <span class="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-200">auto-detected</span>
+                                            @endif
+                                            @if ($selectedRegionManagement['locked'])
+                                                <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300">locked</span>
+                                            @endif
+                                            <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-400">{{ $selectedRegionManagement['detection_method'] }}</span>
+                                        </div>
+                                        <div class="mt-2 text-[11px] text-zinc-400">
+                                            Source: <span class="font-mono">{{ $selectedRegionManagement['source_file'] }}</span>
+                                        </div>
+                                        @if ($selectedRegionManagement['marker_id'])
+                                            <div class="mt-1 text-[11px] text-zinc-400">
+                                                Marker: <span class="font-mono">{{ $selectedRegionManagement['marker_id'] }}</span>
+                                            </div>
+                                        @endif
+                                        @if ($selectedRegionManagement['verified_at'])
+                                            <div class="mt-1 text-[11px] text-zinc-500">
+                                                Verified {{ $selectedRegionManagement['verified_at']->diffForHumans() }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button wire:click="promoteSelectedRegion" class="flux-btn-primary text-xs" @disabled($selectedRegionManagement['locked'])>
+                                            {{ $selectedRegionManagement['managed'] ? 'Refresh Managed Anchor' : 'Promote To Managed Region' }}
+                                        </button>
+                                        <button wire:click="lockSelectedRegion" class="flux-btn-secondary text-xs">
+                                            Mark Static
+                                        </button>
+                                        @if (! $selectedRegionEditable)
+                                            <button wire:click="setMode('code')" class="flux-btn-secondary text-xs">Open In Code Mode</button>
+                                        @endif
+                                    </div>
+                                </div>
+                            @else
+                                <p class="mt-3 text-zinc-400">Select a layer in the canvas to inspect its properties.</p>
+                            @endif
+                        </div>
+
+                        <div class="dash-card">
+                            <div class="dash-card-title">Pages</div>
+                            <div class="mt-3 space-y-2">
+                                @foreach ($sitePages as $sitePage)
+                                    <a href="{{ route('editor', ['site' => $site, 'page' => $sitePage]) }}" class="block rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-zinc-300 transition hover:border-zinc-600 hover:text-zinc-100">
+                                        <div>{{ $sitePage->title ?: ($sitePage->url_path ?: '/') }}</div>
+                                        <div class="mt-1 font-mono text-[11px] text-zinc-500">{{ $sitePage->url_path ?: '/' }}</div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    <div x-show="rightPanelTab === 'seo'" class="space-y-3">
+                        <div class="dash-card">
+                            <div class="dash-card-title">SEO snapshot</div>
+                            <div class="mt-3 space-y-2">
+                                <div class="rounded border border-zinc-700 bg-zinc-950 px-3 py-2">
+                                    <div class="text-[11px] uppercase tracking-wide text-zinc-500">Title</div>
+                                    <div class="mt-1 text-zinc-100">{{ $page->title ?: 'Untitled page' }}</div>
+                                </div>
+                                <div class="rounded border border-zinc-700 bg-zinc-950 px-3 py-2">
+                                    <div class="text-[11px] uppercase tracking-wide text-zinc-500">Meta description</div>
+                                    <div class="mt-1 text-zinc-300">{{ $page->meta_description ?: 'No description saved yet.' }}</div>
+                                </div>
+                                <div class="rounded border border-zinc-700 bg-zinc-950 px-3 py-2">
+                                    <div class="text-[11px] uppercase tracking-wide text-zinc-500">Canonical</div>
+                                    <div class="mt-1 break-all font-mono text-[11px] text-zinc-300">{{ $page->canonical_url ?: 'Not set' }}</div>
+                                </div>
+                                <a href="{{ route('seo.meta', ['site' => $site, 'page' => $page]) }}" class="flux-btn-secondary text-xs">Open SEO editor</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div x-show="rightPanelTab === 'history'" class="space-y-3">
+                        <div class="dash-card">
+                            <div class="dash-card-title">Recent revisions</div>
+                            <div class="mt-3 space-y-2">
+                                @forelse ($recentRevisions as $revision)
+                                    <div class="rounded border border-zinc-800 bg-zinc-950 px-3 py-2">
+                                        <div class="text-zinc-100">{{ $revision->user?->name ?: 'Unknown user' }}</div>
+                                        <div class="mt-1 text-[11px] text-zinc-500">{{ $revision->created_at?->diffForHumans() ?? 'recently' }}</div>
+                                        <div class="mt-2 text-[12px] text-zinc-300">{{ \Illuminate\Support\Str::limit(strip_tags($revision->content_after ?? ''), 120) }}</div>
+                                    </div>
+                                @empty
+                                    <p class="text-zinc-400">No revision history for the currently selected layer yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
+
+                        <div class="dash-card">
+                            <div class="dash-card-title">Git operations</div>
+                            <div class="mt-3 space-y-2">
+                                @foreach ($recentGitOperations as $operation)
+                                    <div class="rounded border border-zinc-800 bg-zinc-950 px-3 py-2">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-zinc-100">{{ $operation->operation }}</span>
+                                            <span class="font-mono text-[11px] text-zinc-500">{{ $operation->status }}</span>
+                                        </div>
+                                        <div class="mt-1 text-[11px] text-zinc-500">{{ $operation->started_at?->diffForHumans() ?? 'recently' }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    <div x-show="rightPanelTab === 'code'" class="space-y-3">
+                        <div class="dash-card">
+                            <div class="dash-card-title">Source</div>
+                            <div class="mt-3 rounded border border-zinc-700 bg-zinc-950 px-3 py-2">
+                                <div class="font-mono text-[11px] text-zinc-400">{{ $codeFilePath }}</div>
+                                <div class="mt-2 text-zinc-300">Open Code mode for raw source edits, conflict recovery, or framework-managed regions.</div>
+                            </div>
+                            <button wire:click="setMode('code')" class="flux-btn-secondary mt-3 text-xs">Switch to Code Mode</button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
         @else
             <div class="flex min-w-0 flex-1 flex-col bg-zinc-950">
                 <div class="flex flex-wrap items-center gap-2 border-b border-zinc-800 bg-zinc-900/40 px-4 py-2">
@@ -260,6 +481,8 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     iframeLoading: true,
     previewRegions,
     selectedRegionId,
+    viewport: 'desktop',
+    rightPanelTab: 'props',
     lastRegionLookupMap: {},
     hoveredRegionElement: null,
     inlineEditingElement: null,
@@ -646,6 +869,22 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         if (doc) {
             this.applyBorderVisibility(doc);
         }
+    },
+
+    setViewport(viewport) {
+        this.viewport = viewport;
+    },
+
+    viewportStyle() {
+        if (this.viewport === 'tablet') {
+            return 'max-width: 820px;';
+        }
+
+        if (this.viewport === 'mobile') {
+            return 'max-width: 420px;';
+        }
+
+        return 'max-width: 100%;';
     },
 
     applyBorderVisibility(doc) {

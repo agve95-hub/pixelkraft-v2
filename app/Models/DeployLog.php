@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class DeployLog extends Model
 {
@@ -29,6 +31,25 @@ class DeployLog extends Model
             'duration_ms' => 'integer',
             'created_at'  => 'datetime',
         ];
+    }
+
+    protected function hash(): Attribute
+    {
+        return Attribute::get(function () {
+            $value = $this->commit_sha ?: $this->id;
+
+            return $value ? Str::limit((string) $value, 7, '') : null;
+        });
+    }
+
+    protected function duration(): Attribute
+    {
+        return Attribute::get(fn () => $this->durationFormatted());
+    }
+
+    protected function time(): Attribute
+    {
+        return Attribute::get(fn () => $this->created_at);
     }
 
     public function site()

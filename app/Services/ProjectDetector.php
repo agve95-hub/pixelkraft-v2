@@ -32,6 +32,7 @@ class ProjectDetector
 
         // Run detection rules in priority order
         $detectors = [
+            [$this, 'detectPhpSite'],
             [$this, 'detectAstro'],
             [$this, 'detectNextjs'],
             [$this, 'detectNuxt'],
@@ -258,6 +259,30 @@ class ProjectDetector
 
                 return $this->result('static_html', null, $outputDir, $confidence);
             }
+        }
+
+        return null;
+    }
+
+    private function detectPhpSite(string $path, ?array $pkg): ?array
+    {
+        $phpCandidates = [
+            "{$path}/index.php",
+            "{$path}/public/index.php",
+        ];
+
+        foreach ($phpCandidates as $candidate) {
+            if (File::exists($candidate)) {
+                return $this->result('php_site', null, null, 0.88);
+            }
+        }
+
+        if (File::isDirectory("{$path}/resources/views") && ! empty(File::glob("{$path}/resources/views/*.blade.php"))) {
+            return $this->result('php_site', null, null, 0.82);
+        }
+
+        if (! empty(File::glob("{$path}/*.php"))) {
+            return $this->result('php_site', null, null, 0.65);
         }
 
         return null;

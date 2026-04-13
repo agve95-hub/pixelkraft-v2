@@ -49,13 +49,7 @@ class PagePreviewService
             $dirs[] = trim($site->build_output_dir, '/');
         }
 
-        if ($site->project_type === 'nextjs') {
-            $dirs[] = 'out';
-        }
-
-        if ($site->project_type === 'nuxt') {
-            $dirs[] = '.output/public';
-        }
+        $dirs = array_merge($dirs, $this->defaultOutputDirsForProjectType((string) $site->project_type));
 
         return array_values(array_unique(array_filter($dirs)));
     }
@@ -89,5 +83,24 @@ class PagePreviewService
         }
 
         return '';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function defaultOutputDirsForProjectType(string $projectType): array
+    {
+        return match ($projectType) {
+            'nextjs' => ['out'],
+            'nuxt' => ['.output/public', 'dist'],
+            'astro' => ['dist'],
+            'hugo' => ['public'],
+            'eleventy' => ['_site'],
+            'react' => ['dist', 'build', 'public'],
+            'vue' => ['dist', 'public'],
+            'svelte' => ['build', 'public'],
+            'static_html', 'php_site' => ['public'],
+            default => ['dist', 'build', 'public'],
+        };
     }
 }

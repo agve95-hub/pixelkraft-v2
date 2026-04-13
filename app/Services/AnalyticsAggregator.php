@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsSnapshot;
 use App\Models\Page;
 use App\Models\Site;
@@ -47,6 +48,8 @@ class AnalyticsAggregator
     {
         $synced = 0;
 
+        $synced += $this->syncFirstPartyTracker($site);
+
         if ($site->cf_zone_id) {
             $synced += $this->syncCloudflare($site);
         }
@@ -56,6 +59,33 @@ class AnalyticsAggregator
         }
 
         return $synced;
+    }
+
+    public function summarizeSiteEvents(Site $site, int $days = 30): array
+    {
+        $events = AnalyticsEvent::query()
+            ->where('site_id', $site->id)
+            ->where('occurred_at', '>=', now()->subDays($days))
+            ->get();
+
+        return [
+            'total_events' => $events->count(),
+            'page_views' => $events->where('event_name', 'page_view')->count(),
+            'forms' => $events->where('event_name', 'form_submit')->count(),
+            'interactions' => $events
+                ->reject(fn (AnalyticsEvent $event) => in_array($event->event_name, ['page_view', 'form_submit'], true))
+                ->count(),
+            'top_events' => $events
+                ->groupBy('event_name')
+                ->map(fn ($group, $eventName) => [
+                    'event_name' => $eventName,
+                    'count' => $group->count(),
+                ])
+                ->sortByDesc('count')
+                ->take(8)
+                ->values()
+                ->all(),
+        ];
     }
 
     /**
@@ -188,6 +218,76 @@ class AnalyticsAggregator
                 ->values()
                 ->all(),
         ];
+    }
+
+    private function syncFirstPartyTracker(Site $site): int
+    {
+        $pagesByPath = $site->pages()
+            ->get()
+            ->keyBy(fn (Page $page) => $this->normalizePath($page->url_path ?: '/'));
+
+        $events = AnalyticsEvent::query()
+            ->where('site_id', $site->id)
+            ->where('occurred_at', '>=', now()->subDays(30)->startOfDay())
+            ->get();
+
+        if ($events->isEmpty()) {
+            $site->update([
+                'visitors_today' => 0,
+                'visitors_change_percent' => null,
+            ]);
+
+            return 0;
+        }
+
+        $groups = $events->groupBy(function (AnalyticsEvent $event): string {
+            return $event->occurred_at->toDateString() . '|' . $this->normalizePath($event->path ?: '/');
+        });
+
+        $writes = 0;
+
+        foreach ($groups as $key => $group) {
+            [$date, $path] = explode('|', $key, 2);
+            $page = $pagesByPath->get($path) ?? $pagesByPath->get('/');
+
+            if (! $page) {
+                continue;
+            }
+
+            $visitorIds = $group
+                ->pluck('visitor_id')
+                ->filter()
+                ->unique()
+                ->count();
+
+            $pageViews = $group->where('event_name', 'page_view')->count();
+
+            $customEvents = $group
+                ->reject(fn (AnalyticsEvent $event) => $event->event_name === 'page_view')
+                ->groupBy('event_name')
+                ->map(fn (Collection $events, string $eventName) => $events->count())
+                ->all();
+
+            AnalyticsSnapshot::updateOrCreate(
+                [
+                    'page_id' => $page->id,
+                    'date' => $date,
+                    'source' => AnalyticsSnapshot::SOURCE_PIXELKRAFT_TRACKER,
+                ],
+                [
+                    'visitors' => max($visitorIds, $pageViews > 0 ? 1 : 0),
+                    'pageviews' => $pageViews,
+                    'custom_events' => $customEvents,
+                    'created_at' => now(),
+                ]
+            );
+
+            $writes++;
+        }
+
+        $this->updateDashboardProjectionFields($site);
+
+        return $writes;
     }
 
     // ── Cloudflare Analytics ────────────────────
@@ -420,5 +520,35 @@ class AnalyticsAggregator
         }
 
         return $path === '' ? '/' : $path;
+    }
+
+    private function updateDashboardProjectionFields(Site $site): void
+    {
+        $today = now()->toDateString();
+        $yesterday = now()->subDay()->toDateString();
+
+        $todayVisitors = AnalyticsSnapshot::query()
+            ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
+            ->where('pages.site_id', $site->id)
+            ->where('analytics_snapshots.source', AnalyticsSnapshot::SOURCE_PIXELKRAFT_TRACKER)
+            ->whereDate('analytics_snapshots.date', $today)
+            ->sum('analytics_snapshots.visitors');
+
+        $yesterdayVisitors = AnalyticsSnapshot::query()
+            ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
+            ->where('pages.site_id', $site->id)
+            ->where('analytics_snapshots.source', AnalyticsSnapshot::SOURCE_PIXELKRAFT_TRACKER)
+            ->whereDate('analytics_snapshots.date', $yesterday)
+            ->sum('analytics_snapshots.visitors');
+
+        $changePercent = null;
+        if ((int) $yesterdayVisitors > 0) {
+            $changePercent = round((((int) $todayVisitors - (int) $yesterdayVisitors) / (int) $yesterdayVisitors) * 100, 2);
+        }
+
+        $site->update([
+            'visitors_today' => (int) $todayVisitors,
+            'visitors_change_percent' => $changePercent,
+        ]);
     }
 }
