@@ -349,8 +349,11 @@ HTML;
             return null;
         }
 
+        $normalizedPath = strtolower(str_replace('\\', '/', $page->file_path));
         $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        if (! in_array($extension, ['jsx', 'tsx', 'vue', 'svelte', 'astro', 'md', 'mdx'], true)) {
+        $isBladeTemplate = str_ends_with($normalizedPath, '.blade.php');
+
+        if (! $isBladeTemplate && ! in_array($extension, ['jsx', 'tsx', 'vue', 'svelte', 'astro', 'md', 'mdx', 'php'], true)) {
             return null;
         }
         $source = File::get($path);
@@ -403,6 +406,11 @@ HTML;
      */
     private function extractSourceSnippets(string $source): array
     {
+        $source = preg_replace('/<\?(?:php|=)?[\s\S]*?\?>/i', ' ', $source) ?? $source;
+        $source = preg_replace('/\{!![\s\S]*?!!\}/', ' ', $source) ?? $source;
+        $source = preg_replace('/\{\{\s*[^}]+\s*\}\}/', ' ', $source) ?? $source;
+        $source = preg_replace('/@\w+(?:\([^)]*\))?/', ' ', $source) ?? $source;
+        $source = preg_replace('/{{--[\s\S]*?--}}/', ' ', $source) ?? $source;
         $source = preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', $source) ?? $source;
         $source = preg_replace('/<style\b[^>]*>.*?<\/style>/is', ' ', $source) ?? $source;
 
