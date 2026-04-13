@@ -14,7 +14,7 @@
 <body class="min-h-screen bg-white antialiased dark:bg-[#121212]">
 
     @php
-        $navSites = \App\Models\Site::query()
+        $navSites = \App\Support\SiteAccess::query()
             ->select('id', 'name', 'slug', 'deploy_status')
             ->withCount([
                 'inboxMessages as unread_inbox_count' => function ($q) {
