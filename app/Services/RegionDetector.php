@@ -90,7 +90,7 @@ class RegionDetector
             $slug = $region->id;
         }
 
-        return "{$baseName}-{$slug}";
+        return "{$baseName}-{$slug}-" . substr((string) $region->id, 0, 8);
     }
 
     /**
@@ -108,8 +108,8 @@ class RegionDetector
 
             $markerId = $region['marker_id'];
             $type = $region['region_type'] ?? 'text';
-            $openMarker = "<!-- cms:editable id=\"{$markerId}\" type=\"{$type}\" -->";
-            $closeMarker = "<!-- /cms:editable -->";
+            $openMarker = "<!-- pk:editable:start:{$markerId} type=\"{$type}\" -->";
+            $closeMarker = "<!-- pk:editable:end:{$markerId} -->";
 
             // Try to find the element by its selector and wrap it
             $html = $this->wrapElementWithMarker($html, $region, $openMarker, $closeMarker);

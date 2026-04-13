@@ -97,11 +97,19 @@ class DeployControls extends Component
         $viewingLog = $this->viewingLogId
             ? $site->deployLogs()->find($this->viewingLogId)
             : null;
+        $currentRelease = $site->currentDeploymentRelease()->first();
+        $productionTarget = $site->deploymentTargets()
+            ->where('environment', 'production')
+            ->first();
+        $trackingInstallation = $site->activeTrackingInstallation()->first();
 
         return view('livewire.sites.deploy-controls', [
             'site'       => $site,
             'deployLogs' => $deployLogs,
             'viewingLog' => $viewingLog,
+            'currentRelease' => $currentRelease,
+            'productionTarget' => $productionTarget,
+            'trackingInstallation' => $trackingInstallation,
         ]);
     }
 }

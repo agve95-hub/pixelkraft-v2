@@ -11,6 +11,7 @@ class AnalyticsSnapshot extends Model
 
     /** GA4 organic search (SEO) channel — see AnalyticsAggregator::syncGoogleAnalytics */
     public const SOURCE_GOOGLE_ORGANIC = 'google_analytics_organic';
+    public const SOURCE_PIXELKRAFT_TRACKER = 'pixelkraft_tracker';
 
     public $timestamps = false;
 

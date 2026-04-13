@@ -15,7 +15,7 @@ class WebhookController extends Controller
     /**
      * Handle incoming GitHub webhook.
      */
-    public function github(Request $request): JsonResponse
+    public function github(Request $request, ?Site $site = null): JsonResponse
     {
         $event = (string) $request->header('X-GitHub-Event', '');
         $deliveryId = trim((string) $request->header('X-GitHub-Delivery', ''));
@@ -57,7 +57,7 @@ class WebhookController extends Controller
             return response()->json(['error' => 'Missing repository info'], 400);
         }
 
-        if (! $this->recordDelivery('github', $deliveryId, $event, $repository)) {
+        if (! $this->recordDelivery('github', $deliveryId, $event, $repository, $request, $site)) {
             return response()->json(['status' => 'duplicate', 'delivery_id' => $deliveryId]);
         }
 
@@ -86,6 +86,10 @@ class WebhookController extends Controller
             ->filter(fn (Site $site) => $site->normalizedGithubRepository() === $repository)
             ->values();
 
+        if ($site) {
+            $sites = $sites->where('id', $site->id)->values();
+        }
+
         if ($sites->isEmpty()) {
             Log::info("No matching site found for repo [{$repository}]");
 
@@ -99,7 +103,7 @@ class WebhookController extends Controller
                 continue;
             }
 
-            SyncFromWebhookJob::dispatch($site, $payload);
+            SyncFromWebhookJob::dispatch($site, $payload, $deliveryId);
             $dispatched++;
 
             Log::info("Dispatched SyncFromWebhookJob for [{$site->slug}]");
@@ -130,6 +134,8 @@ class WebhookController extends Controller
         string $deliveryId,
         string $event,
         string $repository,
+        Request $request,
+        ?Site $site = null,
     ): bool {
         try {
             WebhookDelivery::create([
@@ -137,6 +143,12 @@ class WebhookController extends Controller
                 'delivery_id' => $deliveryId,
                 'event' => $event,
                 'repository' => $repository,
+                'site_id' => $site?->id,
+                'status' => 'received',
+                'headers' => collect($request->headers->all())
+                    ->map(fn ($value) => is_array($value) ? implode(', ', $value) : (string) $value)
+                    ->all(),
+                'payload' => $request->all(),
                 'received_at' => now(),
             ]);
 

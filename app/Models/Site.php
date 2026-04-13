@@ -18,6 +18,7 @@ class Site extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'client_name',
         'slug',
         'client_first_name',
         'client_last_name',
@@ -42,6 +43,12 @@ class Site extends Model
         'ssl_provider',
         'dns_provider',
         'ssl_status',
+        'uptime_percent',
+        'response_avg_ms',
+        'response_p95_ms',
+        'downtime_minutes',
+        'visitors_today',
+        'visitors_change_percent',
         'ssl_expires_at',
         'deploy_status',
         'last_deployed_at',
@@ -66,6 +73,7 @@ class Site extends Model
         'repo_path',
         'pre_deploy_hook',
         'post_deploy_hook',
+        'maintenance_settings',
         'is_active',
     ];
 
@@ -78,12 +86,79 @@ class Site extends Model
             'ftp_ssh_password'  => 'encrypted',
             'env_variables'     => 'array',
             'monthly_retainer'  => 'decimal:2',
+            'uptime_percent'    => 'decimal:2',
+            'response_avg_ms'   => 'integer',
+            'response_p95_ms'   => 'integer',
+            'downtime_minutes'  => 'integer',
+            'visitors_today'    => 'integer',
+            'visitors_change_percent' => 'float',
             'ssl_expires_at'    => 'datetime',
             'last_deployed_at'  => 'datetime',
             'last_synced_at'    => 'datetime',
+            'maintenance_settings' => 'array',
             'is_active'         => 'boolean',
             'deploy_on_webhook' => 'boolean',
         ];
+    }
+
+    protected function clientName(): Attribute
+    {
+        return Attribute::get(fn () => $this->clientDisplayName());
+    }
+
+    protected function type(): Attribute
+    {
+        return Attribute::get(fn () => (string) $this->project_type);
+    }
+
+    protected function status(): Attribute
+    {
+        return Attribute::get(function () {
+            return match ((string) $this->deploy_status) {
+                'live' => 'Live',
+                'failed' => 'Failed',
+                'building' => 'Building',
+                'deploying' => 'Deploying',
+                'idle' => 'Idle',
+                default => Str::title((string) ($this->deploy_status ?: 'Draft')),
+            };
+        });
+    }
+
+    protected function uptime(): Attribute
+    {
+        return Attribute::get(fn () => $this->attributes['uptime_percent'] ?? null);
+    }
+
+    protected function responseAvg(): Attribute
+    {
+        return Attribute::get(fn () => $this->attributes['response_avg_ms'] ?? null);
+    }
+
+    protected function responseP95(): Attribute
+    {
+        return Attribute::get(fn () => $this->attributes['response_p95_ms'] ?? null);
+    }
+
+    protected function sslOk(): Attribute
+    {
+        return Attribute::get(fn () => $this->ssl_status === 'active');
+    }
+
+    protected function sslDays(): Attribute
+    {
+        return Attribute::get(function () {
+            if (! $this->ssl_expires_at) {
+                return 0;
+            }
+
+            return max(0, now()->diffInDays($this->ssl_expires_at, false));
+        });
+    }
+
+    protected function maintenance(): Attribute
+    {
+        return Attribute::get(fn () => $this->maintenance_settings ?? []);
     }
 
     protected function projectTypeLabel(): Attribute
@@ -91,6 +166,7 @@ class Site extends Model
         return Attribute::get(function () {
             return match ($this->project_type) {
                 'static_html' => 'Static HTML',
+                'php_site' => 'PHP Site',
                 'react' => 'React',
                 'vue' => 'Vue',
                 'svelte' => 'Svelte',
@@ -204,6 +280,36 @@ class Site extends Model
         return $this->hasMany(Page::class);
     }
 
+    public function editSessions()
+    {
+        return $this->hasMany(EditSession::class);
+    }
+
+    public function gitOperations()
+    {
+        return $this->hasMany(GitOperation::class);
+    }
+
+    public function deploymentTargets()
+    {
+        return $this->hasMany(DeploymentTarget::class);
+    }
+
+    public function deploymentReleases()
+    {
+        return $this->hasMany(DeploymentRelease::class);
+    }
+
+    public function trackingInstallations()
+    {
+        return $this->hasMany(TrackingInstallation::class);
+    }
+
+    public function analyticsEvents()
+    {
+        return $this->hasMany(AnalyticsEvent::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -239,8 +345,20 @@ class Site extends Model
         return $this->hasMany(SiteInboxMessage::class);
     }
 
+    public function messages()
+    {
+        return $this->hasMany(SiteInboxMessage::class)
+            ->orderByDesc('message_at')
+            ->orderByDesc('created_at');
+    }
+
     public function clientDisplayName(): string
     {
+        $directName = trim((string) ($this->attributes['client_name'] ?? ''));
+        if ($directName !== '') {
+            return $directName;
+        }
+
         $name = trim(trim((string) $this->client_first_name) . ' ' . trim((string) $this->client_last_name));
 
         if ($name !== '') {
@@ -273,6 +391,11 @@ class Site extends Model
         return $this->hasMany(DeployLog::class);
     }
 
+    public function deploys()
+    {
+        return $this->hasMany(DeployLog::class)->latest('created_at');
+    }
+
     public function uptimeChecks()
     {
         return $this->hasMany(UptimeCheck::class);
@@ -288,11 +411,47 @@ class Site extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function seoIssues()
+    {
+        return $this->hasMany(SeoIssue::class);
+    }
+
+    public function reminders()
+    {
+        return $this->hasMany(Reminder::class)
+            ->orderBy('is_done')
+            ->orderBy('due_date');
+    }
+
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class)->orderByDesc('expense_date');
+    }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class)->orderByDesc('report_date');
+    }
+
     // ── Computed ─────────────────────────────────
 
     public function latestDeploy()
     {
         return $this->hasOne(DeployLog::class)->latestOfMany();
+    }
+
+    public function activeTrackingInstallation()
+    {
+        return $this->hasOne(TrackingInstallation::class)
+            ->where('provider', 'pixelkraft')
+            ->where('is_active', true);
+    }
+
+    public function currentDeploymentRelease()
+    {
+        return $this->hasOne(DeploymentRelease::class)
+            ->where('is_current', true)
+            ->latestOfMany('activated_at');
     }
 
     public function latestUptimeCheck()

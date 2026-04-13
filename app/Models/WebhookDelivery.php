@@ -15,13 +15,26 @@ class WebhookDelivery extends Model
         'delivery_id',
         'event',
         'repository',
+        'site_id',
+        'status',
+        'headers',
+        'payload',
         'received_at',
+        'processed_at',
     ];
 
     protected function casts(): array
     {
         return [
             'received_at' => 'datetime',
+            'processed_at' => 'datetime',
+            'headers' => 'array',
+            'payload' => 'array',
         ];
+    }
+
+    public function site()
+    {
+        return $this->belongsTo(Site::class);
     }
 }

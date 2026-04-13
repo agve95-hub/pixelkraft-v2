@@ -1,125 +1,243 @@
-<div class="space-y-6" wire:poll.5s>
-    <flux:card>
-        <div class="flex items-center justify-between mb-4">
-            <flux:heading size="sm">Deploy</flux:heading>
-            <div class="flex items-center gap-2">
-                @if ($site->domain && !$site->nginx_conf_path)
-                    <flux:button wire:click="setupDomain" variant="subtle" size="sm" icon="globe-alt">Setup Domain & SSL</flux:button>
+@php
+    $isDeploying = in_array($site->deploy_status, ['building', 'deploying'], true);
+
+    $statusColor = match ((string) $site->deploy_status) {
+        'live', 'success' => 'green',
+        'building', 'deploying', 'queued' => 'yellow',
+        'failed' => 'red',
+        default => 'blue',
+    };
+
+    $statusLabel = match ((string) $site->deploy_status) {
+        'building' => 'Building',
+        'deploying' => 'Deploying',
+        'queued' => 'Queued',
+        'failed' => 'Failed',
+        'live' => 'Live',
+        default => 'Idle',
+    };
+
+    $sslColor = match ((string) $site->ssl_status) {
+        'active' => 'green',
+        'expired', 'error' => 'red',
+        default => 'yellow',
+    };
+
+    $sslLabel = match ((string) $site->ssl_status) {
+        'active' => 'Active',
+        'expired' => 'Expired',
+        'error' => 'Error',
+        default => 'Pending',
+    };
+@endphp
+
+<div wire:poll.5s style="display:grid;gap:16px">
+    <div class="dash-card">
+        <div class="dash-card-head" style="align-items:flex-start">
+            <div>
+                <div class="dash-card-title">
+                    <x-icons.zap />
+                    <span>Deploy &amp; infrastructure</span>
+                </div>
+                <div style="font-size:12px;color:var(--zinc-500);margin-top:4px">
+                    Trigger a new deploy, provision the domain, and watch the latest activity without leaving the project page.
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                @if ($site->domain && ! $site->nginx_conf_path)
+                    <button
+                        type="button"
+                        wire:click="setupDomain"
+                        wire:target="setupDomain"
+                        wire:loading.attr="disabled"
+                        class="btn btn-sm"
+                    >
+                        <x-icons.globe />
+                        <span wire:loading.remove wire:target="setupDomain">Setup domain &amp; SSL</span>
+                        <span wire:loading wire:target="setupDomain">Setting up...</span>
+                    </button>
                 @endif
 
-                <flux:button
+                <button
+                    type="button"
                     wire:click="deploy"
-                    variant="primary"
-                    size="sm"
-                    icon="cloud-arrow-up"
-                    :disabled="in_array($site->deploy_status, ['building', 'deploying'])"
+                    wire:target="deploy"
+                    wire:loading.attr="disabled"
+                    @disabled($isDeploying)
+                    class="btn btn-accent btn-sm"
                 >
-                    @if (in_array($site->deploy_status, ['building', 'deploying']))
-                        {{ ucfirst($site->deploy_status) }}...
+                    <x-icons.zap />
+                    @if ($isDeploying)
+                        <span>{{ $statusLabel }}...</span>
                     @else
-                        Deploy Now
+                        <span wire:loading.remove wire:target="deploy">Deploy now</span>
+                        <span wire:loading wire:target="deploy">Starting...</span>
                     @endif
-                </flux:button>
+                </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div class="rounded-lg bg-zinc-50 dark:bg-white/5 px-3 py-2">
-                <flux:subheading size="sm">Status</flux:subheading>
-                <div class="mt-1">
-                    @switch($site->deploy_status)
-                        @case('live') <flux:badge color="lime">Live</flux:badge> @break
-                        @case('building') @case('deploying') <flux:badge color="yellow">{{ ucfirst($site->deploy_status) }}</flux:badge> @break
-                        @case('failed') <flux:badge color="red">Failed</flux:badge> @break
-                        @default <flux:badge color="zinc">Idle</flux:badge>
-                    @endswitch
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,0.1);border-radius:12px;overflow:hidden">
+            <div class="stat">
+                <div class="stat-label">Status</div>
+                <div style="margin-top:4px;margin-bottom:4px">
+                    <x-pill :color="$statusColor">{{ $statusLabel }}</x-pill>
                 </div>
+                <div class="stat-note">{{ $site->deployLogs()->count() }} deploys recorded</div>
             </div>
-            <div class="rounded-lg bg-zinc-50 dark:bg-white/5 px-3 py-2">
-                <flux:subheading size="sm">SSL</flux:subheading>
-                <div class="mt-1">
-                    @switch($site->ssl_status)
-                        @case('active') <flux:badge color="lime">Active</flux:badge> @break
-                        @case('expired') <flux:badge color="red">Expired</flux:badge> @break
-                        @case('error') <flux:badge color="red">Error</flux:badge> @break
-                        @default <flux:badge color="zinc">Pending</flux:badge>
-                    @endswitch
+
+            <div class="stat">
+                <div class="stat-label">SSL</div>
+                <div style="margin-top:4px;margin-bottom:4px">
+                    <x-pill :color="$sslColor">{{ $sslLabel }}</x-pill>
                 </div>
+                <div class="stat-note">{{ $site->domain ?: 'Domain not connected' }}</div>
             </div>
-            <div class="rounded-lg bg-zinc-50 dark:bg-white/5 px-3 py-2">
-                <flux:subheading size="sm">Last Deploy</flux:subheading>
-                <flux:text size="sm" class="mt-1">{{ $site->last_deployed_at?->diffForHumans() ?? 'Never' }}</flux:text>
+
+            <div class="stat">
+                <div class="stat-label">Last deploy</div>
+                <div class="stat-val-sm" style="margin-top:6px;font-size:12px">{{ $site->last_deployed_at?->diffForHumans() ?? 'Never' }}</div>
+                <div class="stat-note">{{ $site->branch ?: 'No branch set' }}</div>
             </div>
-            <div class="rounded-lg bg-zinc-50 dark:bg-white/5 px-3 py-2">
-                <flux:subheading size="sm">Domain</flux:subheading>
-                <flux:text size="sm" class="mt-1 font-mono truncate">{{ $site->domain ?? 'Not set' }}</flux:text>
+
+            <div class="stat">
+                <div class="stat-label">Deploy path</div>
+                <div class="stat-val-sm" style="margin-top:6px;font-size:12px">{{ $productionTarget?->deploy_path ?: $site->deploy_path ?: 'Not configured' }}</div>
+                <div class="stat-note">{{ $productionTarget?->release_strategy ? strtoupper($productionTarget->release_strategy) . ' releases' : ($site->repo_url ? 'Git connected' : 'Repo missing') }}</div>
             </div>
         </div>
-    </flux:card>
 
-    <flux:card>
-        <flux:heading size="sm" class="mb-4">Deploy History</flux:heading>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px">
+            <div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;background:rgba(255,255,255,0.03)">
+                <div class="stat-label">Current release</div>
+                <div class="stat-val-sm" style="margin-top:6px;font-size:12px">
+                    {{ $currentRelease?->source_commit_sha ? \Illuminate\Support\Str::limit($currentRelease->source_commit_sha, 10, '') : 'No active release' }}
+                </div>
+                <div class="stat-note">{{ $currentRelease?->activated_at?->diffForHumans() ?? 'Waiting for first successful deploy' }}</div>
+            </div>
 
-        <div class="space-y-1">
-            @forelse ($deployLogs as $log)
-                <div class="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-zinc-50 dark:hover:bg-white/5 transition">
-                    @switch($log->status)
-                        @case('success')
-                            <flux:icon name="check-circle" variant="solid" class="size-5 text-lime-500 shrink-0" />
-                            @break
-                        @case('failed')
-                            <flux:icon name="x-circle" variant="solid" class="size-5 text-red-500 shrink-0" />
-                            @break
-                        @default
-                            <flux:icon name="arrow-path" class="size-5 text-amber-500 shrink-0 animate-spin" />
-                    @endswitch
+            <div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;background:rgba(255,255,255,0.03)">
+                <div class="stat-label">Target runtime</div>
+                <div class="stat-val-sm" style="margin-top:6px;font-size:12px">{{ $productionTarget?->runtime_type ?: 'static' }}</div>
+                <div class="stat-note">{{ $productionTarget?->host ?: ($site->ssh_host ?: 'Local/VPS host not set') }}</div>
+            </div>
 
-                    <div class="flex-1 min-w-0">
-                        <flux:text size="sm">{{ $log->commit_message ?? ucfirst($log->status) . ' deploy' }}</flux:text>
-                        <div class="flex items-center gap-3 mt-0.5">
-                            <flux:text size="xs" class="font-mono">{{ $log->created_at->diffForHumans() }}</flux:text>
-                            @if ($log->duration_ms)
-                                <flux:text size="xs" class="font-mono">{{ $log->durationFormatted() }}</flux:text>
-                            @endif
-                            @if ($log->commit_sha)
-                                <flux:text size="xs" class="font-mono">{{ Str::limit($log->commit_sha, 7, '') }}</flux:text>
+            <div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;background:rgba(255,255,255,0.03)">
+                <div class="stat-label">Tracking</div>
+                <div class="stat-val-sm" style="margin-top:6px;font-size:12px">{{ $trackingInstallation?->provider ? ucfirst($trackingInstallation->provider) : 'Not installed' }}</div>
+                <div class="stat-note">{{ $trackingInstallation?->script_route ?: 'Deploy-time injection pending' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-card">
+        <div class="dash-card-head">
+            <div class="dash-card-title">
+                <x-icons.report />
+                <span>Deploy history</span>
+            </div>
+            <span style="font-size:11px;color:var(--zinc-500)">Latest 15 runs</span>
+        </div>
+
+        @if ($deployLogs->isEmpty())
+            <div class="empty" style="border:1px solid rgba(255,255,255,0.08);border-radius:12px">
+                <div class="empty-icon"><x-icons.zap /></div>
+                No deploys yet
+                <span style="font-size:12px">Trigger the first deploy to populate this history</span>
+            </div>
+        @else
+            <div class="deploy-list">
+                @foreach ($deployLogs as $log)
+                    @php
+                        $logColor = match ((string) $log->status) {
+                            'success', 'live' => 'green',
+                            'failed' => 'red',
+                            default => 'yellow',
+                        };
+
+                        $logLabel = match ((string) $log->status) {
+                            'success' => 'Success',
+                            'failed' => 'Failed',
+                            'deploying' => 'Deploying',
+                            'building' => 'Building',
+                            'queued' => 'Queued',
+                            default => ucfirst((string) $log->status),
+                        };
+                    @endphp
+
+                    <div class="deploy-item">
+                        <div style="display:flex;align-items:center;gap:8px;min-width:0">
+                            <div class="issue-icon issue-icon-{{ $logColor }}">
+                                @if ($logColor === 'green')
+                                    <x-icons.check />
+                                @elseif ($logColor === 'red')
+                                    <x-icons.alert />
+                                @else
+                                    <x-icons.clock />
+                                @endif
+                            </div>
+                            <x-pill :color="$logColor" style="font-size:10px;width:fit-content">{{ $logLabel }}</x-pill>
+                        </div>
+
+                        <span class="deploy-hash">{{ $log->hash ?: 'manual' }}</span>
+                        <span class="deploy-dur">{{ $log->durationFormatted() }}</span>
+
+                        <div style="min-width:0">
+                            <div style="font-size:13px;color:rgba(255,255,255,0.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                                {{ $log->commit_message ?: ucfirst((string) $log->status) . ' deploy' }}
+                            </div>
+                            <div style="font-size:11px;color:var(--zinc-500);margin-top:2px">
+                                {{ $log->triggered_by ?: 'manual' }}
+                                @if ($log->created_at)
+                                    - {{ $log->created_at->format('M j, Y H:i') }}
+                                @endif
+                            </div>
+                        </div>
+
+                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+                            <span class="deploy-time">{{ $log->created_at?->diffForHumans() ?? 'recently' }}</span>
+                            <button type="button" wire:click="viewLog('{{ $log->id }}')" class="btn btn-sm" style="font-size:11px;padding:4px 10px">Log</button>
+                            @if ($log->isSuccess() && $log->snapshot_tag)
+                                <button
+                                    type="button"
+                                    wire:click="rollback('{{ $log->id }}')"
+                                    wire:confirm="Rollback to this deploy?"
+                                    class="btn btn-sm"
+                                    style="font-size:11px;padding:4px 10px;color:var(--amber);border-color:rgba(245,158,11,0.3)"
+                                >
+                                    Rollback
+                                </button>
                             @endif
                         </div>
                     </div>
-
-                    <div class="flex items-center gap-1 shrink-0">
-                        <flux:button wire:click="viewLog('{{ $log->id }}')" size="xs" variant="ghost">Log</flux:button>
-                        @if ($log->isSuccess() && $log->snapshot_tag)
-                            <flux:button wire:click="rollback('{{ $log->id }}')" wire:confirm="Rollback to this deploy?" size="xs" variant="ghost" class="text-amber-500">Rollback</flux:button>
-                        @endif
-                    </div>
-                </div>
-            @empty
-                <div class="py-8 text-center">
-                    <flux:subheading>No deploys yet. Click "Deploy Now" to start.</flux:subheading>
-                </div>
-            @endforelse
-        </div>
-    </flux:card>
-
-    {{-- Log Viewer Modal --}}
-    @if ($viewingLog)
-        <flux:modal name="deploy-log" class="max-w-3xl" :show="true">
-            <div class="space-y-4">
-                <div>
-                    <flux:heading size="lg">Deploy Log</flux:heading>
-                    <flux:text size="xs" class="font-mono mt-1">
-                        {{ $viewingLog->created_at->format('M j, Y H:i:s') }} · {{ $viewingLog->durationFormatted() }} · {{ $viewingLog->triggered_by }}
-                        @if ($viewingLog->commit_sha) · {{ Str::limit($viewingLog->commit_sha, 7, '') }} @endif
-                    </flux:text>
-                </div>
-
-                <div class="rounded-lg bg-zinc-50 dark:bg-zinc-900 p-4 max-h-96 overflow-y-auto">
-                    <pre class="font-mono text-xs whitespace-pre-wrap">{{ $viewingLog->output_log ?? 'No output recorded.' }}</pre>
-                </div>
-
-                <flux:button wire:click="closeLog" variant="subtle">Close</flux:button>
+                @endforeach
             </div>
-        </flux:modal>
+        @endif
+    </div>
+
+    @if ($viewingLog)
+        <div class="dash-card">
+            <div class="dash-card-head">
+                <div class="dash-card-title">
+                    <x-icons.file />
+                    <span>Deploy log</span>
+                </div>
+                <button type="button" wire:click="closeLog" class="btn btn-sm">Close</button>
+            </div>
+
+            <div style="font-size:12px;color:var(--zinc-500);margin-bottom:14px;font-family:var(--mono)">
+                {{ $viewingLog->created_at?->format('M j, Y H:i:s') ?? 'Unknown time' }} -
+                {{ $viewingLog->durationFormatted() }} -
+                {{ $viewingLog->triggered_by ?: 'manual' }}
+                @if ($viewingLog->commit_sha)
+                    - {{ \Illuminate\Support\Str::limit($viewingLog->commit_sha, 7, '') }}
+                @endif
+            </div>
+
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;max-height:420px;overflow:auto">
+                <pre style="margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;color:rgba(255,255,255,0.76);white-space:pre-wrap">{{ $viewingLog->output_log ?? 'No output recorded.' }}</pre>
+            </div>
+        </div>
     @endif
 </div>

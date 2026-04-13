@@ -4,9 +4,13 @@ namespace App\Livewire\Editor;
 
 use App\Jobs\DeploySiteJob;
 use App\Models\ContentRevision;
+use App\Models\EditSession;
 use App\Models\EditableRegion;
 use App\Models\Page;
+use App\Models\Site;
 use App\Services\ContentPatcher;
+use App\Services\EditSessionService;
+use App\Services\GitConflictException;
 use App\Services\GitSyncService;
 use App\Services\SiteSupportService;
 use Illuminate\Contracts\View\View;
@@ -21,6 +25,7 @@ class VisualEditor extends Component
 {
     public string $siteId;
     public string $pageId;
+    public ?string $editSessionId = null;
 
     public string $mode = 'visual'; // visual|code
     public ?string $selectedRegionId = null;
@@ -45,8 +50,10 @@ class VisualEditor extends Component
         $site = $this->resolveSite();
         $page = $this->resolvePage();
         $profile = app(SiteSupportService::class)->editorProfile($site, $page);
+        $session = app(EditSessionService::class)->startOrResume($site, $page, auth()->user());
 
         $this->mode = $profile['default_mode'];
+        $this->editSessionId = $session->id;
 
         $this->codeFilePath = $page->file_path;
         $this->codeLanguage = $this->detectCodeLanguage($this->codeFilePath);
@@ -194,9 +201,12 @@ class VisualEditor extends Component
             $site = $this->resolveSite();
             $page = $this->resolvePage();
             $git = app(GitSyncService::class);
+            $editSession = $this->resolveEditSession();
             $this->debugTelemetry['site_id'] = $site->id;
             $this->debugTelemetry['page_id'] = $page->id;
             $this->debugTelemetry['page_file_path'] = $page->file_path;
+            $this->debugTelemetry['edit_session_id'] = $editSession?->id;
+            $this->debugTelemetry['working_branch'] = $editSession?->working_branch;
 
             $changedFiles = [];
 
@@ -235,8 +245,17 @@ class VisualEditor extends Component
                 $message = $this->commitMessage ?: $this->generateCommitMessage();
                 $this->debugTelemetry['commit_message'] = $message;
 
-                $sha = $git->commitAndPush($site, $changedFiles, $message);
+                $sha = $git->commitAndPush($site, $changedFiles, $message, $editSession);
                 $this->debugTelemetry['commit_sha'] = $sha;
+                if ($editSession) {
+                    $editSession->update([
+                        'base_commit_sha' => $sha,
+                        'metadata' => array_merge($editSession->metadata ?? [], [
+                            'last_commit_sha' => $sha,
+                            'last_saved_at' => now()->toIso8601String(),
+                        ]),
+                    ]);
+                }
 
                 $site->update(['last_synced_at' => now()]);
                 app(\App\Services\ParserService::class)->parseSinglePage($site, $page->file_path);
@@ -273,6 +292,21 @@ class VisualEditor extends Component
             }
             $this->showSaveModal = false;
 
+        } catch (GitConflictException $e) {
+            if ($session = $this->resolveEditSession()) {
+                app(EditSessionService::class)->markConflict($session, [
+                    'error' => $e->getMessage(),
+                    'at' => now()->toIso8601String(),
+                ]);
+            }
+            $this->debugTelemetry['last_save_success'] = false;
+            $this->debugTelemetry['last_error'] = $e->getMessage();
+            $this->debugTelemetry['exception_class'] = $e::class;
+            if (empty($this->debugTelemetry['patch'])) {
+                $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
+            }
+            Log::error("Editor save conflict", ['error' => $e->getMessage()]);
+            session()->flash('error', 'Save blocked by newer repo changes. Your edit session was marked as conflicted for developer review.');
         } catch (\Throwable $e) {
             $this->debugTelemetry['last_save_success'] = false;
             $this->debugTelemetry['last_error'] = $e->getMessage();
@@ -333,6 +367,20 @@ class VisualEditor extends Component
             ? $patcher->canVisuallyEditRegion($selectedRegion)
             : false;
         $editorProfile = app(SiteSupportService::class)->editorProfile($site, $page);
+        $editSession = $this->resolveEditSession();
+        $recentGitOperations = $site->gitOperations()
+            ->latest('started_at')
+            ->limit(5)
+            ->get();
+        $currentRelease = $site->currentDeploymentRelease()->first();
+        $recentRevisions = $selectedRegion
+            ? $selectedRegion->revisions()->with('user')->latest('created_at')->limit(8)->get()
+            : collect();
+        $sitePages = $site->pages()
+            ->orderByRaw('CASE WHEN url_path IS NULL OR url_path = "" THEN 1 ELSE 0 END')
+            ->orderBy('url_path')
+            ->limit(20)
+            ->get(['id', 'title', 'url_path']);
 
         // Build the preview URL for the iframe
         $previewUrl = $this->buildPreviewUrl($site, $page);
@@ -350,6 +398,11 @@ class VisualEditor extends Component
             'debugTelemetryEnabled' => $this->debugTelemetryEnabled,
             'debugTelemetry' => $this->debugTelemetry,
             'codeLanguage' => $this->codeLanguage,
+            'editSession' => $editSession,
+            'recentGitOperations' => $recentGitOperations,
+            'currentRelease' => $currentRelease,
+            'recentRevisions' => $recentRevisions,
+            'sitePages' => $sitePages,
         ]);
     }
 
@@ -424,6 +477,19 @@ class VisualEditor extends Component
                 $query->whereKey($this->pageId)
                     ->where('site_id', $site->id);
             })
+            ->first();
+    }
+
+    private function resolveEditSession(): ?EditSession
+    {
+        if (! $this->editSessionId) {
+            return null;
+        }
+
+        return EditSession::query()
+            ->whereKey($this->editSessionId)
+            ->where('site_id', $this->siteId)
+            ->where('page_id', $this->pageId)
             ->first();
     }
 

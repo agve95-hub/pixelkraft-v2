@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\FormSubmissionController;
 use App\Http\Controllers\Api\InboxInboundController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SiteController;
+use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,14 @@ use Illuminate\Support\Facades\Route;
 // GitHub webhook receiver
 Route::post('/webhooks/github', [WebhookController::class, 'github'])
     ->name('webhooks.github');
+Route::post('/webhooks/github/{site}', [WebhookController::class, 'github'])
+    ->name('webhooks.github.site');
+
+Route::get('/tracking/{site}/pixelkraft.js', [TrackingController::class, 'script'])
+    ->name('tracking.script');
+Route::post('/tracking/{site}/collect', [TrackingController::class, 'collect'])
+    ->middleware('throttle:120,1')
+    ->name('tracking.collect');
 
 // Contact form submission endpoint (rate limited, no auth)
 Route::post('/forms/{slug}', [FormSubmissionController::class, 'store'])
@@ -43,6 +52,9 @@ Route::middleware(['auth:sanctum', 'site.access'])->group(function () {
     Route::post('/sites/{site}/rollback/{logId}', [SiteController::class, 'rollback'])->name('api.sites.rollback');
     Route::get('/sites/{site}/pages', [SiteController::class, 'pages'])->name('api.sites.pages');
     Route::get('/sites/{site}/deploys', [SiteController::class, 'deploys'])->name('api.sites.deploys');
+    Route::get('/sites/{site}/analytics', [SiteController::class, 'analytics'])->name('api.sites.analytics');
+    Route::get('/sites/{site}/releases', [SiteController::class, 'releases'])->name('api.sites.releases');
+    Route::get('/sites/{site}/git-operations', [SiteController::class, 'gitOperations'])->name('api.sites.git-operations');
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('api.notifications.index');

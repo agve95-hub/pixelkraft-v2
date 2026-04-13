@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Page;
 use App\Models\Site;
 use App\Services\PagePreviewService;
+use App\Services\PreviewOverlayService;
 use App\Services\SiteRuntimeService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,6 +17,7 @@ class EditorPreviewController extends Controller
 {
     public function __construct(
         private PagePreviewService $previews,
+        private PreviewOverlayService $overlays,
         private SiteRuntimeService $runtime,
     ) {}
 
@@ -27,6 +29,7 @@ class EditorPreviewController extends Controller
         abort_unless($page->site_id === $site->id, 404);
 
         try {
+            $page->loadMissing('editableRegions');
             $preview = $this->resolvePreviewSource($site, $page);
 
             if ($preview['mode'] === 'runtime') {
@@ -37,7 +40,7 @@ class EditorPreviewController extends Controller
                 $fallbackPreview = $this->renderSourceFallbackPreview($site, $page);
 
                 if ($fallbackPreview !== null) {
-                    return $this->htmlResponse($fallbackPreview);
+                    return $this->htmlResponse($this->decoratePreview($site, $page, $fallbackPreview));
                 }
 
                 return $this->htmlResponse($this->renderUnavailablePreview($site, $page));
@@ -51,7 +54,7 @@ class EditorPreviewController extends Controller
                 $preview['directory_prefix'],
             );
 
-            return $this->htmlResponse($html);
+            return $this->htmlResponse($this->decoratePreview($site, $page, $html));
         } catch (\Throwable $e) {
             Log::warning('Editor preview failed to render page.', [
                 'site_id' => $site->id,
@@ -160,7 +163,7 @@ class EditorPreviewController extends Controller
             $directoryPrefix ? $this->assetBaseUrl($site) . '/' . $directoryPrefix . '/' : $this->assetBaseUrl($site) . '/',
         );
 
-        return $this->htmlResponse($html);
+        return $this->htmlResponse($this->decoratePreview($site, $page, $html));
     }
 
     private function isAllowedLocalAsset(string $path): bool
@@ -307,6 +310,11 @@ class EditorPreviewController extends Controller
             'Content-Type' => 'text/html; charset=utf-8',
             'X-Frame-Options' => 'SAMEORIGIN',
         ]);
+    }
+
+    private function decoratePreview(Site $site, Page $page, string $html): string
+    {
+        return $this->overlays->decorate($site, $page, $html);
     }
 
     private function renderUnavailablePreview(Site $site, Page $page): string

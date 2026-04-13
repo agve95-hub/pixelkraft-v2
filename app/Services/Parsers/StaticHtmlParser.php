@@ -176,21 +176,20 @@ class StaticHtmlParser implements ParserInterface
         $regions = [];
         $html = $crawler->html();
 
-        // Match <!-- cms:editable id="xxx" type="yyy" --> patterns
+        // Match legacy cms:editable and newer pk:editable markers.
         preg_match_all(
-            '/<!--\s*cms:editable\s+id="([^"]+)"(?:\s+type="([^"]+)")?\s*-->/',
+            '/<!--\s*(?:cms:editable\s+id="([^"]+)"(?:\s+type="([^"]+)")?|pk:editable:start:([A-Za-z0-9\-_]+)(?:\s+type="([^"]+)")?)\s*-->/',
             $html,
             $matches,
             PREG_SET_ORDER | PREG_OFFSET_CAPTURE
         );
 
         foreach ($matches as $match) {
-            $markerId = $match[1][0];
-            $type = $match[2][0] ?? 'text';
+            $markerId = $match[1][0] ?: $match[3][0];
+            $type = ($match[2][0] ?? $match[4][0] ?? 'text') ?: 'text';
             $offset = $match[0][1];
 
-            // Find the content between opening and closing markers
-            $closePattern = '/<!--\s*\/cms:editable\s*-->/';
+            $closePattern = '/<!--\s*(?:\/cms:editable|pk:editable:end:' . preg_quote($markerId, '/') . ')\s*-->/';
             $remaining = substr($html, $offset + strlen($match[0][0]));
 
             if (preg_match($closePattern, $remaining, $closeMatch, PREG_OFFSET_CAPTURE)) {
@@ -199,14 +198,21 @@ class StaticHtmlParser implements ParserInterface
 
                 $regions[] = [
                     'selector'        => "[data-cms-id=\"{$markerId}\"]",
+                    'render_selector' => "[data-cms-id=\"{$markerId}\"]",
                     'type'            => $type,
                     'is_static'       => false,
                     'confidence'      => 1.0,
                     'content'         => $content,
                     'marker_id'       => $markerId,
+                    'dom_fingerprint' => $this->buildContentFingerprint($type, $content, []),
                     'source_location' => [
                         'file'   => $filePath,
                         'marker' => $markerId,
+                    ],
+                    'source_anchor' => [
+                        'file' => $filePath,
+                        'marker_id' => $markerId,
+                        'context_hash' => sha1($content),
                     ],
                 ];
             }
@@ -281,6 +287,7 @@ class StaticHtmlParser implements ParserInterface
 
                     $regions[] = [
                         'selector'        => $cssSelector,
+                        'render_selector' => $cssSelector,
                         'type'            => $type,
                         'is_static'       => $score < 0.5,
                         'confidence'      => round($score, 2),
@@ -288,6 +295,14 @@ class StaticHtmlParser implements ParserInterface
                         'source_location' => [
                             'file'     => $filePath,
                             'selector' => $cssSelector,
+                        ],
+                        'dom_fingerprint' => $this->buildFingerprint($node, $cssSelector, $type, $isImage ? ($node->attr('src') ?? '') : $text),
+                        'source_anchor' => [
+                            'file' => $filePath,
+                            'selector' => $cssSelector,
+                            'context_hash' => sha1($isImage ? ($node->attr('src') ?? '') : $text),
+                            'tag' => $tagName,
+                            'type' => $type,
                         ],
                     ];
 
@@ -457,6 +472,37 @@ class StaticHtmlParser implements ParserInterface
         }
 
         return $position;
+    }
+
+    private function buildFingerprint(Crawler $node, string $selector, string $type, string $content): array
+    {
+        $domNode = $node->getNode(0);
+        $attributes = [];
+
+        if ($domNode instanceof \DOMElement) {
+            foreach ($domNode->attributes as $attribute) {
+                if (str_starts_with($attribute->name, 'data-pk-')) {
+                    continue;
+                }
+
+                $attributes[$attribute->name] = $attribute->value;
+            }
+        }
+
+        return $this->buildContentFingerprint($type, $content, [
+            'selector' => $selector,
+            'tag' => $domNode instanceof \DOMElement ? strtolower($domNode->tagName) : null,
+            'attributes_hash' => sha1(json_encode($attributes, JSON_UNESCAPED_SLASHES)),
+        ]);
+    }
+
+    private function buildContentFingerprint(string $type, string $content, array $extra): array
+    {
+        return array_merge($extra, [
+            'type' => $type,
+            'content_hash' => sha1(trim($content)),
+            'text_length' => mb_strlen(trim(strip_tags($content))),
+        ]);
     }
 
     // ── Helpers ──────────────────────────────────

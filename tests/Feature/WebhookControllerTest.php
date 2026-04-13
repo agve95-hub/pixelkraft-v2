@@ -165,6 +165,39 @@ class WebhookControllerTest extends TestCase
         Queue::assertNotPushed(SyncFromWebhookJob::class);
     }
 
+    public function test_it_accepts_site_scoped_webhook_route_and_records_site_id(): void
+    {
+        config()->set('pixelkraft.github_webhook_require_signature', true);
+        config()->set('pixelkraft.github_webhook_secret', 'test-secret');
+
+        $site = Site::create([
+            'name' => 'Scoped',
+            'slug' => 'scoped',
+            'repo_url' => 'https://github.com/acme/demo.git',
+            'branch' => 'main',
+        ]);
+
+        Queue::fake();
+
+        $payload = $this->pushPayload();
+        $response = $this
+            ->withHeaders($this->githubHeaders($payload, deliveryId: 'scoped-delivery'))
+            ->postJson(route('webhooks.github.site', ['site' => $site]), $payload);
+
+        $response
+            ->assertOk()
+            ->assertJson([
+                'status' => 'ok',
+                'dispatched' => 1,
+            ]);
+
+        $this->assertDatabaseHas('webhook_deliveries', [
+            'delivery_id' => 'scoped-delivery',
+            'site_id' => $site->id,
+            'status' => 'received',
+        ]);
+    }
+
     public function test_sync_job_dispatches_deploy_when_site_is_configured_for_webhook_deploy(): void
     {
         $site = Site::create([
