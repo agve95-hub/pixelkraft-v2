@@ -1,378 +1,45 @@
-# pixelkraft
+Act as a Principal Software Architect, Site Reliability Engineer (SRE), Chief Information Security Officer (CISO), and Lead UI/UX Engineer. I am providing you with the complete codebase for my project, an artisanal "Git-to-Render" CMS called Pixelkraft, built on PHP/Laravel.
 
-A self-hosted site operations platform for managing, editing, deploying, and monitoring Git-backed websites from one dashboard.
+I do not just want a basic code review. I need an exhaustive, relentless audit designed to make this system absolutely bulletproof, highly available, and production-ready at an enterprise scale. It must not fail.
 
-## What Is pixelkraft?
+Execute the audit sequentially across the following strict domains. For every flaw you find, you MUST provide the exact code to fix it, the architectural pattern to replace it, or the infrastructure strategy to mitigate it. Do not skip a single line of these instructions.
 
-If you build sites with AI tools and manage more than a few repos, pixelkraft gives you one place to:
+### Phase 1: High Availability & System Resilience
+1. Single Points of Failure: Analyze the Git-to-Render pipeline. What happens if the Git provider (GitHub/GitLab) goes down? What happens if a webhook drops? Provide a robust queueing and retry architecture to guarantee no data loss.
+2. Concurrency & Race Conditions: Audit the repository parsing logic. What happens if two Git pushes happen within milliseconds? How is file locking or job atomic execution handled to prevent database or cache corruption?
+3. Memory Management: Identify any loops, file-parsing routines, or Markdown/AST generators that could cause memory leaks or CPU spikes when processing massive Git repositories. 
 
-- sync with GitHub
-- parse pages and editable regions
-- edit content and code
-- deploy sites to your VPS
-- manage SEO, forms, and operations
-- monitor logs, uptime, and site health
+### Phase 2: Advanced Caching & Edge Optimization
+1. Cache Invalidation Strategies: The hardest part of a Git-to-Render CMS is knowing exactly what to clear. Audit the current caching strategy. Propose a hyper-efficient, tag-based caching architecture (e.g., using Redis) where only the updated Markdown files and their related indexes are purged, keeping the rest of the site served from memory.
+2. Database Optimization: Identify missing indexes, N+1 query problems, and heavy database bottlenecks. Rewrite the offending Eloquent queries or propose raw SQL where Eloquent is too slow.
 
-## Stack
+### Phase 3: Hardcore Security & Penetration Testing
+1. Webhook Payload Verification: Audit how Git payloads are received. Write the code to ensure strict cryptographic verification of webhook signatures to prevent spoofing.
+2. SSRF & Path Traversal: Since this parses external Git files, do a deep dive for Server-Side Request Forgery (SSRF) vulnerabilities. Is it possible for a malicious Markdown file to trigger unauthorized internal server requests or read files outside the intended directory?
+3. Dependency Audit: Identify any known vulnerabilities in the approach used for the current Laravel configuration and PHP setup.
 
-| Layer | Technology |
-|-------|------------|
-| Backend | Laravel 13 (PHP 8.3+) |
-| Frontend | Livewire 4 + Alpine.js + Tailwind CSS v4 |
-| UI Components | Livewire Flux v2 |
-| Database | MariaDB |
-| Cache / Queue / Sessions | Redis or Valkey |
-| Queue Dashboard | Laravel Horizon |
-| Media Storage | Cloudflare R2 |
-| Email | Resend |
-| Auth | Laravel Fortify |
-| API Tokens | Laravel Sanctum |
-| Web Server | Nginx |
-| OS Target | AlmaLinux 10 |
+### Phase 4: Code Quality & Framework Mastery
+1. SOLID Principles & Decoupling: Where is the code too tightly coupled? Identify controllers or models that are doing too much work. Extract this logic into Services, Actions, or Repositories and provide the refactored code.
+2. Strict Typing & Error Handling: Find areas lacking strict PHP typing (`declare(strict_types=1);`). Audit the Exception Handling—are errors failing silently? Provide a strategy for global exception catching that integrates with tools like Sentry or Datadog without exposing stack traces to the user.
 
-## Features
+### Phase 5: UI/UX "Vibe" & Frontend Resilience
+1. Visual Consistency: Audit the frontend assets and Blade templates. Ensure the UI strictly adheres to a "vibe coding" aesthetic: minimalist Bento grid layouts, seamless dark themes, and perfect typography scaling using the Inter font. Point out any CSS/layout inconsistencies.
+2. Graceful Degradation & Error States: What does the user see when a Git pull fails or a markdown file is malformed? Design and suggest robust, beautiful error states (404, 500, parsing errors) that guide the user rather than abandoning them.
+3. Asynchronous UX: Where can we replace synchronous page loads with optimistic UI updates or Livewire/Inertia components to make the dashboard feel instantly responsive?
 
-**Core**
+### Phase 6: Technology Stack Brutality & Open-Source Leverage
+1. Language & Framework Viability: Is PHP/Laravel actually the optimal tool for the heavy-lifting parts of a Git-to-Render engine? Identify specific bottlenecks (e.g., AST parsing, Git tree walking) that should be ripped out and offloaded to microservices written in Go or Rust.
+2. The "Drop or Keep" Matrix: Ruthlessly audit every dependency in `composer.json` and `package.json`. Tell me exactly which packages are bloat, which are security risks, and which must be kept. 
+3. Open-Source Replacements: Stop me from reinventing the wheel. Identify any custom logic in this codebase that should be deleted and replaced with battle-tested open-source packages (e.g., swapping a custom search engine for Meilisearch/Typesense, or using a specific League package for Markdown instead of a custom parser).
 
-- GitHub two-way sync: clone, pull, commit, push
-- Multi-strategy parser for static HTML, rendered SSG output, and component-based apps
-- Region detection from rendered DOM output with manual confirmation controls
-- Visual preview plus code editor with Git-backed save and push
-- Blog, product, template, redirect, and file-management surfaces
-- Per-site configuration for mixed project types
+### Phase 7: Telemetry, Observability & "Path to Perfect" Production Roadmap
+1. SRE Observability: A system isn't production-ready if it's flying blind. Outline exactly how to implement OpenTelemetry, Prometheus, or Datadog to trace the exact millisecond latency of a Git webhook turning into a rendered page.
+2. CI/CD Pipeline: Outline the exact GitHub Actions or GitLab CI yaml structure needed to test, statically analyze (PHPStan/Pint), and deploy this codebase with zero downtime.
+3. Infrastructure Recommendations: Based on the code, what is the ideal hosting environment for maximum robustness? (e.g., Serverless via Laravel Vapor, Kubernetes, or balanced VPS clusters). 
+4. Final Verdict: What is the single biggest threat to this application crashing in production right now?
 
-**Deployment**
+Below is the repository structure and the file contents:
 
-- End-to-end pipeline: edit -> commit -> build -> deploy
-- Static-site deploys
-- Runtime-managed Next.js deploys behind Nginx
-- Package-manager-aware builds for npm, pnpm, yarn, and bun
-- Domain, SSL, and Nginx vhost management
-- Deploy history and rollback support
+[INSERT REPOSITORY TREE HERE]
 
-**SEO**
-
-- Meta editor
-- Open Graph fields
-- JSON-LD structured data editor
-- robots.txt editor
-- Canonical URLs
-- Redirect manager
-- Sitemap generation
-
-**Analytics And Monitoring**
-
-- **GA4 (organic / SEO)**: `pixelkraft:sync-analytics` pulls **Organic Search** traffic only (`sessionDefaultChannelGroup = Organic Search`) via the [Analytics Data API](https://developers.google.com/analytics/devguides/reporting/data/v1), matched to pages by `pagePath`. Requires a Google Cloud service account JSON and **Viewer** access on each GA4 property.
-- Cloudflare analytics aggregation (fallback when GA4 organic rows are absent)
-- Custom event tracking
-- Scheduled HTTP uptime checks with optional **degraded** state when responses are slow but still successful
-- Lighthouse and uptime monitoring hooks
-- Broken-link checking
-- **External uptime (free tiers)**: [UptimeRobot](https://uptimerobot.com/) (50 monitors) and [Better Stack Uptime](https://betterstack.com/uptime) (10 monitors) expose APIs and status badges; pixelkraft can keep using the built-in `pixelkraft:check-uptime` command, or you can mirror external results into `uptime_checks` with a small custom sync if you outgrow ping-from-one-server limits.
-
-**Operations**
-
-- Deploy logs and error logs in the dashboard
-- Sanctum-backed API surface
-- Notification hooks
-- Queue diagnostics and stuck-job visibility
-
-## Framework Support
-
-pixelkraft does not treat every project type the same. The current support model is:
-
-- `static_html`: direct HTML parsing, visual editing, and static deployment
-- `hugo`, `eleventy`, static `astro`: parse rendered output and deploy static build artifacts
-- `nextjs`: supports static export or a runtime-managed Node process behind Nginx
-- `react`, `vue`, `svelte`, `nuxt`: parsing works best from rendered output or preview HTML when available
-
-For component-based frameworks, the editor currently uses this safety model:
-
-- preview is generated from rendered HTML or a local runtime server
-- regions are detected from the rendered DOM
-- code mode is the reliable editing path for component source files
-- full direct visual source patching is still more limited than raw HTML editing
-
-## Architecture
-
-See [ARCHITECTURE.html](ARCHITECTURE.html) for the full blueprint. It covers the parser strategies, editor flow, deployment pipeline, database schema, and the intended phase breakdown.
-
-## Requirements
-
-- PHP 8.3+
-- MariaDB 10.11+
-- Redis 7+ or Valkey
-- Node.js 20+
-- Nginx
-- Composer 2.x
-- Supervisor
-- Certbot for SSL automation, optional
-
-## Setup (Development)
-
-### Quick start
-
-```bash
-git clone https://github.com/agve95-hub/pixelkraft.git
-cd pixelkraft
-composer setup
-```
-
-`composer setup` installs PHP and Node dependencies, ensures `.env` exists, runs migrations, and builds assets.
-
-### Run the development stack
-
-```bash
-composer dev
-```
-
-This starts Laravel, queue worker, logs (`pail`), and Vite in one command.
-
-### Configure environment values
-
-Set `.env` values for your database/cache/services before running full workflows:
-
-- `DB_CONNECTION` + DB credentials (MariaDB recommended)
-- `CACHE_STORE`, `QUEUE_CONNECTION`, and `SESSION_DRIVER` (`redis` / Valkey)
-- Optional external services (GitHub, Cloudflare, GA4, Resend, R2)
-- Inbound form/inbox protection: `INBOX_INBOUND_REQUIRE_SECRET=true` and `INBOX_INBOUND_SECRET=<strong-random-token>`
-
-### Security and tenancy defaults
-
-- Site-scoped dashboard/API access is enforced for non-admin users. Admins can view all sites.
-- New sites are assigned to the current authenticated user (`sites.user_id`).
-- First registered account becomes `admin`; later registrations default to `editor`.
-- Horizon dashboard access is restricted to authenticated admins.
-- Public inbound endpoints support strict bearer-token enforcement via `INBOX_INBOUND_SECRET`.
-
-If you prefer running services individually:
-
-```bash
-php artisan serve
-php artisan queue:listen --tries=1 --timeout=0
-php artisan pail --timeout=0
-npm run dev
-```
-
-### Run tests
-
-```bash
-composer test
-```
-
-### Run quality checks
-
-```bash
-php artisan test
-npm run build
-php artisan migrate --pretend
-```
-
-## Deployment (Production VPS)
-
-### 1. Server prerequisites
-
-```bash
-dnf install php php-fpm php-mysqlnd php-mbstring php-xml php-curl php-zip php-bcmath php-gd php-intl php-opcache php-sodium
-dnf install valkey
-systemctl enable --now valkey
-
-curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-dnf install supervisor
-systemctl enable --now supervisord
-```
-
-### 2. Application setup
-
-```bash
-cd /var/www/pixelkraft
-composer install --no-dev --optimize-autoloader
-cp .env.example .env
-php artisan key:generate
-
-# Configure .env:
-# APP_URL=http://YOUR_SERVER_IP
-# DB_CONNECTION=mariadb
-# CACHE_STORE=redis
-# QUEUE_CONNECTION=redis
-# SESSION_DRIVER=redis
-
-php artisan migrate --force
-php artisan storage:link
-npm install
-npm run build
-chown -R nginx:nginx /var/www/pixelkraft
-```
-
-After each pixelkraft application update:
-
-```bash
-php artisan optimize:clear
-php artisan horizon:terminate
-```
-
-### 2b. Optional: GitHub Actions auto-deploy
-
-This repository includes `.github/workflows/deploy-production.yml` to publish changes automatically when pushing to `main`.
-
-Configure these GitHub repository secrets:
-
-- `PROD_HOST` (example: `187.124.26.127`)
-- `PROD_USER` (recommended non-root deploy user)
-- `PROD_SSH_KEY` (private key for the deploy user)
-- `PROD_APP_DIR` (example: `/var/www/pixelkraft`)
-
-The workflow runs:
-
-- `git pull --ff-only`
-- `composer install --no-dev --optimize-autoloader`
-- `php artisan migrate --force`
-- `npm ci && npm run build`
-- `php artisan optimize:clear`
-- `php artisan horizon:terminate`
-
-> Release policy: because deploy runs automatically from `main`, only merge to `main` when a release is ready for production.
-
-### 3. Flux UI CSS setup
-
-Follow the Flux v2 installation rules exactly.
-
-`resources/css/app.css`
-
-```css
-@import 'tailwindcss';
-@import '../../vendor/livewire/flux/dist/flux.css';
-
-@custom-variant dark (&:where(.dark, .dark *));
-
-@source "../../resources/views";
-@source "../../vendor/livewire/flux/stubs";
-
-@theme {
-    --font-sans: 'Inter', sans-serif;
-}
-```
-
-`postcss.config.js`
-
-```js
-export default {
-    plugins: {
-        '@tailwindcss/postcss': {},
-    },
-};
-```
-
-Install the Tailwind PostCSS plugin:
-
-```bash
-npm install @tailwindcss/postcss
-```
-
-### 4. Nginx configuration
-
-```nginx
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
-    root /var/www/pixelkraft/public;
-    index index.php;
-    client_max_body_size 20M;
-
-    location ~* ^/flux/flux(\.min)?\.(js|css)$ {
-        expires off;
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_pass unix:/run/php-fpm/www.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-
-    location ~ /\. {
-        deny all;
-    }
-}
-```
-
-### 5. Supervisor (Horizon)
-
-Create `/etc/supervisord.d/horizon.ini`:
-
-```ini
-[program:horizon]
-process_name=%(program_name)s
-command=php /var/www/pixelkraft/artisan horizon
-autostart=true
-autorestart=true
-user=nginx
-redirect_stderr=true
-stdout_logfile=/var/www/pixelkraft/storage/logs/horizon.log
-stopwaitsecs=3600
-```
-
-### 6. Cron
-
-```bash
-* * * * * cd /var/www/pixelkraft && php artisan schedule:run >> /dev/null 2>&1
-```
-
-## Key Notes
-
-### Authorization behavior
-
-- Routes with `{site}` parameters are guarded so users can only resolve sites they can access.
-- If a user requests an unauthorized site UUID, the app returns `404` to avoid leaking tenant existence.
-- API and Livewire flows query only visible sites for the authenticated user.
-
-### Managed site builds
-
-- Frontend site builds install dev dependencies when the target framework needs them to compile successfully
-- Runtime-managed Next.js sites run on an internal port and are proxied through Nginx
-- Static optimization steps are skipped for runtime-managed output
-
-### Flux v2 component names
-
-This project uses Flux v2. If you hit broken UI after refactors, double-check Blade component names:
-
-| Flux v1 (wrong) | Flux v2 (correct) |
-|---|---|
-| `flux:sidebar sticky stashable` | `flux:sidebar sticky collapsible="mobile"` |
-| `flux:brand` | `flux:sidebar.brand` |
-| `flux:navlist.item` | `flux:sidebar.item` |
-| `flux:navlist.group` | `flux:sidebar.group` |
-| `flux:spacer` | `flux:sidebar.spacer` |
-| `flux:profile` | `flux:sidebar.profile` |
-
-### AlmaLinux 10 specifics
-
-- Use `valkey` instead of a `redis` package
-- `php-pecl-redis6` works with Valkey on the default port `6379`
-
-### Tailwind v4 migration
-
-- Use `@import "tailwindcss"` instead of the old Tailwind layers
-- Use `@tailwindcss/postcss` as the PostCSS plugin
-- Use `@source` directives in CSS instead of an old `content` array
-
-## Build Phases
-
-| Phase | Focus | Status |
-|-------|-------|--------|
-| 1 | Foundation + Auth + GitHub Sync | Complete |
-| 2 | Multi-Strategy Parser + Region Detection | Complete |
-| 3 | Visual Editor + Content Management | Complete |
-| 4 | Deploy Pipeline + Domain / SSL Management | Complete |
-| 5 | SEO + Analytics + Monitoring | Complete |
-| 6 | Email + Operations + Polish | Complete |
-
-## License
-
-Private - not open source.
+[INSERT ALL FILE CONTENTS HERE]
