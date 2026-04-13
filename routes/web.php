@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Dashboard\SiteAnalyticsController;
 use App\Http\Controllers\EditorPreviewController;
 use App\Models\AnalyticsSnapshot;
 use App\Models\BlogPost;
@@ -27,7 +28,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     // Sites
     Route::get('/sites', fn () => view('dashboard.sites.index'))->name('sites.index');
     Route::get('/sites/create', fn () => view('dashboard.sites.create'))->name('sites.create');
-    Route::middleware('site.access')->group(function () {
+    Route::middleware(['site.access', 'expand.site.sidebar'])->group(function () {
         Route::get('/sites/{site}', function (Site $site) {
             $site->loadCount([
                 'inboxMessages as inbox_unread_count' => fn ($q) => $q->where('direction', 'inbound')->where('is_read', false),
@@ -122,6 +123,11 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         Route::get('/sites/{site}/expenses', fn (Site $site) => view('dashboard.sites.expenses', ['site' => $site]))->name('sites.expenses');
         Route::get('/sites/{site}/reminders', fn (Site $site) => view('dashboard.sites.reminders', ['site' => $site]))->name('sites.reminders');
         Route::get('/sites/{site}/reports', fn (Site $site) => view('dashboard.sites.reports', ['site' => $site]))->name('sites.reports');
+        Route::get('/sites/{site}/analytics', SiteAnalyticsController::class)->name('sites.analytics');
+        Route::get('/sites/{site}/maintenance', fn (Site $site) => view('dashboard.sites.maintenance', ['site' => $site]))->name('sites.maintenance');
+        Route::get('/sites/{site}/maintenance/preview', function (Site $site) {
+            return view('dashboard.sites.maintenance-preview', ['site' => $site]);
+        })->name('sites.maintenance.preview');
         Route::get('/sites/{site}/settings', fn (Site $site) => view('dashboard.sites.settings', ['site' => $site]))->name('sites.settings');
         Route::get('/sites/{site}/files', fn (Site $site) => view('dashboard.sites.files', ['site' => $site]))->name('sites.files');
 

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureSiteAccess;
+use App\Http\Middleware\RememberExpandedSite;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,7 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'site.access' => \App\Http\Middleware\EnsureSiteAccess::class,
+            'site.access' => EnsureSiteAccess::class,
+            'expand.site.sidebar' => RememberExpandedSite::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
