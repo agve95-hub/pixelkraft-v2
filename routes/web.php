@@ -6,6 +6,8 @@ use App\Models\BlogPost;
 use App\Models\Notification;
 use App\Models\Page;
 use App\Models\Site;
+use App\Support\SeoIssueSummary;
+use App\Support\SiteAccess;
 use Illuminate\Support\Facades\Route;
 
 // ── Guest ───────────────────────────────────────
@@ -14,7 +16,13 @@ Route::get('/', fn () => redirect()->route('login'));
 // ── Dashboard (auth required) ───────────────────
 Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(function () {
 
-    Route::get('/', fn () => view('dashboard.index'))->name('dashboard');
+    Route::get('/', function () {
+        $visibleSiteIds = SiteAccess::query()->pluck('id');
+
+        return view('dashboard.index', [
+            'seoIssueCount' => SeoIssueSummary::openCountForSiteIds($visibleSiteIds),
+        ]);
+    })->name('dashboard');
 
     // Sites
     Route::get('/sites', fn () => view('dashboard.sites.index'))->name('sites.index');
@@ -81,47 +89,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 ->limit(5)
                 ->get();
 
-            $missingMetaCount = $site->pages()
-                ->where(fn ($q) => $q->whereNull('meta_description')->orWhere('meta_description', ''))
-                ->count();
-
-            $missingOgCount = $site->pages()
-                ->where(fn ($q) => $q
-                    ->whereNull('og_title')
-                    ->orWhere('og_title', '')
-                    ->orWhereNull('og_description')
-                    ->orWhere('og_description', ''))
-                ->count();
-
-            $lowSeoCount = $site->pages()
-                ->where('seo_score', '<', 80)
-                ->count();
-
-            $seoIssues = collect();
-
-            if ($missingMetaCount > 0) {
-                $seoIssues->push([
-                    'severity' => 'warning',
-                    'message' => 'Missing meta descriptions',
-                    'count' => $missingMetaCount,
-                ]);
-            }
-
-            if ($missingOgCount > 0) {
-                $seoIssues->push([
-                    'severity' => 'info',
-                    'message' => 'Missing Open Graph tags',
-                    'count' => $missingOgCount,
-                ]);
-            }
-
-            if ($lowSeoCount > 0) {
-                $seoIssues->push([
-                    'severity' => 'warning',
-                    'message' => 'Low SEO score pages (< 80)',
-                    'count' => $lowSeoCount,
-                ]);
-            }
+            $seoIssues = SeoIssueSummary::openAggregatesForSite($site);
 
             $pages = $site->pages()
                 ->withSum([
@@ -134,6 +102,8 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
             return view('dashboard.sites.show', [
                 'site' => $site,
+                'seoIssueCount' => SeoIssueSummary::openCountForSite($site),
+                'seoWarningCount' => SeoIssueSummary::openWarningCountForSite($site),
                 'visitorsToday' => (int) $visitorsToday,
                 'visitorsTrendPercent' => $visitorsLastWeek > 0
                     ? (int) round((($visitorsToday - $visitorsLastWeek) / $visitorsLastWeek) * 100)

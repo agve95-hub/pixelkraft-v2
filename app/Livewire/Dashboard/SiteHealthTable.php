@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Dashboard;
 
-use App\Models\Page;
 use App\Models\Site;
+use App\Support\SeoIssueSummary;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -18,9 +18,7 @@ class SiteHealthTable extends Component
             ->orderBy('name')
             ->get()
             ->map(function (Site $site) {
-                $seoIssues = $site->pages->filter(function (Page $page) {
-                    return empty($page->title) || empty($page->meta_description) || ($page->seo_score !== null && $page->seo_score < 60);
-                })->count();
+                $seoIssues = SeoIssueSummary::openCountForSite($site);
 
                 $uptimeCheck = $site->latestUptimeCheck;
                 $uptimeHistory = $site->uptimeChecks()

@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Dashboard;
 
-use App\Models\Page;
+use App\Models\SeoIssue;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -11,72 +11,31 @@ class SeoIssuesPanel extends Component
 {
     public function render(): View
     {
-        $issues = collect();
         $visibleSiteIds = SiteAccess::query()->pluck('id');
 
-        $missingDescription = Page::query()
+        $issues = SeoIssue::query()
+            ->open()
             ->whereIn('site_id', $visibleSiteIds)
-            ->where(function ($q) {
-                $q->whereNull('meta_description')->orWhere('meta_description', '');
-            })
-            ->with('site')
-            ->limit(5)
-            ->get();
-
-        foreach ($missingDescription as $page) {
-            $issues->push([
-                'severity' => 'warning',
-                'message' => 'Missing meta description',
-                'site' => $page->site?->name ?? 'Unknown',
-                'page' => $page,
+            ->whereNotNull('page_id')
+            ->with(['page' => fn ($q) => $q->select('id', 'site_id', 'url_path', 'title'), 'site:id,name'])
+            ->orderByDesc('updated_at')
+            ->limit(25)
+            ->get()
+            ->map(fn (SeoIssue $issue) => [
+                'severity' => (string) $issue->severity,
+                'message' => (string) $issue->message,
+                'site' => (string) ($issue->site?->name ?? 'Unknown'),
+                'page' => $issue->page,
             ]);
-        }
 
-        $noOg = Page::query()
+        $totalCount = SeoIssue::query()
+            ->open()
             ->whereIn('site_id', $visibleSiteIds)
-            ->where(function ($q) {
-                $q->whereNull('og_title')->orWhere('og_title', '');
-            })->where(function ($q) {
-                $q->whereNull('og_image')->orWhere('og_image', '');
-            })
-            ->with('site')
-            ->limit(5)
-            ->get();
-
-        foreach ($noOg as $page) {
-            if (!$issues->contains(fn ($i) => $i['page']->id === $page->id)) {
-                $issues->push([
-                    'severity' => 'info',
-                    'message' => 'No Open Graph tags',
-                    'site' => $page->site?->name ?? 'Unknown',
-                    'page' => $page,
-                ]);
-            }
-        }
-
-        $shortTitle = Page::query()
-            ->whereIn('site_id', $visibleSiteIds)
-            ->whereNotNull('title')
-            ->where('title', '!=', '')
-            ->whereRaw('LENGTH(title) < 30')
-            ->with('site')
-            ->limit(5)
-            ->get();
-
-        foreach ($shortTitle as $page) {
-            if (!$issues->contains(fn ($i) => $i['page']->id === $page->id)) {
-                $issues->push([
-                    'severity' => 'warning',
-                    'message' => 'Title tag too short (under 30 chars)',
-                    'site' => $page->site?->name ?? 'Unknown',
-                    'page' => $page,
-                ]);
-            }
-        }
+            ->count();
 
         return view('livewire.dashboard.seo-issues-panel', [
             'issues' => $issues->take(5),
-            'totalCount' => $issues->count(),
+            'totalCount' => $totalCount,
         ]);
     }
 }

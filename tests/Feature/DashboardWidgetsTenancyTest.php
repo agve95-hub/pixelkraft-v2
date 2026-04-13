@@ -8,6 +8,7 @@ use App\Livewire\Layout\NotificationBell;
 use App\Models\DeployLog;
 use App\Models\Notification;
 use App\Models\Page;
+use App\Models\SeoIssue;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -172,7 +173,7 @@ class DashboardWidgetsTenancyTest extends TestCase
             'project_type' => 'static_html',
         ]);
 
-        Page::create([
+        $alicePage = Page::create([
             'site_id' => $aliceSite->id,
             'file_path' => 'a.html',
             'url_path' => '/a',
@@ -181,7 +182,7 @@ class DashboardWidgetsTenancyTest extends TestCase
             'is_published' => true,
         ]);
 
-        Page::create([
+        $bobPage = Page::create([
             'site_id' => $bobSite->id,
             'file_path' => 'b.html',
             'url_path' => '/b',
@@ -190,9 +191,27 @@ class DashboardWidgetsTenancyTest extends TestCase
             'is_published' => true,
         ]);
 
+        SeoIssue::create([
+            'site_id' => $aliceSite->id,
+            'page_id' => $alicePage->id,
+            'severity' => 'warning',
+            'code' => 'analyzer:meta_description',
+            'message' => 'Alice SEO problem',
+            'resolved_at' => null,
+        ]);
+
+        SeoIssue::create([
+            'site_id' => $bobSite->id,
+            'page_id' => $bobPage->id,
+            'severity' => 'warning',
+            'code' => 'analyzer:title',
+            'message' => 'Bob SEO problem',
+            'resolved_at' => null,
+        ]);
+
         Livewire::actingAs($alice)
             ->test(SeoIssuesPanel::class)
-            ->assertSee('Alice SEO Site', false)
-            ->assertDontSee('Bob SEO Site', false);
+            ->assertSee('Alice SEO problem', false)
+            ->assertDontSee('Bob SEO problem', false);
     }
 }

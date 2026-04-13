@@ -35,8 +35,8 @@
             default => 'bg-amber-500/15 text-amber-300 border-amber-500/25',
         };
 
-        $seoIssueCount = (int) $seoIssues->sum('count');
-        $warningCount = (int) $seoIssues->where('severity', 'warning')->sum('count');
+        $seoIssueCount = (int) ($seoIssueCount ?? $seoIssues->sum('count'));
+        $warningCount = (int) ($seoWarningCount ?? $seoIssues->where('severity', 'warning')->sum('count'));
         $latestResponseLabel = $latestResponseMs ? $latestResponseMs . 'ms' : '—';
         $p95ResponseLabel = $p95ResponseMs ? $p95ResponseMs . 'ms' : '—';
 
@@ -173,7 +173,9 @@
                 <div class="space-y-1.5">
                     @forelse ($seoIssues as $issue)
                         <div class="flex items-start gap-3 rounded-lg border border-zinc-800/80 bg-zinc-950/60 px-3 py-2.5">
-                            @if ($issue['severity'] === 'warning')
+                            @if ($issue['severity'] === 'error')
+                                <span class="mt-0.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase bg-red-400/15 text-red-300">Error</span>
+                            @elseif ($issue['severity'] === 'warning')
                                 <span class="mt-0.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase bg-amber-400/15 text-amber-300">Warning</span>
                             @else
                                 <span class="mt-0.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase bg-sky-400/15 text-sky-300">Info</span>

@@ -1,7 +1,7 @@
 <div>
     <div class="h-full rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-5">
         <div class="mb-4 flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-zinc-100">Expenses</h3>
+            <h3 class="text-sm font-semibold text-zinc-100">Recorded expenses</h3>
             <p class="text-xs tabular-nums text-zinc-500">&euro;{{ number_format($grandTotal, 2) }}</p>
         </div>
 
@@ -10,7 +10,7 @@
                 <div class="flex items-center justify-between rounded-lg border border-zinc-800/70 px-3 py-2.5">
                     <div>
                         <p class="text-sm font-medium text-zinc-200">{{ $expense['site']->name }}</p>
-                        <p class="text-xs text-zinc-500">{{ $expense['items'] }} items</p>
+                        <p class="text-xs text-zinc-500">{{ $expense['items'] }} {{ $expense['items'] === 1 ? 'entry' : 'entries' }}</p>
                     </div>
                     <p class="text-sm font-medium tabular-nums text-zinc-100">&euro;{{ number_format($expense['total'], 2) }}</p>
                 </div>
@@ -29,7 +29,8 @@
                 </div>
             @else
                 <div class="py-7 text-center">
-                    <p class="text-sm text-zinc-500">No expenses to track</p>
+                    <p class="text-sm text-zinc-500">No expense entries yet</p>
+                    <p class="mt-1 text-xs text-zinc-600">Record expenses per site to see totals here.</p>
                 </div>
             @endif
         </div>

@@ -16,14 +16,7 @@
         $totalPages = \App\Models\Page::query()
             ->whereIn('site_id', $visibleSiteIds)
             ->count();
-        $seoIssueCount = \App\Models\Page::query()
-            ->whereIn('site_id', $visibleSiteIds)
-            ->where(function ($q) {
-                $q->whereNull('title')
-                    ->orWhereNull('meta_description')
-                    ->orWhere('seo_score', '<', 60);
-            })
-            ->count();
+        $seoIssueCount = (int) ($seoIssueCount ?? 0);
 
         $latestChecks = \App\Models\UptimeCheck::query()
             ->whereIn('site_id', $visibleSiteIds)

@@ -14,7 +14,9 @@
                     href="{{ route('seo.meta', [$issue['page']->site_id, $issue['page']->id]) }}"
                     class="group flex items-start gap-3 rounded-lg border border-zinc-700/60 bg-[#141414] px-3 py-2.5 transition hover:border-zinc-600 hover:bg-zinc-950/80"
                 >
-                    @if ($issue['severity'] === 'warning')
+                    @if ($issue['severity'] === 'error')
+                        <span class="mt-0.5 inline-flex rounded border border-red-600/60 bg-red-950/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-200">Error</span>
+                    @elseif ($issue['severity'] === 'warning')
                         <span class="mt-0.5 inline-flex rounded border border-zinc-600 bg-zinc-950 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-100">Warning</span>
                     @else
                         <span class="mt-0.5 inline-flex rounded border border-zinc-600 bg-zinc-950 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-300">Info</span>
