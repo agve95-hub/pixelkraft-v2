@@ -3,9 +3,9 @@
 namespace App\Jobs;
 
 use App\Models\Notification;
-use App\Models\Page;
 use App\Models\Site;
 use App\Services\ParserService;
+use App\Services\SeoAnalyzer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -37,9 +37,10 @@ class ParseSiteJob implements ShouldQueue
 
             $this->site->load('pages');
 
-            $this->site->pages->each(function (Page $page) {
-                $page->update(['seo_score' => $this->computeSeoScore($page)]);
-            });
+            $analyzer = app(SeoAnalyzer::class);
+            foreach ($this->site->pages as $page) {
+                $analyzer->analyze($page->fresh());
+            }
 
         } catch (\Throwable $e) {
             Log::error("ParseSiteJob failed for [{$this->site->slug}]", [
@@ -56,45 +57,6 @@ class ParseSiteJob implements ShouldQueue
 
             throw $e;
         }
-    }
-
-    /**
-     * Compute a basic SEO score (0-100) for a page.
-     */
-    private function computeSeoScore(Page $page): int
-    {
-        $score = 0;
-
-        // Title (25 points)
-        if ($page->title) {
-            $len = mb_strlen($page->title);
-            $score += ($len >= 10 && $len <= 70) ? 25 : 15;
-        }
-
-        // Meta description (20 points)
-        if ($page->meta_description) {
-            $len = mb_strlen($page->meta_description);
-            $score += ($len >= 50 && $len <= 160) ? 20 : 10;
-        }
-
-        // Open Graph (15 points)
-        if ($page->og_title) $score += 5;
-        if ($page->og_description) $score += 5;
-        if ($page->og_image) $score += 5;
-
-        // Canonical URL (10 points)
-        if ($page->canonical_url) $score += 10;
-
-        // Schema.org JSON-LD (10 points)
-        if ($page->schema_json) $score += 10;
-
-        // Content exists (10 points)
-        if ($page->content_hash) $score += 10;
-
-        // Has URL path (10 points)
-        if ($page->url_path && $page->url_path !== '/') $score += 10;
-
-        return min(100, $score);
     }
 
     public function tags(): array

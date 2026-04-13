@@ -90,6 +90,14 @@
                                     @endif
                                 </span>
                             </flux:sidebar.item>
+                            <flux:sidebar.item
+                                icon="banknotes"
+                                href="{{ route('sites.expenses', $navSite) }}"
+                                :current="request()->routeIs('sites.expenses')"
+                                class="!py-1.5"
+                            >
+                                Expenses
+                            </flux:sidebar.item>
                         </div>
                     @endif
                 @endforeach

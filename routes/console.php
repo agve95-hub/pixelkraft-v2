@@ -26,6 +26,11 @@ Schedule::command('pixelkraft:sync-analytics')
     ->dailyAt('06:00')
     ->withoutOverlapping();
 
+// SEO analyzer: refresh scores and seo_issues for all active sites (after analytics)
+Schedule::command('pixelkraft:analyze-seo --all')
+    ->dailyAt('06:30')
+    ->withoutOverlapping();
+
 // ── SSL Monitoring ──────────────────────────────
 
 // Check SSL expiry weekly (Monday 8am)
