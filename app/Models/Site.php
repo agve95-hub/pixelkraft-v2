@@ -310,6 +310,11 @@ class Site extends Model
         return $this->hasMany(AnalyticsEvent::class);
     }
 
+    public function webhookDeliveries()
+    {
+        return $this->hasMany(WebhookDelivery::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
