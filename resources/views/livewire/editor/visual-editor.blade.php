@@ -28,6 +28,13 @@
                 <span class="rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 font-mono text-[11px] text-cyan-200">
                     {{ $editSession->working_branch }}
                 </span>
+                <span @class([
+                    'rounded border px-2 py-1 text-[11px]',
+                    'border-red-500/30 bg-red-500/10 text-red-200' => $editSession->status === 'conflicted',
+                    'border-zinc-700 bg-zinc-800 text-zinc-300' => $editSession->status !== 'conflicted',
+                ])>
+                    {{ ucfirst($editSession->status) }}
+                </span>
             @endif
             @if ($currentRelease)
                 <span class="rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200">
@@ -98,6 +105,21 @@
                     {{ session('error') }}
                 </div>
             @endif
+        </div>
+    @endif
+
+    @if ($editSession?->status === 'conflicted')
+        <div class="border-b border-red-500/20 bg-red-500/5 px-4 py-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-red-200">This edit session is conflicted.</p>
+                    <p class="mt-1 text-xs text-red-100/80">
+                        pixelkraft detected newer repo changes while saving. Review the layer in Code mode or start a fresh session before making more visual edits.
+                    </p>
+                </div>
+                <button wire:click="setMode('code')" class="flux-btn-secondary text-xs">Open Code Mode</button>
+                <button wire:click="startFreshSession" class="flux-btn-primary text-xs">Start Fresh Session</button>
+            </div>
         </div>
     @endif
 
@@ -243,6 +265,44 @@
                                     <div class="rounded border border-zinc-700 bg-zinc-950 px-3 py-2">
                                         <div class="text-[11px] uppercase tracking-wide text-zinc-500">Region status</div>
                                         <div class="mt-1 text-zinc-100">{{ $selectedRegionEditable ? 'Visual editable' : 'Code-first / preview only' }}</div>
+                                    </div>
+                                    <div class="rounded border border-zinc-700 bg-zinc-950 px-3 py-2">
+                                        <div class="text-[11px] uppercase tracking-wide text-zinc-500">Management</div>
+                                        <div class="mt-1 flex flex-wrap items-center gap-2">
+                                            @if ($selectedRegionManagement['managed'])
+                                                <span class="rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200">managed</span>
+                                            @else
+                                                <span class="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-200">auto-detected</span>
+                                            @endif
+                                            @if ($selectedRegionManagement['locked'])
+                                                <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-300">locked</span>
+                                            @endif
+                                            <span class="rounded border border-zinc-700 bg-zinc-900 px-2 py-1 text-[11px] text-zinc-400">{{ $selectedRegionManagement['detection_method'] }}</span>
+                                        </div>
+                                        <div class="mt-2 text-[11px] text-zinc-400">
+                                            Source: <span class="font-mono">{{ $selectedRegionManagement['source_file'] }}</span>
+                                        </div>
+                                        @if ($selectedRegionManagement['marker_id'])
+                                            <div class="mt-1 text-[11px] text-zinc-400">
+                                                Marker: <span class="font-mono">{{ $selectedRegionManagement['marker_id'] }}</span>
+                                            </div>
+                                        @endif
+                                        @if ($selectedRegionManagement['verified_at'])
+                                            <div class="mt-1 text-[11px] text-zinc-500">
+                                                Verified {{ $selectedRegionManagement['verified_at']->diffForHumans() }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button wire:click="promoteSelectedRegion" class="flux-btn-primary text-xs" @disabled($selectedRegionManagement['locked'])>
+                                            {{ $selectedRegionManagement['managed'] ? 'Refresh Managed Anchor' : 'Promote To Managed Region' }}
+                                        </button>
+                                        <button wire:click="lockSelectedRegion" class="flux-btn-secondary text-xs">
+                                            Mark Static
+                                        </button>
+                                        @if (! $selectedRegionEditable)
+                                            <button wire:click="setMode('code')" class="flux-btn-secondary text-xs">Open In Code Mode</button>
+                                        @endif
                                     </div>
                                 </div>
                             @else

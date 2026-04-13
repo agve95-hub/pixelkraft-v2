@@ -54,11 +54,22 @@ class RegionDetector
      */
     public function confirmAsEditable(EditableRegion $region, ?string $markerId = null): void
     {
+        $sourceAnchor = $region->source_anchor ?? [];
+
+        if ($markerId) {
+            $sourceAnchor['marker_id'] = $markerId;
+            $sourceAnchor['verified_via'] = 'marker';
+        } else {
+            $sourceAnchor['verified_via'] = 'manual';
+        }
+
         $region->update([
             'is_static'        => false,
             'detection_method' => $markerId ? 'marker' : 'manual',
             'marker_id'        => $markerId,
             'confidence_score' => 1.0,
+            'source_anchor'    => $sourceAnchor,
+            'last_verified_at' => now(),
         ]);
     }
 
@@ -67,10 +78,16 @@ class RegionDetector
      */
     public function confirmAsStatic(EditableRegion $region): void
     {
+        $sourceAnchor = $region->source_anchor ?? [];
+        $sourceAnchor['verified_via'] = 'manual';
+        $sourceAnchor['locked'] = true;
+
         $region->update([
             'is_static'        => true,
             'detection_method' => 'manual',
             'confidence_score' => 1.0,
+            'source_anchor'    => $sourceAnchor,
+            'last_verified_at' => now(),
         ]);
     }
 

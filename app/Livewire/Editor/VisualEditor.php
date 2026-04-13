@@ -12,6 +12,7 @@ use App\Services\ContentPatcher;
 use App\Services\EditSessionService;
 use App\Services\GitConflictException;
 use App\Services\GitSyncService;
+use App\Services\RegionDetector;
 use App\Services\SiteSupportService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
@@ -180,6 +181,58 @@ class VisualEditor extends Component
         $this->commitMessage = $this->generateCommitMessage();
         $this->deployAfterSave = true;
         $this->showSaveModal = true;
+    }
+
+    public function startFreshSession(): void
+    {
+        $site = $this->resolveSite();
+        $page = $this->resolvePage();
+        $sessions = app(EditSessionService::class);
+
+        if ($current = $this->resolveEditSession()) {
+            $sessions->close($current, [
+                'restarted_at' => now()->toIso8601String(),
+                'restarted_by' => auth()->id(),
+            ]);
+        }
+
+        $session = $sessions->startOrResume($site, $page, auth()->user());
+        $this->editSessionId = $session->id;
+
+        session()->flash('success', 'Started a fresh edit session from the latest known page state.');
+    }
+
+    public function promoteSelectedRegion(): void
+    {
+        if (! $this->selectedRegionId) {
+            session()->flash('error', 'Select a layer first so pixelkraft knows which region to promote.');
+            return;
+        }
+
+        $region = $this->resolveRegion($this->selectedRegionId);
+        $detector = app(RegionDetector::class);
+
+        $markerId = $region->marker_id ?: $detector->generateMarkerId($region);
+        $detector->confirmAsEditable($region, $markerId);
+
+        $this->dispatch('region-updated', regionId: $region->id);
+        $this->dispatch('reload-iframe');
+        session()->flash('success', 'Region promoted to a managed editable layer. Future visual saves will prefer durable marker-based anchors.');
+    }
+
+    public function lockSelectedRegion(): void
+    {
+        if (! $this->selectedRegionId) {
+            session()->flash('error', 'Select a layer first so pixelkraft knows which region to lock.');
+            return;
+        }
+
+        $region = $this->resolveRegion($this->selectedRegionId);
+        app(RegionDetector::class)->confirmAsStatic($region);
+
+        $this->dispatch('region-updated', regionId: $region->id);
+        $this->dispatch('reload-iframe');
+        session()->flash('success', 'Region marked as static. It will stay preview-only until you re-enable it.');
     }
 
     public function save(): void
@@ -376,6 +429,9 @@ class VisualEditor extends Component
         $recentRevisions = $selectedRegion
             ? $selectedRegion->revisions()->with('user')->latest('created_at')->limit(8)->get()
             : collect();
+        $selectedRegionManagement = $selectedRegion
+            ? $this->selectedRegionManagementState($selectedRegion)
+            : null;
         $sitePages = $site->pages()
             ->orderByRaw('CASE WHEN url_path IS NULL OR url_path = "" THEN 1 ELSE 0 END')
             ->orderBy('url_path')
@@ -402,6 +458,7 @@ class VisualEditor extends Component
             'recentGitOperations' => $recentGitOperations,
             'currentRelease' => $currentRelease,
             'recentRevisions' => $recentRevisions,
+            'selectedRegionManagement' => $selectedRegionManagement,
             'sitePages' => $sitePages,
         ]);
     }
@@ -514,6 +571,23 @@ class VisualEditor extends Component
         }
 
         return 'This region is preview-only because pixelkraft could not map it back to a unique source edit safely. Use Code mode for this one.';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function selectedRegionManagementState(EditableRegion $region): array
+    {
+        return [
+            'managed' => $region->isConfirmed() || $region->hasVerifiedAnchor(),
+            'locked' => (bool) $region->is_static,
+            'detection_method' => $region->detection_method,
+            'marker_id' => $region->marker_id,
+            'has_verified_anchor' => $region->hasVerifiedAnchor(),
+            'verified_at' => $region->last_verified_at,
+            'source_file' => data_get($region->source_location, 'file', $region->page?->file_path),
+            'source_anchor_type' => data_get($region->source_anchor, 'verified_via'),
+        ];
     }
 
     private function resetDebugTelemetry(): void
