@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Page;
+use App\Models\SeoIssue;
 use App\Models\Site;
 use Illuminate\Support\Facades\File;
 
@@ -71,6 +72,8 @@ class SeoAnalyzer
         // Update the page's SEO score
         $page->update(['seo_score' => $normalizedScore]);
 
+        $this->syncSeoIssuesFromSuggestions($page, $suggestions);
+
         return [
             'score'       => $normalizedScore,
             'suggestions' => $suggestions,
@@ -89,6 +92,75 @@ class SeoAnalyzer
         }
 
         return $results;
+    }
+
+    /**
+     * Persist analyzer output as open {@see SeoIssue} rows (one per logical field).
+     *
+     * @param  array<int, array{severity: string, message: string, field: string}>  $suggestions
+     */
+    private function syncSeoIssuesFromSuggestions(Page $page, array $suggestions): void
+    {
+        $severityRank = ['error' => 3, 'warning' => 2, 'info' => 1];
+
+        $byField = [];
+        foreach ($suggestions as $row) {
+            $field = $row['field'] ?? 'general';
+            if (! isset($byField[$field])) {
+                $byField[$field] = ['severities' => [], 'messages' => []];
+            }
+            $byField[$field]['severities'][] = $row['severity'] ?? 'warning';
+            $byField[$field]['messages'][] = $row['message'];
+        }
+
+        $activeCodes = [];
+
+        foreach ($byField as $field => $data) {
+            $code = 'analyzer:'.$field;
+            $activeCodes[] = $code;
+
+            $severity = collect($data['severities'])
+                ->sortByDesc(fn ($s) => $severityRank[$s] ?? 0)
+                ->first() ?? 'warning';
+
+            $severity = $this->normalizeIssueSeverity((string) $severity);
+
+            $message = implode(' ', array_unique($data['messages']));
+
+            SeoIssue::query()->updateOrCreate(
+                [
+                    'page_id' => $page->id,
+                    'code' => $code,
+                    'resolved_at' => null,
+                ],
+                [
+                    'site_id' => $page->site_id,
+                    'severity' => $severity,
+                    'message' => $message,
+                    'meta' => ['field' => $field, 'source' => 'seo_analyzer'],
+                ],
+            );
+        }
+
+        $staleQuery = SeoIssue::query()
+            ->where('page_id', $page->id)
+            ->whereNull('resolved_at')
+            ->where('code', 'like', 'analyzer:%');
+
+        if ($activeCodes === []) {
+            $staleQuery->update(['resolved_at' => now()]);
+        } else {
+            $staleQuery->whereNotIn('code', $activeCodes)->update(['resolved_at' => now()]);
+        }
+    }
+
+    private function normalizeIssueSeverity(string $severity): string
+    {
+        return match ($severity) {
+            'error' => 'error',
+            'info' => 'info',
+            default => 'warning',
+        };
     }
 
     // ── Individual Checks ───────────────────────

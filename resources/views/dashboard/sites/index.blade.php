@@ -6,11 +6,11 @@
         $selectedId = request()->query('site');
 
         if ($selectedId) {
-            $selectedSite = \App\Models\Site::query()->find($selectedId);
+            $selectedSite = \App\Support\SiteAccess::query()->whereKey($selectedId)->first();
         }
 
         if (! $selectedSite) {
-            $selectedSite = \App\Models\Site::query()->orderBy('name')->first();
+            $selectedSite = \App\Support\SiteAccess::query()->orderBy('name')->first();
         }
     @endphp
 
