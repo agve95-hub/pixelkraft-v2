@@ -1,5 +1,3 @@
-<x-layouts.app>
-    <x-slot:title>{{ $page->title ?? $page->file_path }} — Editor</x-slot:title>
-
+<x-layouts.editor-shell :title="($page->title ?? $page->file_path) . ' — Editor'">
     @livewire('editor.visual-editor', ['siteId' => $site->id, 'pageId' => $page->id])
-</x-layouts.app>
+</x-layouts.editor-shell>

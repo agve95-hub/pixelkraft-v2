@@ -11,6 +11,10 @@
     --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
+[x-cloak] {
+    display: none !important;
+}
+
 /* Mockup-aligned tokens (used by inline var() in dashboard views) */
 :root {
     --zinc-50: #fafafa;

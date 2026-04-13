@@ -4,43 +4,70 @@ namespace App\Livewire\Editor;
 
 use App\Jobs\DeploySiteJob;
 use App\Models\ContentRevision;
-use App\Models\EditSession;
 use App\Models\EditableRegion;
+use App\Models\EditSession;
 use App\Models\Page;
 use App\Models\Site;
 use App\Services\ContentPatcher;
 use App\Services\EditSessionService;
 use App\Services\GitConflictException;
 use App\Services\GitSyncService;
+use App\Services\ParserService;
 use App\Services\RegionDetector;
 use App\Services\SiteSupportService;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use App\Support\SiteAccess;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 class VisualEditor extends Component
 {
     public string $siteId;
+
     public string $pageId;
+
     public ?string $editSessionId = null;
 
     public string $mode = 'visual'; // visual|code
+
     public ?string $selectedRegionId = null;
+
     public string $editContent = '';
+
     public string $commitMessage = '';
+
     public bool $showSaveModal = false;
+
+    public bool $showScheduleModal = false;
+
     public bool $isSaving = false;
+
     public bool $deployAfterSave = true;
+
+    public string $schedulePublishAt = '';
+
+    public string $scheduleBranch = 'main';
+
     public bool $debugTelemetryEnabled = false;
+
     public array $debugTelemetry = [];
+
+    /**
+     * Visual undo/redo for inline edits is not persisted as a stack yet; the mockup shows
+     * these controls, so we expose the affordance and keep the action non-destructive.
+     */
+    public bool $canUndo = false;
+
+    public bool $canRedo = false;
 
     // Code editor state
     public string $codeContent = '';
+
     public string $codeFilePath = '';
+
     public string $codeLanguage = 'plaintext';
 
     public function mount(string $siteId, string $pageId): void
@@ -62,6 +89,76 @@ class VisualEditor extends Component
         $this->resetDebugTelemetry();
 
         $this->loadCodeContent();
+    }
+
+    public function openScheduleModal(): void
+    {
+        $this->schedulePublishAt = now()->addDay()->format('Y-m-d\TH:i');
+        $this->scheduleBranch = 'main';
+        $this->showScheduleModal = true;
+    }
+
+    public function closeScheduleModal(): void
+    {
+        $this->showScheduleModal = false;
+    }
+
+    /**
+     * Mockup maps "Schedule" to deferred publish; pages only have a boolean published flag today,
+     * so we record intent in-session and avoid writing fake DB timestamps.
+     */
+    public function confirmSchedule(): void
+    {
+        $this->showScheduleModal = false;
+        session()->flash(
+            'info',
+            'Scheduled publish is not stored on pages yet. Use Save draft + Publish when ready, or track schedule in your release process.'
+        );
+    }
+
+    public function undo(): void
+    {
+        session()->flash('info', 'Undo is not wired to the inline edit stack yet. Re-select the layer or use Code mode.');
+    }
+
+    public function redo(): void
+    {
+        session()->flash('info', 'Redo is not wired to the inline edit stack yet.');
+    }
+
+    public function saveDraft(): void
+    {
+        if ($this->mode === 'visual') {
+            if (! $this->selectedRegionId) {
+                session()->flash('error', 'Select a layer in the canvas before saving a draft from visual mode.');
+
+                return;
+            }
+
+            if (! $this->selectedRegionCanBeEdited()) {
+                session()->flash('error', $this->visualSaveErrorMessage());
+
+                return;
+            }
+        }
+
+        $this->deployAfterSave = false;
+        $this->commitMessage = $this->generateCommitMessage();
+        $this->save();
+    }
+
+    public function publishPage(): void
+    {
+        try {
+            $site = $this->resolveSite();
+            $page = $this->resolvePage();
+            $page->update(['is_published' => true]);
+            DeploySiteJob::dispatch($site->fresh(), 'editor');
+            session()->flash('success', 'Page marked published and deploy queued.');
+            $this->dispatch('reload-iframe');
+        } catch (\Throwable $e) {
+            session()->flash('error', 'Publish failed: '.$e->getMessage());
+        }
     }
 
     #[On('region-selected')]
@@ -123,11 +220,13 @@ class VisualEditor extends Component
         if ($this->mode === 'visual') {
             if (! $this->selectedRegionId) {
                 session()->flash('error', 'Select a highlighted element first, then edit it inline.');
+
                 return;
             }
 
             if (! $this->selectedRegionCanBeEdited()) {
                 session()->flash('error', $this->visualSaveErrorMessage());
+
                 return;
             }
         }
@@ -143,7 +242,7 @@ class VisualEditor extends Component
             $site = $this->resolveSite();
             $page = $this->resolvePage();
 
-            app(\App\Services\ParserService::class)->parseSinglePage($site, $page->file_path);
+            app(ParserService::class)->parseSinglePage($site, $page->file_path);
             $this->debugTelemetry['last_action'] = 'reparse_page';
             $this->debugTelemetry['last_error'] = null;
 
@@ -156,7 +255,7 @@ class VisualEditor extends Component
             $this->dispatch('reload-iframe');
         } catch (\Throwable $e) {
             $this->debugTelemetry['last_error'] = $e->getMessage();
-            session()->flash('error', 'Re-parse failed: ' . $e->getMessage());
+            session()->flash('error', 'Re-parse failed: '.$e->getMessage());
         }
     }
 
@@ -168,12 +267,14 @@ class VisualEditor extends Component
             if (! $this->selectedRegionId) {
                 $this->debugTelemetry['last_error'] = 'No region selected';
                 session()->flash('error', 'Select a highlighted element first, then edit its content.');
+
                 return;
             }
 
             if (! $this->selectedRegionCanBeEdited()) {
                 $this->debugTelemetry['last_error'] = 'Selected region is not visually editable';
                 session()->flash('error', $this->visualSaveErrorMessage());
+
                 return;
             }
         }
@@ -206,6 +307,7 @@ class VisualEditor extends Component
     {
         if (! $this->selectedRegionId) {
             session()->flash('error', 'Select a layer first so pixelkraft knows which region to promote.');
+
             return;
         }
 
@@ -224,6 +326,7 @@ class VisualEditor extends Component
     {
         if (! $this->selectedRegionId) {
             session()->flash('error', 'Select a layer first so pixelkraft knows which region to lock.');
+
             return;
         }
 
@@ -280,11 +383,11 @@ class VisualEditor extends Component
 
                 // Create revision
                 ContentRevision::create([
-                    'region_id'      => $region->id,
-                    'user_id'        => auth()->id(),
+                    'region_id' => $region->id,
+                    'user_id' => auth()->id(),
                     'content_before' => $region->current_content,
-                    'content_after'  => $this->editContent,
-                    'created_at'     => now(),
+                    'content_after' => $this->editContent,
+                    'created_at' => now(),
                 ]);
 
                 $changedFiles = $patcher->applyEdit($region, $this->editContent);
@@ -311,7 +414,7 @@ class VisualEditor extends Component
                 }
 
                 $site->update(['last_synced_at' => now()]);
-                app(\App\Services\ParserService::class)->parseSinglePage($site, $page->file_path);
+                app(ParserService::class)->parseSinglePage($site, $page->file_path);
 
                 if ($this->deployAfterSave) {
                     DeploySiteJob::dispatch($site->fresh(), 'editor');
@@ -358,7 +461,7 @@ class VisualEditor extends Component
             if (empty($this->debugTelemetry['patch'])) {
                 $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
             }
-            Log::error("Editor save conflict", ['error' => $e->getMessage()]);
+            Log::error('Editor save conflict', ['error' => $e->getMessage()]);
             session()->flash('error', 'Save blocked by newer repo changes. Your edit session was marked as conflicted for developer review.');
         } catch (\Throwable $e) {
             $this->debugTelemetry['last_save_success'] = false;
@@ -367,8 +470,8 @@ class VisualEditor extends Component
             if (empty($this->debugTelemetry['patch'])) {
                 $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
             }
-            Log::error("Editor save failed", ['error' => $e->getMessage()]);
-            session()->flash('error', 'Save failed: ' . $e->getMessage());
+            Log::error('Editor save failed', ['error' => $e->getMessage()]);
+            session()->flash('error', 'Save failed: '.$e->getMessage());
         } finally {
             $this->debugTelemetry['save_finished_at'] = now()->toIso8601String();
             $this->isSaving = false;
@@ -391,6 +494,7 @@ class VisualEditor extends Component
     {
         $this->resetDebugTelemetry();
     }
+
     public function render(): View
     {
         $site = $this->resolveSite();
@@ -436,16 +540,22 @@ class VisualEditor extends Component
             ->orderByRaw('CASE WHEN url_path IS NULL OR url_path = "" THEN 1 ELSE 0 END')
             ->orderBy('url_path')
             ->limit(20)
-            ->get(['id', 'title', 'url_path']);
+            ->get(['id', 'title', 'url_path', 'is_published']);
+        $seoIssues = $page->seoIssues()
+            ->whereNull('resolved_at')
+            ->orderByDesc('severity')
+            ->limit(12)
+            ->get(['id', 'severity', 'message']);
+        $mediaSamples = $this->collectRepoMediaSamples($site);
 
         // Build the preview URL for the iframe
         $previewUrl = $this->buildPreviewUrl($site, $page);
 
         return view('livewire.editor.visual-editor', [
-            'site'           => $site,
-            'page'           => $page,
+            'site' => $site,
+            'page' => $page,
             'selectedRegion' => $selectedRegion,
-            'previewUrl'     => $previewUrl,
+            'previewUrl' => $previewUrl,
             'previewRegions' => $previewRegions,
             'previewRegionCount' => $previewRegions->count(),
             'patchableRegionCount' => $patchableRegionCount,
@@ -460,6 +570,8 @@ class VisualEditor extends Component
             'recentRevisions' => $recentRevisions,
             'selectedRegionManagement' => $selectedRegionManagement,
             'sitePages' => $sitePages,
+            'seoIssues' => $seoIssues,
+            'mediaSamples' => $mediaSamples,
         ]);
     }
 
@@ -588,6 +700,58 @@ class VisualEditor extends Component
             'source_file' => data_get($region->source_location, 'file', $region->page?->file_path),
             'source_anchor_type' => data_get($region->source_anchor, 'verified_via'),
         ];
+    }
+
+    /**
+     * Mockup "Media" tab: surface a short list of image-like paths from the cloned repo when present.
+     * This stays read-only and avoids duplicating the full FileManager UI.
+     *
+     * @return list<array{path: string, label: string}>
+     */
+    private function collectRepoMediaSamples(Site $site, int $limit = 24): array
+    {
+        $root = $site->repo_path;
+        if (! $root || ! File::isDirectory($root)) {
+            return [];
+        }
+
+        $extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'ico'];
+        $out = [];
+
+        foreach (['public', 'static', 'assets', 'images', 'img', 'media'] as $sub) {
+            $dir = "{$root}/{$sub}";
+            if (! File::isDirectory($dir)) {
+                continue;
+            }
+
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST
+            );
+
+            foreach ($iterator as $file) {
+                if (! $file->isFile()) {
+                    continue;
+                }
+
+                $ext = strtolower((string) pathinfo($file->getFilename(), PATHINFO_EXTENSION));
+                if (! in_array($ext, $extensions, true)) {
+                    continue;
+                }
+
+                $relative = Str::after($file->getPathname(), $root.'/');
+                $out[] = [
+                    'path' => $relative,
+                    'label' => basename($relative),
+                ];
+
+                if (count($out) >= $limit) {
+                    return $out;
+                }
+            }
+        }
+
+        return $out;
     }
 
     private function resetDebugTelemetry(): void

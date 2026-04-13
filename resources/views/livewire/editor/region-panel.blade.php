@@ -1,13 +1,15 @@
 <div class="flex h-full flex-col">
     <div class="border-b border-zinc-800 px-3 py-3">
-        <p class="text-xs font-semibold uppercase tracking-wider text-zinc-300">Layers</p>
-        <p class="mt-1 text-[11px] text-zinc-500">
-            @if ($editorProfile['visual_editing_supported'])
-                {{ $visualEditableCount }} editable layer{{ $visualEditableCount === 1 ? '' : 's' }}. Click a row to focus it in canvas.
-            @else
-                Code-first page. Layers help you locate elements before editing source.
-            @endif
-        </p>
+        <p class="text-xs font-semibold uppercase tracking-wider text-zinc-300">Elements</p>
+        @if ($variant !== 'compact')
+            <p class="mt-1 text-[11px] text-zinc-500">
+                @if ($editorProfile['visual_editing_supported'])
+                    {{ $visualEditableCount }} editable layer{{ $visualEditableCount === 1 ? '' : 's' }}. Click a row to focus it in canvas.
+                @else
+                    Code-first page. Layers help you locate elements before editing source.
+                @endif
+            </p>
+        @endif
     </div>
 
     <div class="border-b border-zinc-800 px-3 py-2">

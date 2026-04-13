@@ -4,18 +4,23 @@ namespace App\Livewire\Editor;
 
 use App\Models\EditableRegion;
 use App\Models\Page;
-use App\Support\SiteAccess;
 use App\Services\ContentPatcher;
 use App\Services\RegionDetector;
 use App\Services\SiteSupportService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 class RegionPanel extends Component
 {
     public string $pageId;
+
+    /** When `compact`, the panel drops extra chrome so it fits the mockup left rail. */
+    public string $variant = 'default';
+
     public string $filter = 'all'; // all|dynamic|static|unconfirmed
+
     public ?string $selectedRegionId = null;
 
     public function confirmEditable(string $regionId): void
@@ -74,10 +79,10 @@ class RegionPanel extends Component
         $query = $page->editableRegions();
 
         $query = match ($this->filter) {
-            'dynamic'     => $query->where('is_static', false),
-            'static'      => $query->where('is_static', true),
+            'dynamic' => $query->where('is_static', false),
+            'static' => $query->where('is_static', true),
             'unconfirmed' => $query->where('detection_method', 'auto'),
-            default       => $query,
+            default => $query,
         };
 
         $regions = $query->get()
@@ -106,16 +111,16 @@ class RegionPanel extends Component
 
         $layerGroups = [];
         foreach ($groupOrder as $anchorKey) {
-            /** @var \Illuminate\Support\Collection<int, EditableRegion> $groupRegions */
+            /** @var Collection<int, EditableRegion> $groupRegions */
             $groupRegions = $byAnchor->get($anchorKey, collect())->sortBy(
                 fn (EditableRegion $r) => $this->regionSortKey($r)
             )->values();
             $firstSelector = (string) ($groupRegions->first()?->selector ?? '');
             $layerGroups[] = [
-                'key'       => $anchorKey,
-                'label'     => $this->mainAnchorLabel($firstSelector),
-                'token'     => $this->mainAnchorTagToken($firstSelector),
-                'regions'   => $groupRegions->all(),
+                'key' => $anchorKey,
+                'label' => $this->mainAnchorLabel($firstSelector),
+                'token' => $this->mainAnchorTagToken($firstSelector),
+                'regions' => $groupRegions->all(),
             ];
         }
 
@@ -126,9 +131,9 @@ class RegionPanel extends Component
             ->all();
 
         $counts = [
-            'all'         => $page->editableRegions()->count(),
-            'dynamic'     => $page->editableRegions()->where('is_static', false)->count(),
-            'static'      => $page->editableRegions()->where('is_static', true)->count(),
+            'all' => $page->editableRegions()->count(),
+            'dynamic' => $page->editableRegions()->where('is_static', false)->count(),
+            'static' => $page->editableRegions()->where('is_static', true)->count(),
             'unconfirmed' => $page->editableRegions()->where('detection_method', 'auto')->count(),
         ];
         $visualEditableCount = $editorProfile['visual_editing_supported']
@@ -139,9 +144,9 @@ class RegionPanel extends Component
             : 0;
 
         return view('livewire.editor.region-panel', [
-            'regions'       => $regions,
-            'layerGroups'   => $layerGroups,
-            'counts'        => $counts,
+            'regions' => $regions,
+            'layerGroups' => $layerGroups,
+            'counts' => $counts,
             'visualEditability' => $visualEditability,
             'visualEditableCount' => $visualEditableCount,
             'regionTags' => $regionTags,
