@@ -98,6 +98,22 @@
                             >
                                 Expenses
                             </flux:sidebar.item>
+                            <flux:sidebar.item
+                                icon="clock"
+                                href="{{ route('sites.reminders', $navSite) }}"
+                                :current="request()->routeIs('sites.reminders')"
+                                class="!py-1.5"
+                            >
+                                Reminders
+                            </flux:sidebar.item>
+                            <flux:sidebar.item
+                                icon="clipboard-document"
+                                href="{{ route('sites.reports', $navSite) }}"
+                                :current="request()->routeIs('sites.reports')"
+                                class="!py-1.5"
+                            >
+                                Reports
+                            </flux:sidebar.item>
                         </div>
                     @endif
                 @endforeach
