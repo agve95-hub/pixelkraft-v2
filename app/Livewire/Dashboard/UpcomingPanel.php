@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Dashboard;
 
+use App\Models\Reminder;
+use App\Models\Report;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -12,6 +14,8 @@ class UpcomingPanel extends Component
     {
         $upcoming = collect();
 
+        $visibleSiteIds = SiteAccess::query()->pluck('id');
+
         $sslPending = SiteAccess::query()->where('ssl_status', 'pending')->get();
         foreach ($sslPending as $site) {
             $upcoming->push([
@@ -21,6 +25,7 @@ class UpcomingPanel extends Component
                 'subtitle' => $site->name,
                 'date' => now(),
                 'overdue' => true,
+                'href' => route('sites.settings', $site),
             ]);
         }
 
@@ -37,17 +42,58 @@ class UpcomingPanel extends Component
                 'subtitle' => $site->name,
                 'date' => now()->addDay(),
                 'overdue' => false,
+                'href' => route('sites.settings', $site),
             ]);
         }
 
-        $upcoming->push([
-            'icon' => 'document-text',
-            'color' => 'zinc',
-            'title' => 'Send monthly report',
-            'subtitle' => 'All sites',
-            'date' => now()->endOfMonth(),
-            'overdue' => false,
-        ]);
+        Reminder::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->where('is_done', false)
+            ->whereNotNull('due_date')
+            ->with('site:id,name,slug')
+            ->where('due_date', '>=', now()->subDay()->toDateString())
+            ->where('due_date', '<=', now()->addDays(90)->toDateString())
+            ->orderBy('due_date')
+            ->limit(8)
+            ->get()
+            ->each(function (Reminder $reminder) use (&$upcoming) {
+                $site = $reminder->site;
+                if (! $site) {
+                    return;
+                }
+                $due = $reminder->due_date->startOfDay();
+                $overdue = $due->isPast() && ! $due->isToday();
+
+                $upcoming->push([
+                    'icon' => 'clock',
+                    'color' => $overdue ? 'red' : 'zinc',
+                    'title' => $reminder->title,
+                    'subtitle' => $site->name,
+                    'date' => $due,
+                    'overdue' => $overdue,
+                    'href' => route('sites.reminders', $site),
+                ]);
+            });
+
+        foreach (SiteAccess::query()->get() as $site) {
+            $hasReportThisMonth = Report::query()
+                ->where('site_id', $site->id)
+                ->whereYear('report_date', now()->year)
+                ->whereMonth('report_date', now()->month)
+                ->exists();
+
+            if (! $hasReportThisMonth) {
+                $upcoming->push([
+                    'icon' => 'clipboard-document',
+                    'color' => 'zinc',
+                    'title' => 'Add monthly site report',
+                    'subtitle' => $site->name,
+                    'date' => now()->endOfMonth()->startOfDay(),
+                    'overdue' => false,
+                    'href' => route('sites.reports', $site),
+                ]);
+            }
+        }
 
         $noAnalytics = SiteAccess::query()
             ->where(function ($query) {
@@ -63,12 +109,16 @@ class UpcomingPanel extends Component
                 'subtitle' => $site->name,
                 'date' => now()->addDays(7),
                 'overdue' => false,
+                'href' => route('sites.settings', $site),
             ]);
         }
 
+        $sorted = $upcoming->sortBy(fn (array $item) => $item['date']->timestamp)->values();
+        $totalCount = $sorted->count();
+
         return view('livewire.dashboard.upcoming-panel', [
-            'upcoming' => $upcoming->take(5),
-            'totalCount' => $upcoming->count(),
+            'upcoming' => $sorted->take(5),
+            'totalCount' => $totalCount,
         ]);
     }
 }

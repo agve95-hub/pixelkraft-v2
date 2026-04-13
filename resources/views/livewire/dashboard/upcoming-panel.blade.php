@@ -10,7 +10,12 @@
 
         <div class="space-y-1.5">
             @forelse ($upcoming as $item)
-                <div class="flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 transition hover:border-zinc-700/70 hover:bg-zinc-950/50">
+                @php($href = $item['href'] ?? null)
+                @if ($href)
+                    <a href="{{ $href }}" class="flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 transition hover:border-zinc-700/70 hover:bg-zinc-950/50">
+                @else
+                    <div class="flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 transition hover:border-zinc-700/70 hover:bg-zinc-950/50">
+                @endif
                     <flux:icon :name="$item['icon']" @class([
                         'mt-0.5 size-4 shrink-0',
                         'text-red-500' => $item['color'] === 'red',
@@ -30,7 +35,11 @@
                             {{ $item['date']->format('M j') }}
                         </p>
                     </div>
-                </div>
+                @if ($href)
+                    </a>
+                @else
+                    </div>
+                @endif
             @empty
                 <div class="py-6 text-center">
                     <p class="text-sm text-zinc-500">Nothing upcoming</p>

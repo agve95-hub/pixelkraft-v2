@@ -25,11 +25,10 @@ class ExampleTest extends TestCase
      */
     public function test_sites_create_renders_for_authenticated_users(): void
     {
-        $user = new User;
-        $user->id = 'test-user';
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get('/dashboard/sites/create');
 
-        $response->assertStatus(200);
+        $response->assertOk();
     }
 }
