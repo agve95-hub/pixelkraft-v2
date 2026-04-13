@@ -3,6 +3,7 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\Page;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -11,9 +12,13 @@ class SeoIssuesPanel extends Component
     public function render(): View
     {
         $issues = collect();
+        $visibleSiteIds = SiteAccess::query()->pluck('id');
 
-        $missingDescription = Page::whereNull('meta_description')
-            ->orWhere('meta_description', '')
+        $missingDescription = Page::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->where(function ($q) {
+                $q->whereNull('meta_description')->orWhere('meta_description', '');
+            })
             ->with('site')
             ->limit(5)
             ->get();
@@ -27,11 +32,16 @@ class SeoIssuesPanel extends Component
             ]);
         }
 
-        $noOg = Page::where(function ($q) {
-            $q->whereNull('og_title')->orWhere('og_title', '');
-        })->where(function ($q) {
-            $q->whereNull('og_image')->orWhere('og_image', '');
-        })->with('site')->limit(5)->get();
+        $noOg = Page::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->where(function ($q) {
+                $q->whereNull('og_title')->orWhere('og_title', '');
+            })->where(function ($q) {
+                $q->whereNull('og_image')->orWhere('og_image', '');
+            })
+            ->with('site')
+            ->limit(5)
+            ->get();
 
         foreach ($noOg as $page) {
             if (!$issues->contains(fn ($i) => $i['page']->id === $page->id)) {
@@ -44,7 +54,9 @@ class SeoIssuesPanel extends Component
             }
         }
 
-        $shortTitle = Page::whereNotNull('title')
+        $shortTitle = Page::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->whereNotNull('title')
             ->where('title', '!=', '')
             ->whereRaw('LENGTH(title) < 30')
             ->with('site')

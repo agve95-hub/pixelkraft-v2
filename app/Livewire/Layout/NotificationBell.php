@@ -3,6 +3,7 @@
 namespace App\Livewire\Layout;
 
 use App\Models\Notification;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
@@ -17,18 +18,22 @@ class NotificationBell extends Component
 
     public function refreshCount(): void
     {
-        $this->unreadCount = Notification::unread()->count();
+        $this->unreadCount = $this->visibleNotificationQuery()
+            ->unread()
+            ->count();
     }
 
     public function markAllRead(): void
     {
-        Notification::unread()->update(['is_read' => true]);
+        $this->visibleNotificationQuery()
+            ->unread()
+            ->update(['is_read' => true]);
         $this->unreadCount = 0;
     }
 
     public function render(): View
     {
-        $notifications = Notification::query()
+        $notifications = $this->visibleNotificationQuery()
             ->latest('created_at')
             ->limit(10)
             ->get();
@@ -36,5 +41,19 @@ class NotificationBell extends Component
         return view('livewire.layout.notification-bell', [
             'notifications' => $notifications,
         ]);
+    }
+
+    private function visibleNotificationQuery()
+    {
+        $query = Notification::query();
+        $user = auth()->user();
+
+        if ($user?->isAdmin()) {
+            return $query;
+        }
+
+        $visibleSiteIds = SiteAccess::query()->pluck('id');
+
+        return $query->whereIn('site_id', $visibleSiteIds);
     }
 }
