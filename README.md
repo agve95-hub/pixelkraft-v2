@@ -70,7 +70,7 @@ Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and so
 - All credentials encrypted at rest (`github_token`, `cf_api_token`, `smtp_password`, `ftp_ssh_password`)
 - HMAC-SHA256 webhook signature verification (constant-time `hash_equals`)
 - Role-based access control (admin / user)
-- Laravel Sanctum API tokens + Fortify 2FA
+- Laravel Sanctum API tokens (scoped personal access tokens for `/api/v1` machine clients) + Fortify 2FA
 - Redis-backed distributed locking on all Git operations (prevents race conditions)
 - Path traversal protection on asset serving
 
@@ -319,6 +319,25 @@ echo "✅ Deployment complete"
 
 ---
 
+## Authenticated JSON API (`/api/v1`)
+
+Machine clients use **`Authorization: Bearer {token}`** with a Sanctum **personal access token**. The same routes accept **first-party cookie session** auth (SPA on a stateful domain); session requests are not subject to token ability checks.
+
+Issue tokens with only the abilities you need (wildcard **`['*']`** is supported but discouraged for automation):
+
+| Ability | Routes |
+|---|---|
+| `pixelkraft:sites:read` | `GET /api/v1/sites`, `GET /api/v1/sites/{site}`, pages, deploys, analytics, releases, git-operations |
+| `pixelkraft:sites:sync` | `POST /api/v1/sites/{site}/sync` |
+| `pixelkraft:sites:deploy` | `POST /api/v1/sites/{site}/deploy` |
+| `pixelkraft:sites:rollback` | `POST /api/v1/sites/{site}/rollback/{logId}` |
+| `pixelkraft:notifications:read` | `GET /api/v1/notifications` |
+| `pixelkraft:notifications:write` | `POST /api/v1/notifications/{id}/read`, `POST /api/v1/notifications/read-all` |
+
+Example (Artisan tinker or your own admin UI): create a token with `['pixelkraft:sites:read', 'pixelkraft:sites:deploy']` for a read-only dashboard plus deploy from CI.
+
+---
+
 ## Public contact forms API
 
 Sites can accept **anonymous** form posts from the marketing site or static pages.
@@ -391,6 +410,7 @@ Before going live, verify:
 - [ ] `SESSION_DRIVER=redis`
 - [ ] `QUEUE_CONNECTION=redis`
 - [ ] All encrypted fields use a strong `APP_KEY` (`php artisan key:generate`)
+- [ ] Sanctum **personal access tokens** for `/api/v1` use **narrow abilities** (avoid `*` in production except break-glass tokens)
 - [ ] `/horizon` dashboard is protected (`web` + `auth` middleware; **admin-only** by default — `HorizonServiceProvider` gate; optional `HORIZON_ALLOW_LOCAL_BYPASS=true` restores Laravel’s “any authenticated user in `local`” behavior)
 - [ ] Nginx TLS configured with certificate via Let's Encrypt / Certbot
 - [ ] `storage/` and `bootstrap/cache/` are writable by `www-data` only

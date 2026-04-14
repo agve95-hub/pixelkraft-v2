@@ -50,7 +50,7 @@ class ApiSiteSyncDeployTest extends TestCase
         $mock->shouldReceive('isCloned')->once()->with(Mockery::on(fn ($s) => $s->is($site)))->andReturn(false);
         $this->app->instance(GitSyncService::class, $mock);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson("/api/v1/sites/{$site->id}/sync")
             ->assertOk()
@@ -84,7 +84,7 @@ class ApiSiteSyncDeployTest extends TestCase
         $mock->shouldReceive('isCloned')->once()->andReturn(true);
         $this->app->instance(GitSyncService::class, $mock);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson("/api/v1/sites/{$site->id}/sync")->assertOk();
 
@@ -112,7 +112,7 @@ class ApiSiteSyncDeployTest extends TestCase
             'project_type' => 'static_html',
         ]);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson("/api/v1/sites/{$site->id}/deploy")
             ->assertOk()
@@ -151,7 +151,7 @@ class ApiSiteSyncDeployTest extends TestCase
             'created_at' => now(),
         ]);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson("/api/v1/sites/{$site->id}/rollback/{$log->id}")
             ->assertStatus(400)

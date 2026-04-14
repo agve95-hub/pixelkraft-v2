@@ -62,7 +62,7 @@ class NotificationApiTest extends TestCase
             'created_at' => now(),
         ]);
 
-        Sanctum::actingAs($alice);
+        Sanctum::actingAs($alice, ['*']);
 
         $data = $this->getJson('/api/v1/notifications')->assertOk()->json('data');
         $this->assertCount(1, $data);
@@ -94,7 +94,7 @@ class NotificationApiTest extends TestCase
             'created_at' => now(),
         ]);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->postJson("/api/v1/notifications/{$n->id}/read")
             ->assertOk()
@@ -151,7 +151,7 @@ class NotificationApiTest extends TestCase
             'created_at' => now(),
         ]);
 
-        Sanctum::actingAs($alice);
+        Sanctum::actingAs($alice, ['*']);
 
         $this->postJson('/api/v1/notifications/read-all')->assertOk();
 
