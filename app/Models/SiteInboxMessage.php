@@ -77,7 +77,7 @@ class SiteInboxMessage extends Model
 
     public static function bodyFromFormPayload(array $data): string
     {
-        foreach (['message', 'body', 'content', 'comments', 'details'] as $key) {
+        foreach (['message', 'body', 'content', 'inquiry', 'comments', 'details'] as $key) {
             if (! empty($data[$key]) && is_string($data[$key])) {
                 return trim($data[$key]);
             }

@@ -71,6 +71,58 @@ class FormSubmissionControllerTest extends TestCase
         );
     }
 
+    public function test_extended_contact_fields_are_stored_and_used_for_inbox(): void
+    {
+        $site = Site::create([
+            'name' => 'Extended Form Site',
+            'slug' => 'extended-form-site',
+            'repo_url' => 'https://github.com/example/ext.git',
+            'branch' => 'main',
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/forms/extended-form-site', [
+            '_form_name' => 'lead',
+            'first_name' => 'Pat',
+            'last_name' => 'Lee',
+            'email' => 'pat@example.com',
+            'company' => 'Acme Co',
+            'phone' => '+15551234567',
+            'inquiry' => 'We need a quote for a new site.',
+            'department' => 'sales',
+        ])->assertCreated();
+
+        $submission = FormSubmission::query()->where('site_id', $site->id)->firstOrFail();
+        $stored = $submission->data;
+        $this->assertSame('Pat', $stored['first_name']);
+        $this->assertSame('Acme Co', $stored['company']);
+        $this->assertStringContainsString('quote', $stored['inquiry']);
+
+        $inbox = SiteInboxMessage::query()->where('site_id', $site->id)->where('source', 'form')->firstOrFail();
+        $this->assertSame('Pat Lee', $inbox->from_name);
+        $this->assertStringContainsString('We need a quote', $inbox->body);
+    }
+
+    public function test_unknown_form_fields_are_not_persisted(): void
+    {
+        $site = Site::create([
+            'name' => 'Strict Site',
+            'slug' => 'strict-form-site',
+            'repo_url' => 'https://github.com/example/strict.git',
+            'branch' => 'main',
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/forms/strict-form-site', [
+            'message' => 'Hi',
+            'extra_field' => 'should not be stored',
+        ])->assertCreated();
+
+        $submission = FormSubmission::query()->where('site_id', $site->id)->firstOrFail();
+        $this->assertArrayNotHasKey('extra_field', $submission->data);
+        $this->assertSame('Hi', $submission->data['message']);
+    }
+
     public function test_honeypot_marks_spam_and_skips_inbox(): void
     {
         $site = Site::create([

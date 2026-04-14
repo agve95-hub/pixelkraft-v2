@@ -39,15 +39,22 @@ class FormSubmissionController extends Controller
             '_hp' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'name' => ['nullable', 'string', 'max:255'],
+            'first_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
             'message' => ['nullable', 'string', 'max:10000'],
             'body' => ['nullable', 'string', 'max:10000'],
             'content' => ['nullable', 'string', 'max:10000'],
+            'inquiry' => ['nullable', 'string', 'max:10000'],
             'subject' => ['nullable', 'string', 'max:200'],
             'title' => ['nullable', 'string', 'max:200'],
             'topic' => ['nullable', 'string', 'max:200'],
             'comments' => ['nullable', 'string', 'max:10000'],
             'details' => ['nullable', 'string', 'max:10000'],
             'phone' => ['nullable', 'string', 'max:50'],
+            'company' => ['nullable', 'string', 'max:255'],
+            'website' => ['nullable', 'string', 'max:500'],
+            'url' => ['nullable', 'string', 'max:500'],
+            'department' => ['nullable', 'string', 'max:100'],
         ]);
 
         $data = [];
@@ -56,15 +63,22 @@ class FormSubmissionController extends Controller
             '_hp',
             'email',
             'name',
+            'first_name',
+            'last_name',
             'message',
             'body',
             'content',
+            'inquiry',
             'subject',
             'title',
             'topic',
             'comments',
             'details',
             'phone',
+            'company',
+            'website',
+            'url',
+            'department',
         ] as $key) {
             if (! array_key_exists($key, $validated)) {
                 continue;
@@ -103,6 +117,10 @@ class FormSubmissionController extends Controller
             $fromName = null;
             if (! empty($data['name']) && is_string($data['name'])) {
                 $fromName = trim($data['name']);
+            } elseif (! empty($data['first_name']) || ! empty($data['last_name'])) {
+                $fromName = trim(
+                    trim((string) ($data['first_name'] ?? '')).' '.trim((string) ($data['last_name'] ?? ''))
+                );
             } elseif ($fromEmail) {
                 $fromName = explode('@', $fromEmail)[0];
             }
@@ -138,10 +156,17 @@ class FormSubmissionController extends Controller
             return true;
         }
 
-        // Check for common spam patterns in message body
-        $body = $data['message'] ?? $data['body'] ?? $data['content'] ?? '';
+        // Check for common spam patterns in free-text fields
+        $body = implode("\n", array_filter([
+            $data['message'] ?? null,
+            $data['body'] ?? null,
+            $data['content'] ?? null,
+            $data['inquiry'] ?? null,
+            $data['comments'] ?? null,
+            $data['details'] ?? null,
+        ], fn ($v) => is_string($v) && $v !== ''));
 
-        if (is_string($body)) {
+        if ($body !== '') {
             $spamPatterns = [
                 '/\b(viagra|casino|crypto|click here|buy now|free money)\b/i',
                 '/(http[s]?:\/\/){3,}/i', // More than 2 URLs
