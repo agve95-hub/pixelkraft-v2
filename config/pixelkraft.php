@@ -182,4 +182,41 @@ return [
     'inbox_inbound_secret' => env('INBOX_INBOUND_SECRET'),
     'inbox_inbound_require_secret' => env('INBOX_INBOUND_REQUIRE_SECRET', env('APP_ENV', 'production') !== 'local'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Public form submissions (/api/forms/{slug})
+    |--------------------------------------------------------------------------
+    |
+    | Keys under '*' are the global maximum: only these may appear in stored
+    | payload (after validation). Optional keys named like the _form_name
+    | value restrict to a subset of '*' for that form. Unknown form names use
+    | '*' only. Values must be a subset of the built-in field list; anything
+    | else is ignored. An empty per-form list falls back to '*'.
+    |
+    */
+    'form_submission_allowed_fields' => [
+        '*' => [
+            '_hp',
+            'email',
+            'name',
+            'first_name',
+            'last_name',
+            'message',
+            'body',
+            'content',
+            'inquiry',
+            'subject',
+            'title',
+            'topic',
+            'comments',
+            'details',
+            'phone',
+            'company',
+            'website',
+            'url',
+            'department',
+            'to_email',
+        ],
+    ],
+
 ];

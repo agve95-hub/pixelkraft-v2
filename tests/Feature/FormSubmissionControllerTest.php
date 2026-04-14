@@ -123,6 +123,46 @@ class FormSubmissionControllerTest extends TestCase
         $this->assertSame('Hi', $submission->data['message']);
     }
 
+    public function test_per_form_config_strips_fields_not_in_subset(): void
+    {
+        config([
+            'pixelkraft.form_submission_allowed_fields' => [
+                '*' => [
+                    'email',
+                    'name',
+                    'message',
+                    'company',
+                    'phone',
+                ],
+                'minimal' => ['email', 'message'],
+            ],
+        ]);
+
+        $site = Site::create([
+            'name' => 'Subset Site',
+            'slug' => 'subset-form-site',
+            'repo_url' => 'https://github.com/example/subset.git',
+            'branch' => 'main',
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/forms/subset-form-site', [
+            '_form_name' => 'minimal',
+            'email' => 'x@example.com',
+            'name' => 'Should Drop',
+            'message' => 'Only this and email.',
+            'company' => 'Also drop',
+        ])->assertCreated();
+
+        $submission = FormSubmission::query()->where('site_id', $site->id)->firstOrFail();
+        $stored = $submission->data;
+        $this->assertSame('minimal', $submission->form_name);
+        $this->assertSame('x@example.com', $stored['email']);
+        $this->assertSame('Only this and email.', $stored['message']);
+        $this->assertArrayNotHasKey('name', $stored);
+        $this->assertArrayNotHasKey('company', $stored);
+    }
+
     public function test_to_email_is_stored_on_inbox_when_provided(): void
     {
         $site = Site::create([
