@@ -4,6 +4,7 @@ namespace App\Livewire\Sites;
 
 use App\Jobs\CloneRepoJob;
 use App\Models\Site;
+use App\Rules\GitRemoteUrl;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -97,12 +98,17 @@ class SiteManager extends Component
             'billingCycle' => 'nullable|string|in:monthly,quarterly,yearly',
             'monthlyRetainer' => 'nullable|numeric|min:0',
 
-            'repoUrl' => 'required|url',
-            'branch' => 'required|string|max:100',
-            'buildCommand' => 'nullable|string|max:500',
+            // Restrict to known git hosting providers to prevent GitHub token exfiltration
+            // via a crafted repo URL pointing to an attacker-controlled host.
+            'repoUrl' => ['required', 'string', 'max:500', new GitRemoteUrl],
+            // Branch: same strict regex as SiteSettings to prevent injection.
+            'branch' => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9\-._\/]*$/'],
+            // Build command: disallow shell injection metacharacters (; | ` $ < >) and newlines.
+            'buildCommand' => ['nullable', 'string', 'max:500', 'not_regex:/[;|`\$<>\r\n]/'],
             'githubToken' => 'nullable|string|max:500',
 
-            'domain' => 'nullable|string|max:255',
+            // Hostname: letters, digits, dots, hyphens only; no newlines or shell chars.
+            'domain' => ['nullable', 'string', 'max:253', 'regex:/^[a-zA-Z0-9*][a-zA-Z0-9.\-*]*$/'],
             'sslProvider' => 'nullable|string|in:letsencrypt,cloudflare,custom,none',
             'dnsProvider' => 'nullable|string|max:255',
 
@@ -119,7 +125,8 @@ class SiteManager extends Component
             'smtpPassword' => 'nullable|string|max:500',
 
             'hostingProvider' => 'nullable|string|max:255',
-            'sshHost' => 'nullable|string|max:255',
+            // sshHost: reject newlines to prevent header/command injection.
+            'sshHost' => ['nullable', 'string', 'max:255', 'not_regex:/[\r\n]/'],
             'ftpSshUser' => 'nullable|string|max:255',
             'ftpSshPassword' => 'nullable|string|max:500',
         ];

@@ -66,6 +66,10 @@ class FileManager extends Component
             return;
         }
 
+        // Cap editable file size at 2 MB to prevent unbounded DB/memory usage
+        // from oversized Livewire property payloads.
+        $this->validate(['fileContent' => 'nullable|string|max:2097152']);
+
         $site = SiteAccess::findOrFail($this->siteId);
         $this->viewingFile = $this->normalizeRelativePath($this->viewingFile);
         $fullPath = $this->resolvePathWithinRepo($site, $this->viewingFile);
