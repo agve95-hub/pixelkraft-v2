@@ -369,6 +369,7 @@ Submissions matching simple patterns (e.g. obvious spam phrases or many URLs in 
 | `monitoring.webhook_deliveries_retention_days` | `30` | `WEBHOOK_DELIVERIES_RETENTION_DAYS` — age of `webhook_deliveries` rows kept before prune |
 | `runtime.port_start` | `4100` | First port for runtime Node.js sites |
 | `runtime.startup_timeout_seconds` | `30` | Wait time for Node.js server to start |
+| `horizon.allow_local_bypass` | `false` | `HORIZON_ALLOW_LOCAL_BYPASS` — when `true` and `APP_ENV=local`, any logged-in user may open Horizon (Laravel default); keep `false` for admin-only everywhere |
 
 ---
 
@@ -384,7 +385,7 @@ Before going live, verify:
 - [ ] `SESSION_DRIVER=redis`
 - [ ] `QUEUE_CONNECTION=redis`
 - [ ] All encrypted fields use a strong `APP_KEY` (`php artisan key:generate`)
-- [ ] `/horizon` dashboard is protected (`web` + `auth` middleware; **admin-only** outside `local` — `HorizonServiceProvider` gate; in `local`, Horizon allows access for developer convenience)
+- [ ] `/horizon` dashboard is protected (`web` + `auth` middleware; **admin-only** by default — `HorizonServiceProvider` gate; optional `HORIZON_ALLOW_LOCAL_BYPASS=true` restores Laravel’s “any authenticated user in `local`” behavior)
 - [ ] Nginx TLS configured with certificate via Let's Encrypt / Certbot
 - [ ] `storage/` and `bootstrap/cache/` are writable by `www-data` only
 - [ ] PHP `expose_php = Off` in `php.ini`

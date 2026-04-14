@@ -31,6 +31,50 @@ class HorizonAccessTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_non_admin_forbidden_in_local_when_local_bypass_disabled(): void
+    {
+        $originalEnv = app()['env'] ?? null;
+        config(['horizon.allow_local_bypass' => false]);
+        app()->instance('env', 'local');
+
+        try {
+            $user = User::create([
+                'name' => 'Local Editor',
+                'email' => 'local-editor@example.com',
+                'password' => Hash::make('password'),
+                'role' => 'editor',
+            ]);
+
+            $this->actingAs($user)
+                ->get(route('horizon.index'))
+                ->assertForbidden();
+        } finally {
+            app()->instance('env', $originalEnv);
+        }
+    }
+
+    public function test_non_admin_allowed_in_local_when_local_bypass_enabled(): void
+    {
+        $originalEnv = app()['env'] ?? null;
+        config(['horizon.allow_local_bypass' => true]);
+        app()->instance('env', 'local');
+
+        try {
+            $user = User::create([
+                'name' => 'Bypass Editor',
+                'email' => 'bypass-editor@example.com',
+                'password' => Hash::make('password'),
+                'role' => 'editor',
+            ]);
+
+            $this->actingAs($user)
+                ->get(route('horizon.index'))
+                ->assertOk();
+        } finally {
+            app()->instance('env', $originalEnv);
+        }
+    }
+
     public function test_admin_can_open_horizon_dashboard(): void
     {
         $user = User::create([
