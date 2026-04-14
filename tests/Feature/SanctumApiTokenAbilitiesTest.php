@@ -31,7 +31,7 @@ class SanctumApiTokenAbilitiesTest extends TestCase
             'project_type' => 'static_html',
         ]);
 
-        $plain = $user->createToken('ci', ['pixelkraft:sites:read'])->plainTextToken;
+        $plain = $user->createToken('ci-read-'.uniqid('', true), ['pixelkraft:sites:read'])->plainTextToken;
 
         $this->withToken($plain)
             ->postJson("/api/v1/sites/{$site->id}/deploy")
@@ -58,7 +58,7 @@ class SanctumApiTokenAbilitiesTest extends TestCase
             'project_type' => 'static_html',
         ]);
 
-        $plain = $user->createToken('ci', ['pixelkraft:sites:deploy'])->plainTextToken;
+        $plain = $user->createToken('ci-deploy-'.uniqid('', true), ['pixelkraft:sites:deploy'])->plainTextToken;
 
         $this->withToken($plain)
             ->postJson("/api/v1/sites/{$site->id}/deploy")
@@ -85,7 +85,7 @@ class SanctumApiTokenAbilitiesTest extends TestCase
             'project_type' => 'static_html',
         ]);
 
-        $plain = $user->createToken('ci', ['*'])->plainTextToken;
+        $plain = $user->createToken('ci-star-'.uniqid('', true), ['*'])->plainTextToken;
 
         $this->withToken($plain)
             ->postJson("/api/v1/sites/{$site->id}/deploy")
