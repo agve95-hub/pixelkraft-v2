@@ -351,7 +351,7 @@ Before going live, verify:
 - [ ] `SESSION_DRIVER=redis`
 - [ ] `QUEUE_CONNECTION=redis`
 - [ ] All encrypted fields use a strong `APP_KEY` (`php artisan key:generate`)
-- [ ] `/horizon` dashboard is protected (auth middleware — admin users only)
+- [ ] `/horizon` dashboard is protected (`web` + `auth` middleware; **admin-only** outside `local` — `HorizonServiceProvider` gate; in `local`, Horizon allows access for developer convenience)
 - [ ] Nginx TLS configured with certificate via Let's Encrypt / Certbot
 - [ ] `storage/` and `bootstrap/cache/` are writable by `www-data` only
 - [ ] PHP `expose_php = Off` in `php.ini`
