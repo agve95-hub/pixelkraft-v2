@@ -164,10 +164,8 @@ class WebhookController extends Controller
                 'repository' => $repository,
                 'site_id' => $site?->id,
                 'status' => 'received',
-                'headers' => collect($request->headers->all())
-                    ->map(fn ($value) => is_array($value) ? implode(', ', $value) : (string) $value)
-                    ->all(),
-                'payload' => $request->all(),
+                'headers' => $this->sanitizedWebhookHeaders($request),
+                'payload' => $this->minimalGithubWebhookPayload($request->all()),
                 'received_at' => now(),
             ]);
 
@@ -185,5 +183,56 @@ class WebhookController extends Controller
 
             throw $e;
         }
+    }
+
+    /**
+     * Store only non-sensitive headers useful for debugging (no signatures or auth).
+     *
+     * @return array<string, string>
+     */
+    private function sanitizedWebhookHeaders(Request $request): array
+    {
+        $all = collect($request->headers->all())
+            ->map(fn ($value) => is_array($value) ? implode(', ', $value) : (string) $value);
+
+        $keep = ['x-github-event', 'x-github-delivery', 'user-agent', 'content-type', 'accept'];
+
+        return $all->only($keep)->all();
+    }
+
+    /**
+     * Persist a minimal push payload for dedupe / audit — not the full GitHub JSON
+     * (which can contain emails, tokens in commit messages, etc.).
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function minimalGithubWebhookPayload(array $payload): array
+    {
+        $head = is_array($payload['head_commit'] ?? null) ? $payload['head_commit'] : [];
+        $message = isset($head['message']) && is_string($head['message'])
+            ? mb_substr($head['message'], 0, 500)
+            : null;
+
+        return [
+            'ref' => $payload['ref'] ?? null,
+            'before' => $payload['before'] ?? null,
+            'after' => $payload['after'] ?? null,
+            'repository' => [
+                'full_name' => is_array($payload['repository'] ?? null)
+                    ? ($payload['repository']['full_name'] ?? null)
+                    : null,
+            ],
+            'pusher' => [
+                'name' => is_array($payload['pusher'] ?? null)
+                    ? ($payload['pusher']['name'] ?? null)
+                    : null,
+            ],
+            'head_commit' => [
+                'id' => $head['id'] ?? null,
+                'timestamp' => $head['timestamp'] ?? null,
+                'message' => $message,
+            ],
+        ];
     }
 }
