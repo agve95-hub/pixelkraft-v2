@@ -3,6 +3,7 @@
 namespace App\Livewire\Sites;
 
 use App\Jobs\SyncAnalyticsJob;
+use App\Rules\PublicUrl;
 use App\Services\SiteProvisioningService;
 use App\Services\SiteRuntimeService;
 use App\Services\SiteSupportService;
@@ -111,7 +112,8 @@ class SiteSettings extends Component
             // Deploy path must be an absolute filesystem path; no newlines.
             'deployPath' => ['nullable', 'string', 'max:255', 'regex:/^\//', 'not_regex:/[\r\n;{}]/'],
             'sshHost' => ['nullable', 'string', 'max:255', 'not_regex:/[\r\n]/'],
-            'healthCheckUrl' => 'nullable|url|max:500',
+            // Health check URL must be a publicly routable http/https URL (no private/loopback IPs).
+            'healthCheckUrl' => ['nullable', 'string', 'max:500', new PublicUrl],
             'releaseStrategy' => 'required|in:symlink,replace,runtime',
             'deployOnWebhook' => 'boolean',
             'trackingEnabled' => 'boolean',

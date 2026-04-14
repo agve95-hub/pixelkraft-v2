@@ -74,8 +74,9 @@ class Site extends Model
         'nginx_conf_path',
         'deploy_path',
         'repo_path',
-        'pre_deploy_hook',
-        'post_deploy_hook',
+        // pre_deploy_hook and post_deploy_hook are intentionally excluded from $fillable.
+        // They are shell command strings that are not yet executed — keeping them out of
+        // $fillable prevents any accidental mass-assignment from API or Livewire requests.
         'maintenance_settings',
         'is_active',
     ];

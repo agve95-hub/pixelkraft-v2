@@ -39,9 +39,14 @@ Schedule::command('pixelkraft:check-ssl')
 
 // ── Backups ─────────────────────────────────────
 
-// Database backup daily at 2am
-Schedule::command('pixelkraft:backup-database')
+// Full database backup daily at 2am via spatie/laravel-backup.
+Schedule::command('backup:run --only-db')
     ->dailyAt('02:00')
+    ->withoutOverlapping();
+
+// Clean up old backups according to the retention policy in config/backup.php.
+Schedule::command('backup:clean')
+    ->dailyAt('02:30')
     ->withoutOverlapping();
 
 // ── Content ─────────────────────────────────────

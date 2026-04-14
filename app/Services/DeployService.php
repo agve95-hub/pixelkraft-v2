@@ -689,6 +689,32 @@ class DeployService
             return;
         }
 
+        // Defence-in-depth: ensure the stored URL is still a public http(s) endpoint.
+        // This catches any URLs that bypassed validation (e.g., stored before the rule existed).
+        $scheme = strtolower((string) parse_url($target->health_check_url, PHP_URL_SCHEME));
+        if (! in_array($scheme, ['http', 'https'], true)) {
+            $log->appendLog('  Health check skipped: URL scheme must be http or https.');
+
+            return;
+        }
+
+        $host = (string) parse_url($target->health_check_url, PHP_URL_HOST);
+        if ($host !== '') {
+            // Resolve hostname → IP; if host is already an IP use it directly.
+            if (filter_var($host, FILTER_VALIDATE_IP)) {
+                $ip = $host;
+            } else {
+                $resolved = gethostbyname($host);
+                $ip = ($resolved !== $host) ? $resolved : null;
+            }
+
+            if ($ip !== null && ! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                $log->appendLog('  Health check skipped: URL resolves to a private or reserved IP address.');
+
+                return;
+            }
+        }
+
         try {
             $response = Http::timeout(15)
                 ->withOptions(['http_errors' => false])
