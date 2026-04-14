@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DeployStatus;
 use App\Jobs\ParseSiteJob;
 use App\Models\DeployLog;
 use App\Models\DeploymentRelease;
@@ -65,7 +66,7 @@ class DeployService
 
         $release = $this->startRelease($site, $log, $target);
 
-        $site->update(['deploy_status' => 'queued']);
+        $site->update(['deploy_status' => DeployStatus::Queued]);
         $log->appendLog('Deploy pipeline queued.');
 
         return [
@@ -77,7 +78,7 @@ class DeployService
 
     public function provisionEnvironment(Site $site, DeployLog $log, DeploymentRelease $release): void
     {
-        $site->update(['deploy_status' => 'building']);
+        $site->update(['deploy_status' => DeployStatus::Building]);
 
         $target = $release->deploymentTarget()->first() ?: $this->resolveTarget($site, 'production');
 
@@ -141,7 +142,7 @@ class DeployService
 
     public function activateRelease(Site $site, DeployLog $log, DeploymentRelease $release): void
     {
-        $site->update(['deploy_status' => 'deploying']);
+        $site->update(['deploy_status' => DeployStatus::Deploying]);
 
         $target = $release->deploymentTarget()->first() ?: $this->resolveTarget($site, 'production');
         $adapter = $this->adapterFor($site);
@@ -168,7 +169,7 @@ class DeployService
         ]);
 
         $site->update([
-            'deploy_status' => 'live',
+            'deploy_status' => DeployStatus::Live,
             'last_deployed_at' => now(),
         ]);
 
@@ -216,7 +217,7 @@ class DeployService
             ]);
         }
 
-        $site->update(['deploy_status' => 'failed']);
+        $site->update(['deploy_status' => DeployStatus::Failed]);
 
         Log::error("Deploy failed for [{$site->slug}]", [
             'error' => $message,
@@ -239,7 +240,7 @@ class DeployService
         ]);
 
         try {
-            $site->update(['deploy_status' => 'deploying']);
+            $site->update(['deploy_status' => DeployStatus::Deploying]);
             $target = $this->resolveTarget($site, 'production');
             $rollbackSourceReleaseId = $site->deploymentReleases()
                 ->where('source_commit_sha', $targetDeploy->commit_sha)
@@ -271,7 +272,7 @@ class DeployService
             ]);
 
             $site->update([
-                'deploy_status' => 'live',
+                'deploy_status' => DeployStatus::Live,
                 'last_deployed_at' => now(),
             ]);
             $this->completeRelease($site, $release, $target, $targetDeploy->commit_sha, $release->rollback_of_release_id);

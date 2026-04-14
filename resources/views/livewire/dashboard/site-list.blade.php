@@ -35,12 +35,12 @@
                     <flux:table.cell class="font-mono text-xs">{{ $site->domain ?? '—' }}</flux:table.cell>
                     <flux:table.cell><flux:badge size="sm" color="purple">{{ $site->project_type }}</flux:badge></flux:table.cell>
                     <flux:table.cell>
-                        @if ($site->deploy_status === 'live')
+                        @if ($site->deploy_status === \App\Enums\DeployStatus::Live)
                             <flux:badge size="sm" color="lime">Live</flux:badge>
-                        @elseif ($site->deploy_status === 'failed')
+                        @elseif ($site->deploy_status === \App\Enums\DeployStatus::Failed)
                             <flux:badge size="sm" color="red">Failed</flux:badge>
                         @else
-                            <flux:badge size="sm" color="zinc">{{ ucfirst($site->deploy_status ?? 'idle') }}</flux:badge>
+                            <flux:badge size="sm" color="zinc">{{ $site->status }}</flux:badge>
                         @endif
                     </flux:table.cell>
                     <flux:table.cell class="text-xs">{{ $site->last_deployed_at?->diffForHumans() ?? 'Never' }}</flux:table.cell>

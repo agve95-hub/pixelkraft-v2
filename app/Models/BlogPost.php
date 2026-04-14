@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BlogPostStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -36,6 +37,7 @@ class BlogPost extends Model
             'schema_json' => 'array',
             'published_at' => 'datetime',
             'scheduled_at' => 'datetime',
+            'status'       => BlogPostStatus::class,
         ];
     }
 
@@ -51,17 +53,17 @@ class BlogPost extends Model
 
     public function isPublished(): bool
     {
-        return $this->status === 'published';
+        return $this->status === BlogPostStatus::Published;
     }
 
     public function isScheduled(): bool
     {
-        return $this->status === 'scheduled' && $this->scheduled_at?->isFuture();
+        return $this->status === BlogPostStatus::Scheduled && $this->scheduled_at?->isFuture();
     }
 
     public function shouldPublish(): bool
     {
-        return $this->status === 'scheduled'
+        return $this->status === BlogPostStatus::Scheduled
             && $this->scheduled_at
             && $this->scheduled_at->isPast();
     }

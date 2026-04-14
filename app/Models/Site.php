@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DeployStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -102,6 +103,7 @@ class Site extends Model
             'maintenance_settings' => 'array',
             'is_active' => 'boolean',
             'deploy_on_webhook' => 'boolean',
+            'deploy_status'     => DeployStatus::class,
         ];
     }
 
@@ -118,14 +120,8 @@ class Site extends Model
     protected function status(): Attribute
     {
         return Attribute::get(function () {
-            return match ((string) $this->deploy_status) {
-                'live' => 'Live',
-                'failed' => 'Failed',
-                'building' => 'Building',
-                'deploying' => 'Deploying',
-                'idle' => 'Idle',
-                default => Str::title((string) ($this->deploy_status ?: 'Draft')),
-            };
+            return $this->deploy_status?->label()
+                ?? Str::title((string) ($this->getRawOriginal('deploy_status') ?: 'Draft'));
         });
     }
 
@@ -216,7 +212,7 @@ class Site extends Model
 
     public function isLive(): bool
     {
-        return $this->deploy_status === 'live';
+        return $this->deploy_status === DeployStatus::Live;
     }
 
     public function needsBuild(): bool

@@ -2,18 +2,10 @@
     <x-slot:title>{{ $site->name }}</x-slot:title>
 
     @php
-        $shouldAutoRefresh = is_null($site->last_synced_at) || in_array($site->deploy_status, ['building', 'deploying', 'queued'], true);
+        $shouldAutoRefresh = is_null($site->last_synced_at) || $site->deploy_status?->isActive();
 
-        $deployStatus = (string) $site->deploy_status;
-        $deployStatusLabel = match ($deployStatus) {
-            'live' => 'Live',
-            'building' => 'Building',
-            'deploying' => 'Deploying',
-            'queued' => 'Queued',
-            'failed' => 'Failed',
-            default => 'Idle',
-        };
-
+        $deployStatus = $site->deploy_status?->value ?? 'draft';
+        $deployStatusLabel = $site->status; // computed attribute on Site model
         $deployStatusClasses = match ($deployStatus) {
             'live' => 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25',
             'building', 'deploying', 'queued' => 'bg-amber-500/15 text-amber-300 border-amber-500/25',

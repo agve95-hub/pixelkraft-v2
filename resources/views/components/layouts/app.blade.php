@@ -85,10 +85,10 @@
                         <x-slot:icon>
                             <span @class([
                                 'size-2 rounded-full shrink-0',
-                                'bg-emerald-400' => $navSite->deploy_status === 'live',
-                                'bg-amber-400' => in_array($navSite->deploy_status, ['deploying', 'queued']),
-                                'bg-red-500' => $navSite->deploy_status === 'failed',
-                                'bg-zinc-500' => !in_array($navSite->deploy_status, ['live', 'deploying', 'queued', 'failed']),
+                                'bg-emerald-400' => $navSite->deploy_status === \App\Enums\DeployStatus::Live,
+                                'bg-amber-400' => in_array($navSite->deploy_status, [\App\Enums\DeployStatus::Deploying, \App\Enums\DeployStatus::Queued]),
+                                'bg-red-500' => $navSite->deploy_status === \App\Enums\DeployStatus::Failed,
+                                'bg-zinc-500' => !in_array($navSite->deploy_status, [\App\Enums\DeployStatus::Live, \App\Enums\DeployStatus::Deploying, \App\Enums\DeployStatus::Queued, \App\Enums\DeployStatus::Failed]),
                             ])></span>
                         </x-slot:icon>
                         {{ $navSite->name }}

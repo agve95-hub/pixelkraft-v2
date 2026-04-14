@@ -82,7 +82,7 @@ class BlogEditor extends Component
             $this->excerpt = $post->excerpt ?? '';
             $this->featuredImage = $post->featured_image ?? '';
             $this->tags = $post->tags ?? [];
-            $this->status = $post->status;
+            $this->status = $post->status->value;
             $this->scheduledAt = $post->scheduled_at?->format('Y-m-d\TH:i');
             $this->seoTitle = $post->seo_title ?? '';
             $this->seoDescription = $post->seo_description ?? '';

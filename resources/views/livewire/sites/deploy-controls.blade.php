@@ -1,21 +1,15 @@
 @php
-    $isDeploying = in_array($site->deploy_status, ['building', 'deploying'], true);
+    $isDeploying = $site->deploy_status?->isActive() ?? false;
 
-    $statusColor = match ((string) $site->deploy_status) {
+    $_ds = $site->deploy_status?->value ?? 'draft';
+    $statusColor = match ($_ds) {
         'live', 'success' => 'green',
         'building', 'deploying', 'queued' => 'yellow',
         'failed' => 'red',
         default => 'blue',
     };
 
-    $statusLabel = match ((string) $site->deploy_status) {
-        'building' => 'Building',
-        'deploying' => 'Deploying',
-        'queued' => 'Queued',
-        'failed' => 'Failed',
-        'live' => 'Live',
-        default => 'Idle',
-    };
+    $statusLabel = $site->status; // computed attribute on Site model
 
     $sslColor = match ((string) $site->ssl_status) {
         'active' => 'green',
