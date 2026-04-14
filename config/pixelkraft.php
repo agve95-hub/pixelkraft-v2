@@ -103,6 +103,10 @@ return [
          */
         'uptime_retention_days' => (int) env('UPTIME_RETENTION_DAYS', 30),
         'events_retention_days' => (int) env('EVENTS_RETENTION_DAYS', 90),
+        /**
+         * Webhook delivery audit rows (pruned weekly by `pixelkraft:prune-webhooks`).
+         */
+        'webhook_deliveries_retention_days' => (int) env('WEBHOOK_DELIVERIES_RETENTION_DAYS', 30),
     ],
 
     /*

@@ -8,14 +8,17 @@ use Illuminate\Console\Command;
 class PruneWebhooks extends Command
 {
     protected $signature = 'pixelkraft:prune-webhooks
-                            {--days=30 : Delete deliveries older than this many days}
+                            {--days= : Delete deliveries older than this many days (default: config pixelkraft.monitoring.webhook_deliveries_retention_days)}
                             {--dry-run : Report how many rows would be deleted without deleting}';
 
     protected $description = 'Delete old webhook_deliveries rows to cap table growth and retention.';
 
     public function handle(): int
     {
-        $days = max(1, (int) $this->option('days'));
+        $opt = $this->option('days');
+        $days = ($opt !== null && $opt !== '')
+            ? max(1, (int) $opt)
+            : max(1, (int) config('pixelkraft.monitoring.webhook_deliveries_retention_days', 30));
         $dryRun = (bool) $this->option('dry-run');
 
         $cutoff = now()->subDays($days);

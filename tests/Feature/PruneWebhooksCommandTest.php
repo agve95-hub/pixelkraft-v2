@@ -50,4 +50,21 @@ class PruneWebhooksCommandTest extends TestCase
 
         $this->assertDatabaseHas('webhook_deliveries', ['delivery_id' => 'dry-old']);
     }
+
+    public function test_prune_uses_config_default_when_days_omitted(): void
+    {
+        config(['pixelkraft.monitoring.webhook_deliveries_retention_days' => 10]);
+
+        WebhookDelivery::create([
+            'provider' => 'github',
+            'delivery_id' => 'cfg-old',
+            'event' => 'push',
+            'repository' => 'acme/cfg',
+            'received_at' => now()->subDays(20),
+        ]);
+
+        $this->artisan('pixelkraft:prune-webhooks')->assertSuccessful();
+
+        $this->assertDatabaseMissing('webhook_deliveries', ['delivery_id' => 'cfg-old']);
+    }
 }

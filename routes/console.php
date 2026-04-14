@@ -64,8 +64,10 @@ Schedule::command('pixelkraft:prune-monitoring')
     ->weeklyOn(0, '01:00')
     ->withoutOverlapping();
 
-// Prune webhook delivery audit rows weekly (Sunday 1:15am). Default 30 days.
-Schedule::command('pixelkraft:prune-webhooks')
+// Prune webhook delivery audit rows weekly (Sunday 1:15am).
+Schedule::command(
+    'pixelkraft:prune-webhooks --days='.(int) config('pixelkraft.monitoring.webhook_deliveries_retention_days', 30)
+)
     ->weeklyOn(0, '01:15')
     ->withoutOverlapping();
 

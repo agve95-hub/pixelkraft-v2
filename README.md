@@ -333,6 +333,7 @@ echo "✅ Deployment complete"
 | `deploy.build_timeout_seconds` | `300` | Max build command duration |
 | `deploy.rollback_snapshots` | `10` | How many rollback points to keep |
 | `monitoring.uptime_interval_minutes` | `5` | Uptime check frequency |
+| `monitoring.webhook_deliveries_retention_days` | `30` | `WEBHOOK_DELIVERIES_RETENTION_DAYS` — age of `webhook_deliveries` rows kept before prune |
 | `runtime.port_start` | `4100` | First port for runtime Node.js sites |
 | `runtime.startup_timeout_seconds` | `30` | Wait time for Node.js server to start |
 
