@@ -87,6 +87,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Local environment bypass (Horizon dashboard)
+    |--------------------------------------------------------------------------
+    |
+    | Laravel's default Horizon setup allows any authenticated user to open the
+    | dashboard when APP_ENV is "local". For production parity and safer laptops
+    | with APP_ENV=local, that bypass is off unless you set this to true.
+    |
+    */
+
+    'allow_local_bypass' => env('HORIZON_ALLOW_LOCAL_BYPASS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Wait Time Thresholds
     |--------------------------------------------------------------------------
     |

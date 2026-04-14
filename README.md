@@ -371,6 +371,12 @@ Submissions matching simple patterns (e.g. obvious spam phrases or many URLs in 
 | `runtime.startup_timeout_seconds` | `30` | Wait time for Node.js server to start |
 | `form_submission_allowed_fields` | Built-in list under `*` | Per-form subsets of allowed `/api/forms` payload keys (see **Public contact forms API**) |
 
+### `config/horizon.php`
+
+| Key | Default | Description |
+|---|---|---|
+| `allow_local_bypass` | `false` | `HORIZON_ALLOW_LOCAL_BYPASS` — when `true` and `APP_ENV=local`, any logged-in user may open Horizon (Laravel default); keep `false` for admin-only everywhere |
+
 ---
 
 ## Security Checklist for Production
@@ -385,7 +391,7 @@ Before going live, verify:
 - [ ] `SESSION_DRIVER=redis`
 - [ ] `QUEUE_CONNECTION=redis`
 - [ ] All encrypted fields use a strong `APP_KEY` (`php artisan key:generate`)
-- [ ] `/horizon` dashboard is protected (`web` + `auth` middleware; **admin-only** outside `local` — `HorizonServiceProvider` gate; in `local`, Horizon allows access for developer convenience)
+- [ ] `/horizon` dashboard is protected (`web` + `auth` middleware; **admin-only** by default — `HorizonServiceProvider` gate; optional `HORIZON_ALLOW_LOCAL_BYPASS=true` restores Laravel’s “any authenticated user in `local`” behavior)
 - [ ] Nginx TLS configured with certificate via Let's Encrypt / Certbot
 - [ ] `storage/` and `bootstrap/cache/` are writable by `www-data` only
 - [ ] PHP `expose_php = Off` in `php.ini`
