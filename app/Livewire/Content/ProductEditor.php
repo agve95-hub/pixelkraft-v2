@@ -25,7 +25,8 @@ class ProductEditor extends Component
 
     public string $imageInput = '';
 
-    public array $attributes = [];
+    /** @var array<string, string> Custom key/value fields (not Livewire HTML attributes). */
+    public array $productAttributes = [];
 
     public string $attrKey = '';
 
@@ -59,7 +60,7 @@ class ProductEditor extends Component
             $this->price = $product->price;
             $this->currency = $product->currency;
             $this->images = $product->images ?? [];
-            $this->attributes = $product->attributes ?? [];
+            $this->productAttributes = $product->attributes ?? [];
             $this->outputPath = $product->output_path ?? '';
             $this->status = $product->status;
         }
@@ -86,7 +87,7 @@ class ProductEditor extends Component
         $value = trim($this->attrValue);
 
         if ($key && $value) {
-            $this->attributes[$key] = $value;
+            $this->productAttributes[$key] = $value;
         }
 
         $this->attrKey = '';
@@ -95,7 +96,7 @@ class ProductEditor extends Component
 
     public function removeAttribute(string $key): void
     {
-        unset($this->attributes[$key]);
+        unset($this->productAttributes[$key]);
     }
 
     public function save(): void
@@ -110,7 +111,7 @@ class ProductEditor extends Component
             'price' => $this->price,
             'currency' => strtoupper($this->currency),
             'images' => $this->images,
-            'attributes' => $this->attributes,
+            'attributes' => $this->productAttributes,
             'output_path' => $this->outputPath ?: null,
             'status' => $this->status,
         ];

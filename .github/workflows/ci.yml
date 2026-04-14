@@ -53,6 +53,9 @@ jobs:
       - name: Run Pint
         run: vendor/bin/pint --test
 
+      - name: Run PHPStan
+        run: composer run phpstan
+
       - name: Run PHPUnit
         run: php artisan test
 

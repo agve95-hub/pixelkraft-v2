@@ -75,9 +75,9 @@
                 <input type="text" wire:model="attrValue" wire:keydown.enter.prevent="addAttribute" class="flux-input text-xs flex-1" placeholder="Value (e.g. Red)">
                 <button wire:click="addAttribute" class="flux-btn-secondary text-xs !py-1.5 !px-3">Add</button>
             </div>
-            @if (!empty($attributes))
+            @if (!empty($productAttributes))
                 <div class="space-y-1">
-                    @foreach ($attributes as $key => $value)
+                    @foreach ($productAttributes as $key => $value)
                         <div class="flex items-center justify-between rounded bg-zinc-800/40 px-3 py-1.5">
                             <span class="text-xs"><span class="text-zinc-400 font-medium">{{ $key }}:</span> <span class="text-zinc-300">{{ $value }}</span></span>
                             <button wire:click="removeAttribute('{{ $key }}')" class="text-xs text-zinc-600 hover:text-red-400">×</button>
