@@ -80,9 +80,23 @@ class DeployLog extends Model
             : round($seconds, 1).'s';
     }
 
+    /** Maximum bytes stored in output_log before the oldest lines are dropped. */
+    private const MAX_LOG_BYTES = 512 * 1024; // 512 KB
+
     public function appendLog(string $line): void
     {
-        $this->output_log = ($this->output_log ?? '').$line."\n";
+        $current = ($this->output_log ?? '').$line."\n";
+
+        if (strlen($current) > self::MAX_LOG_BYTES) {
+            // Keep the newest MAX_LOG_BYTES worth of content; prepend a notice.
+            $truncated = substr($current, -self::MAX_LOG_BYTES);
+            // Trim to next newline so we don't start mid-line.
+            $nl = strpos($truncated, "\n");
+            $truncated = $nl !== false ? substr($truncated, $nl + 1) : $truncated;
+            $current = "[...log truncated to last 512 KB...]\n".$truncated;
+        }
+
+        $this->output_log = $current;
         $this->save();
     }
 }

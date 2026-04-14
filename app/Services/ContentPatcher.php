@@ -43,6 +43,13 @@ class ContentPatcher
             throw new \RuntimeException("Source file not found: {$targetFile}");
         }
 
+        // Prevent path traversal: the resolved real path must remain inside the repo.
+        $realFull = realpath($fullPath);
+        $realRepo = realpath($repoPath);
+        if ($realFull === false || $realRepo === false || ! str_starts_with($realFull, $realRepo.DIRECTORY_SEPARATOR)) {
+            throw new \RuntimeException("Refusing to write outside of repository: {$targetFile}");
+        }
+
         $originalContent = File::get($fullPath);
         $changedFiles = [];
         $contentChanged = trim((string) $region->current_content) !== trim($newContent);
@@ -115,6 +122,13 @@ class ContentPatcher
         $fullPath = "{$site->repo_path}/{$targetFile}";
 
         if (! File::exists($fullPath)) {
+            return false;
+        }
+
+        // Reject paths that escape the repository root.
+        $realFull = realpath($fullPath);
+        $realRepo = realpath($site->repo_path);
+        if ($realFull === false || $realRepo === false || ! str_starts_with($realFull, $realRepo.DIRECTORY_SEPARATOR)) {
             return false;
         }
 

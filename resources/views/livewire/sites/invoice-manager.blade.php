@@ -450,7 +450,8 @@
                             Mark as paid
                         </flux:button>
                     @endif
-                    <flux:button type="button" size="sm" variant="subtle" onclick="window.pixelkraftPrintInvoice?.()">Print / PDF</flux:button>
+                    <flux:button type="button" size="sm" variant="subtle" onclick="window.pixelkraftPrintInvoice?.()">Print</flux:button>
+                    <flux:button href="{{ route('sites.invoices.pdf', [$site, $inv]) }}" size="sm" variant="subtle" icon="arrow-down-tray">Download PDF</flux:button>
                     <flux:button type="button" size="sm" variant="subtle" wire:click="duplicate">Duplicate</flux:button>
                 </div>
             </div>

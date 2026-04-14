@@ -28,11 +28,13 @@ class BackupDatabase extends Command
             mkdir(dirname($localPath), 0755, true);
         }
 
-        // Dump database
+        // Dump database — all arguments are shell-escaped to prevent injection.
         $result = Process::timeout(300)->run(
-            "mysqldump -h {$dbHost} -u {$dbUser}".
+            'mysqldump -h '.escapeshellarg($dbHost).
+            ' -u '.escapeshellarg($dbUser).
             ($dbPass ? ' -p'.escapeshellarg($dbPass) : '').
-            " {$dbName} | gzip > ".escapeshellarg($localPath)
+            ' '.escapeshellarg($dbName).
+            ' | gzip > '.escapeshellarg($localPath)
         );
 
         if (! $result->successful() || ! file_exists($localPath)) {

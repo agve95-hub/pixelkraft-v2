@@ -48,9 +48,18 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'sanctum.token.can', 'site.acce
     // Sites
     Route::get('/sites', [SiteController::class, 'index'])->name('api.v1.sites.index');
     Route::get('/sites/{site}', [SiteController::class, 'show'])->name('api.v1.sites.show');
-    Route::post('/sites/{site}/sync', [SiteController::class, 'sync'])->name('api.v1.sites.sync');
-    Route::post('/sites/{site}/deploy', [SiteController::class, 'deploy'])->name('api.v1.sites.deploy');
-    Route::post('/sites/{site}/rollback/{logId}', [SiteController::class, 'rollback'])->name('api.v1.sites.rollback');
+    // Sync: 10 per minute per user (prevents webhook-style hammering via API token)
+    Route::post('/sites/{site}/sync', [SiteController::class, 'sync'])
+        ->middleware('throttle:10,1')
+        ->name('api.v1.sites.sync');
+    // Deploy: 5 per minute per user (each dispatch queues a full build chain)
+    Route::post('/sites/{site}/deploy', [SiteController::class, 'deploy'])
+        ->middleware('throttle:5,1')
+        ->name('api.v1.sites.deploy');
+    // Rollback: 5 per minute per user
+    Route::post('/sites/{site}/rollback/{logId}', [SiteController::class, 'rollback'])
+        ->middleware('throttle:5,1')
+        ->name('api.v1.sites.rollback');
     Route::get('/sites/{site}/pages', [SiteController::class, 'pages'])->name('api.v1.sites.pages');
     Route::get('/sites/{site}/deploys', [SiteController::class, 'deploys'])->name('api.v1.sites.deploys');
     Route::get('/sites/{site}/analytics', [SiteController::class, 'analytics'])->name('api.v1.sites.analytics');

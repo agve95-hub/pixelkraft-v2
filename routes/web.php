@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Dashboard\SiteAnalyticsController;
 use App\Http\Controllers\EditorPreviewController;
+use App\Http\Controllers\InvoicePdfController;
 use App\Models\AnalyticsSnapshot;
 use App\Models\BlogPost;
 use App\Models\Notification;
@@ -155,6 +156,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         })->name('sites.show');
         Route::get('/sites/{site}/inbox', fn (Site $site) => view('dashboard.sites.inbox', ['site' => $site]))->name('sites.inbox');
         Route::get('/sites/{site}/invoices', fn (Site $site) => view('dashboard.sites.invoices', ['site' => $site]))->name('sites.invoices');
+        Route::get('/sites/{site}/invoices/{invoice}/pdf', InvoicePdfController::class)->name('sites.invoices.pdf');
         Route::get('/sites/{site}/expenses', fn (Site $site) => view('dashboard.sites.expenses', ['site' => $site]))->name('sites.expenses');
         Route::get('/sites/{site}/reminders', fn (Site $site) => view('dashboard.sites.reminders', ['site' => $site]))->name('sites.reminders');
         Route::get('/sites/{site}/reports', fn (Site $site) => view('dashboard.sites.reports', ['site' => $site]))->name('sites.reports');

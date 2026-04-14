@@ -398,6 +398,38 @@ class DeployService
         $log->appendLog('  Skipping HTML/JS minification and lazy-loading injection for framework-managed output.');
     }
 
+    /**
+     * Env var names that could be used to hijack the Node.js / shell runtime.
+     * User-supplied `env_variables` keys matching any of these are silently dropped
+     * before being passed to the build process.
+     *
+     * @var list<string>
+     */
+    public const DANGEROUS_ENV_VARS = [
+        // Node.js execution hooks
+        'NODE_OPTIONS',
+        'NODE_PATH',
+        'NODE_EXTRA_CA_CERTS',
+        // npm/pnpm/yarn/bun configuration redirects
+        'NPM_CONFIG_USERCONFIG',
+        'NPM_CONFIG_GLOBALCONFIG',
+        'NPM_CONFIG_PREFIX',
+        'PNPM_HOME',
+        'BUN_INSTALL',
+        // Dynamic linker injection (Linux/macOS)
+        'LD_PRELOAD',
+        'LD_LIBRARY_PATH',
+        'DYLD_INSERT_LIBRARIES',
+        'DYLD_LIBRARY_PATH',
+        // Shell override
+        'SHELL',
+        'IFS',
+        'ENV',
+        'BASH_ENV',
+        // PATH override — we set this ourselves below
+        'PATH',
+    ];
+
     private function runCommand(
         string $command,
         string $cwd,
@@ -408,12 +440,19 @@ class DeployService
         $nodeBinPath = str_replace('\\', '/', "{$cwd}/node_modules/.bin");
         $systemPath = getenv('PATH') ?: ($_SERVER['PATH'] ?? '');
 
+        // Strip any user-supplied env vars that could hijack the build runtime.
+        $siteEnv = array_filter(
+            (array) ($site->env_variables ?? []),
+            fn (string $key) => ! in_array(strtoupper($key), self::DANGEROUS_ENV_VARS, true),
+            ARRAY_FILTER_USE_KEY
+        );
+
         $env = array_merge(
             [
                 'NODE_ENV' => 'production',
                 'PATH' => $nodeBinPath.PATH_SEPARATOR.$systemPath,
             ],
-            $site->env_variables ?? [],
+            $siteEnv,
             $envOverrides,
         );
 
