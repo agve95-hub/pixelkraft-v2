@@ -41,6 +41,14 @@ class SiteController extends Controller
 
     public function sync(Site $site): JsonResponse
     {
+        if ($site->deploy_status?->isActive()) {
+            return response()->json([
+                'error' => 'conflict',
+                'message' => 'A deploy is currently in progress. Sync will run automatically once the deploy completes.',
+                'current_status' => $site->deploy_status->value,
+            ], 409);
+        }
+
         if (! app(GitSyncService::class)->isCloned($site)) {
             CloneRepoJob::dispatch($site);
 

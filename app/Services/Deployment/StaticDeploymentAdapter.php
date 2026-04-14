@@ -53,6 +53,19 @@ class StaticDeploymentAdapter implements DeploymentAdapter
 
         if ($site->build_output_dir) {
             $outputPath = "{$repoPath}/{$site->build_output_dir}";
+
+            // Defence-in-depth: reject traversal attempts that survived input validation.
+            $realRepo = realpath((string) $repoPath);
+            $realOutput = realpath($outputPath);
+            if (
+                $realRepo !== false
+                && $realOutput !== false
+                && ! str_starts_with($realOutput, $realRepo.DIRECTORY_SEPARATOR)
+                && $realOutput !== $realRepo
+            ) {
+                throw new \RuntimeException("Refusing to deploy from a directory outside of repository: {$site->build_output_dir}");
+            }
+
             if (File::isDirectory($outputPath)) {
                 return $outputPath;
             }
@@ -80,6 +93,19 @@ class StaticDeploymentAdapter implements DeploymentAdapter
 
         if ($configuredOutputDir && $configuredOutputDir !== '.next') {
             $configuredPath = "{$repoPath}/{$configuredOutputDir}";
+
+            // Defence-in-depth: reject traversal attempts that survived input validation.
+            $realRepo = realpath((string) $repoPath);
+            $realConfigured = realpath($configuredPath);
+            if (
+                $realRepo !== false
+                && $realConfigured !== false
+                && ! str_starts_with($realConfigured, $realRepo.DIRECTORY_SEPARATOR)
+                && $realConfigured !== $realRepo
+            ) {
+                throw new \RuntimeException("Refusing to deploy from a directory outside of repository: {$configuredOutputDir}");
+            }
+
             if (File::isDirectory($configuredPath)) {
                 return $configuredPath;
             }

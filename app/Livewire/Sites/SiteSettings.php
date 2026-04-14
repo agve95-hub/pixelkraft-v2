@@ -102,7 +102,8 @@ class SiteSettings extends Component
             // and newlines. The && operator is still allowed (commonly used for
             // "build && export" workflows).
             'buildCommand' => ['nullable', 'string', 'max:500', 'not_regex:/[;|`\$<>\r\n]/'],
-            'buildOutputDir' => ['nullable', 'string', 'max:255', 'not_regex:/[\r\n]/'],
+            // No leading slash, no '..' traversal, no shell metacharacters.
+            'buildOutputDir' => ['nullable', 'string', 'max:255', 'not_regex:/\.\.|^\/|[\r\n;{}]/'],
             // Branch: letters, digits, hyphens, dots, underscores, forward-slashes.
             'branch' => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9\-._\/]*$/'],
             'projectType' => ['required', 'string', 'in:static_html,php_site,react,vue,svelte,astro,hugo,eleventy,nextjs,nuxt,custom'],

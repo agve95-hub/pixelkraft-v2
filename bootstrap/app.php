@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureSanctumApiTokenCan;
 use App\Http\Middleware\EnsureSiteAccess;
 use App\Http\Middleware\RememberExpandedSite;
+use App\Http\Middleware\SetSecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(SetSecurityHeaders::class);
+
         $middleware->alias([
             'site.access' => EnsureSiteAccess::class,
             'expand.site.sidebar' => RememberExpandedSite::class,
