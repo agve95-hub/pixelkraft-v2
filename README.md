@@ -327,12 +327,12 @@ Sites can accept **anonymous** form posts from the marketing site or static page
 |---|---|
 | **Endpoint** | `POST /api/forms/{slug}` where `{slug}` is the site’s `slug` (active sites only) |
 | **Rate limit** | 10 requests per minute per client IP and slug (returns `429` when exceeded) |
-| **Anti-spam** | Optional honeypot field **`_hp`** — if it has any value, the submission is stored as spam and skipped for inbox/notifications (checked even when **`_hp`** is omitted from the per-form stored-field subset) |
+| **Anti-spam** | Optional honeypot field **`_hp`** — if it has any value, the submission is stored as spam and skipped for inbox/notifications (checked on the raw request even when **`_hp`** is omitted from the per-form stored-field subset) |
 | **Form name** | Optional **`_form_name`** (default `contact`) — stored on the submission record |
 
 ### Allowed fields (allowlisted)
 
-Only these JSON keys are validated. Stored keys on `form_submissions.data` are the intersection of (a) this list and (b) `config('pixelkraft.form_submission_allowed_fields')`: the `*` entry is the maximum set per site; optional entries keyed by the same string as **`_form_name`** further restrict which of those keys are persisted for that form. Unknown form names use `*` only. Any other request keys are ignored.
+Only these JSON keys are validated. Stored keys on `form_submissions.data` are the intersection of (a) this list and (b) `config('pixelkraft.form_submission_allowed_fields')`: the `*` entry is the maximum set; optional entries keyed by the same string as **`_form_name`** further restrict which of those keys are persisted for that form. Unknown form names use `*` only. Any other request keys are ignored.
 
 | Field | Notes |
 |---|---|
@@ -367,9 +367,9 @@ Submissions matching simple patterns (e.g. obvious spam phrases or many URLs in 
 | `deploy.rollback_snapshots` | `10` | How many rollback points to keep |
 | `monitoring.uptime_interval_minutes` | `5` | Uptime check frequency |
 | `monitoring.webhook_deliveries_retention_days` | `30` | `WEBHOOK_DELIVERIES_RETENTION_DAYS` — age of `webhook_deliveries` rows kept before prune |
-| `form_submission_allowed_fields` | Built-in list under `*` | Per-form subsets of allowed `/api/forms` payload keys (see README **Public contact forms API**) |
 | `runtime.port_start` | `4100` | First port for runtime Node.js sites |
 | `runtime.startup_timeout_seconds` | `30` | Wait time for Node.js server to start |
+| `form_submission_allowed_fields` | Built-in list under `*` | Per-form subsets of allowed `/api/forms` payload keys (see **Public contact forms API**) |
 
 ---
 

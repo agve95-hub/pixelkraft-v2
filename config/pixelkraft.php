@@ -187,11 +187,11 @@ return [
     | Public form submissions (/api/forms/{slug})
     |--------------------------------------------------------------------------
     |
-    | Keys under '*' are the global maximum: only these may appear in stored
-    | payload (after validation). Optional keys named like the _form_name
-    | value restrict to a subset of '*' for that form. Unknown form names use
-    | '*' only. Values must be a subset of the built-in field list; anything
-    | else is ignored. An empty per-form list falls back to '*'.
+    | Keys under '*' are the global maximum stored on form_submissions.data
+    | (after validation). Optional entries keyed by _form_name restrict to a
+    | subset of '*' for that form. Unknown form names use '*' only. Values must
+    | be a subset of the built-in field list; anything else is ignored. An
+    | empty per-form list falls back to '*'.
     |
     */
     'form_submission_allowed_fields' => [
