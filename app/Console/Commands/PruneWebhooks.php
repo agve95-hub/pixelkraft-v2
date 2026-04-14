@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\WebhookDelivery;
+use Illuminate\Console\Command;
+
+class PruneWebhooks extends Command
+{
+    protected $signature = 'pixelkraft:prune-webhooks
+                            {--days=30 : Delete deliveries older than this many days}
+                            {--dry-run : Report how many rows would be deleted without deleting}';
+
+    protected $description = 'Delete old webhook_deliveries rows to cap table growth and retention.';
+
+    public function handle(): int
+    {
+        $days = max(1, (int) $this->option('days'));
+        $dryRun = (bool) $this->option('dry-run');
+
+        $cutoff = now()->subDays($days);
+        $query = WebhookDelivery::query()->where('received_at', '<', $cutoff);
+        $count = $query->count();
+
+        if ($dryRun) {
+            $this->line("[dry-run] {$count} webhook_deliveries rows older than {$days} days would be deleted.");
+
+            return self::SUCCESS;
+        }
+
+        $deleted = $query->delete();
+        $this->info("Deleted {$deleted} webhook_deliveries rows older than {$days} days.");
+
+        return self::SUCCESS;
+    }
+}
