@@ -14,6 +14,30 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class FormSubmissionController extends Controller
 {
+    /** @var list<string> */
+    private const FORM_SUBMISSION_FIELD_KEYS = [
+        '_hp',
+        'email',
+        'name',
+        'first_name',
+        'last_name',
+        'message',
+        'body',
+        'content',
+        'inquiry',
+        'subject',
+        'title',
+        'topic',
+        'comments',
+        'details',
+        'phone',
+        'company',
+        'website',
+        'url',
+        'department',
+        'to_email',
+    ];
+
     /**
      * Receive a contact form submission (public endpoint).
      */
@@ -59,29 +83,7 @@ class FormSubmissionController extends Controller
         ]);
 
         $data = [];
-        foreach ([
-            '_form_name',
-            '_hp',
-            'email',
-            'name',
-            'first_name',
-            'last_name',
-            'message',
-            'body',
-            'content',
-            'inquiry',
-            'subject',
-            'title',
-            'topic',
-            'comments',
-            'details',
-            'phone',
-            'company',
-            'website',
-            'url',
-            'department',
-            'to_email',
-        ] as $key) {
+        foreach (self::FORM_SUBMISSION_FIELD_KEYS as $key) {
             if (! array_key_exists($key, $validated)) {
                 continue;
             }
@@ -92,12 +94,16 @@ class FormSubmissionController extends Controller
             $data[$key] = $value;
         }
 
+        $formName = (string) ($validated['_form_name'] ?? 'contact');
+        $allowedKeys = $this->allowedFormSubmissionKeysForForm($formName);
+        $data = array_intersect_key($data, array_flip($allowedKeys));
+
         // Basic honeypot spam detection
         $isSpam = $this->detectSpam($request, $data);
 
         $submission = FormSubmission::create([
             'site_id' => $site->id,
-            'form_name' => (string) ($validated['_form_name'] ?? 'contact'),
+            'form_name' => $formName,
             'data' => $data,
             'ip_address' => $request->ip(),
             'is_spam' => $isSpam,
@@ -156,7 +162,7 @@ class FormSubmissionController extends Controller
     private function detectSpam(Request $request, array $data): bool
     {
         // Honeypot: if a hidden field named '_hp' has a value, it's a bot
-        if (! empty($data['_hp'])) {
+        if ($request->filled('_hp') || ! empty($data['_hp'])) {
             return true;
         }
 
@@ -184,5 +190,34 @@ class FormSubmissionController extends Controller
         }
 
         return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function allowedFormSubmissionKeysForForm(string $formName): array
+    {
+        $config = config('pixelkraft.form_submission_allowed_fields', []);
+        $star = $config['*'] ?? self::FORM_SUBMISSION_FIELD_KEYS;
+        $star = array_values(array_intersect(
+            is_array($star) ? $star : [],
+            self::FORM_SUBMISSION_FIELD_KEYS
+        ));
+        if ($star === []) {
+            $star = self::FORM_SUBMISSION_FIELD_KEYS;
+        }
+
+        if ($formName === '' || $formName === '*') {
+            return $star;
+        }
+
+        $specific = $config[$formName] ?? null;
+        if (! is_array($specific) || $specific === []) {
+            return $star;
+        }
+
+        $intersect = array_values(array_intersect($specific, $star));
+
+        return $intersect !== [] ? $intersect : $star;
     }
 }
