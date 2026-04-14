@@ -31,6 +31,7 @@ class ImageOptimizer
                 if ($current->isDir() && in_array($current->getFilename(), $skipDirs, true)) {
                     return false;
                 }
+
                 return true;
             }
         );
@@ -53,10 +54,10 @@ class ImageOptimizer
             try {
                 $optimized = match ($ext) {
                     'jpg', 'jpeg' => $this->optimizeJpeg($path),
-                    'png'         => $this->optimizePng($path),
-                    'svg'         => $this->optimizeSvg($path),
-                    'gif'         => false,
-                    default       => false,
+                    'png' => $this->optimizePng($path),
+                    'svg' => $this->optimizeSvg($path),
+                    'gif' => false,
+                    default => false,
                 };
 
                 if (in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
@@ -83,9 +84,9 @@ class ImageOptimizer
 
         return match ($ext) {
             'jpg', 'jpeg' => $this->optimizeJpeg($path),
-            'png'         => $this->optimizePng($path),
-            'svg'         => $this->optimizeSvg($path),
-            default       => false,
+            'png' => $this->optimizePng($path),
+            'svg' => $this->optimizeSvg($path),
+            default => false,
         };
     }
 
@@ -96,7 +97,7 @@ class ImageOptimizer
         }
 
         $result = Process::timeout(30)->run(
-            'jpegoptim --strip-all --max=85 --quiet ' . escapeshellarg($path)
+            'jpegoptim --strip-all --max=85 --quiet '.escapeshellarg($path)
         );
 
         return $result->successful();
@@ -109,7 +110,7 @@ class ImageOptimizer
         }
 
         $result = Process::timeout(30)->run(
-            'pngquant --force --quality=65-85 --output ' . escapeshellarg($path) . ' -- ' . escapeshellarg($path)
+            'pngquant --force --quality=65-85 --output '.escapeshellarg($path).' -- '.escapeshellarg($path)
         );
 
         return $result->successful();
@@ -122,7 +123,7 @@ class ImageOptimizer
         }
 
         $result = Process::timeout(15)->run(
-            'svgo --quiet ' . escapeshellarg($path)
+            'svgo --quiet '.escapeshellarg($path)
         );
 
         return $result->successful();
@@ -145,7 +146,7 @@ class ImageOptimizer
         }
 
         $result = Process::timeout(30)->run(
-            'cwebp -quiet -q 80 ' . escapeshellarg($path) . ' -o ' . escapeshellarg($webpPath)
+            'cwebp -quiet -q 80 '.escapeshellarg($path).' -o '.escapeshellarg($webpPath)
         );
 
         return $result->successful();

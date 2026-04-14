@@ -113,7 +113,7 @@ class SiteRuntimeService
             try {
                 $response = Http::timeout(15)
                     ->withOptions(['http_errors' => false])
-                    ->get($this->urlForPort($port) . $this->normalizePath($path), $query);
+                    ->get($this->urlForPort($port).$this->normalizePath($path), $query);
 
                 if ($response->status() > 0) {
                     return $response;
@@ -142,7 +142,7 @@ class SiteRuntimeService
         if ($site->project_type === 'nextjs' && $this->inferredDeploymentMode($site) === self::MODE_STATIC) {
             throw new \RuntimeException(
                 'This Next.js repository is configured for static export. '
-                . 'Switch the site deployment mode to static, or remove the export configuration before using runtime mode.'
+                .'Switch the site deployment mode to static, or remove the export configuration before using runtime mode.'
             );
         }
 
@@ -171,7 +171,7 @@ class SiteRuntimeService
 
         return [
             'working_dir' => $site->repo_path,
-            'command' => 'next start -H ' . $this->host() . ' -p ' . $this->portFor($site),
+            'command' => 'next start -H '.$this->host().' -p '.$this->portFor($site),
             'bin_dir' => "{$site->repo_path}/node_modules/.bin",
         ];
     }
@@ -206,24 +206,24 @@ class SiteRuntimeService
         $nodeVersion = $site->node_version ?? '20';
         $host = $this->host();
         $port = $this->portFor($site);
-        $script = "cd " . escapeshellarg($execution['working_dir']) . " && "
-            . "export PORT={$port} HOSTNAME=" . escapeshellarg($host) . " NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 && "
-            . $this->nvmBootstrap($nodeVersion);
+        $script = 'cd '.escapeshellarg($execution['working_dir']).' && '
+            ."export PORT={$port} HOSTNAME=".escapeshellarg($host).' NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 && '
+            .$this->nvmBootstrap($nodeVersion);
 
         if (! empty($execution['bin_dir'])) {
-            $script .= 'export PATH="' . addcslashes($execution['bin_dir'], '"\\') . ':$PATH" && ';
+            $script .= 'export PATH="'.addcslashes($execution['bin_dir'], '"\\').':$PATH" && ';
         }
 
-        $script .= 'nohup ' . $execution['command']
-            . ' >> ' . escapeshellarg($logFile)
-            . ' 2>&1 & echo $! > ' . escapeshellarg($pidFile);
+        $script .= 'nohup '.$execution['command']
+            .' >> '.escapeshellarg($logFile)
+            .' 2>&1 & echo $! > '.escapeshellarg($pidFile);
 
         $result = Process::timeout(20)
             ->path($execution['working_dir'])
             ->run(['bash', '-lc', $script]);
 
         if (! $result->successful()) {
-            throw new \RuntimeException('Failed to start runtime process: ' . trim($result->errorOutput() ?: $result->output()));
+            throw new \RuntimeException('Failed to start runtime process: '.trim($result->errorOutput() ?: $result->output()));
         }
     }
 
@@ -235,11 +235,11 @@ class SiteRuntimeService
             return;
         }
 
-        $script = 'if [ -f ' . escapeshellarg($pidFile) . ' ]; then '
-            . 'PID=$(cat ' . escapeshellarg($pidFile) . '); '
-            . 'if kill -0 "$PID" 2>/dev/null; then kill "$PID" || true; sleep 1; fi; '
-            . 'rm -f ' . escapeshellarg($pidFile) . '; '
-            . 'fi';
+        $script = 'if [ -f '.escapeshellarg($pidFile).' ]; then '
+            .'PID=$(cat '.escapeshellarg($pidFile).'); '
+            .'if kill -0 "$PID" 2>/dev/null; then kill "$PID" || true; sleep 1; fi; '
+            .'rm -f '.escapeshellarg($pidFile).'; '
+            .'fi';
 
         Process::timeout(10)
             ->path(dirname($pidFile))
@@ -257,7 +257,8 @@ class SiteRuntimeService
         while (microtime(true) < $deadline) {
             if ($this->isReachableOnPort($desiredPort, '/')) {
                 unset($this->activePortCache[(string) $site->id]);
-                $log->appendLog('  Runtime server is responding on ' . $this->baseUrl($site));
+                $log->appendLog('  Runtime server is responding on '.$this->baseUrl($site));
+
                 return;
             }
 
@@ -273,19 +274,19 @@ class SiteRuntimeService
     private function runtimeRoot(Site $site): string
     {
         return rtrim((string) config('pixelkraft.runtime.storage_path', storage_path('app/runtime-sites')), '/')
-            . '/' . $site->slug;
+            .'/'.$site->slug;
     }
 
     private function pidFile(Site $site): string
     {
         return rtrim((string) config('pixelkraft.runtime.pid_path', storage_path('app/runtime-pids')), '/')
-            . '/' . $site->slug . '.pid';
+            .'/'.$site->slug.'.pid';
     }
 
     private function logFile(Site $site): string
     {
         return rtrim((string) config('pixelkraft.runtime.log_path', storage_path('logs/runtime-sites')), '/')
-            . '/' . $site->slug . '.log';
+            .'/'.$site->slug.'.log';
     }
 
     private function hasStandaloneServer(Site $site): bool
@@ -336,7 +337,7 @@ class SiteRuntimeService
             }
 
             $config = File::get($path);
-            if (preg_match('/' . preg_quote($key, '/') . '\s*:\s*[\'"]' . preg_quote($expectedValue, '/') . '[\'"]/', $config)) {
+            if (preg_match('/'.preg_quote($key, '/').'\s*:\s*[\'"]'.preg_quote($expectedValue, '/').'[\'"]/', $config)) {
                 return true;
             }
         }
@@ -351,7 +352,7 @@ class SiteRuntimeService
 
     private function normalizePath(string $path): string
     {
-        return '/' . ltrim($path, '/');
+        return '/'.ltrim($path, '/');
     }
 
     /**
@@ -403,7 +404,7 @@ class SiteRuntimeService
         $result = Process::timeout(5)->run([
             'bash',
             '-lc',
-            'ps -p ' . escapeshellarg($pid) . ' -o args=',
+            'ps -p '.escapeshellarg($pid).' -o args=',
         ]);
 
         if (! $result->successful()) {
@@ -428,7 +429,7 @@ class SiteRuntimeService
         try {
             $response = Http::timeout(15)
                 ->withOptions(['http_errors' => false])
-                ->get($this->urlForPort($port) . $this->normalizePath($path));
+                ->get($this->urlForPort($port).$this->normalizePath($path));
 
             return $response->status() > 0 && $response->status() < 500;
         } catch (\Throwable) {
@@ -438,15 +439,15 @@ class SiteRuntimeService
 
     private function urlForPort(int $port): string
     {
-        return 'http://' . $this->host() . ':' . $port;
+        return 'http://'.$this->host().':'.$port;
     }
 
     private function nvmBootstrap(string $nodeVersion): string
     {
         return 'export NVM_DIR="$HOME/.nvm" && '
-            . 'if [ -s "$NVM_DIR/nvm.sh" ]; then . "$NVM_DIR/nvm.sh"; nvm use '
-            . escapeshellarg($nodeVersion)
-            . ' >/dev/null 2>&1 || true; fi && ';
+            .'if [ -s "$NVM_DIR/nvm.sh" ]; then . "$NVM_DIR/nvm.sh"; nvm use '
+            .escapeshellarg($nodeVersion)
+            .' >/dev/null 2>&1 || true; fi && ';
     }
 
     private function normalizeDeploymentMode(mixed $mode): ?string

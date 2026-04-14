@@ -29,11 +29,11 @@ class EditableRegion extends Model
     protected function casts(): array
     {
         return [
-            'is_static'        => 'boolean',
+            'is_static' => 'boolean',
             'confidence_score' => 'float',
-            'source_location'  => 'array',
-            'dom_fingerprint'  => 'array',
-            'source_anchor'    => 'array',
+            'source_location' => 'array',
+            'dom_fingerprint' => 'array',
+            'source_anchor' => 'array',
             'last_verified_at' => 'datetime',
         ];
     }

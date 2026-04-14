@@ -29,7 +29,7 @@ return new class extends Migration
                     Crypt::decryptString($raw);
 
                     return; // already encrypted
-                } catch (\Exception) {
+                } catch (Exception) {
                     // Plaintext — encrypt it below.
                 }
 
@@ -51,7 +51,7 @@ return new class extends Migration
                     DB::table('users')
                         ->where('id', $row->id)
                         ->update(['discord_webhook' => $plain]);
-                } catch (\Exception) {
+                } catch (Exception) {
                     // If decryption fails the value was already plain; leave it.
                 }
             });

@@ -10,14 +10,20 @@ use Livewire\Component;
 class TemplateManager extends Component
 {
     public string $siteId;
+
     private ?string $resolvedSiteId = null;
 
     // Form state
     public bool $showForm = false;
+
     public ?string $editingId = null;
+
     public string $name = '';
+
     public string $type = 'page';
+
     public string $htmlTemplate = '';
+
     public string $fieldsSchema = '';
 
     public function create(): void
@@ -49,8 +55,8 @@ class TemplateManager extends Component
         $siteId = $this->siteIdOrFail();
 
         $this->validate([
-            'name'         => 'required|string|max:255',
-            'type'         => 'required|in:page,section,component',
+            'name' => 'required|string|max:255',
+            'type' => 'required|in:page,section,component',
             'htmlTemplate' => 'required|string',
         ]);
 
@@ -59,14 +65,15 @@ class TemplateManager extends Component
             $fieldsSchema = json_decode($this->fieldsSchema, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 $this->addError('fieldsSchema', 'Invalid JSON');
+
                 return;
             }
         }
 
         $data = [
-            'site_id'       => $siteId,
-            'name'          => $this->name,
-            'type'          => $this->type,
+            'site_id' => $siteId,
+            'name' => $this->name,
+            'type' => $this->type,
             'html_template' => $this->htmlTemplate,
             'fields_schema' => $fieldsSchema,
         ];

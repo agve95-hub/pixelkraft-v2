@@ -26,13 +26,13 @@ class NotificationController extends Controller
             ->limit(50)
             ->get()
             ->map(fn (Notification $n) => [
-                'id'         => $n->id,
-                'type'       => $n->type,
-                'title'      => $n->title,
-                'body'       => $n->body,
-                'is_read'    => $n->is_read,
-                'site'       => $n->site ? ['id' => $n->site->id, 'name' => $n->site->name] : null,
-                'data'       => $n->data,
+                'id' => $n->id,
+                'type' => $n->type,
+                'title' => $n->title,
+                'body' => $n->body,
+                'is_read' => $n->is_read,
+                'site' => $n->site ? ['id' => $n->site->id, 'name' => $n->site->name] : null,
+                'data' => $n->data,
                 'created_at' => $n->created_at?->toIso8601String(),
             ]);
 

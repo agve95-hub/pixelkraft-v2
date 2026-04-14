@@ -81,14 +81,14 @@ class ParserService
     private function resolveParser(Site $site): ParserInterface
     {
         return match ($site->project_type) {
-            'static_html'          => $this->staticParser,
-            'php_site'             => $this->phpParser,
-            'hugo', 'eleventy'     => $this->ssgParser,
-            'astro'                => $this->shouldUseSsgParser($site) ? $this->ssgParser : $this->spaParser,
+            'static_html' => $this->staticParser,
+            'php_site' => $this->phpParser,
+            'hugo', 'eleventy' => $this->ssgParser,
+            'astro' => $this->shouldUseSsgParser($site) ? $this->ssgParser : $this->spaParser,
             'react', 'vue',
             'svelte', 'nextjs',
-            'nuxt'                 => $this->spaParser,
-            default                => $this->staticParser, // fallback
+            'nuxt' => $this->spaParser,
+            default => $this->staticParser, // fallback
         };
     }
 
@@ -110,17 +110,17 @@ class ParserService
         $page = $site->pages()->updateOrCreate(
             ['file_path' => $parsed->filePath],
             [
-                'url_path'         => $parsed->urlPath,
-                'title'            => $parsed->title,
+                'url_path' => $parsed->urlPath,
+                'title' => $parsed->title,
                 'meta_description' => $parsed->metaDescription,
-                'meta_keywords'    => $parsed->metaKeywords,
-                'og_title'         => $parsed->ogTitle,
-                'og_description'   => $parsed->ogDescription,
-                'og_image'         => $parsed->ogImage,
-                'canonical_url'    => $parsed->canonicalUrl,
-                'schema_json'      => $parsed->schemaJson,
-                'content_hash'     => $parsed->contentHash,
-                'is_published'     => true,
+                'meta_keywords' => $parsed->metaKeywords,
+                'og_title' => $parsed->ogTitle,
+                'og_description' => $parsed->ogDescription,
+                'og_image' => $parsed->ogImage,
+                'canonical_url' => $parsed->canonicalUrl,
+                'schema_json' => $parsed->schemaJson,
+                'content_hash' => $parsed->contentHash,
+                'is_published' => true,
             ]
         );
 
@@ -218,7 +218,7 @@ class ParserService
         if (! empty($removed)) {
             $site->pages()->whereIn('file_path', $removed)->delete();
 
-            Log::info("Pruned " . count($removed) . " deleted pages from [{$site->slug}]");
+            Log::info('Pruned '.count($removed)." deleted pages from [{$site->slug}]");
         }
     }
 }

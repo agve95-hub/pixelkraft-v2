@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class SyncAnalytics extends Command
 {
     protected $signature = 'pixelkraft:sync-analytics';
+
     protected $description = 'Sync analytics (GA4 organic SEO + Cloudflare) into snapshots';
 
     public function handle(AnalyticsAggregator $aggregator): int

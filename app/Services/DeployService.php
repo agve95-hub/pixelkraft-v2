@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Jobs\ParseSiteJob;
+use App\Models\DeployLog;
 use App\Models\DeploymentRelease;
 use App\Models\DeploymentTarget;
-use App\Models\DeployLog;
 use App\Models\Site;
 use App\Services\Deployment\DeploymentAdapter;
 use App\Services\Deployment\RuntimeDeploymentAdapter;
@@ -101,10 +101,10 @@ class DeployService
             ]),
         ]);
 
-        $log->appendLog('  Deployment target: ' . $target->environment . ' (' . ($target->runtime_type ?: 'static') . ')');
-        $log->appendLog('  Release strategy: ' . ($target->release_strategy ?: 'symlink'));
-        $log->appendLog('  Repo path: ' . ($site->repo_path ?: 'n/a'));
-        $log->appendLog('  Deploy path: ' . ($target->deploy_path ?: $site->deploy_path ?: 'n/a'));
+        $log->appendLog('  Deployment target: '.$target->environment.' ('.($target->runtime_type ?: 'static').')');
+        $log->appendLog('  Release strategy: '.($target->release_strategy ?: 'symlink'));
+        $log->appendLog('  Repo path: '.($site->repo_path ?: 'n/a'));
+        $log->appendLog('  Deploy path: '.($target->deploy_path ?: $site->deploy_path ?: 'n/a'));
     }
 
     public function buildSite(Site $site, DeployLog $log, DeploymentRelease $release): void
@@ -146,7 +146,7 @@ class DeployService
         $target = $release->deploymentTarget()->first() ?: $this->resolveTarget($site, 'production');
         $adapter = $this->adapterFor($site);
 
-        $log->appendLog('[4/4] ' . $adapter->activationStepLabel($site));
+        $log->appendLog('[4/4] '.$adapter->activationStepLabel($site));
         $adapter->activate($site, $log);
 
         if ($this->shouldReloadNginx($site)) {
@@ -164,7 +164,7 @@ class DeployService
             'status' => 'success',
             'commit_sha' => $sha,
             'duration_ms' => $this->elapsedDuration($log),
-            'snapshot_tag' => 'deploy-' . now()->format('Ymd-His'),
+            'snapshot_tag' => 'deploy-'.now()->format('Ymd-His'),
         ]);
 
         $site->update([
@@ -410,7 +410,7 @@ class DeployService
         $env = array_merge(
             [
                 'NODE_ENV' => 'production',
-                'PATH' => $nodeBinPath . PATH_SEPARATOR . $systemPath,
+                'PATH' => $nodeBinPath.PATH_SEPARATOR.$systemPath,
             ],
             $site->env_variables ?? [],
             $envOverrides,
@@ -427,13 +427,13 @@ class DeployService
             ->env($env)
             ->run(['bash', '-c', $fullCommand]);
 
-        $output = trim($result->output() . "\n" . $result->errorOutput());
+        $output = trim($result->output()."\n".$result->errorOutput());
 
         return [
             'success' => $result->successful(),
             'command' => $command,
             'output' => $output,
-            'summary' => $result->successful() ? 'OK' : 'FAILED (exit ' . $result->exitCode() . ')',
+            'summary' => $result->successful() ? 'OK' : 'FAILED (exit '.$result->exitCode().')',
         ];
     }
 
@@ -518,7 +518,7 @@ class DeployService
             )
         ) {
             return $this->packageManagerRun($site->repo_path, 'build')
-                . ' && ' .
+                .' && '.
                 $this->packageManagerRun($site->repo_path, 'export');
         }
 
@@ -559,7 +559,7 @@ class DeployService
     {
         return collect(preg_split("/\r\n|\n|\r/", trim($output)) ?: [])
             ->filter(fn (?string $line) => $line !== null && $line !== '')
-            ->map(fn (string $line) => '    ' . $line)
+            ->map(fn (string $line) => '    '.$line)
             ->take(80)
             ->implode("\n");
     }
@@ -654,13 +654,13 @@ class DeployService
                 ->withOptions(['http_errors' => false])
                 ->get($target->health_check_url);
 
-            $log->appendLog('  Health check: HTTP ' . $response->status() . ' (' . $target->health_check_url . ')');
+            $log->appendLog('  Health check: HTTP '.$response->status().' ('.$target->health_check_url.')');
 
             if ($response->status() >= 500) {
                 throw new \RuntimeException("Health check failed with HTTP {$response->status()}");
             }
         } catch (Throwable $e) {
-            $log->appendLog('  Health check failed: ' . $e->getMessage());
+            $log->appendLog('  Health check failed: '.$e->getMessage());
             throw $e;
         }
     }
@@ -720,8 +720,8 @@ class DeployService
         // The && operator is deliberately permitted (commonly used as "build && export").
         if (preg_match('/[;|`$<>]/', $command)) {
             throw new \RuntimeException(
-                "Build command contains a disallowed shell character (one of: ; | \` \$ < >). " .
-                "Edit the build command in Site Settings to remove it."
+                "Build command contains a disallowed shell character (one of: ; | \` \$ < >). ".
+                'Edit the build command in Site Settings to remove it.'
             );
         }
     }

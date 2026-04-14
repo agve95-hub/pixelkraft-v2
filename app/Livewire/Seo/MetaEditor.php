@@ -15,19 +15,29 @@ use Livewire\Component;
 class MetaEditor extends Component
 {
     public string $pageId;
+
     public string $focusKeyword = '';
 
     public string $title = '';
+
     public string $metaDescription = '';
+
     public string $metaKeywords = '';
+
     public string $ogTitle = '';
+
     public string $ogDescription = '';
+
     public string $ogImage = '';
+
     public string $canonicalUrl = '';
 
     public array $analysis = [];
+
     public bool $metaEditingSupported = false;
+
     public string $metaEditingMode = 'unsupported';
+
     public string $metaEditingNotice = '';
 
     private ?string $resolvedSiteId = null;
@@ -72,24 +82,26 @@ class MetaEditor extends Component
 
         if (! $this->metaEditingSupported) {
             session()->flash('error', $this->metaEditingNotice);
+
             return;
         }
 
         $attributes = [
-            'title'            => $this->title ?: null,
+            'title' => $this->title ?: null,
             'meta_description' => $this->metaDescription ?: null,
-            'meta_keywords'    => $this->metaKeywords ?: null,
-            'og_title'         => $this->ogTitle ?: null,
-            'og_description'   => $this->ogDescription ?: null,
-            'og_image'         => $this->ogImage ?: null,
-            'canonical_url'    => $this->canonicalUrl ?: null,
+            'meta_keywords' => $this->metaKeywords ?: null,
+            'og_title' => $this->ogTitle ?: null,
+            'og_description' => $this->ogDescription ?: null,
+            'og_image' => $this->ogImage ?: null,
+            'canonical_url' => $this->canonicalUrl ?: null,
         ];
 
         try {
             $this->patchSourceFile($page);
             $page->update($attributes);
         } catch (\Throwable $e) {
-            session()->flash('error', 'SEO save failed: ' . $e->getMessage());
+            session()->flash('error', 'SEO save failed: '.$e->getMessage());
+
             return;
         }
 
@@ -164,23 +176,25 @@ class MetaEditor extends Component
     {
         if ($type === 'title') {
             if (preg_match('/<title[^>]*>.*?<\/title>/si', $html)) {
-                return preg_replace('/<title[^>]*>.*?<\/title>/si', '<title>' . e($value) . '</title>', $html, 1);
+                return preg_replace('/<title[^>]*>.*?<\/title>/si', '<title>'.e($value).'</title>', $html, 1);
             }
             if (preg_match('/<head[^>]*>/i', $html, $m, PREG_OFFSET_CAPTURE)) {
                 $pos = $m[0][1] + strlen($m[0][0]);
-                return substr_replace($html, "\n    <title>" . e($value) . "</title>", $pos, 0);
+
+                return substr_replace($html, "\n    <title>".e($value).'</title>', $pos, 0);
             }
+
             return $html;
         }
 
         if ($type === 'og') {
             $attr = 'property';
-            $pattern = '/<meta\s+[^>]*' . $attr . '=["\']' . preg_quote($name, '/') . '["\'][^>]*>/i';
-            $replacement = '<meta ' . $attr . '="' . $name . '" content="' . e($value) . '">';
+            $pattern = '/<meta\s+[^>]*'.$attr.'=["\']'.preg_quote($name, '/').'["\'][^>]*>/i';
+            $replacement = '<meta '.$attr.'="'.$name.'" content="'.e($value).'">';
         } else {
             $attr = 'name';
-            $pattern = '/<meta\s+[^>]*' . $attr . '=["\']' . preg_quote($name, '/') . '["\'][^>]*>/i';
-            $replacement = '<meta ' . $attr . '="' . $name . '" content="' . e($value) . '">';
+            $pattern = '/<meta\s+[^>]*'.$attr.'=["\']'.preg_quote($name, '/').'["\'][^>]*>/i';
+            $replacement = '<meta '.$attr.'="'.$name.'" content="'.e($value).'">';
         }
 
         if (empty($value)) {
@@ -205,7 +219,7 @@ class MetaEditor extends Component
             return $html;
         }
 
-        $tag = '<link rel="canonical" href="' . e($url) . '">';
+        $tag = '<link rel="canonical" href="'.e($url).'">';
 
         if (preg_match('/<link[^>]*rel=["\']canonical["\'][^>]*>/i', $html)) {
             return preg_replace('/<link[^>]*rel=["\']canonical["\'][^>]*>/i', $tag, $html, 1);

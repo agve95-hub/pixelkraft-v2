@@ -42,7 +42,7 @@ class SiteSupportService
                 ($deploymentModeSource === 'inferred'
                     ? 'Deployment mode is currently auto-inferred from the project type and build configuration. Save settings to pin it explicitly. '
                     : '')
-                . ($deploymentMode === 'runtime'
+                .($deploymentMode === 'runtime'
                     ? 'Deployments start and health-check a local runtime process behind Nginx.'
                     : 'Deployments publish static build artifacts that Nginx serves directly.')
             ),

@@ -14,7 +14,7 @@ class SiteDeletionCleanupTest extends TestCase
 
     public function test_deleting_site_removes_site_filesystem_artifacts(): void
     {
-        $slug = 'cleanup-' . Str::lower(Str::random(8));
+        $slug = 'cleanup-'.Str::lower(Str::random(8));
         $sandboxRoot = storage_path("framework/testing/site-deletion-{$slug}");
 
         $reposRoot = "{$sandboxRoot}/repos";

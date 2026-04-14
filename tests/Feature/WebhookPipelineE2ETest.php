@@ -47,12 +47,12 @@ class WebhookPipelineE2ETest extends TestCase
         config()->set('pixelkraft.github_webhook_secret', 'test-global-secret');
 
         $site = Site::create([
-            'name'             => 'E2E Pipeline Site',
-            'slug'             => 'e2e-pipeline',
-            'repo_url'         => 'https://github.com/acme/e2e.git',
-            'branch'           => 'main',
+            'name' => 'E2E Pipeline Site',
+            'slug' => 'e2e-pipeline',
+            'repo_url' => 'https://github.com/acme/e2e.git',
+            'branch' => 'main',
             'deploy_on_webhook' => true,
-            'is_active'        => true,
+            'is_active' => true,
         ]);
 
         // ── Step 1: POST webhook → SyncFromWebhookJob dispatched ──────────
@@ -64,10 +64,10 @@ class WebhookPipelineE2ETest extends TestCase
 
         $response = $this
             ->withHeaders([
-                'X-GitHub-Event'      => 'push',
-                'X-GitHub-Delivery'   => 'e2e-delivery-001',
-                'X-Hub-Signature-256' => 'sha256=' . hash_hmac('sha256', $body, 'test-global-secret'),
-                'Accept'              => 'application/json',
+                'X-GitHub-Event' => 'push',
+                'X-GitHub-Delivery' => 'e2e-delivery-001',
+                'X-Hub-Signature-256' => 'sha256='.hash_hmac('sha256', $body, 'test-global-secret'),
+                'Accept' => 'application/json',
             ])
             ->postJson('/api/webhooks/github', $payload);
 
@@ -76,10 +76,10 @@ class WebhookPipelineE2ETest extends TestCase
         // Delivery must be recorded in the database.
         $this->assertDatabaseHas('webhook_deliveries', [
             'delivery_id' => 'e2e-delivery-001',
-            'provider'    => 'github',
-            'event'       => 'push',
-            'repository'  => 'acme/e2e',
-            'status'      => 'received',
+            'provider' => 'github',
+            'event' => 'push',
+            'repository' => 'acme/e2e',
+            'status' => 'received',
         ]);
 
         Queue::assertPushed(
@@ -117,7 +117,7 @@ class WebhookPipelineE2ETest extends TestCase
         // Delivery status must be updated to "processed".
         $this->assertDatabaseHas('webhook_deliveries', [
             'delivery_id' => 'e2e-delivery-001',
-            'status'      => 'processed',
+            'status' => 'processed',
         ]);
     }
 
@@ -130,12 +130,12 @@ class WebhookPipelineE2ETest extends TestCase
         config()->set('pixelkraft.github_webhook_require_signature', false);
 
         $site = Site::create([
-            'name'             => 'Up To Date',
-            'slug'             => 'up-to-date',
-            'repo_url'         => 'https://github.com/acme/utd.git',
-            'branch'           => 'main',
+            'name' => 'Up To Date',
+            'slug' => 'up-to-date',
+            'repo_url' => 'https://github.com/acme/utd.git',
+            'branch' => 'main',
             'deploy_on_webhook' => true,
-            'is_active'        => true,
+            'is_active' => true,
         ]);
 
         Queue::fake();
@@ -149,11 +149,11 @@ class WebhookPipelineE2ETest extends TestCase
 
         // Seed a delivery record so markDeliveryProcessed can find it.
         WebhookDelivery::create([
-            'provider'    => 'github',
+            'provider' => 'github',
             'delivery_id' => 'no-change-delivery',
-            'event'       => 'push',
-            'repository'  => 'acme/utd',
-            'status'      => 'received',
+            'event' => 'push',
+            'repository' => 'acme/utd',
+            'status' => 'received',
             'received_at' => now(),
         ]);
 
@@ -164,7 +164,7 @@ class WebhookPipelineE2ETest extends TestCase
 
         $this->assertDatabaseHas('webhook_deliveries', [
             'delivery_id' => 'no-change-delivery',
-            'status'      => 'ignored',
+            'status' => 'ignored',
         ]);
     }
 
@@ -176,12 +176,12 @@ class WebhookPipelineE2ETest extends TestCase
         config()->set('pixelkraft.github_webhook_require_signature', false);
 
         $site = Site::create([
-            'name'             => 'No Auto Deploy',
-            'slug'             => 'no-auto-deploy',
-            'repo_url'         => 'https://github.com/acme/nad.git',
-            'branch'           => 'main',
+            'name' => 'No Auto Deploy',
+            'slug' => 'no-auto-deploy',
+            'repo_url' => 'https://github.com/acme/nad.git',
+            'branch' => 'main',
             'deploy_on_webhook' => false,
-            'is_active'        => true,
+            'is_active' => true,
         ]);
 
         Queue::fake();
@@ -203,12 +203,12 @@ class WebhookPipelineE2ETest extends TestCase
     private function makePushPayload(string $fullName = 'acme/e2e', string $ref = 'refs/heads/main'): array
     {
         return [
-            'ref'         => $ref,
-            'repository'  => [
+            'ref' => $ref,
+            'repository' => [
                 'full_name' => $fullName,
                 'clone_url' => "https://github.com/{$fullName}.git",
             ],
-            'pusher'      => ['name' => 'octocat'],
+            'pusher' => ['name' => 'octocat'],
             'head_commit' => ['message' => 'ci: trigger build', 'id' => 'abc1234567890'],
         ];
     }

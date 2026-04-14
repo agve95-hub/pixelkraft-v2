@@ -18,7 +18,7 @@ class GitSyncService
     public function __construct(
         private SiteLockService $locks,
     ) {
-        $this->git = new Git();
+        $this->git = new Git;
     }
 
     public function cloneRepo(Site $site, ?EditSession $session = null): GitRepository
@@ -136,6 +136,7 @@ class GitSyncService
                 if (! $this->hasChanges($repo)) {
                     $sha = $this->getCurrentSha($repo);
                     $this->finishOperation($operation, 'noop', commitSha: $sha, output: 'No changes to commit.');
+
                     return $sha;
                 }
 
@@ -158,6 +159,7 @@ class GitSyncService
                     try {
                         $sha = $this->pullRebaseAndPush($site, $repo);
                         $this->finishOperation($operation, 'success', commitSha: $sha, output: 'Push rejected, recovered with pull --rebase.');
+
                         return $sha;
                     } catch (\Throwable $rebaseException) {
                         $this->finishOperation($operation, 'conflict', error: $this->scrubSecrets($rebaseException->getMessage()));
@@ -191,6 +193,7 @@ class GitSyncService
                 if (! $this->hasChanges($repo)) {
                     $sha = $this->getCurrentSha($repo);
                     $this->finishOperation($operation, 'noop', commitSha: $sha, output: 'No changes to commit.');
+
                     return $sha;
                 }
 
@@ -206,6 +209,7 @@ class GitSyncService
                     try {
                         $sha = $this->pullRebaseAndPush($site, $repo);
                         $this->finishOperation($operation, 'success', commitSha: $sha, output: 'Push rejected, recovered with pull --rebase.');
+
                         return $sha;
                     } catch (\Throwable $rebaseException) {
                         $this->finishOperation($operation, 'conflict', error: $this->scrubSecrets($rebaseException->getMessage()));
@@ -299,7 +303,7 @@ class GitSyncService
 
     public function isCloned(Site $site): bool
     {
-        return File::isDirectory($site->repo_path . '/.git');
+        return File::isDirectory($site->repo_path.'/.git');
     }
 
     public function listFiles(Site $site, ?array $extensions = null): array
@@ -321,7 +325,7 @@ class GitSyncService
                 continue;
             }
 
-            $relativePath = str_replace($repoPath . '/', '', $file->getPathname());
+            $relativePath = str_replace($repoPath.'/', '', $file->getPathname());
 
             if ($this->shouldSkipPath($relativePath)) {
                 continue;
@@ -397,15 +401,15 @@ class GitSyncService
     private function writeCredentialFile(Site $site): void
     {
         $credFile = $this->credentialFilePath($site);
-        $dir      = dirname($credFile);
+        $dir = dirname($credFile);
 
         if (! File::isDirectory($dir)) {
             File::ensureDirectoryExists($dir, 0700, true);
         }
 
-        $parsed  = parse_url((string) $site->repo_url);
-        $scheme  = $parsed['scheme'] ?? 'https';
-        $host    = $parsed['host'] ?? 'github.com';
+        $parsed = parse_url((string) $site->repo_url);
+        $scheme = $parsed['scheme'] ?? 'https';
+        $host = $parsed['host'] ?? 'github.com';
         $content = "{$scheme}://x-access-token:{$site->github_token}@{$host}\n";
 
         file_put_contents($credFile, $content, LOCK_EX);
@@ -414,7 +418,7 @@ class GitSyncService
 
     private function credentialFilePath(Site $site): string
     {
-        return rtrim((string) $site->repo_path, '/') . '/.git/.pk_credentials';
+        return rtrim((string) $site->repo_path, '/').'/.git/.pk_credentials';
     }
 
     /**

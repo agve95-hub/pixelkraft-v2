@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\WebhookController;
+use App\Models\NewsletterSubscriber;
 use Illuminate\Support\Facades\Route;
 
 // ── Public (no auth) ────────────────────────────
@@ -28,7 +29,7 @@ Route::post('/forms/{slug}', [FormSubmissionController::class, 'store'])
     ->name('api.forms.store');
 
 // Newsletter unsubscribe (signed URL, no auth)
-Route::get('/unsubscribe/{subscriber}', function (\App\Models\NewsletterSubscriber $subscriber) {
+Route::get('/unsubscribe/{subscriber}', function (NewsletterSubscriber $subscriber) {
     $subscriber->update(['status' => 'unsubscribed']);
 
     return response('<html><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f4f4f5;"><div style="text-align:center;"><h1>Unsubscribed</h1><p>You have been successfully unsubscribed.</p></div></body></html>', 200, [

@@ -13,10 +13,12 @@ class SubscriberList extends Component
     use WithPagination;
 
     public ?string $siteId = null;
+
     public string $search = '';
 
     // Add form
     public string $newEmail = '';
+
     public string $newName = '';
 
     private ?array $visibleSiteIdsCache = null;
@@ -34,8 +36,8 @@ class SubscriberList extends Component
     {
         $this->validate([
             'newEmail' => 'required|email',
-            'newName'  => 'nullable|string|max:255',
-            'siteId'   => 'required',
+            'newName' => 'nullable|string|max:255',
+            'siteId' => 'required',
         ]);
 
         abort_unless(in_array($this->siteId, $this->visibleSiteIds(), true), 404);
@@ -97,7 +99,7 @@ class SubscriberList extends Component
         $subscribers = $query->latest()->paginate(25);
 
         $stats = [
-            'active'       => NewsletterSubscriber::query()
+            'active' => NewsletterSubscriber::query()
                 ->whereIn('site_id', $this->visibleSiteIds())
                 ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
                 ->where('status', 'active')
@@ -107,7 +109,7 @@ class SubscriberList extends Component
                 ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
                 ->where('status', 'unsubscribed')
                 ->count(),
-            'bounced'      => NewsletterSubscriber::query()
+            'bounced' => NewsletterSubscriber::query()
                 ->whereIn('site_id', $this->visibleSiteIds())
                 ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
                 ->where('status', 'bounced')
@@ -116,8 +118,8 @@ class SubscriberList extends Component
 
         return view('livewire.email.subscriber-list', [
             'subscribers' => $subscribers,
-            'sites'       => $sites,
-            'stats'       => $stats,
+            'sites' => $sites,
+            'stats' => $stats,
         ]);
     }
 }

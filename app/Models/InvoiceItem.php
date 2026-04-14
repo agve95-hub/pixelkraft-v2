@@ -22,7 +22,7 @@ class InvoiceItem extends Model
     {
         return [
             'quantity' => 'decimal:4',
-            'rate'     => 'decimal:4',
+            'rate' => 'decimal:4',
         ];
     }
 

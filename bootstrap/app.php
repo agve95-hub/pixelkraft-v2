@@ -5,6 +5,7 @@ use App\Http\Middleware\RememberExpandedSite;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,7 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // Forward exceptions to Sentry when the SDK is installed and SENTRY_DSN is set.
         // Install: composer require sentry/sentry-laravel
-        if (class_exists(\Sentry\Laravel\Integration::class)) {
-            \Sentry\Laravel\Integration::handles($exceptions);
+        if (class_exists(Integration::class)) {
+            Integration::handles($exceptions);
         }
     })->create();

@@ -26,7 +26,7 @@ return new class extends Migration
                 ->whereNull('user_id')
                 ->update(['user_id' => $firstAdminId]);
         } elseif (Schema::hasColumn('sites', 'user_id') && DB::table('sites')->whereNull('user_id')->exists()) {
-            throw new \RuntimeException('Cannot assign existing sites: no admin user exists.');
+            throw new RuntimeException('Cannot assign existing sites: no admin user exists.');
         }
     }
 

@@ -24,9 +24,9 @@ class FormSubmission extends Model
     protected function casts(): array
     {
         return [
-            'data'       => 'array',
-            'is_read'    => 'boolean',
-            'is_spam'    => 'boolean',
+            'data' => 'array',
+            'is_read' => 'boolean',
+            'is_spam' => 'boolean',
             'created_at' => 'datetime',
         ];
     }

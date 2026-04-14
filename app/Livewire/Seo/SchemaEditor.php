@@ -5,7 +5,6 @@ namespace App\Livewire\Seo;
 use App\Models\Page;
 use App\Services\GitSyncService;
 use App\Services\SiteSupportService;
-use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Livewire\Component;
@@ -13,8 +12,11 @@ use Livewire\Component;
 class SchemaEditor extends Component
 {
     public string $pageId;
+
     public string $schemaJson = '';
+
     public bool $schemaEditingSupported = false;
+
     public string $schemaEditingNotice = '';
 
     private function pageOrFail(): Page
@@ -42,6 +44,7 @@ class SchemaEditor extends Component
 
         if (! $this->schemaEditingSupported) {
             session()->flash('error', $this->schemaEditingNotice);
+
             return;
         }
 
@@ -50,9 +53,11 @@ class SchemaEditor extends Component
                 $this->injectSchema($page, '');
                 $page->update(['schema_json' => null]);
                 session()->flash('success', 'Schema markup removed.');
+
                 return;
             } catch (\Throwable $e) {
-                session()->flash('error', 'Schema removal failed: ' . $e->getMessage());
+                session()->flash('error', 'Schema removal failed: '.$e->getMessage());
+
                 return;
             }
         }
@@ -60,7 +65,8 @@ class SchemaEditor extends Component
         $decoded = json_decode($this->schemaJson, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->addError('schemaJson', 'Invalid JSON: ' . json_last_error_msg());
+            $this->addError('schemaJson', 'Invalid JSON: '.json_last_error_msg());
+
             return;
         }
 
@@ -69,7 +75,7 @@ class SchemaEditor extends Component
             $page->update(['schema_json' => $decoded]);
             session()->flash('success', 'Schema markup saved and pushed.');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Schema save failed: ' . $e->getMessage());
+            session()->flash('error', 'Schema save failed: '.$e->getMessage());
         }
     }
 
@@ -82,51 +88,51 @@ class SchemaEditor extends Component
         $this->schemaJson = match ($preset) {
             'article' => json_encode([
                 '@context' => 'https://schema.org',
-                '@type'    => 'Article',
+                '@type' => 'Article',
                 'headline' => $page->title ?? '',
                 'description' => $page->meta_description ?? '',
-                'url' => "https://{$domain}" . ($page->url_path ?? '/'),
+                'url' => "https://{$domain}".($page->url_path ?? '/'),
                 'datePublished' => now()->format('Y-m-d'),
                 'author' => ['@type' => 'Person', 'name' => ''],
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
 
             'product' => json_encode([
                 '@context' => 'https://schema.org',
-                '@type'    => 'Product',
-                'name'     => $page->title ?? '',
+                '@type' => 'Product',
+                'name' => $page->title ?? '',
                 'description' => $page->meta_description ?? '',
-                'url' => "https://{$domain}" . ($page->url_path ?? '/'),
+                'url' => "https://{$domain}".($page->url_path ?? '/'),
                 'offers' => [
-                    '@type'         => 'Offer',
-                    'price'         => '0.00',
+                    '@type' => 'Offer',
+                    'price' => '0.00',
                     'priceCurrency' => 'USD',
-                    'availability'  => 'https://schema.org/InStock',
+                    'availability' => 'https://schema.org/InStock',
                 ],
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
 
             'local_business' => json_encode([
                 '@context' => 'https://schema.org',
-                '@type'    => 'LocalBusiness',
-                'name'     => $site->name,
-                'url'      => "https://{$domain}",
-                'address'  => [
-                    '@type'           => 'PostalAddress',
-                    'streetAddress'   => '',
+                '@type' => 'LocalBusiness',
+                'name' => $site->name,
+                'url' => "https://{$domain}",
+                'address' => [
+                    '@type' => 'PostalAddress',
+                    'streetAddress' => '',
                     'addressLocality' => '',
-                    'addressCountry'  => '',
+                    'addressCountry' => '',
                 ],
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
 
             'faq' => json_encode([
                 '@context' => 'https://schema.org',
-                '@type'    => 'FAQPage',
+                '@type' => 'FAQPage',
                 'mainEntity' => [
                     [
                         '@type' => 'Question',
-                        'name'  => 'Question 1?',
+                        'name' => 'Question 1?',
                         'acceptedAnswer' => [
                             '@type' => 'Answer',
-                            'text'  => 'Answer 1.',
+                            'text' => 'Answer 1.',
                         ],
                     ],
                 ],
@@ -165,7 +171,7 @@ class SchemaEditor extends Component
         if ($json === '') {
             $html = preg_replace($pattern, '', $html, 1) ?? $html;
         } else {
-            $scriptTag = '<script type="application/ld+json">' . "\n" . $json . "\n" . '</script>';
+            $scriptTag = '<script type="application/ld+json">'."\n".$json."\n".'</script>';
 
             if (preg_match($pattern, $html)) {
                 $html = preg_replace($pattern, $scriptTag, $html, 1);

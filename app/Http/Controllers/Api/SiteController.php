@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Jobs\CloneRepoJob;
 use App\Http\Controllers\Controller;
+use App\Jobs\CloneRepoJob;
 use App\Jobs\DeploySiteJob;
 use App\Jobs\ParseSiteJob;
 use App\Models\DeployLog;
@@ -11,6 +11,7 @@ use App\Models\Site;
 use App\Services\AnalyticsAggregator;
 use App\Services\DeployService;
 use App\Services\GitSyncService;
+use App\Services\SiteRuntimeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -43,7 +44,7 @@ class SiteController extends Controller
             CloneRepoJob::dispatch($site);
 
             return response()->json([
-                'status'  => 'dispatched',
+                'status' => 'dispatched',
                 'message' => "Clone + sync job dispatched for {$site->name}",
             ]);
         }
@@ -51,7 +52,7 @@ class SiteController extends Controller
         ParseSiteJob::dispatch($site);
 
         return response()->json([
-            'status'  => 'dispatched',
+            'status' => 'dispatched',
             'message' => "Sync job dispatched for {$site->name}",
         ]);
     }
@@ -61,7 +62,7 @@ class SiteController extends Controller
         DeploySiteJob::dispatch($site, 'api');
 
         return response()->json([
-            'status'  => 'dispatched',
+            'status' => 'dispatched',
             'message' => "Deploy job dispatched for {$site->name}",
         ]);
     }
@@ -81,14 +82,14 @@ class SiteController extends Controller
             $result = $deployer->rollback($site, $log);
 
             return response()->json([
-                'status'  => $result->status,
+                'status' => $result->status,
                 'message' => "Rollback to {$log->snapshot_tag}: {$result->status}",
             ]);
         } catch (\Throwable $e) {
             report($e);
 
             return response()->json([
-                'error'   => 'Rollback failed',
+                'error' => 'Rollback failed',
                 'message' => 'An unexpected error occurred while rolling back this deployment.',
             ], 500);
         }
@@ -100,15 +101,15 @@ class SiteController extends Controller
             ->orderBy('url_path')
             ->get()
             ->map(fn ($page) => [
-                'id'               => $page->id,
-                'file_path'        => $page->file_path,
-                'url_path'         => $page->url_path,
-                'title'            => $page->title,
-                'seo_score'        => $page->seo_score,
+                'id' => $page->id,
+                'file_path' => $page->file_path,
+                'url_path' => $page->url_path,
+                'title' => $page->title,
+                'seo_score' => $page->seo_score,
                 'lighthouse_score' => $page->lighthouse_score,
-                'is_published'     => $page->is_published,
-                'content_hash'     => $page->content_hash,
-                'updated_at'       => $page->updated_at?->toIso8601String(),
+                'is_published' => $page->is_published,
+                'content_hash' => $page->content_hash,
+                'updated_at' => $page->updated_at?->toIso8601String(),
             ]);
 
         return response()->json(['data' => $pages]);
@@ -136,14 +137,14 @@ class SiteController extends Controller
             ->limit(25)
             ->get()
             ->map(fn ($log) => [
-                'id'             => $log->id,
-                'status'         => $log->status,
-                'commit_sha'     => $log->commit_sha,
+                'id' => $log->id,
+                'status' => $log->status,
+                'commit_sha' => $log->commit_sha,
                 'commit_message' => $log->commit_message,
-                'duration_ms'    => $log->duration_ms,
-                'triggered_by'   => $log->triggered_by,
-                'snapshot_tag'   => $log->snapshot_tag,
-                'created_at'     => $log->created_at?->toIso8601String(),
+                'duration_ms' => $log->duration_ms,
+                'triggered_by' => $log->triggered_by,
+                'snapshot_tag' => $log->snapshot_tag,
+                'created_at' => $log->created_at?->toIso8601String(),
             ]);
 
         return response()->json(['data' => $deploys]);
@@ -194,36 +195,36 @@ class SiteController extends Controller
     private function formatSite(Site $site, bool $detailed = false): array
     {
         $data = [
-            'id'             => $site->id,
-            'name'           => $site->name,
-            'slug'           => $site->slug,
-            'domain'         => $site->domain,
-            'project_type'   => $site->project_type,
-            'deployment_mode' => app(\App\Services\SiteRuntimeService::class)->deploymentMode($site),
-            'deploy_status'  => $site->deploy_status,
-            'ssl_status'     => $site->ssl_status,
-            'is_active'      => $site->is_active,
-            'pages_count'    => $site->pages_count ?? 0,
+            'id' => $site->id,
+            'name' => $site->name,
+            'slug' => $site->slug,
+            'domain' => $site->domain,
+            'project_type' => $site->project_type,
+            'deployment_mode' => app(SiteRuntimeService::class)->deploymentMode($site),
+            'deploy_status' => $site->deploy_status,
+            'ssl_status' => $site->ssl_status,
+            'is_active' => $site->is_active,
+            'pages_count' => $site->pages_count ?? 0,
             'last_deployed_at' => $site->last_deployed_at?->toIso8601String(),
-            'last_synced_at'   => $site->last_synced_at?->toIso8601String(),
+            'last_synced_at' => $site->last_synced_at?->toIso8601String(),
         ];
 
         if ($site->latestUptimeCheck) {
             $data['uptime'] = [
-                'is_up'            => $site->latestUptimeCheck->is_up,
-                'is_degraded'      => (bool) $site->latestUptimeCheck->is_degraded,
+                'is_up' => $site->latestUptimeCheck->is_up,
+                'is_degraded' => (bool) $site->latestUptimeCheck->is_degraded,
                 'response_time_ms' => $site->latestUptimeCheck->response_time_ms,
-                'checked_at'       => $site->latestUptimeCheck->checked_at?->toIso8601String(),
+                'checked_at' => $site->latestUptimeCheck->checked_at?->toIso8601String(),
             ];
         }
 
         if ($detailed) {
-            $data['repo_url']         = $site->repo_url;
-            $data['branch']           = $site->branch;
-            $data['build_command']    = $site->build_command;
+            $data['repo_url'] = $site->repo_url;
+            $data['branch'] = $site->branch;
+            $data['build_command'] = $site->build_command;
             $data['build_output_dir'] = $site->build_output_dir;
             $data['blog_posts_count'] = $site->blog_posts_count ?? 0;
-            $data['products_count']   = $site->product_listings_count ?? 0;
+            $data['products_count'] = $site->product_listings_count ?? 0;
             $data['submissions_count'] = $site->form_submissions_count ?? 0;
         }
 

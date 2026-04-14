@@ -15,7 +15,7 @@ class SiteProvisioningService
         File::ensureDirectoryExists((string) $site->repo_path, 0755, true);
         File::ensureDirectoryExists(dirname((string) $site->deploy_path), 0755, true);
         if ($site->deploy_path) {
-            File::ensureDirectoryExists(rtrim((string) $site->deploy_path, '/\\') . '/releases', 0755, true);
+            File::ensureDirectoryExists(rtrim((string) $site->deploy_path, '/\\').'/releases', 0755, true);
         }
 
         $this->ensureDefaultDeploymentTargets($site);
@@ -24,7 +24,7 @@ class SiteProvisioningService
 
     public function ensureDefaultDeploymentTargets(Site $site): void
     {
-        $healthUrl = $site->domain ? 'https://' . $site->domain . '/' : null;
+        $healthUrl = $site->domain ? 'https://'.$site->domain.'/' : null;
         $runtimeType = app(SiteRuntimeService::class)->deploymentMode($site);
 
         DeploymentTarget::query()->firstOrCreate(
@@ -49,7 +49,7 @@ class SiteProvisioningService
             ],
             [
                 'host' => $site->ssh_host ?: $site->domain,
-                'deploy_path' => $site->deploy_path ? rtrim($site->deploy_path, '/\\') . '-staging' : null,
+                'deploy_path' => $site->deploy_path ? rtrim($site->deploy_path, '/\\').'-staging' : null,
                 'runtime_type' => $runtimeType,
                 'health_check_url' => null,
                 'release_strategy' => 'symlink',

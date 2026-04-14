@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Jobs\SyncFromWebhookJob;
 use App\Models\Site;
 use App\Models\WebhookDelivery;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
@@ -96,13 +96,14 @@ class WebhookController extends Controller
             return response()->json(['status' => 'no_matching_site']);
         }
 
-        $rawBody   = $request->getContent();
+        $rawBody = $request->getContent();
         $signature = $request->header('X-Hub-Signature-256');
 
         $dispatched = 0;
         foreach ($sites as $site) {
             if ($branch !== $site->branch) {
                 Log::info("Webhook push to [{$branch}] ignored for site [{$site->slug}] (configured: {$site->branch})");
+
                 continue;
             }
 
@@ -113,9 +114,10 @@ class WebhookController extends Controller
             if (! empty($site->webhook_secret)) {
                 if (! $this->verifyGitHubSignature($rawBody, $signature, $site->webhook_secret)) {
                     Log::warning('Per-site webhook signature verification failed, skipping dispatch.', [
-                        'site'        => $site->slug,
+                        'site' => $site->slug,
                         'delivery_id' => $deliveryId,
                     ]);
+
                     continue;
                 }
             }
@@ -127,7 +129,7 @@ class WebhookController extends Controller
         }
 
         return response()->json([
-            'status'     => 'ok',
+            'status' => 'ok',
             'dispatched' => $dispatched,
         ]);
     }
@@ -141,7 +143,7 @@ class WebhookController extends Controller
             return false;
         }
 
-        $expected = 'sha256=' . hash_hmac('sha256', $payload, $secret);
+        $expected = 'sha256='.hash_hmac('sha256', $payload, $secret);
 
         return hash_equals($expected, $signature);
     }

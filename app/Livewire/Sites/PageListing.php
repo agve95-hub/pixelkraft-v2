@@ -10,8 +10,11 @@ use Livewire\Component;
 class PageListing extends Component
 {
     public string $siteId;
+
     public string $search = '';
+
     public string $sortBy = 'url_path';
+
     public string $sortDir = 'asc';
 
     public function sort(string $column): void

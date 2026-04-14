@@ -9,6 +9,7 @@ use Livewire\Component;
 class DiscordWebhook extends Component
 {
     public string $webhookUrl = '';
+
     public bool $hasExistingWebhook = false;
 
     public function mount(): void
@@ -51,6 +52,7 @@ class DiscordWebhook extends Component
 
         if (empty($url)) {
             session()->flash('error', 'No Discord webhook is configured yet.');
+
             return;
         }
 
@@ -60,7 +62,7 @@ class DiscordWebhook extends Component
             ]);
             session()->flash('success', 'Test message sent to Discord.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to send test: ' . $e->getMessage());
+            session()->flash('error', 'Failed to send test: '.$e->getMessage());
         }
     }
 

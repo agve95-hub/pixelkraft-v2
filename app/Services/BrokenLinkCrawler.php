@@ -38,19 +38,19 @@ class BrokenLinkCrawler
         if (! empty($allBroken)) {
             Notification::createAlert(
                 type: 'broken_links',
-                title: "Found " . count($allBroken) . " broken links on {$site->name}",
-                body: "Pages affected: " . count(array_unique(array_column($allBroken, 'page'))),
+                title: 'Found '.count($allBroken)." broken links on {$site->name}",
+                body: 'Pages affected: '.count(array_unique(array_column($allBroken, 'page'))),
                 siteId: $site->id,
                 data: ['broken' => array_slice($allBroken, 0, 20)],
             );
         }
 
-        Log::info("Link crawl for [{$site->slug}]: {$totalLinks} links, " . count($allBroken) . " broken, " . count($allRedirects) . " redirects");
+        Log::info("Link crawl for [{$site->slug}]: {$totalLinks} links, ".count($allBroken).' broken, '.count($allRedirects).' redirects');
 
         return [
             'total_links' => $totalLinks,
-            'broken'      => $allBroken,
-            'redirects'   => $allRedirects,
+            'broken' => $allBroken,
+            'redirects' => $allRedirects,
         ];
     }
 
@@ -114,12 +114,13 @@ class BrokenLinkCrawler
 
                 if (! $exists && ! $this->fileExistsInRepo($site, $internalPath)) {
                     $broken[] = [
-                        'url'    => $link,
-                        'page'   => $page->url_path,
-                        'type'   => 'internal_404',
+                        'url' => $link,
+                        'page' => $page->url_path,
+                        'type' => 'internal_404',
                         'status' => 404,
                     ];
                 }
+
                 continue;
             }
 
@@ -129,16 +130,16 @@ class BrokenLinkCrawler
 
                 if ($result['status'] >= 400) {
                     $broken[] = [
-                        'url'    => $link,
-                        'page'   => $page->url_path,
-                        'type'   => 'external_' . $result['status'],
+                        'url' => $link,
+                        'page' => $page->url_path,
+                        'type' => 'external_'.$result['status'],
                         'status' => $result['status'],
                     ];
                 } elseif ($result['status'] >= 300 && $result['status'] < 400) {
                     $redirects[] = [
-                        'url'         => $link,
-                        'page'        => $page->url_path,
-                        'status'      => $result['status'],
+                        'url' => $link,
+                        'page' => $page->url_path,
+                        'status' => $result['status'],
                         'redirect_to' => $result['redirect_to'] ?? null,
                     ];
                 }
@@ -146,8 +147,8 @@ class BrokenLinkCrawler
         }
 
         return [
-            'total'     => count($links),
-            'broken'    => $broken,
+            'total' => count($links),
+            'broken' => $broken,
             'redirects' => $redirects,
         ];
     }
@@ -163,13 +164,13 @@ class BrokenLinkCrawler
         }
 
         if (str_starts_with($link, '/')) {
-            return $baseUrl . $link;
+            return $baseUrl.$link;
         }
 
         // Relative link
         $dir = dirname($pagePath);
 
-        return $baseUrl . '/' . ltrim($dir . '/' . $link, '/');
+        return $baseUrl.'/'.ltrim($dir.'/'.$link, '/');
     }
 
     private function isInternalLink(string $link, ?string $baseUrl): bool

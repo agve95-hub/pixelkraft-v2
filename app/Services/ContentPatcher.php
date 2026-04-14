@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\EditableRegion;
-use App\Models\Page;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\DomCrawler\Crawler;
@@ -14,6 +13,7 @@ class ContentPatcher
      * @var array<string, string>
      */
     private array $sourceContentCache = [];
+
     /**
      * @var array<string, mixed>
      */
@@ -60,7 +60,7 @@ class ContentPatcher
 
         $patched = match ($sourceType) {
             'html', 'template' => $this->patchHtml($originalContent, $region, $newContent),
-            'markdown'         => $this->patchMarkdown($originalContent, $region, $newContent),
+            'markdown' => $this->patchMarkdown($originalContent, $region, $newContent),
             'component',
             'component_preview',
             'component_runtime_preview' => $this->patchComponent($originalContent, $region, $newContent),
@@ -132,7 +132,7 @@ class ContentPatcher
     /**
      * Apply multiple edits at once (batch save).
      *
-     * @param array<string, string> $edits  [region_id => new_content]
+     * @param  array<string, string>  $edits  [region_id => new_content]
      * @return string[] List of all changed files
      */
     public function applyBatch(array $edits): array
@@ -175,7 +175,7 @@ class ContentPatcher
     {
         $escapedId = preg_quote($markerId, '/');
 
-        $pattern = '/(<!--\s*(?:cms:editable\s+id="' . $escapedId . '"[^>]*|pk:editable:start:' . $escapedId . '[^>]*)-->)\s*(.*?)\s*(<!--\s*(?:\/cms:editable|pk:editable:end:' . $escapedId . ')\s*-->)/s';
+        $pattern = '/(<!--\s*(?:cms:editable\s+id="'.$escapedId.'"[^>]*|pk:editable:start:'.$escapedId.'[^>]*)-->)\s*(.*?)\s*(<!--\s*(?:\/cms:editable|pk:editable:end:'.$escapedId.')\s*-->)/s';
 
         return preg_replace($pattern, "$1\n{$newContent}\n$3", $html, 1);
     }
@@ -253,8 +253,8 @@ class ContentPatcher
 
         // Replace in src="..." attribute
         return preg_replace(
-            '/src=(["\'])' . $escapedOld . '\1/',
-            'src=$1' . $newSrc . '$1',
+            '/src=(["\'])'.$escapedOld.'\1/',
+            'src=$1'.$newSrc.'$1',
             $html,
             1
         );
@@ -270,8 +270,8 @@ class ContentPatcher
             $escapedOld = preg_quote($oldContent, '/');
 
             return preg_replace(
-                '/href=(["\'])' . $escapedOld . '\1/',
-                'href=$1' . $newContent . '$1',
+                '/href=(["\'])'.$escapedOld.'\1/',
+                'href=$1'.$newContent.'$1',
                 $html,
                 1
             );
@@ -338,7 +338,7 @@ class ContentPatcher
 
         return preg_replace_callback(
             $strategy['pattern'],
-            fn (array $matches) => $matches[1] . $newContent . $matches[2],
+            fn (array $matches) => $matches[1].$newContent.$matches[2],
             $content,
             1
         ) ?? $content;
@@ -361,7 +361,7 @@ class ContentPatcher
         }
 
         $jsxMatches = $this->findCapturedMatches(
-            '/(?:>\\s*|\\}\\s*)(' . $pattern . ')(\\s*)(?=(?:<|\\{))/u',
+            '/(?:>\\s*|\\}\\s*)('.$pattern.')(\\s*)(?=(?:<|\\{))/u',
             $content,
             1,
         );
@@ -406,7 +406,7 @@ class ContentPatcher
         }
 
         $escaped = preg_quote($currentContent, '/');
-        $srcPattern = '/(src\\s*=\\s*["\\\'])' . $escaped . '(["\\\'])/u';
+        $srcPattern = '/(src\\s*=\\s*["\\\'])'.$escaped.'(["\\\'])/u';
 
         if (preg_match_all($srcPattern, $content) === 1) {
             return ['kind' => 'image_src', 'pattern' => $srcPattern];
@@ -493,7 +493,7 @@ class ContentPatcher
     private function findQuotedStringMatches(string $content, string $pattern): array
     {
         $ranges = $this->metadataBlockRanges($content);
-        $matches = $this->findCapturedMatches('/(["\\\'])(' . $pattern . ')\\1/u', $content, 2);
+        $matches = $this->findCapturedMatches('/(["\\\'])('.$pattern.')\\1/u', $content, 2);
 
         return array_values(array_filter($matches, function (array $match) use ($ranges) {
             return ! $this->offsetFallsWithinRanges($match['start'], $ranges);
@@ -501,7 +501,7 @@ class ContentPatcher
     }
 
     /**
-     * @param list<array{start: int, length: int}> $matches
+     * @param  list<array{start: int, length: int}>  $matches
      * @return list<array{start: int, length: int}>
      */
     private function uniqueOffsetMatches(array $matches): array
@@ -509,7 +509,7 @@ class ContentPatcher
         $unique = [];
 
         foreach ($matches as $match) {
-            $unique[$match['start'] . ':' . $match['length']] = $match;
+            $unique[$match['start'].':'.$match['length']] = $match;
         }
 
         return array_values($unique);
@@ -541,11 +541,13 @@ class ContentPatcher
                 if ($inString !== null) {
                     if ($escaped) {
                         $escaped = false;
+
                         continue;
                     }
 
                     if ($char === '\\') {
                         $escaped = true;
+
                         continue;
                     }
 
@@ -558,11 +560,13 @@ class ContentPatcher
 
                 if (in_array($char, ['"', "'", '`'], true)) {
                     $inString = $char;
+
                     continue;
                 }
 
                 if ($char === '{') {
                     $depth++;
+
                     continue;
                 }
 
@@ -575,6 +579,7 @@ class ContentPatcher
                             'end' => $cursor,
                         ];
                         $offset = $cursor + 1;
+
                         continue 2;
                     }
                 }
@@ -587,7 +592,7 @@ class ContentPatcher
     }
 
     /**
-     * @param list<array{start: int, end: int}> $ranges
+     * @param  list<array{start: int, end: int}>  $ranges
      */
     private function offsetFallsWithinRanges(int $offset, array $ranges): bool
     {
@@ -655,7 +660,7 @@ class ContentPatcher
             $pos = strpos($normalizedHaystack, $normalizedNeedle);
 
             if ($pos === false) {
-                Log::warning("ContentPatcher: could not find content to replace", [
+                Log::warning('ContentPatcher: could not find content to replace', [
                     'needle_preview' => mb_substr($needle, 0, 100),
                 ]);
 
@@ -687,6 +692,6 @@ class ContentPatcher
         $open = "<!-- pk:editable:start:{$region->marker_id} type=\"{$region->region_type}\" -->";
         $close = "<!-- pk:editable:end:{$region->marker_id} -->";
 
-        return $this->safeReplace($html, $currentContent, $open . "\n" . $currentContent . "\n" . $close);
+        return $this->safeReplace($html, $currentContent, $open."\n".$currentContent."\n".$close);
     }
 }

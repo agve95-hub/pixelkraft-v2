@@ -6,6 +6,7 @@ use App\Jobs\DeploySiteJob;
 use App\Jobs\ParseSiteJob;
 use App\Jobs\SyncFromWebhookJob;
 use App\Models\Site;
+use App\Services\GitSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
@@ -215,7 +216,7 @@ class WebhookControllerTest extends TestCase
             'head_commit' => ['message' => 'Webhook update'],
         ]);
 
-        $git = Mockery::mock(\App\Services\GitSyncService::class);
+        $git = Mockery::mock(GitSyncService::class);
         $git->shouldReceive('pull')->once()->withArgs(function (Site $passedSite) use ($site) {
             return $passedSite->id === $site->id;
         })->andReturn(true);
@@ -251,7 +252,7 @@ class WebhookControllerTest extends TestCase
         $body = json_encode($payload, JSON_THROW_ON_ERROR);
         $headers = $this->githubHeaders($payload, deliveryId: 'per-site-bad');
         // Override signature to be signed with global secret only (not per-site).
-        $headers['X-Hub-Signature-256'] = 'sha256=' . hash_hmac('sha256', $body, 'global-secret');
+        $headers['X-Hub-Signature-256'] = 'sha256='.hash_hmac('sha256', $body, 'global-secret');
 
         $response = $this
             ->withHeaders($headers)
@@ -290,7 +291,7 @@ class WebhookControllerTest extends TestCase
             'X-GitHub-Event' => 'push',
             'Accept' => 'application/json',
             'X-GitHub-Delivery' => 'per-site-good',
-            'X-Hub-Signature-256' => 'sha256=' . hash_hmac('sha256', $body, $perSiteSecret),
+            'X-Hub-Signature-256' => 'sha256='.hash_hmac('sha256', $body, $perSiteSecret),
         ];
 
         // Use the site-scoped route so the per-site secret is the only verification needed.
@@ -333,7 +334,7 @@ class WebhookControllerTest extends TestCase
         if ($includeSignature) {
             $body = json_encode($payload, JSON_THROW_ON_ERROR);
             $secret = (string) config('pixelkraft.github_webhook_secret', '');
-            $headers['X-Hub-Signature-256'] = 'sha256=' . hash_hmac('sha256', $body, $secret);
+            $headers['X-Hub-Signature-256'] = 'sha256='.hash_hmac('sha256', $body, $secret);
         }
 
         return $headers;

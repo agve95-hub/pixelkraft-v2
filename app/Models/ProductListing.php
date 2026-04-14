@@ -25,8 +25,8 @@ class ProductListing extends Model
     protected function casts(): array
     {
         return [
-            'price'      => 'decimal:2',
-            'images'     => 'array',
+            'price' => 'decimal:2',
+            'images' => 'array',
             'attributes' => 'array',
         ];
     }
@@ -38,6 +38,6 @@ class ProductListing extends Model
 
     public function formattedPrice(): string
     {
-        return $this->currency . ' ' . number_format((float) $this->price, 2);
+        return $this->currency.' '.number_format((float) $this->price, 2);
     }
 }

@@ -2,6 +2,4 @@
 
 namespace App\Services;
 
-class GitConflictException extends \RuntimeException
-{
-}
+class GitConflictException extends \RuntimeException {}

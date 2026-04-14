@@ -31,7 +31,7 @@ class StaticHtmlParser implements ParserInterface
                 continue;
             }
 
-            $relativePath = str_replace($repoPath . '/', '', $file->getPathname());
+            $relativePath = str_replace($repoPath.'/', '', $file->getPathname());
 
             if ($this->shouldSkip($relativePath)) {
                 continue;
@@ -189,7 +189,7 @@ class StaticHtmlParser implements ParserInterface
             $type = ($match[2][0] ?? $match[4][0] ?? 'text') ?: 'text';
             $offset = $match[0][1];
 
-            $closePattern = '/<!--\s*(?:\/cms:editable|pk:editable:end:' . preg_quote($markerId, '/') . ')\s*-->/';
+            $closePattern = '/<!--\s*(?:\/cms:editable|pk:editable:end:'.preg_quote($markerId, '/').')\s*-->/';
             $remaining = substr($html, $offset + strlen($match[0][0]));
 
             if (preg_match($closePattern, $remaining, $closeMatch, PREG_OFFSET_CAPTURE)) {
@@ -197,16 +197,16 @@ class StaticHtmlParser implements ParserInterface
                 $content = trim($content);
 
                 $regions[] = [
-                    'selector'        => "[data-cms-id=\"{$markerId}\"]",
+                    'selector' => "[data-cms-id=\"{$markerId}\"]",
                     'render_selector' => "[data-cms-id=\"{$markerId}\"]",
-                    'type'            => $type,
-                    'is_static'       => false,
-                    'confidence'      => 1.0,
-                    'content'         => $content,
-                    'marker_id'       => $markerId,
+                    'type' => $type,
+                    'is_static' => false,
+                    'confidence' => 1.0,
+                    'content' => $content,
+                    'marker_id' => $markerId,
                     'dom_fingerprint' => $this->buildContentFingerprint($type, $content, []),
                     'source_location' => [
-                        'file'   => $filePath,
+                        'file' => $filePath,
                         'marker' => $markerId,
                     ],
                     'source_anchor' => [
@@ -278,22 +278,22 @@ class StaticHtmlParser implements ParserInterface
                     $cssSelector = $this->buildSelector($node, $index);
 
                     $type = match (true) {
-                        $isImage                        => 'image',
-                        $tagName === 'a'                => 'link',
+                        $isImage => 'image',
+                        $tagName === 'a' => 'link',
                         in_array($tagName, ['ul', 'ol']) => 'list',
                         in_array($tagName, ['section', 'article', 'main']) => 'section',
-                        default                         => 'text',
+                        default => 'text',
                     };
 
                     $regions[] = [
-                        'selector'        => $cssSelector,
+                        'selector' => $cssSelector,
                         'render_selector' => $cssSelector,
-                        'type'            => $type,
-                        'is_static'       => $score < 0.5,
-                        'confidence'      => round($score, 2),
-                        'content'         => $isImage ? $node->attr('src') : mb_substr($text, 0, 500),
+                        'type' => $type,
+                        'is_static' => $score < 0.5,
+                        'confidence' => round($score, 2),
+                        'content' => $isImage ? $node->attr('src') : mb_substr($text, 0, 500),
                         'source_location' => [
-                            'file'     => $filePath,
+                            'file' => $filePath,
                             'selector' => $cssSelector,
                         ],
                         'dom_fingerprint' => $this->buildFingerprint($node, $cssSelector, $type, $isImage ? ($node->attr('src') ?? '') : $text),
@@ -430,7 +430,7 @@ class StaticHtmlParser implements ParserInterface
         }
 
         if ($domNode->hasAttribute('id')) {
-            return '#' . $domNode->getAttribute('id');
+            return '#'.$domNode->getAttribute('id');
         }
 
         $segments = [];
@@ -440,11 +440,11 @@ class StaticHtmlParser implements ParserInterface
             $tagName = strtolower($current->tagName);
 
             if ($current->hasAttribute('id')) {
-                array_unshift($segments, '#' . $current->getAttribute('id'));
+                array_unshift($segments, '#'.$current->getAttribute('id'));
                 break;
             }
 
-            array_unshift($segments, $tagName . ':nth-of-type(' . $this->nthOfType($current) . ')');
+            array_unshift($segments, $tagName.':nth-of-type('.$this->nthOfType($current).')');
 
             $parent = $current->parentNode;
             if (! $parent instanceof \DOMElement || in_array(strtolower($parent->tagName), ['html'], true)) {
@@ -454,7 +454,7 @@ class StaticHtmlParser implements ParserInterface
             $current = $parent;
         }
 
-        return implode(' > ', $segments) ?: strtolower($domNode->tagName) . ':nth-of-type(' . max(1, $index + 1) . ')';
+        return implode(' > ', $segments) ?: strtolower($domNode->tagName).':nth-of-type('.max(1, $index + 1).')';
     }
 
     private function nthOfType(\DOMElement $element): int
@@ -532,7 +532,7 @@ class StaticHtmlParser implements ParserInterface
         $path = $filePath;
 
         if ($outputDir) {
-            $path = preg_replace('#^' . preg_quote($outputDir, '#') . '/?#', '', $path);
+            $path = preg_replace('#^'.preg_quote($outputDir, '#').'/?#', '', $path);
         }
 
         // Also strip common source dirs
@@ -540,7 +540,7 @@ class StaticHtmlParser implements ParserInterface
 
         $path = preg_replace('#/?index\.html?$#', '', $path);
         $path = preg_replace('#\.html?$#', '', $path);
-        $path = '/' . ltrim($path, '/');
+        $path = '/'.ltrim($path, '/');
 
         return $path ?: '/';
     }

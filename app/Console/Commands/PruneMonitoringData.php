@@ -33,6 +33,7 @@ class PruneMonitoringData extends Command
 
         if ($uptimeDays < 1 || $eventsDays < 1) {
             $this->error('Retention days must be at least 1.');
+
             return self::FAILURE;
         }
 

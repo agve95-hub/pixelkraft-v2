@@ -41,7 +41,7 @@ class SpaComponentParser implements ParserInterface
                     continue;
                 }
 
-                $relativePath = str_replace($repoPath . '/', '', $file->getPathname());
+                $relativePath = str_replace($repoPath.'/', '', $file->getPathname());
 
                 if ($this->shouldSkip($relativePath)) {
                     continue;
@@ -73,11 +73,11 @@ class SpaComponentParser implements ParserInterface
 
         // Extract content based on file type
         $extractedContent = match ($extension) {
-            'jsx', 'tsx'    => $this->parseJsx($content),
-            'vue'           => $this->parseVueSfc($content),
-            'svelte'        => $this->parseSvelte($content),
-            'astro'         => $this->parseAstro($content),
-            default         => $this->parseGeneric($content),
+            'jsx', 'tsx' => $this->parseJsx($content),
+            'vue' => $this->parseVueSfc($content),
+            'svelte' => $this->parseSvelte($content),
+            'astro' => $this->parseAstro($content),
+            default => $this->parseGeneric($content),
         };
 
         $renderedPreview = $this->parseRenderedPreview($repoPath, $filePath, $urlPath, $content, $site);
@@ -111,10 +111,10 @@ class SpaComponentParser implements ParserInterface
     private function parseJsx(string $content): ?array
     {
         $result = [
-            'title'            => null,
+            'title' => null,
             'meta_description' => null,
-            'text_nodes'       => [],
-            'images'           => [],
+            'text_nodes' => [],
+            'images' => [],
         ];
 
         // Extract text content from JSX elements
@@ -171,10 +171,10 @@ class SpaComponentParser implements ParserInterface
     private function parseVueSfc(string $content): ?array
     {
         $result = [
-            'title'            => null,
+            'title' => null,
             'meta_description' => null,
-            'text_nodes'       => [],
-            'images'           => [],
+            'text_nodes' => [],
+            'images' => [],
         ];
 
         // Extract <template> block
@@ -217,10 +217,10 @@ class SpaComponentParser implements ParserInterface
     private function parseSvelte(string $content): ?array
     {
         $result = [
-            'title'            => null,
+            'title' => null,
             'meta_description' => null,
-            'text_nodes'       => [],
-            'images'           => [],
+            'text_nodes' => [],
+            'images' => [],
         ];
 
         // Remove <script> and <style> blocks
@@ -269,10 +269,10 @@ class SpaComponentParser implements ParserInterface
         $template = count($parts) >= 3 ? $parts[2] : ($parts[1] ?? $content);
 
         $result = [
-            'title'            => null,
+            'title' => null,
             'meta_description' => null,
-            'text_nodes'       => [],
-            'images'           => [],
+            'text_nodes' => [],
+            'images' => [],
         ];
 
         // Extract frontmatter values
@@ -329,13 +329,13 @@ class SpaComponentParser implements ParserInterface
 
         foreach ($extracted['text_nodes'] as $text) {
             $regions[] = [
-                'selector'        => "[data-pk-region=\"spa-{$index}\"]",
-                'type'            => 'text',
-                'is_static'       => false,
-                'confidence'      => 0.6, // Lower confidence for regex-extracted content
-                'content'         => mb_substr($text, 0, 500),
+                'selector' => "[data-pk-region=\"spa-{$index}\"]",
+                'type' => 'text',
+                'is_static' => false,
+                'confidence' => 0.6, // Lower confidence for regex-extracted content
+                'content' => mb_substr($text, 0, 500),
                 'source_location' => [
-                    'file'        => $filePath,
+                    'file' => $filePath,
                     'source_type' => 'component',
                 ],
             ];
@@ -344,13 +344,13 @@ class SpaComponentParser implements ParserInterface
 
         foreach ($extracted['images'] ?? [] as $src) {
             $regions[] = [
-                'selector'        => "[data-pk-region=\"spa-{$index}\"]",
-                'type'            => 'image',
-                'is_static'       => false,
-                'confidence'      => 0.5,
-                'content'         => $src,
+                'selector' => "[data-pk-region=\"spa-{$index}\"]",
+                'type' => 'image',
+                'is_static' => false,
+                'confidence' => 0.5,
+                'content' => $src,
                 'source_location' => [
-                    'file'        => $filePath,
+                    'file' => $filePath,
                     'source_type' => 'component',
                 ],
             ];
@@ -427,7 +427,7 @@ class SpaComponentParser implements ParserInterface
             sourceContent: $sourceContent,
             urlPath: $urlPath,
             sourceType: 'component_runtime_preview',
-            previewReference: $this->runtime->previewBaseUrl($site) . $urlPath,
+            previewReference: $this->runtime->previewBaseUrl($site).$urlPath,
         );
     }
 
@@ -471,11 +471,11 @@ class SpaComponentParser implements ParserInterface
     private function getExtensions(string $projectType): array
     {
         return match ($projectType) {
-            'react', 'nextjs'  => ['jsx', 'tsx'],
-            'vue', 'nuxt'      => ['vue'],
-            'svelte'           => ['svelte'],
-            'astro'            => ['astro', 'md', 'mdx'],
-            default            => ['jsx', 'tsx', 'vue', 'svelte', 'astro'],
+            'react', 'nextjs' => ['jsx', 'tsx'],
+            'vue', 'nuxt' => ['vue'],
+            'svelte' => ['svelte'],
+            'astro' => ['astro', 'md', 'mdx'],
+            default => ['jsx', 'tsx', 'vue', 'svelte', 'astro'],
         };
     }
 
@@ -483,9 +483,9 @@ class SpaComponentParser implements ParserInterface
     {
         $candidates = match ($projectType) {
             'nextjs' => ['app', 'pages', 'src/app', 'src/pages'],
-            'nuxt'   => ['pages', 'components'],
-            'astro'  => ['src/pages', 'src/content'],
-            default  => ['src/pages', 'src/views', 'src/routes', 'pages', 'src/components', 'src'],
+            'nuxt' => ['pages', 'components'],
+            'astro' => ['src/pages', 'src/content'],
+            default => ['src/pages', 'src/views', 'src/routes', 'pages', 'src/components', 'src'],
         };
 
         return array_map(fn ($dir) => "{$repoPath}/{$dir}", $candidates);
@@ -501,10 +501,10 @@ class SpaComponentParser implements ParserInterface
 
         // Page-like patterns by framework
         $pagePatterns = match ($projectType) {
-            'nuxt'   => ['#^pages/#'],
-            'astro'  => ['#^src/pages/#', '#^src/content/#'],
+            'nuxt' => ['#^pages/#'],
+            'astro' => ['#^src/pages/#', '#^src/content/#'],
             'svelte' => ['#^src/routes/#'],
-            default  => ['#(page|view|screen|route)#i', '#^src/(pages|views|routes)/#'],
+            default => ['#(page|view|screen|route)#i', '#^src/(pages|views|routes)/#'],
         };
 
         foreach ($pagePatterns as $pattern) {
@@ -546,7 +546,7 @@ class SpaComponentParser implements ParserInterface
         $path = preg_replace('/\[\.\.\.([^\]]+)\]/', ':$1*', $path);
         $path = preg_replace('/\[([^\]]+)\]/', ':$1', $path);
 
-        $path = '/' . ltrim($path, '/');
+        $path = '/'.ltrim($path, '/');
 
         return $path ?: '/';
     }

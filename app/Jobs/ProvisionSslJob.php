@@ -15,7 +15,9 @@ class ProvisionSslJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 2;
+
     public int $backoff = 60;
+
     public int $timeout = 180;
 
     public function __construct(

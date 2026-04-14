@@ -4,8 +4,8 @@ namespace App\Livewire\Seo;
 
 use App\Models\Redirect;
 use App\Services\NginxConfigService;
-use Illuminate\Contracts\View\View;
 use App\Support\SiteAccess;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class RedirectManager extends Component
@@ -13,8 +13,11 @@ class RedirectManager extends Component
     public string $siteId;
 
     public string $fromPath = '';
+
     public string $toPath = '';
+
     public int $statusCode = 301;
+
     public ?string $editingId = null;
 
     private function siteIdOrFail(): string
@@ -25,8 +28,8 @@ class RedirectManager extends Component
     public function save(): void
     {
         $this->validate([
-            'fromPath'   => 'required|string|max:500|starts_with:/',
-            'toPath'     => 'required|string|max:500',
+            'fromPath' => 'required|string|max:500|starts_with:/',
+            'toPath' => 'required|string|max:500',
             'statusCode' => 'required|in:301,302',
         ]);
         $siteId = $this->siteIdOrFail();
@@ -37,15 +40,15 @@ class RedirectManager extends Component
                 ->where('site_id', $siteId)
                 ->firstOrFail();
             $redirect->update([
-                'from_path'   => $this->fromPath,
-                'to_path'     => $this->toPath,
+                'from_path' => $this->fromPath,
+                'to_path' => $this->toPath,
                 'status_code' => $this->statusCode,
             ]);
         } else {
             Redirect::create([
-                'site_id'     => $siteId,
-                'from_path'   => $this->fromPath,
-                'to_path'     => $this->toPath,
+                'site_id' => $siteId,
+                'from_path' => $this->fromPath,
+                'to_path' => $this->toPath,
                 'status_code' => $this->statusCode,
             ]);
         }

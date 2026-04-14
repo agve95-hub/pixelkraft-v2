@@ -29,7 +29,7 @@ class DeployLog extends Model
     {
         return [
             'duration_ms' => 'integer',
-            'created_at'  => 'datetime',
+            'created_at' => 'datetime',
         ];
     }
 
@@ -76,13 +76,13 @@ class DeployLog extends Model
         $seconds = $this->duration_ms / 1000;
 
         return $seconds >= 60
-            ? round($seconds / 60, 1) . 'm'
-            : round($seconds, 1) . 's';
+            ? round($seconds / 60, 1).'m'
+            : round($seconds, 1).'s';
     }
 
     public function appendLog(string $line): void
     {
-        $this->output_log = ($this->output_log ?? '') . $line . "\n";
+        $this->output_log = ($this->output_log ?? '').$line."\n";
         $this->save();
     }
 }

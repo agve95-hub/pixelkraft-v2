@@ -98,7 +98,7 @@ class StaticDeploymentAdapter implements DeploymentAdapter
         if ($configuredOutputDir === '.next' || File::isDirectory("{$repoPath}/.next")) {
             throw new \RuntimeException(
                 'Next.js built a `.next` directory, which is not a static deploy artifact. '
-                . 'Configure static export so the build outputs to `out`, or switch the site deployment mode to runtime.'
+                .'Configure static export so the build outputs to `out`, or switch the site deployment mode to runtime.'
             );
         }
 
@@ -109,7 +109,7 @@ class StaticDeploymentAdapter implements DeploymentAdapter
 
     private function replaceDirectory(string $sourceDir, string $targetDir): void
     {
-        $stagingDir = $targetDir . '.__pixelkraft_tmp';
+        $stagingDir = $targetDir.'.__pixelkraft_tmp';
 
         File::deleteDirectory($stagingDir);
         File::ensureDirectoryExists(dirname($targetDir), 0755, true);

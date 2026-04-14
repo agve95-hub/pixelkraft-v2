@@ -10,9 +10,9 @@ use Google\Analytics\Data\V1beta\Client\BetaAnalyticsDataClient;
 use Google\Analytics\Data\V1beta\DateRange;
 use Google\Analytics\Data\V1beta\Dimension;
 use Google\Analytics\Data\V1beta\Filter;
-use Google\Analytics\Data\V1beta\FilterExpression;
 use Google\Analytics\Data\V1beta\Filter\StringFilter;
 use Google\Analytics\Data\V1beta\Filter\StringFilter\MatchType;
+use Google\Analytics\Data\V1beta\FilterExpression;
 use Google\Analytics\Data\V1beta\Metric;
 use Google\Analytics\Data\V1beta\RunReportRequest;
 use Illuminate\Support\Collection;
@@ -147,12 +147,12 @@ class AnalyticsAggregator
     {
         if ($pageIds->isEmpty()) {
             return [
-                'total_visitors'  => 0,
+                'total_visitors' => 0,
                 'total_pageviews' => 0,
                 'avg_bounce_rate' => 0.0,
                 'avg_session_sec' => 0,
-                'daily'           => [],
-                'top_pages'       => [],
+                'daily' => [],
+                'top_pages' => [],
             ];
         }
 
@@ -166,14 +166,14 @@ class AnalyticsAggregator
         $snapshots = $query->get();
 
         return [
-            'total_visitors'  => (int) $snapshots->sum('visitors'),
+            'total_visitors' => (int) $snapshots->sum('visitors'),
             'total_pageviews' => (int) $snapshots->sum('pageviews'),
             'avg_bounce_rate' => round((float) ($snapshots->avg('bounce_rate') ?? 0), 1),
             'avg_session_sec' => (int) ($snapshots->avg('avg_session_sec') ?? 0),
             'daily' => $snapshots->groupBy(fn ($s) => $s->date->format('Y-m-d'))
                 ->map(fn ($group) => [
-                    'date'      => $group->first()->date->format('Y-m-d'),
-                    'visitors'  => (int) $group->sum('visitors'),
+                    'date' => $group->first()->date->format('Y-m-d'),
+                    'visitors' => (int) $group->sum('visitors'),
                     'pageviews' => (int) $group->sum('pageviews'),
                 ])
                 ->sortBy('date')
@@ -181,8 +181,8 @@ class AnalyticsAggregator
                 ->all(),
             'top_pages' => $snapshots->groupBy('page_id')
                 ->map(fn ($group) => [
-                    'page_id'   => (string) $group->first()->page_id,
-                    'visitors'  => (int) $group->sum('visitors'),
+                    'page_id' => (string) $group->first()->page_id,
+                    'visitors' => (int) $group->sum('visitors'),
                     'pageviews' => (int) $group->sum('pageviews'),
                 ])
                 ->sortByDesc('pageviews')
@@ -205,13 +205,13 @@ class AnalyticsAggregator
         $snapshots = $query->get();
 
         return [
-            'total_visitors'  => (int) $snapshots->sum('visitors'),
+            'total_visitors' => (int) $snapshots->sum('visitors'),
             'total_pageviews' => (int) $snapshots->sum('pageviews'),
             'avg_bounce_rate' => round((float) ($snapshots->avg('bounce_rate') ?? 0), 1),
             'daily' => $snapshots->groupBy(fn ($s) => $s->date->format('Y-m-d'))
                 ->map(fn ($group) => [
-                    'date'      => $group->first()->date->format('Y-m-d'),
-                    'visitors'  => (int) $group->sum('visitors'),
+                    'date' => $group->first()->date->format('Y-m-d'),
+                    'visitors' => (int) $group->sum('visitors'),
                     'pageviews' => (int) $group->sum('pageviews'),
                 ])
                 ->sortBy('date')
@@ -241,7 +241,7 @@ class AnalyticsAggregator
         }
 
         $groups = $events->groupBy(function (AnalyticsEvent $event): string {
-            return $event->occurred_at->toDateString() . '|' . $this->normalizePath($event->path ?: '/');
+            return $event->occurred_at->toDateString().'|'.$this->normalizePath($event->path ?: '/');
         });
 
         $writes = 0;
@@ -308,7 +308,7 @@ class AnalyticsAggregator
                     'query' => $this->cloudflareQuery(),
                     'variables' => [
                         'zoneTag' => $site->cf_zone_id,
-                        'date'    => $yesterday,
+                        'date' => $yesterday,
                     ],
                 ]);
 
@@ -333,12 +333,12 @@ class AnalyticsAggregator
                 AnalyticsSnapshot::updateOrCreate(
                     [
                         'page_id' => $homepage->id,
-                        'date'    => $yesterday,
-                        'source'  => 'cloudflare',
+                        'date' => $yesterday,
+                        'source' => 'cloudflare',
                     ],
                     [
-                        'visitors'   => $visitors,
-                        'pageviews'  => $pageviews,
+                        'visitors' => $visitors,
+                        'pageviews' => $pageviews,
                         'created_at' => now(),
                     ]
                 );

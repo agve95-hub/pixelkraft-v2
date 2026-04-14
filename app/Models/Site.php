@@ -81,24 +81,24 @@ class Site extends Model
     protected function casts(): array
     {
         return [
-            'github_token'      => 'encrypted',
-            'webhook_secret'    => 'encrypted',
-            'cf_api_token'      => 'encrypted',
-            'smtp_password'     => 'encrypted',
-            'ftp_ssh_password'  => 'encrypted',
-            'env_variables'     => 'array',
-            'monthly_retainer'  => 'decimal:2',
-            'uptime_percent'    => 'decimal:2',
-            'response_avg_ms'   => 'integer',
-            'response_p95_ms'   => 'integer',
-            'downtime_minutes'  => 'integer',
-            'visitors_today'    => 'integer',
+            'github_token' => 'encrypted',
+            'webhook_secret' => 'encrypted',
+            'cf_api_token' => 'encrypted',
+            'smtp_password' => 'encrypted',
+            'ftp_ssh_password' => 'encrypted',
+            'env_variables' => 'array',
+            'monthly_retainer' => 'decimal:2',
+            'uptime_percent' => 'decimal:2',
+            'response_avg_ms' => 'integer',
+            'response_p95_ms' => 'integer',
+            'downtime_minutes' => 'integer',
+            'visitors_today' => 'integer',
             'visitors_change_percent' => 'float',
-            'ssl_expires_at'    => 'datetime',
-            'last_deployed_at'  => 'datetime',
-            'last_synced_at'    => 'datetime',
+            'ssl_expires_at' => 'datetime',
+            'last_deployed_at' => 'datetime',
+            'last_synced_at' => 'datetime',
             'maintenance_settings' => 'array',
-            'is_active'         => 'boolean',
+            'is_active' => 'boolean',
             'deploy_on_webhook' => 'boolean',
         ];
     }
@@ -195,13 +195,13 @@ class Site extends Model
                 $site->slug = Str::slug($site->name);
             }
             if (empty($site->r2_bucket_prefix)) {
-                $site->r2_bucket_prefix = 'sites/' . $site->slug . '/media';
+                $site->r2_bucket_prefix = 'sites/'.$site->slug.'/media';
             }
             if (empty($site->repo_path)) {
-                $site->repo_path = config('pixelkraft.repos_path') . '/' . $site->slug;
+                $site->repo_path = config('pixelkraft.repos_path').'/'.$site->slug;
             }
             if (empty($site->deploy_path)) {
-                $site->deploy_path = config('pixelkraft.sites_deploy_path') . '/' . $site->slug;
+                $site->deploy_path = config('pixelkraft.sites_deploy_path').'/'.$site->slug;
             }
         });
 
@@ -229,7 +229,7 @@ class Site extends Model
 
         return [
             'owner' => trim(dirname($path), '/'),
-            'repo'  => basename($path, '.git'),
+            'repo' => basename($path, '.git'),
         ];
     }
 
@@ -272,7 +272,7 @@ class Site extends Model
             return null;
         }
 
-        return strtolower($segments[0] . '/' . $segments[1]);
+        return strtolower($segments[0].'/'.$segments[1]);
     }
 
     // ── Relationships ───────────────────────────
@@ -366,7 +366,7 @@ class Site extends Model
             return $directName;
         }
 
-        $name = trim(trim((string) $this->client_first_name) . ' ' . trim((string) $this->client_last_name));
+        $name = trim(trim((string) $this->client_first_name).' '.trim((string) $this->client_last_name));
 
         if ($name !== '') {
             return $name;
@@ -493,33 +493,33 @@ class Site extends Model
         $this->deleteDirectory($this->repo_path, $this->slug);
         $this->deleteDirectory($this->deploy_path, $this->slug);
         $this->deleteDirectory($this->runtimeRootPath(), $this->slug);
-        $this->deleteFile($this->runtimePidPath(), $this->slug . '.pid');
-        $this->deleteFile($this->runtimeLogPath(), $this->slug . '.log');
-        $this->deleteFile($this->nginxConfigPath(), $this->slug . '.conf');
-        $this->deleteFile($this->nginxEnabledPath(), $this->slug . '.conf');
+        $this->deleteFile($this->runtimePidPath(), $this->slug.'.pid');
+        $this->deleteFile($this->runtimeLogPath(), $this->slug.'.log');
+        $this->deleteFile($this->nginxConfigPath(), $this->slug.'.conf');
+        $this->deleteFile($this->nginxEnabledPath(), $this->slug.'.conf');
     }
 
     private function runtimeRootPath(): string
     {
         return rtrim((string) config('pixelkraft.runtime.storage_path', storage_path('app/runtime-sites')), '/')
-            . '/' . $this->slug;
+            .'/'.$this->slug;
     }
 
     private function runtimePidPath(): string
     {
         return rtrim((string) config('pixelkraft.runtime.pid_path', storage_path('app/runtime-pids')), '/')
-            . '/' . $this->slug . '.pid';
+            .'/'.$this->slug.'.pid';
     }
 
     private function runtimeLogPath(): string
     {
         return rtrim((string) config('pixelkraft.runtime.log_path', storage_path('logs/runtime-sites')), '/')
-            . '/' . $this->slug . '.log';
+            .'/'.$this->slug.'.log';
     }
 
     private function nginxConfigPath(): string
     {
-        return (string) ($this->nginx_conf_path ?: (rtrim((string) config('pixelkraft.nginx_sites_path'), '/') . '/' . $this->slug . '.conf'));
+        return (string) ($this->nginx_conf_path ?: (rtrim((string) config('pixelkraft.nginx_sites_path'), '/').'/'.$this->slug.'.conf'));
     }
 
     private function nginxEnabledPath(): string
@@ -530,7 +530,7 @@ class Site extends Model
             (string) config('pixelkraft.nginx_sites_path')
         );
 
-        return rtrim($enabledDir, '/') . '/' . $this->slug . '.conf';
+        return rtrim($enabledDir, '/').'/'.$this->slug.'.conf';
     }
 
     private function deleteDirectory(?string $path, ?string $expectedBasename = null): void
@@ -543,12 +543,14 @@ class Site extends Model
 
         if ($expectedBasename !== null && basename($path) !== $expectedBasename) {
             Log::warning("Skipped deleting unexpected directory [{$path}] for site [{$this->slug}]");
+
             return;
         }
 
         try {
             if (is_link($path)) {
                 @unlink($path);
+
                 return;
             }
 
@@ -572,6 +574,7 @@ class Site extends Model
 
         if ($expectedBasename !== null && basename($path) !== $expectedBasename) {
             Log::warning("Skipped deleting unexpected file [{$path}] for site [{$this->slug}]");
+
             return;
         }
 

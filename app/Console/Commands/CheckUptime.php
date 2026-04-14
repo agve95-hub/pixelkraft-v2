@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Http;
 class CheckUptime extends Command
 {
     protected $signature = 'pixelkraft:check-uptime';
+
     protected $description = 'Run uptime checks on all active sites';
 
     public function handle(): int
@@ -42,12 +43,12 @@ class CheckUptime extends Command
                 && $statusCode < 300;
 
             UptimeCheck::create([
-                'site_id'          => $site->id,
-                'status_code'      => $statusCode,
+                'site_id' => $site->id,
+                'status_code' => $statusCode,
                 'response_time_ms' => $responseTimeMs,
-                'is_up'            => $isUp,
-                'is_degraded'      => $isDegraded,
-                'checked_at'       => now(),
+                'is_up' => $isUp,
+                'is_degraded' => $isDegraded,
+                'checked_at' => now(),
             ]);
 
             // Alert after 3 consecutive failures

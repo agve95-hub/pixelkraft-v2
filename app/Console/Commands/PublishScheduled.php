@@ -2,13 +2,14 @@
 
 namespace App\Console\Commands;
 
-use App\Models\BlogPost;
 use App\Jobs\DeploySiteJob;
+use App\Models\BlogPost;
 use Illuminate\Console\Command;
 
 class PublishScheduled extends Command
 {
     protected $signature = 'pixelkraft:publish-scheduled';
+
     protected $description = 'Publish blog posts that are scheduled for the current time';
 
     public function handle(): int
@@ -27,7 +28,7 @@ class PublishScheduled extends Command
 
         foreach ($posts as $post) {
             $post->update([
-                'status'       => 'published',
+                'status' => 'published',
                 'published_at' => now(),
             ]);
 

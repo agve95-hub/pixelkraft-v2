@@ -32,8 +32,8 @@ class BlogPost extends Model
     protected function casts(): array
     {
         return [
-            'tags'         => 'array',
-            'schema_json'  => 'array',
+            'tags' => 'array',
+            'schema_json' => 'array',
             'published_at' => 'datetime',
             'scheduled_at' => 'datetime',
         ];

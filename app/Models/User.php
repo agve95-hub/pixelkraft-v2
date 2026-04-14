@@ -32,8 +32,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'discord_webhook'   => 'encrypted',
+            'password' => 'hashed',
+            'discord_webhook' => 'encrypted',
         ];
     }
 

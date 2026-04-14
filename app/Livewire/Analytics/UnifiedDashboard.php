@@ -5,10 +5,10 @@ namespace App\Livewire\Analytics;
 use App\Models\AnalyticsSnapshot;
 use App\Models\DeployLog;
 use App\Models\Page;
-use App\Models\UptimeCheck;
 use App\Models\Site;
-use App\Support\SiteAccess;
+use App\Models\UptimeCheck;
 use App\Services\AnalyticsAggregator;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -16,6 +16,7 @@ use Livewire\Component;
 class UnifiedDashboard extends Component
 {
     public ?string $siteId = null;
+
     public int $days = 30;
 
     public function render(): View

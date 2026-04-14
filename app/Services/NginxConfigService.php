@@ -149,7 +149,7 @@ class NginxConfigService
 
         foreach ($redirects as $redirect) {
             $from = preg_quote($redirect->from_path, '~');
-            $to   = $this->sanitizeRedirectToPath($redirect->to_path);
+            $to = $this->sanitizeRedirectToPath($redirect->to_path);
             $redirectBlock .= "    rewrite ^{$from}$ {$to} permanent;\n";
         }
 

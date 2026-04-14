@@ -23,11 +23,11 @@ class UptimeCheck extends Model
     protected function casts(): array
     {
         return [
-            'status_code'      => 'integer',
+            'status_code' => 'integer',
             'response_time_ms' => 'integer',
-            'is_up'            => 'boolean',
-            'is_degraded'      => 'boolean',
-            'checked_at'       => 'datetime',
+            'is_up' => 'boolean',
+            'is_degraded' => 'boolean',
+            'checked_at' => 'datetime',
         ];
     }
 
@@ -43,7 +43,7 @@ class UptimeCheck extends Model
         }
 
         return $this->response_time_ms >= 1000
-            ? round($this->response_time_ms / 1000, 2) . 's'
-            : $this->response_time_ms . 'ms';
+            ? round($this->response_time_ms / 1000, 2).'s'
+            : $this->response_time_ms.'ms';
     }
 }

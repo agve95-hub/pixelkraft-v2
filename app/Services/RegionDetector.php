@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\EditableRegion;
 use App\Models\Page;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class RegionDetector
@@ -36,7 +37,7 @@ class RegionDetector
             if (abs($newScore - $region->confidence_score) > 0.05) {
                 $region->update([
                     'confidence_score' => round($newScore, 2),
-                    'is_static'        => $newScore < 0.5,
+                    'is_static' => $newScore < 0.5,
                 ]);
                 $refined++;
             }
@@ -64,11 +65,11 @@ class RegionDetector
         }
 
         $region->update([
-            'is_static'        => false,
+            'is_static' => false,
             'detection_method' => $markerId ? 'marker' : 'manual',
-            'marker_id'        => $markerId,
+            'marker_id' => $markerId,
             'confidence_score' => 1.0,
-            'source_anchor'    => $sourceAnchor,
+            'source_anchor' => $sourceAnchor,
             'last_verified_at' => now(),
         ]);
     }
@@ -83,10 +84,10 @@ class RegionDetector
         $sourceAnchor['locked'] = true;
 
         $region->update([
-            'is_static'        => true,
+            'is_static' => true,
             'detection_method' => 'manual',
             'confidence_score' => 1.0,
-            'source_anchor'    => $sourceAnchor,
+            'source_anchor' => $sourceAnchor,
             'last_verified_at' => now(),
         ]);
     }
@@ -107,7 +108,7 @@ class RegionDetector
             $slug = $region->id;
         }
 
-        return "{$baseName}-{$slug}-" . substr((string) $region->id, 0, 8);
+        return "{$baseName}-{$slug}-".substr((string) $region->id, 0, 8);
     }
 
     /**
@@ -141,7 +142,7 @@ class RegionDetector
      * Build a map of content that repeats across pages.
      */
     /**
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Page>  $otherPages
+     * @param  Collection<int, Page>  $otherPages
      * @return array<string, int>
      */
     private function buildRepeatMap(iterable $otherPages): array
@@ -205,7 +206,7 @@ class RegionDetector
         // Handle #id selectors
         if (preg_match('/^#(.+)$/', $selector, $m)) {
             $id = preg_quote($m[1], '/');
-            $pattern = '/(<[^>]*\bid=["\']' . $id . '["\'][^>]*>)(.*?)(<\/[^>]+>)/s';
+            $pattern = '/(<[^>]*\bid=["\']'.$id.'["\'][^>]*>)(.*?)(<\/[^>]+>)/s';
 
             return preg_replace($pattern, "{$openMarker}\n$1$2$3\n{$closeMarker}", $html, 1);
         }
@@ -214,7 +215,7 @@ class RegionDetector
         if (preg_match('/^(\w+)\.(.+)$/', $selector, $m)) {
             $tag = preg_quote($m[1], '/');
             $class = preg_quote($m[2], '/');
-            $pattern = '/(<' . $tag . '[^>]*\bclass=["\'][^"\']*\b' . $class . '\b[^"\']*["\'][^>]*>)(.*?)(<\/' . $tag . '>)/s';
+            $pattern = '/(<'.$tag.'[^>]*\bclass=["\'][^"\']*\b'.$class.'\b[^"\']*["\'][^>]*>)(.*?)(<\/'.$tag.'>)/s';
 
             return preg_replace($pattern, "{$openMarker}\n$1$2$3\n{$closeMarker}", $html, 1);
         }

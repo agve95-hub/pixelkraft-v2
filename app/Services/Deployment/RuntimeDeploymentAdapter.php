@@ -35,6 +35,6 @@ class RuntimeDeploymentAdapter implements DeploymentAdapter
     public function activate(Site $site, DeployLog $log): void
     {
         $this->runtime->deploy($site, $log);
-        $log->appendLog('  Runtime site deployed on ' . $this->runtime->baseUrl($site));
+        $log->appendLog('  Runtime site deployed on '.$this->runtime->baseUrl($site));
     }
 }

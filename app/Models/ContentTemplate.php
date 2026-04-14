@@ -48,7 +48,7 @@ class ContentTemplate extends Model
         $html = $this->html_template;
 
         foreach ($data as $key => $value) {
-            $html = str_replace('{{' . $key . '}}', (string) $value, $html);
+            $html = str_replace('{{'.$key.'}}', (string) $value, $html);
         }
 
         return $html;

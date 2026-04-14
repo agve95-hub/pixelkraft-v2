@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\AnalyticsEvent;
-use App\Models\Page;
 use App\Models\Site;
 use App\Models\TrackingInstallation;
 use Illuminate\Http\Request;
@@ -106,24 +105,24 @@ JS;
     public function injectIntoHtml(Site $site, string $html): string
     {
         $scriptUrl = route('tracking.script', ['site' => $site]);
-        $scriptTag = '<script defer src="' . e($scriptUrl) . '"></script>';
+        $scriptTag = '<script defer src="'.e($scriptUrl).'"></script>';
         $gaSnippet = $this->gaSnippet($site);
         $gtmSnippet = $this->gtmSnippet($site);
-        $bundle = $scriptTag . $gaSnippet . $gtmSnippet;
+        $bundle = $scriptTag.$gaSnippet.$gtmSnippet;
 
         if (str_contains($html, $scriptUrl)) {
             return $html;
         }
 
         if (stripos($html, '</head>') !== false) {
-            return preg_replace('/<\/head>/i', $bundle . "\n</head>", $html, 1) ?? $html;
+            return preg_replace('/<\/head>/i', $bundle."\n</head>", $html, 1) ?? $html;
         }
 
         if (stripos($html, '</body>') !== false) {
-            return preg_replace('/<\/body>/i', $bundle . "\n</body>", $html, 1) ?? $html;
+            return preg_replace('/<\/body>/i', $bundle."\n</body>", $html, 1) ?? $html;
         }
 
-        return $html . $bundle;
+        return $html.$bundle;
     }
 
     public function recordEvent(Site $site, array $payload, Request $request): AnalyticsEvent

@@ -35,7 +35,7 @@ class AlertsPanel extends Component
             ->get();
 
         return view('livewire.dashboard.alerts-panel', [
-            'alerts'      => $alerts,
+            'alerts' => $alerts,
             'sslExpiring' => $sslExpiring,
         ]);
     }

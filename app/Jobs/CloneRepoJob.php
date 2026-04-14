@@ -18,7 +18,9 @@ class CloneRepoJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $backoff = 30;
+
     public int $timeout = 300;
 
     public function __construct(
@@ -40,7 +42,7 @@ class CloneRepoJob implements ShouldQueue
 
             Log::info("CloneRepoJob completed for [{$this->site->slug}]", [
                 'project_type' => $detection['type'],
-                'confidence'   => $detection['confidence'],
+                'confidence' => $detection['confidence'],
             ]);
 
             // Dispatch site parsing job (Phase 2)

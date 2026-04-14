@@ -38,7 +38,7 @@ class PreviewOverlayServiceTest extends TestCase
 </html>
 HTML;
 
-        $decorated = (new PreviewOverlayService())->decorate($site, $page, $html);
+        $decorated = (new PreviewOverlayService)->decorate($site, $page, $html);
 
         $this->assertStringContainsString('data-pk-preview="editor"', $decorated);
         $this->assertStringContainsString('data-pk-region-id="region-hero"', $decorated);
@@ -74,7 +74,7 @@ HTML;
 </html>
 HTML;
 
-        $decorated = (new PreviewOverlayService())->decorate($site, $page, $html);
+        $decorated = (new PreviewOverlayService)->decorate($site, $page, $html);
 
         $this->assertStringContainsString('data-pk-region-id="region-copy"', $decorated);
         $this->assertStringContainsString('data-pk-region-type="text"', $decorated);

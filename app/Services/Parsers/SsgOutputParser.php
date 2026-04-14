@@ -4,7 +4,6 @@ namespace App\Services\Parsers;
 
 use App\Models\Site;
 use Illuminate\Support\Facades\File;
-use Symfony\Component\DomCrawler\Crawler;
 
 class SsgOutputParser implements ParserInterface
 {
@@ -46,7 +45,7 @@ class SsgOutputParser implements ParserInterface
             }
 
             // Store path relative to repo root (includes output dir prefix)
-            $relativePath = str_replace($repoPath . '/', '', $file->getPathname());
+            $relativePath = str_replace($repoPath.'/', '', $file->getPathname());
             $pages[] = $relativePath;
         }
 
@@ -93,7 +92,7 @@ class SsgOutputParser implements ParserInterface
 
         // Strip output dir prefix to get the content path
         if ($outputDir) {
-            $relativePath = preg_replace('#^' . preg_quote($outputDir, '#') . '/?#', '', $relativePath);
+            $relativePath = preg_replace('#^'.preg_quote($outputDir, '#').'/?#', '', $relativePath);
         }
 
         // Remove index.html suffix
@@ -111,7 +110,7 @@ class SsgOutputParser implements ParserInterface
             foreach ($candidates as $candidate) {
                 if (File::exists($candidate)) {
                     return [
-                        'source_file' => str_replace($repoPath . '/', '', $candidate),
+                        'source_file' => str_replace($repoPath.'/', '', $candidate),
                         'source_type' => $pattern['type'],
                     ];
                 }
@@ -155,10 +154,10 @@ class SsgOutputParser implements ParserInterface
     private function guessOutputDir(string $repoPath, Site $site): ?string
     {
         $candidates = match ($site->project_type) {
-            'hugo'     => ['public'],
+            'hugo' => ['public'],
             'eleventy' => ['_site'],
-            'astro'    => ['dist'],
-            default    => ['dist', 'public', 'build', '_site'],
+            'astro' => ['dist'],
+            default => ['dist', 'public', 'build', '_site'],
         };
 
         foreach ($candidates as $dir) {

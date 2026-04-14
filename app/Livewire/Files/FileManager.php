@@ -3,10 +3,10 @@
 namespace App\Livewire\Files;
 
 use App\Services\GitSyncService;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use App\Support\SiteAccess;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -15,9 +15,13 @@ class FileManager extends Component
     use WithFileUploads;
 
     public string $siteId;
+
     public string $currentPath = '';
+
     public ?string $viewingFile = null;
+
     public string $fileContent = '';
+
     public $uploadFile = null;
 
     public function navigateTo(string $path): void
@@ -68,6 +72,7 @@ class FileManager extends Component
 
         if (! File::exists($fullPath) || ! File::isFile($fullPath)) {
             session()->flash('error', 'File not found.');
+
             return;
         }
 
@@ -78,7 +83,7 @@ class FileManager extends Component
             $git->commitAndPush($site, [$this->viewingFile], "Edit {$this->viewingFile}");
             session()->flash('success', 'File saved and pushed.');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Saved locally but push failed: ' . $e->getMessage());
+            session()->flash('error', 'Saved locally but push failed: '.$e->getMessage());
         }
     }
 
@@ -94,12 +99,14 @@ class FileManager extends Component
 
         if (! File::isDirectory($targetDir)) {
             session()->flash('error', 'Target directory not found.');
+
             return;
         }
 
         $filename = basename(str_replace('\\', '/', $this->uploadFile->getClientOriginalName()));
         if ($filename === '' || $filename === '.' || $filename === '..') {
             session()->flash('error', 'Invalid filename.');
+
             return;
         }
 
@@ -116,7 +123,7 @@ class FileManager extends Component
             $git->commitAndPush($site, [$relativePath], "Upload {$filename}");
             session()->flash('success', "Uploaded {$filename}.");
         } catch (\Throwable $e) {
-            session()->flash('error', 'Uploaded locally but push failed: ' . $e->getMessage());
+            session()->flash('error', 'Uploaded locally but push failed: '.$e->getMessage());
         }
 
         $this->uploadFile = null;
@@ -139,7 +146,7 @@ class FileManager extends Component
             $git->commitAllAndPush($site, "Delete {$relativePath}");
             session()->flash('success', "Deleted {$relativePath}.");
         } catch (\Throwable $e) {
-            session()->flash('error', 'Deleted locally but push failed: ' . $e->getMessage());
+            session()->flash('error', 'Deleted locally but push failed: '.$e->getMessage());
         }
 
         if ($this->viewingFile === $relativePath) {
@@ -157,14 +164,14 @@ class FileManager extends Component
     public function formatSize(int $bytes): string
     {
         if ($bytes < 1024) {
-            return $bytes . ' B';
+            return $bytes.' B';
         }
 
         if ($bytes < 1048576) {
-            return round($bytes / 1024, 1) . ' KB';
+            return round($bytes / 1024, 1).' KB';
         }
 
-        return round($bytes / 1048576, 1) . ' MB';
+        return round($bytes / 1048576, 1).' MB';
     }
 
     public function render(): View
@@ -173,7 +180,7 @@ class FileManager extends Component
         $entries = $this->getDirectoryEntries($site);
 
         return view('livewire.files.file-manager', [
-            'site'    => $site,
+            'site' => $site,
             'entries' => $entries,
         ]);
     }
@@ -201,10 +208,10 @@ class FileManager extends Component
             $relativePath = $this->currentPath ? "{$this->currentPath}/{$name}" : $name;
 
             $entries[] = [
-                'name'     => $name,
-                'path'     => $relativePath,
-                'type'     => 'directory',
-                'size'     => null,
+                'name' => $name,
+                'path' => $relativePath,
+                'type' => 'directory',
+                'size' => null,
                 'modified' => File::lastModified($dir),
             ];
         }
@@ -219,11 +226,11 @@ class FileManager extends Component
             $relativePath = $this->currentPath ? "{$this->currentPath}/{$name}" : $name;
 
             $entries[] = [
-                'name'     => $name,
-                'path'     => $relativePath,
-                'type'     => 'file',
-                'size'     => $file->getSize(),
-                'ext'      => strtolower($file->getExtension()),
+                'name' => $name,
+                'path' => $relativePath,
+                'type' => 'file',
+                'size' => $file->getSize(),
+                'ext' => strtolower($file->getExtension()),
                 'modified' => $file->getMTime(),
             ];
         }
@@ -279,7 +286,7 @@ class FileManager extends Component
         $resolved = $this->normalizeAbsolutePath($resolved);
         $basePath = $this->resolveRepoBasePath($site);
 
-        if ($resolved !== $basePath && ! str_starts_with($resolved, $basePath . '/')) {
+        if ($resolved !== $basePath && ! str_starts_with($resolved, $basePath.'/')) {
             return null;
         }
 
@@ -295,9 +302,9 @@ class FileManager extends Component
             return $basePath;
         }
 
-        $candidate = $this->normalizeAbsolutePath($basePath . '/' . $relativePath);
+        $candidate = $this->normalizeAbsolutePath($basePath.'/'.$relativePath);
 
-        if (! str_starts_with($candidate, $basePath . '/')) {
+        if (! str_starts_with($candidate, $basePath.'/')) {
             return $basePath;
         }
 

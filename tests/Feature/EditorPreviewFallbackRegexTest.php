@@ -15,12 +15,12 @@ class EditorPreviewFallbackRegexTest extends TestCase
 
     public function test_source_fallback_preview_handles_at_symbol_without_regex_error(): void
     {
-        $repoPath = storage_path('framework/testing/disks/' . Str::uuid());
+        $repoPath = storage_path('framework/testing/disks/'.Str::uuid());
         $sourceFile = 'app/events-workshops/feuerlauf/anmeldung/page.tsx';
-        $absoluteSourcePath = $repoPath . '/' . $sourceFile;
+        $absoluteSourcePath = $repoPath.'/'.$sourceFile;
 
         @mkdir(dirname($absoluteSourcePath), 0777, true);
-        file_put_contents($absoluteSourcePath, <<<TSX
+        file_put_contents($absoluteSourcePath, <<<'TSX'
 export default function Page() {
     return <main><h1>Anmeldung</h1><p>@feuerlauf</p></main>;
 }

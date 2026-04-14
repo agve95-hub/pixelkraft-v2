@@ -4,11 +4,11 @@ namespace App\Livewire\Sites;
 
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Support\SiteAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use App\Support\SiteAccess;
 use Livewire\Component;
 
 class InvoiceManager extends Component
@@ -134,7 +134,7 @@ class InvoiceManager extends Component
             return;
         }
         try {
-            $base = \Carbon\Carbon::parse($this->form_invoice_date);
+            $base = Carbon::parse($this->form_invoice_date);
             $this->form_due_date = $base->copy()->addDays($days)->toDateString();
         } catch (\Throwable) {
             $this->form_due_date = now()->addDays($days)->toDateString();
@@ -167,18 +167,18 @@ class InvoiceManager extends Component
         }
 
         $this->validate([
-            'form_number'           => ['required', 'string', 'max:64'],
-            'form_invoice_date'     => ['required', 'date'],
-            'form_due_date'         => ['required', 'date'],
-            'form_currency_code'    => ['required', 'string', 'size:3'],
-            'form_tax_rate'         => ['required', 'numeric', 'min:0', 'max:100'],
+            'form_number' => ['required', 'string', 'max:64'],
+            'form_invoice_date' => ['required', 'date'],
+            'form_due_date' => ['required', 'date'],
+            'form_currency_code' => ['required', 'string', 'size:3'],
+            'form_tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'form_discount_percent' => ['required', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $items = $lines->values()->map(fn (array $row) => [
             'description' => trim((string) $row['description']),
-            'quantity'    => $this->parseFormLineQuantity($row),
-            'rate'        => (float) ($row['rate'] ?? 0),
+            'quantity' => $this->parseFormLineQuantity($row),
+            'rate' => (float) ($row['rate'] ?? 0),
         ])->all();
 
         $sub = collect($items)->sum(fn (array $i) => $i['quantity'] * $i['rate']);
@@ -190,22 +190,22 @@ class InvoiceManager extends Component
         $total = $after + $tax;
 
         $this->previewData = [
-            'number'            => $this->form_number,
-            'invoice_date'      => $this->form_invoice_date,
-            'due_date'          => $this->form_due_date,
-            'status'            => Invoice::STATUS_UNPAID,
-            'currency_code'     => strtoupper($this->form_currency_code),
-            'tax_rate'          => $this->form_tax_rate,
-            'discount_percent'  => $this->form_discount_percent,
-            'notes'             => $this->form_notes,
-            'payment_details'   => $this->form_payment_details,
-            'from_address'      => $this->form_from_address,
-            'bill_to'           => $this->form_bill_to,
-            'items'             => $items,
-            'subtotal'          => number_format($sub, 2, '.', ''),
-            'discount_amount'   => number_format($disc, 2, '.', ''),
-            'tax_amount'        => number_format($tax, 2, '.', ''),
-            'total'             => number_format($total, 2, '.', ''),
+            'number' => $this->form_number,
+            'invoice_date' => $this->form_invoice_date,
+            'due_date' => $this->form_due_date,
+            'status' => Invoice::STATUS_UNPAID,
+            'currency_code' => strtoupper($this->form_currency_code),
+            'tax_rate' => $this->form_tax_rate,
+            'discount_percent' => $this->form_discount_percent,
+            'notes' => $this->form_notes,
+            'payment_details' => $this->form_payment_details,
+            'from_address' => $this->form_from_address,
+            'bill_to' => $this->form_bill_to,
+            'items' => $items,
+            'subtotal' => number_format($sub, 2, '.', ''),
+            'discount_amount' => number_format($disc, 2, '.', ''),
+            'tax_amount' => number_format($tax, 2, '.', ''),
+            'total' => number_format($total, 2, '.', ''),
         ];
 
         $this->screen = 'preview';
@@ -280,11 +280,11 @@ class InvoiceManager extends Component
 
             foreach ($source->items as $i => $item) {
                 InvoiceItem::create([
-                    'invoice_id'  => $new->id,
+                    'invoice_id' => $new->id,
                     'description' => $item->description,
-                    'quantity'    => $item->quantity,
-                    'rate'        => $item->rate,
-                    'sort_order'  => $i,
+                    'quantity' => $item->quantity,
+                    'rate' => $item->rate,
+                    'sort_order' => $i,
                 ]);
             }
 
@@ -299,21 +299,21 @@ class InvoiceManager extends Component
         $site = SiteAccess::findOrFail($this->siteId);
 
         $this->validate([
-            'form_number'           => ['required', 'string', 'max:64', Rule::unique('invoices', 'number')->where('site_id', $site->id)],
-            'form_invoice_date'     => ['required', 'date'],
-            'form_due_date'         => ['required', 'date'],
-            'form_currency_code'    => ['required', 'string', 'size:3'],
-            'form_tax_rate'         => ['required', 'numeric', 'min:0', 'max:100'],
+            'form_number' => ['required', 'string', 'max:64', Rule::unique('invoices', 'number')->where('site_id', $site->id)],
+            'form_invoice_date' => ['required', 'date'],
+            'form_due_date' => ['required', 'date'],
+            'form_currency_code' => ['required', 'string', 'size:3'],
+            'form_tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'form_discount_percent' => ['required', 'numeric', 'min:0', 'max:100'],
-            'form_payment_terms'    => ['required', 'string', 'max:32'],
-            'form_notes'            => ['nullable', 'string', 'max:20000'],
-            'form_payment_details'  => ['nullable', 'string', 'max:20000'],
-            'form_from_address'     => ['nullable', 'string', 'max:5000'],
-            'form_bill_to'          => ['nullable', 'string', 'max:5000'],
-            'form_lines'            => ['required', 'array', 'min:1'],
+            'form_payment_terms' => ['required', 'string', 'max:32'],
+            'form_notes' => ['nullable', 'string', 'max:20000'],
+            'form_payment_details' => ['nullable', 'string', 'max:20000'],
+            'form_from_address' => ['nullable', 'string', 'max:5000'],
+            'form_bill_to' => ['nullable', 'string', 'max:5000'],
+            'form_lines' => ['required', 'array', 'min:1'],
             'form_lines.*.description' => ['nullable', 'string', 'max:2000'],
-            'form_lines.*.quantity'    => ['nullable', 'numeric', 'min:0'],
-            'form_lines.*.rate'        => ['nullable', 'numeric', 'min:0'],
+            'form_lines.*.quantity' => ['nullable', 'numeric', 'min:0'],
+            'form_lines.*.rate' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $lines = $this->billableFormLines();
@@ -326,28 +326,28 @@ class InvoiceManager extends Component
 
         DB::transaction(function () use ($site, $lines) {
             $invoice = Invoice::create([
-                'site_id'           => $site->id,
-                'number'            => $this->form_number,
-                'invoice_date'      => $this->form_invoice_date,
-                'due_date'          => $this->form_due_date,
-                'status'            => Invoice::STATUS_UNPAID,
-                'currency_code'     => strtoupper($this->form_currency_code),
-                'tax_rate'          => $this->form_tax_rate,
-                'discount_percent'  => $this->form_discount_percent,
-                'payment_terms'     => $this->form_payment_terms,
-                'notes'             => $this->form_notes ?: null,
-                'payment_details'   => $this->form_payment_details ?: null,
-                'from_address'      => $this->form_from_address ?: null,
-                'bill_to'           => $this->form_bill_to ?: null,
+                'site_id' => $site->id,
+                'number' => $this->form_number,
+                'invoice_date' => $this->form_invoice_date,
+                'due_date' => $this->form_due_date,
+                'status' => Invoice::STATUS_UNPAID,
+                'currency_code' => strtoupper($this->form_currency_code),
+                'tax_rate' => $this->form_tax_rate,
+                'discount_percent' => $this->form_discount_percent,
+                'payment_terms' => $this->form_payment_terms,
+                'notes' => $this->form_notes ?: null,
+                'payment_details' => $this->form_payment_details ?: null,
+                'from_address' => $this->form_from_address ?: null,
+                'bill_to' => $this->form_bill_to ?: null,
             ]);
 
             foreach ($lines->values() as $i => $row) {
                 InvoiceItem::create([
-                    'invoice_id'  => $invoice->id,
+                    'invoice_id' => $invoice->id,
                     'description' => trim((string) $row['description']),
-                    'quantity'    => $this->parseFormLineQuantity($row),
-                    'rate'        => (float) ($row['rate'] ?? 0),
-                    'sort_order'  => $i,
+                    'quantity' => $this->parseFormLineQuantity($row),
+                    'rate' => (float) ($row['rate'] ?? 0),
+                    'sort_order' => $i,
                 ]);
             }
         });
@@ -410,8 +410,8 @@ class InvoiceManager extends Component
         return [
             'subtotal' => $sub,
             'discount' => $disc,
-            'tax'      => $tax,
-            'total'    => $total,
+            'tax' => $tax,
+            'total' => $total,
         ];
     }
 
@@ -437,14 +437,14 @@ class InvoiceManager extends Component
             : null;
 
         return view('livewire.sites.invoice-manager', [
-            'site'              => $site,
-            'invoices'          => $invoices,
-            'paidInvoices'      => $paidInvoices,
-            'unpaidInvoices'    => $unpaidInvoices,
-            'totalPaidAmount'   => $totalPaidAmount,
+            'site' => $site,
+            'invoices' => $invoices,
+            'paidInvoices' => $paidInvoices,
+            'unpaidInvoices' => $unpaidInvoices,
+            'totalPaidAmount' => $totalPaidAmount,
             'totalUnpaidAmount' => $totalUnpaidAmount,
-            'totalAllAmount'    => $totalAllAmount,
-            'activeInvoice'     => $activeInvoice,
+            'totalAllAmount' => $totalAllAmount,
+            'activeInvoice' => $activeInvoice,
         ]);
     }
 }

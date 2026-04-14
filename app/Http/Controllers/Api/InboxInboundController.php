@@ -45,7 +45,7 @@ class InboxInboundController extends Controller
             return response()->json(['error' => 'Site not found'], 404);
         }
 
-        $key = 'inbox-inbound:' . $request->ip() . ':' . $slug;
+        $key = 'inbox-inbound:'.$request->ip().':'.$slug;
 
         if (RateLimiter::tooManyAttempts($key, 30)) {
             return response()->json(['error' => 'Too many requests'], 429);
@@ -55,22 +55,22 @@ class InboxInboundController extends Controller
 
         $validated = $request->validate([
             'from_email' => ['nullable', 'email', 'max:255'],
-            'from_name'  => ['nullable', 'string', 'max:255'],
-            'to_email'   => ['nullable', 'email', 'max:255'],
-            'subject'    => ['required', 'string', 'max:500'],
-            'body'       => ['required', 'string', 'max:65535'],
+            'from_name' => ['nullable', 'string', 'max:255'],
+            'to_email' => ['nullable', 'email', 'max:255'],
+            'subject' => ['required', 'string', 'max:500'],
+            'body' => ['required', 'string', 'max:65535'],
         ]);
 
         SiteInboxMessage::create([
-            'site_id'    => $site->id,
-            'direction'  => 'inbound',
+            'site_id' => $site->id,
+            'direction' => 'inbound',
             'from_email' => $validated['from_email'] ?? null,
-            'from_name'  => $validated['from_name'] ?? null,
-            'to_email'   => $validated['to_email'] ?? null,
-            'subject'    => $validated['subject'],
-            'body'       => $validated['body'],
-            'is_read'    => false,
-            'source'     => 'webhook',
+            'from_name' => $validated['from_name'] ?? null,
+            'to_email' => $validated['to_email'] ?? null,
+            'subject' => $validated['subject'],
+            'body' => $validated['body'],
+            'is_read' => false,
+            'source' => 'webhook',
         ]);
 
         return response()->json(['status' => 'ok'], 201);

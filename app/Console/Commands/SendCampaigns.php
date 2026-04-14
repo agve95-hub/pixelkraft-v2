@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\URL;
 class SendCampaigns extends Command
 {
     protected $signature = 'pixelkraft:send-campaigns';
+
     protected $description = 'Send scheduled and queued newsletter campaigns via Resend';
 
     public function handle(): int
@@ -48,6 +49,7 @@ class SendCampaigns extends Command
 
         if (! $apiKey) {
             Log::warning("Cannot send campaign [{$campaign->id}]: RESEND_API_KEY not configured");
+
             return;
         }
 
@@ -61,10 +63,11 @@ class SendCampaigns extends Command
                 'sent_at' => now(),
                 'stats' => ['sent' => 0, 'opened' => 0, 'clicked' => 0, 'bounced' => 0],
             ]);
+
             return;
         }
 
-        $fromEmail = config('mail.from.address', 'noreply@' . ($campaign->site?->domain ?? 'localhost'));
+        $fromEmail = config('mail.from.address', 'noreply@'.($campaign->site?->domain ?? 'localhost'));
         $fromName = $campaign->site?->name ?? config('mail.from.name', 'pixelkraft');
         $sent = 0;
         $failed = 0;
@@ -73,12 +76,12 @@ class SendCampaigns extends Command
             try {
                 $response = Http::withHeaders([
                     'Authorization' => "Bearer {$apiKey}",
-                    'Content-Type'  => 'application/json',
+                    'Content-Type' => 'application/json',
                 ])->post('https://api.resend.com/emails', [
-                    'from'    => "{$fromName} <{$fromEmail}>",
-                    'to'      => [$subscriber->email],
+                    'from' => "{$fromName} <{$fromEmail}>",
+                    'to' => [$subscriber->email],
                     'subject' => $campaign->subject,
-                    'html'    => $this->personalizeHtml($campaign->body_html, $subscriber),
+                    'html' => $this->personalizeHtml($campaign->body_html, $subscriber),
                 ]);
 
                 if ($response->successful()) {
@@ -102,12 +105,12 @@ class SendCampaigns extends Command
         }
 
         $campaign->update([
-            'status'  => 'sent',
+            'status' => 'sent',
             'sent_at' => now(),
-            'stats'   => [
-                'sent'    => $sent,
-                'failed'  => $failed,
-                'opened'  => 0,
+            'stats' => [
+                'sent' => $sent,
+                'failed' => $failed,
+                'opened' => 0,
                 'clicked' => 0,
                 'bounced' => $failed,
             ],
@@ -119,9 +122,9 @@ class SendCampaigns extends Command
     private function personalizeHtml(string $html, NewsletterSubscriber $subscriber): string
     {
         $replacements = [
-            '{{email}}'            => $subscriber->email,
-            '{{name}}'             => $subscriber->name ?? 'Subscriber',
-            '{{unsubscribe_url}}'  => URL::signedRoute('api.unsubscribe', ['subscriber' => $subscriber->id]),
+            '{{email}}' => $subscriber->email,
+            '{{name}}' => $subscriber->name ?? 'Subscriber',
+            '{{unsubscribe_url}}' => URL::signedRoute('api.unsubscribe', ['subscriber' => $subscriber->id]),
         ];
 
         return str_replace(array_keys($replacements), array_values($replacements), $html);

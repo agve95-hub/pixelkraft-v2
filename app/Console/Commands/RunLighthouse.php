@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Log;
 class RunLighthouse extends Command
 {
     protected $signature = 'pixelkraft:run-lighthouse {--site= : Specific site slug} {--strategy=mobile : mobile or desktop}';
+
     protected $description = 'Fetch PageSpeed Insights scores for all live site pages';
 
     private const PSI_ENDPOINT = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
@@ -56,10 +57,10 @@ class RunLighthouse extends Command
                 if ($scores) {
                     $page->update(['lighthouse_score' => $scores]);
                     $this->info(
-                        "  {$page->url_path}: " .
-                        "perf={$scores['performance']}, " .
-                        "a11y={$scores['accessibility']}, " .
-                        "bp={$scores['best_practices']}, " .
+                        "  {$page->url_path}: ".
+                        "perf={$scores['performance']}, ".
+                        "a11y={$scores['accessibility']}, ".
+                        "bp={$scores['best_practices']}, ".
                         "seo={$scores['seo']}"
                     );
                 }
@@ -71,11 +72,11 @@ class RunLighthouse extends Command
 
     private function auditPage(Site $site, Page $page, string $strategy): ?array
     {
-        $url = 'https://' . $site->domain . ($page->url_path ?? '/');
+        $url = 'https://'.$site->domain.($page->url_path ?? '/');
         $apiKey = config('pixelkraft.psi_api_key');
 
         $params = [
-            'url'      => $url,
+            'url' => $url,
             'strategy' => $strategy,
             'category' => ['performance', 'accessibility', 'best-practices', 'seo'],
         ];
@@ -92,7 +93,7 @@ class RunLighthouse extends Command
             if (! $response->successful()) {
                 Log::warning("PageSpeed Insights request failed for [{$url}]", [
                     'status' => $response->status(),
-                    'body'   => $response->body(),
+                    'body' => $response->body(),
                 ]);
 
                 return null;
@@ -102,10 +103,10 @@ class RunLighthouse extends Command
             $categories = $data['lighthouseResult']['categories'] ?? [];
 
             return [
-                'performance'    => $this->scoreToInt($categories['performance']['score'] ?? null),
-                'accessibility'  => $this->scoreToInt($categories['accessibility']['score'] ?? null),
+                'performance' => $this->scoreToInt($categories['performance']['score'] ?? null),
+                'accessibility' => $this->scoreToInt($categories['accessibility']['score'] ?? null),
                 'best_practices' => $this->scoreToInt($categories['best-practices']['score'] ?? null),
-                'seo'            => $this->scoreToInt($categories['seo']['score'] ?? null),
+                'seo' => $this->scoreToInt($categories['seo']['score'] ?? null),
             ];
         } catch (\Throwable $e) {
             Log::warning("PageSpeed Insights error for [{$url}]", ['error' => $e->getMessage()]);

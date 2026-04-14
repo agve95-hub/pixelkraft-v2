@@ -72,7 +72,7 @@ class SiteInboxMessage extends Model
             }
         }
 
-        return 'Contact: ' . str_replace('_', ' ', $formName);
+        return 'Contact: '.str_replace('_', ' ', $formName);
     }
 
     public static function bodyFromFormPayload(array $data): string
@@ -89,7 +89,7 @@ class SiteInboxMessage extends Model
                 continue;
             }
             if (is_string($value) || is_numeric($value)) {
-                $lines[] = ucfirst(str_replace('_', ' ', (string) $key)) . ': ' . $value;
+                $lines[] = ucfirst(str_replace('_', ' ', (string) $key)).': '.$value;
             }
         }
 

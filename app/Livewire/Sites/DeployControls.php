@@ -7,14 +7,16 @@ use App\Jobs\ProvisionSslJob;
 use App\Models\DeployLog;
 use App\Services\DeployService;
 use App\Services\NginxConfigService;
-use Illuminate\Contracts\View\View;
 use App\Support\SiteAccess;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class DeployControls extends Component
 {
     public string $siteId;
+
     public bool $showLogs = false;
+
     public ?string $viewingLogId = null;
 
     public function deploy(): void
@@ -32,6 +34,7 @@ class DeployControls extends Component
 
         if (empty($site->domain) || empty($site->deploy_path)) {
             session()->flash('error', 'Configure domain and deploy path in settings first.');
+
             return;
         }
 
@@ -49,7 +52,7 @@ class DeployControls extends Component
             ProvisionSslJob::dispatch($site);
 
         } catch (\Throwable $e) {
-            session()->flash('error', 'Domain setup failed: ' . $e->getMessage());
+            session()->flash('error', 'Domain setup failed: '.$e->getMessage());
         }
     }
 
@@ -62,6 +65,7 @@ class DeployControls extends Component
 
         if (empty($log->snapshot_tag)) {
             session()->flash('error', 'No snapshot available for this deploy.');
+
             return;
         }
 
@@ -71,7 +75,7 @@ class DeployControls extends Component
 
             session()->flash('success', "Rolled back to {$log->snapshot_tag}.");
         } catch (\Throwable $e) {
-            session()->flash('error', 'Rollback failed: ' . $e->getMessage());
+            session()->flash('error', 'Rollback failed: '.$e->getMessage());
         }
     }
 
@@ -104,7 +108,7 @@ class DeployControls extends Component
         $trackingInstallation = $site->activeTrackingInstallation()->first();
 
         return view('livewire.sites.deploy-controls', [
-            'site'       => $site,
+            'site' => $site,
             'deployLogs' => $deployLogs,
             'viewingLog' => $viewingLog,
             'currentRelease' => $currentRelease,

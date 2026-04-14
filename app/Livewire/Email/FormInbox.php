@@ -13,7 +13,9 @@ class FormInbox extends Component
     use WithPagination;
 
     public ?string $siteId = null;
+
     public string $filter = 'unread'; // all|unread|spam
+
     private ?array $visibleSiteIdsCache = null;
 
     protected function visibleSiteIds(): array
@@ -69,14 +71,14 @@ class FormInbox extends Component
 
         $query = match ($this->filter) {
             'unread' => $query->where('is_read', false)->where('is_spam', false),
-            'spam'   => $query->where('is_spam', true),
-            default  => $query->where('is_spam', false),
+            'spam' => $query->where('is_spam', true),
+            default => $query->where('is_spam', false),
         };
 
         $submissions = $query->latest('created_at')->paginate(20);
 
         $counts = [
-            'all'    => FormSubmission::query()
+            'all' => FormSubmission::query()
                 ->whereIn('site_id', $this->visibleSiteIds())
                 ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
                 ->where('is_spam', false)
@@ -87,7 +89,7 @@ class FormInbox extends Component
                 ->where('is_read', false)
                 ->where('is_spam', false)
                 ->count(),
-            'spam'   => FormSubmission::query()
+            'spam' => FormSubmission::query()
                 ->whereIn('site_id', $this->visibleSiteIds())
                 ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
                 ->where('is_spam', true)
@@ -96,8 +98,8 @@ class FormInbox extends Component
 
         return view('livewire.email.form-inbox', [
             'submissions' => $submissions,
-            'sites'       => $sites,
-            'counts'      => $counts,
+            'sites' => $sites,
+            'counts' => $counts,
         ]);
     }
 }

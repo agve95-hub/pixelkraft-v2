@@ -9,6 +9,7 @@ use Illuminate\Console\Command;
 class CrawlLinks extends Command
 {
     protected $signature = 'pixelkraft:crawl-links {--site= : Specific site slug}';
+
     protected $description = 'Crawl sites for broken links';
 
     public function handle(BrokenLinkCrawler $crawler): int
@@ -26,7 +27,7 @@ class CrawlLinks extends Command
 
             $result = $crawler->crawl($site);
 
-            $this->info("  Links: {$result['total_links']}, Broken: " . count($result['broken']) . ", Redirects: " . count($result['redirects']));
+            $this->info("  Links: {$result['total_links']}, Broken: ".count($result['broken']).', Redirects: '.count($result['redirects']));
         }
 
         return self::SUCCESS;

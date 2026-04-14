@@ -37,7 +37,7 @@ class NextMetadataPatcher
         $body = $this->upsertNestedObjectProperty($body, 'openGraph', 'description', $this->formatString($fields['og_description'] ?? null), 1);
         $body = $this->upsertNestedObjectProperty($body, 'openGraph', 'images', $this->formatString($fields['og_image'] ?? null), 1);
 
-        $replacement = "{\n" . rtrim($body) . "\n}";
+        $replacement = "{\n".rtrim($body)."\n}";
 
         return substr_replace(
             $content,
@@ -87,7 +87,7 @@ class NextMetadataPatcher
             }
 
             $nestedBody = $this->upsertObjectProperty('', $childProperty, $formattedValue, $indentLevel + 1);
-            $formattedObject = "{\n" . rtrim($nestedBody) . "\n" . str_repeat('  ', $indentLevel) . "}";
+            $formattedObject = "{\n".rtrim($nestedBody)."\n".str_repeat('  ', $indentLevel).'}';
 
             return $this->upsertObjectProperty($body, $parentProperty, $formattedObject, $indentLevel);
         }
@@ -100,7 +100,7 @@ class NextMetadataPatcher
             }
 
             $nestedBody = $this->upsertObjectProperty('', $childProperty, $formattedValue, $indentLevel + 1);
-            $formattedObject = "{\n" . rtrim($nestedBody) . "\n" . str_repeat('  ', $indentLevel) . "}";
+            $formattedObject = "{\n".rtrim($nestedBody)."\n".str_repeat('  ', $indentLevel).'}';
 
             return $this->replacePropertyRange($body, $parentRange, $parentProperty, $formattedObject, $indentLevel);
         }
@@ -118,7 +118,7 @@ class NextMetadataPatcher
             return $this->removePropertyRange($body, $parentRange);
         }
 
-        $formattedObject = "{\n" . rtrim($updatedInnerBody) . "\n" . str_repeat('  ', $indentLevel) . "}";
+        $formattedObject = "{\n".rtrim($updatedInnerBody)."\n".str_repeat('  ', $indentLevel).'}';
 
         return $this->replacePropertyRange($body, $parentRange, $parentProperty, $formattedObject, $indentLevel);
     }
@@ -139,14 +139,14 @@ class NextMetadataPatcher
             return $body;
         }
 
-        $line = str_repeat('  ', $indentLevel) . "{$property}: {$formattedValue},";
+        $line = str_repeat('  ', $indentLevel)."{$property}: {$formattedValue},";
         $trimmed = rtrim($body);
 
         if ($trimmed === '') {
-            return $line . "\n";
+            return $line."\n";
         }
 
-        return $trimmed . "\n" . $line . "\n";
+        return $trimmed."\n".$line."\n";
     }
 
     /**
@@ -165,11 +165,13 @@ class NextMetadataPatcher
             if ($stringDelimiter !== null) {
                 if ($escapeNext) {
                     $escapeNext = false;
+
                     continue;
                 }
 
                 if ($char === '\\') {
                     $escapeNext = true;
+
                     continue;
                 }
 
@@ -182,16 +184,19 @@ class NextMetadataPatcher
 
             if (in_array($char, ['"', "'", '`'], true)) {
                 $stringDelimiter = $char;
+
                 continue;
             }
 
             if ($char === '{' || $char === '[' || $char === '(') {
                 $depth++;
+
                 continue;
             }
 
             if ($char === '}' || $char === ']' || $char === ')') {
                 $depth--;
+
                 continue;
             }
 
@@ -274,11 +279,13 @@ class NextMetadataPatcher
             if ($stringDelimiter !== null) {
                 if ($escapeNext) {
                     $escapeNext = false;
+
                     continue;
                 }
 
                 if ($char === '\\') {
                     $escapeNext = true;
+
                     continue;
                 }
 
@@ -291,11 +298,13 @@ class NextMetadataPatcher
 
             if (in_array($char, ['"', "'", '`'], true)) {
                 $stringDelimiter = $char;
+
                 continue;
             }
 
             if ($char === '{' || $char === '[' || $char === '(') {
                 $depth++;
+
                 continue;
             }
 
@@ -305,6 +314,7 @@ class NextMetadataPatcher
                 }
 
                 $depth--;
+
                 continue;
             }
 
@@ -317,7 +327,7 @@ class NextMetadataPatcher
     }
 
     /**
-     * @param array{start: int, end: int} $range
+     * @param  array{start: int, end: int}  $range
      */
     private function removePropertyRange(string $body, array $range): string
     {
@@ -325,11 +335,11 @@ class NextMetadataPatcher
     }
 
     /**
-     * @param array{start: int, end: int} $range
+     * @param  array{start: int, end: int}  $range
      */
     private function replacePropertyRange(string $body, array $range, string $property, string $formattedValue, int $indentLevel): string
     {
-        $line = str_repeat('  ', $indentLevel) . "{$property}: {$formattedValue},\n";
+        $line = str_repeat('  ', $indentLevel)."{$property}: {$formattedValue},\n";
 
         return substr_replace($body, $line, $range['start'], $range['end'] - $range['start']);
     }
@@ -347,11 +357,13 @@ class NextMetadataPatcher
             if ($stringDelimiter !== null) {
                 if ($escapeNext) {
                     $escapeNext = false;
+
                     continue;
                 }
 
                 if ($char === '\\') {
                     $escapeNext = true;
+
                     continue;
                 }
 
@@ -364,11 +376,13 @@ class NextMetadataPatcher
 
             if (in_array($char, ['"', "'", '`'], true)) {
                 $stringDelimiter = $char;
+
                 continue;
             }
 
             if ($char === '{') {
                 $depth++;
+
                 continue;
             }
 

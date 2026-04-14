@@ -21,7 +21,7 @@ class Redirect extends Model
     {
         return [
             'status_code' => 'integer',
-            'is_active'   => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 

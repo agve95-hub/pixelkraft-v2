@@ -25,9 +25,9 @@ class NewsletterCampaign extends Model
     {
         return [
             'segment_filter' => 'array',
-            'stats'          => 'array',
-            'scheduled_at'   => 'datetime',
-            'sent_at'        => 'datetime',
+            'stats' => 'array',
+            'scheduled_at' => 'datetime',
+            'sent_at' => 'datetime',
         ];
     }
 

@@ -30,9 +30,9 @@ class PagePreviewServiceTest extends TestCase
 
     public function test_it_finds_built_html_inside_framework_output_directories(): void
     {
-        $repoPath = storage_path('framework/testing/disks/' . Str::uuid());
-        File::ensureDirectoryExists($repoPath . '/dist/about', 0755, true);
-        File::put($repoPath . '/dist/about/index.html', '<html><body>About</body></html>');
+        $repoPath = storage_path('framework/testing/disks/'.Str::uuid());
+        File::ensureDirectoryExists($repoPath.'/dist/about', 0755, true);
+        File::put($repoPath.'/dist/about/index.html', '<html><body>About</body></html>');
 
         $site = new Site([
             'project_type' => 'astro',
@@ -47,9 +47,9 @@ class PagePreviewServiceTest extends TestCase
 
     public function test_configured_output_dir_takes_priority_over_defaults(): void
     {
-        $repoPath = storage_path('framework/testing/disks/' . Str::uuid());
-        File::ensureDirectoryExists($repoPath . '/custom-output/docs', 0755, true);
-        File::put($repoPath . '/custom-output/docs/index.html', '<html><body>Docs</body></html>');
+        $repoPath = storage_path('framework/testing/disks/'.Str::uuid());
+        File::ensureDirectoryExists($repoPath.'/custom-output/docs', 0755, true);
+        File::put($repoPath.'/custom-output/docs/index.html', '<html><body>Docs</body></html>');
 
         $site = new Site([
             'project_type' => 'react',

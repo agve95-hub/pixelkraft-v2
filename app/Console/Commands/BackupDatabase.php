@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 class BackupDatabase extends Command
 {
     protected $signature = 'pixelkraft:backup-database';
+
     protected $description = 'Backup the MariaDB database to Cloudflare R2';
 
     public function handle(): int
@@ -29,19 +30,19 @@ class BackupDatabase extends Command
 
         // Dump database
         $result = Process::timeout(300)->run(
-            "mysqldump -h {$dbHost} -u {$dbUser}" .
-            ($dbPass ? " -p" . escapeshellarg($dbPass) : '') .
-            " {$dbName} | gzip > " . escapeshellarg($localPath)
+            "mysqldump -h {$dbHost} -u {$dbUser}".
+            ($dbPass ? ' -p'.escapeshellarg($dbPass) : '').
+            " {$dbName} | gzip > ".escapeshellarg($localPath)
         );
 
         if (! $result->successful() || ! file_exists($localPath)) {
-            $this->error("Database dump failed: " . $result->errorOutput());
+            $this->error('Database dump failed: '.$result->errorOutput());
 
             return self::FAILURE;
         }
 
         $size = filesize($localPath);
-        $this->info("Database dumped: {$filename} (" . number_format($size / 1024 / 1024, 2) . " MB)");
+        $this->info("Database dumped: {$filename} (".number_format($size / 1024 / 1024, 2).' MB)');
 
         // Upload to R2
         $disk = config('pixelkraft.backup.disk', 'r2');

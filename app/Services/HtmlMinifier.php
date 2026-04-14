@@ -27,6 +27,7 @@ class HtmlMinifier
                 if ($current->isDir() && in_array($current->getFilename(), $skipDirs, true)) {
                     return false;
                 }
+
                 return true;
             }
         );
@@ -51,9 +52,9 @@ class HtmlMinifier
 
                 $minified = match ($ext) {
                     'html', 'htm' => $this->minifyHtml($original),
-                    'css'         => $this->minifyCss($original),
-                    'js'          => $this->minifyJs($original),
-                    default       => $original,
+                    'css' => $this->minifyCss($original),
+                    'js' => $this->minifyJs($original),
+                    default => $original,
                 };
 
                 // Only write if we actually reduced size
@@ -183,6 +184,7 @@ class HtmlMinifier
                 if ($current->isDir() && in_array($current->getFilename(), $skipDirs, true)) {
                     return false;
                 }
+
                 return true;
             }
         );
@@ -205,7 +207,7 @@ class HtmlMinifier
                 $modified = preg_replace_callback(
                     '/<img\b(?![^>]*\bloading\s*=)([^>]*)>/i',
                     function ($match) {
-                        return '<img loading="lazy"' . $match[1] . '>';
+                        return '<img loading="lazy"'.$match[1].'>';
                     },
                     $html,
                     -1,

@@ -54,13 +54,13 @@ return [
     */
 
     'breadcrumbs' => [
-        'logs'            => true,
-        'cache'           => true,
-        'livewire'        => true,
-        'sql_queries'     => true,
-        'sql_bindings'    => false, // keep false — bindings may contain PII
-        'queue_info'      => true,
-        'command_info'    => true,
+        'logs' => true,
+        'cache' => true,
+        'livewire' => true,
+        'sql_queries' => true,
+        'sql_bindings' => false, // keep false — bindings may contain PII
+        'queue_info' => true,
+        'command_info' => true,
         'http_client_requests' => true,
     ],
 

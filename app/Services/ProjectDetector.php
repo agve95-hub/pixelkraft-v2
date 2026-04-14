@@ -48,6 +48,7 @@ class ProjectDetector
             $result = $detector($repoPath, $packageJson);
             if ($result !== null) {
                 Log::info("Detected project type for [{$site->slug}]", $result);
+
                 return $result;
             }
         }
@@ -387,14 +388,13 @@ class ProjectDetector
         ?string $outputDir,
         float $confidence,
         string $deploymentMode = SiteRuntimeService::MODE_STATIC,
-    ): array
-    {
+    ): array {
         return [
-            'deployment_mode'  => $deploymentMode,
-            'type'             => $type,
-            'build_command'    => $buildCommand,
+            'deployment_mode' => $deploymentMode,
+            'type' => $type,
+            'build_command' => $buildCommand,
             'build_output_dir' => $outputDir,
-            'confidence'       => $confidence,
+            'confidence' => $confidence,
         ];
     }
 }

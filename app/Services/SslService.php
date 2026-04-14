@@ -22,15 +22,15 @@ class SslService
         Log::info("Provisioning SSL for [{$site->domain}]");
 
         $result = Process::timeout(120)->run(
-            'sudo certbot --nginx -d ' . escapeshellarg($site->domain) .
-            ' --non-interactive --agree-tos --email ' . escapeshellarg(config('mail.from.address', 'admin@localhost')) .
+            'sudo certbot --nginx -d '.escapeshellarg($site->domain).
+            ' --non-interactive --agree-tos --email '.escapeshellarg(config('mail.from.address', 'admin@localhost')).
             ' --redirect'
         );
 
         if (! $result->successful()) {
             Log::error("SSL provisioning failed for [{$site->domain}]", [
                 'output' => $result->output(),
-                'error'  => $result->errorOutput(),
+                'error' => $result->errorOutput(),
             ]);
 
             $site->update(['ssl_status' => 'error']);
@@ -49,7 +49,7 @@ class SslService
         $expiresAt = $this->getCertExpiry($site->domain);
 
         $site->update([
-            'ssl_status'     => 'active',
+            'ssl_status' => 'active',
             'ssl_expires_at' => $expiresAt,
         ]);
 
@@ -66,7 +66,7 @@ class SslService
     public function getCertExpiry(string $domain): ?Carbon
     {
         $result = Process::timeout(10)->run(
-            'sudo certbot certificates --domain ' . escapeshellarg($domain) . ' 2>/dev/null'
+            'sudo certbot certificates --domain '.escapeshellarg($domain).' 2>/dev/null'
         );
 
         if (preg_match('/Expiry Date:\s+(.+?)\s+\(/', $result->output(), $match)) {
@@ -79,8 +79,8 @@ class SslService
 
         // Fallback: check via openssl
         $result = Process::timeout(10)->run(
-            'echo | openssl s_client -servername ' . escapeshellarg($domain) .
-            ' -connect ' . escapeshellarg($domain) . ':443 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null'
+            'echo | openssl s_client -servername '.escapeshellarg($domain).
+            ' -connect '.escapeshellarg($domain).':443 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null'
         );
 
         if (preg_match('/notAfter=(.+)/', $result->output(), $match)) {

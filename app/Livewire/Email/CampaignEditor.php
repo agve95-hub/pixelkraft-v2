@@ -11,14 +11,19 @@ use Livewire\Component;
 class CampaignEditor extends Component
 {
     public ?string $siteId = null;
+
     public ?string $campaignId = null;
 
     public string $subject = '';
+
     public string $bodyHtml = '';
+
     public string $status = 'draft';
+
     public ?string $scheduledAt = null;
 
     public bool $showEditor = false;
+
     private ?array $visibleSiteIdsCache = null;
 
     protected function visibleSiteIds(): array
@@ -59,19 +64,19 @@ class CampaignEditor extends Component
     public function save(): void
     {
         $this->validate([
-            'siteId'  => 'required',
+            'siteId' => 'required',
             'subject' => 'required|string|max:255',
             'bodyHtml' => 'required|string',
-            'status'  => 'required|in:draft,scheduled',
+            'status' => 'required|in:draft,scheduled',
         ]);
 
         abort_unless(in_array((string) $this->siteId, $this->visibleSiteIds(), true), 404);
 
         $data = [
-            'site_id'      => $this->siteId,
-            'subject'      => $this->subject,
-            'body_html'    => $this->bodyHtml,
-            'status'       => $this->status,
+            'site_id' => $this->siteId,
+            'subject' => $this->subject,
+            'body_html' => $this->bodyHtml,
+            'status' => $this->status,
             'scheduled_at' => $this->status === 'scheduled' ? $this->scheduledAt : null,
         ];
 
@@ -101,8 +106,8 @@ class CampaignEditor extends Component
             ->count();
 
         $campaign->update([
-            'status'  => 'sending',
-            'stats'   => ['queued' => $subscriberCount, 'sent' => 0, 'opened' => 0, 'clicked' => 0, 'bounced' => 0],
+            'status' => 'sending',
+            'stats' => ['queued' => $subscriberCount, 'sent' => 0, 'opened' => 0, 'clicked' => 0, 'bounced' => 0],
         ]);
 
         // The SendCampaigns artisan command picks this up
@@ -139,7 +144,7 @@ class CampaignEditor extends Component
             ->get();
 
         return view('livewire.email.campaign-editor', [
-            'sites'     => $sites,
+            'sites' => $sites,
             'campaigns' => $campaigns,
         ]);
     }

@@ -3,8 +3,8 @@
 namespace App\Livewire\Sites;
 
 use App\Models\SiteInboxMessage;
-use Illuminate\Support\Facades\Mail;
 use App\Support\SiteAccess;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 
 class SiteInbox extends Component
@@ -45,15 +45,15 @@ class SiteInbox extends Component
     public function sendMessage(): void
     {
         $this->validate([
-            'composeTo'      => 'required|email',
+            'composeTo' => 'required|email',
             'composeSubject' => 'required|string|max:255',
-            'composeBody'    => 'required|string|max:50000',
+            'composeBody' => 'required|string|max:50000',
         ]);
 
         $site = SiteAccess::findOrFail($this->siteId);
 
         $fromAddress = config('mail.from.address');
-        $fromName = $site->name . ' — ' . config('app.name');
+        $fromName = $site->name.' — '.config('app.name');
 
         try {
             Mail::raw($this->composeBody, function ($message) use ($fromAddress, $fromName) {
@@ -70,16 +70,16 @@ class SiteInbox extends Component
         }
 
         SiteInboxMessage::create([
-            'site_id'    => $site->id,
-            'user_id'    => auth()->id(),
-            'direction'  => 'outbound',
+            'site_id' => $site->id,
+            'user_id' => auth()->id(),
+            'direction' => 'outbound',
             'from_email' => auth()->user()->email,
-            'from_name'  => auth()->user()->name,
-            'to_email'   => $this->composeTo,
-            'subject'    => $this->composeSubject,
-            'body'       => $this->composeBody,
-            'is_read'    => true,
-            'source'     => 'dashboard',
+            'from_name' => auth()->user()->name,
+            'to_email' => $this->composeTo,
+            'subject' => $this->composeSubject,
+            'body' => $this->composeBody,
+            'is_read' => true,
+            'source' => 'dashboard',
         ]);
 
         $this->reset('composeSubject', 'composeBody');
@@ -123,7 +123,7 @@ class SiteInbox extends Component
             : null;
 
         return view('livewire.sites.site-inbox', [
-            'site'     => $site,
+            'site' => $site,
             'messages' => $messages,
             'selected' => $selected,
         ]);

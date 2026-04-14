@@ -11,6 +11,7 @@ class AnalyticsSnapshot extends Model
 
     /** GA4 organic search (SEO) channel — see AnalyticsAggregator::syncGoogleAnalytics */
     public const SOURCE_GOOGLE_ORGANIC = 'google_analytics_organic';
+
     public const SOURCE_PIXELKRAFT_TRACKER = 'pixelkraft_tracker';
 
     public $timestamps = false;
@@ -30,13 +31,13 @@ class AnalyticsSnapshot extends Model
     protected function casts(): array
     {
         return [
-            'date'            => 'date',
-            'visitors'        => 'integer',
-            'pageviews'       => 'integer',
-            'bounce_rate'     => 'float',
+            'date' => 'date',
+            'visitors' => 'integer',
+            'pageviews' => 'integer',
+            'bounce_rate' => 'float',
             'avg_session_sec' => 'integer',
-            'custom_events'   => 'array',
-            'created_at'      => 'datetime',
+            'custom_events' => 'array',
+            'created_at' => 'datetime',
         ];
     }
 

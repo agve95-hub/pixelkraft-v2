@@ -33,10 +33,10 @@ class Page extends Model
     protected function casts(): array
     {
         return [
-            'schema_json'      => 'array',
+            'schema_json' => 'array',
             'lighthouse_score' => 'array',
-            'seo_score'        => 'integer',
-            'is_published'     => 'boolean',
+            'seo_score' => 'integer',
+            'is_published' => 'boolean',
         ];
     }
 

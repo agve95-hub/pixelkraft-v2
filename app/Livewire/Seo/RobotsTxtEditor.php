@@ -5,15 +5,17 @@ namespace App\Livewire\Seo;
 use App\Models\Site;
 use App\Services\GitSyncService;
 use App\Services\SiteRuntimeService;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
-use App\Support\SiteAccess;
 use Livewire\Component;
 
 class RobotsTxtEditor extends Component
 {
     public string $siteId;
+
     public string $content = '';
+
     public bool $exists = false;
 
     public function mount(): void
@@ -36,6 +38,7 @@ class RobotsTxtEditor extends Component
 
         if (! $git->isCloned($site)) {
             session()->flash('error', 'Repository not cloned yet.');
+
             return;
         }
 
@@ -52,11 +55,11 @@ class RobotsTxtEditor extends Component
         }
 
         try {
-            $relativePath = str_replace($site->repo_path . '/', '', $filePath);
+            $relativePath = str_replace($site->repo_path.'/', '', $filePath);
             $git->commitAndPush($site, [$relativePath], 'Update robots.txt');
             session()->flash('success', 'robots.txt saved and pushed.');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Saved locally but push failed: ' . $e->getMessage());
+            session()->flash('error', 'Saved locally but push failed: '.$e->getMessage());
         }
 
         $this->exists = true;
@@ -68,9 +71,9 @@ class RobotsTxtEditor extends Component
 
         $this->content = match ($preset) {
             'allow_all' => "User-agent: *\nAllow: /\n\nSitemap: https://{$site->domain}/sitemap.xml",
-            'block_ai'  => "User-agent: *\nAllow: /\n\nUser-agent: GPTBot\nDisallow: /\n\nUser-agent: ChatGPT-User\nDisallow: /\n\nUser-agent: Google-Extended\nDisallow: /\n\nUser-agent: CCBot\nDisallow: /\n\nUser-agent: anthropic-ai\nDisallow: /\n\nSitemap: https://{$site->domain}/sitemap.xml",
+            'block_ai' => "User-agent: *\nAllow: /\n\nUser-agent: GPTBot\nDisallow: /\n\nUser-agent: ChatGPT-User\nDisallow: /\n\nUser-agent: Google-Extended\nDisallow: /\n\nUser-agent: CCBot\nDisallow: /\n\nUser-agent: anthropic-ai\nDisallow: /\n\nSitemap: https://{$site->domain}/sitemap.xml",
             'block_all' => "User-agent: *\nDisallow: /",
-            default     => $this->content,
+            default => $this->content,
         };
     }
 
@@ -89,7 +92,7 @@ class RobotsTxtEditor extends Component
             "{$site->repo_path}/robots.txt",
         ];
 
-        array_unshift($candidates, $this->targetDirectory($site) . '/robots.txt');
+        array_unshift($candidates, $this->targetDirectory($site).'/robots.txt');
 
         foreach ($candidates as $path) {
             if (File::exists($path)) {

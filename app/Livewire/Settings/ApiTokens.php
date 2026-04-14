@@ -8,6 +8,7 @@ use Livewire\Component;
 class ApiTokens extends Component
 {
     public string $tokenName = '';
+
     public ?string $newToken = null;
 
     public function createToken(): void

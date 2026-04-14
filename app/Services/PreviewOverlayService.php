@@ -16,7 +16,7 @@ class PreviewOverlayService
     public function __construct(
         private ?CssSelectorConverter $selectors = null,
     ) {
-        $this->selectors ??= new CssSelectorConverter();
+        $this->selectors ??= new CssSelectorConverter;
     }
 
     public function decorate(Site $site, Page $page, string $html): string
@@ -30,7 +30,7 @@ class PreviewOverlayService
 
         try {
             $loaded = $document->loadHTML(
-                '<?xml encoding="utf-8" ?>' . $html,
+                '<?xml encoding="utf-8" ?>'.$html,
                 LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR | LIBXML_NOWARNING,
             );
 
@@ -94,7 +94,7 @@ class PreviewOverlayService
         $selectors = array_values(array_unique(array_filter([
             $region->render_selector,
             $region->selector,
-            $region->marker_id ? '[data-cms-id="' . $region->marker_id . '"]' : null,
+            $region->marker_id ? '[data-cms-id="'.$region->marker_id.'"]' : null,
         ])));
 
         foreach ($selectors as $selector) {
@@ -291,6 +291,6 @@ class PreviewOverlayService
 
     private function temporaryNodeId(EditableRegion $region, int $index): string
     {
-        return 'pk-node-' . Str::slug((string) $region->id, '-') . '-' . $index;
+        return 'pk-node-'.Str::slug((string) $region->id, '-').'-'.$index;
     }
 }

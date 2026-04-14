@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
-use App\Models\DeploymentRelease;
 use App\Models\DeployLog;
+use App\Models\DeploymentRelease;
 use App\Models\Site;
 use App\Services\DeployService;
 use Illuminate\Bus\Queueable;
@@ -18,6 +18,7 @@ class ActivateReleaseJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 1;
+
     public int $timeout = 600;
 
     public function __construct(

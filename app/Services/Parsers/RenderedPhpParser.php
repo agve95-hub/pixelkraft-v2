@@ -19,8 +19,8 @@ class RenderedPhpParser implements ParserInterface
     public function discoverPages(string $repoPath, Site $site): array
     {
         $directories = [
-            $repoPath . '/public',
-            $repoPath . '/resources/views',
+            $repoPath.'/public',
+            $repoPath.'/resources/views',
             $repoPath,
         ];
 
@@ -41,7 +41,7 @@ class RenderedPhpParser implements ParserInterface
                 }
 
                 $path = str_replace('\\', '/', $file->getPathname());
-                $relativePath = str_replace(str_replace('\\', '/', $repoPath) . '/', '', $path);
+                $relativePath = str_replace(str_replace('\\', '/', $repoPath).'/', '', $path);
                 $lower = strtolower($relativePath);
 
                 if ($this->shouldSkip($lower)) {
@@ -102,7 +102,7 @@ class RenderedPhpParser implements ParserInterface
         $path = preg_replace('#\.blade\.php$#', '', $path) ?? $path;
         $path = preg_replace('#\.php$#', '', $path) ?? $path;
         $path = preg_replace('#/?index$#', '', $path) ?? $path;
-        $path = '/' . ltrim($path, '/');
+        $path = '/'.ltrim($path, '/');
 
         return $path === '' ? '/' : $path;
     }

@@ -1,5 +1,6 @@
 <?php
 
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -104,7 +105,7 @@ return [
             // Set LOG_STDERR_FORMATTER=json in production to emit structured JSON
             // logs consumable by Datadog, Loki, or any log aggregation pipeline.
             'formatter' => env('LOG_STDERR_FORMATTER') === 'json'
-                ? \Monolog\Formatter\JsonFormatter::class
+                ? JsonFormatter::class
                 : env('LOG_STDERR_FORMATTER'),
             'processors' => [PsrLogMessageProcessor::class],
         ],

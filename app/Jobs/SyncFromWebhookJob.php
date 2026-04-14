@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Jobs\DeploySiteJob;
 use App\Models\Notification;
 use App\Models\Site;
 use App\Models\WebhookDelivery;
@@ -20,6 +19,7 @@ class SyncFromWebhookJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 2;
+
     public int $timeout = 300;
 
     public function __construct(
@@ -36,7 +36,7 @@ class SyncFromWebhookJob implements ShouldQueue
         $pusher = $this->payload['pusher']['name'] ?? 'unknown';
 
         Log::info("SyncFromWebhookJob: pulling changes for [{$this->site->slug}]", [
-            'pusher'  => $pusher,
+            'pusher' => $pusher,
             'message' => $commitMessage,
         ]);
 
@@ -46,6 +46,7 @@ class SyncFromWebhookJob implements ShouldQueue
             if (! $hasChanges) {
                 $this->markDeliveryProcessed('ignored');
                 Log::info("SyncFromWebhookJob: no new changes for [{$this->site->slug}]");
+
                 return;
             }
 
@@ -72,7 +73,7 @@ class SyncFromWebhookJob implements ShouldQueue
                 body: "A push by {$pusher} conflicts with local edits. Manual resolution required.",
                 siteId: $this->site->id,
                 data: [
-                    'pusher'  => $pusher,
+                    'pusher' => $pusher,
                     'message' => $commitMessage,
                 ],
             );

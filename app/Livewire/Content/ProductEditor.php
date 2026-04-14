@@ -10,27 +10,38 @@ use Livewire\Component;
 class ProductEditor extends Component
 {
     public string $siteId;
+
     public ?string $productId = null;
 
     public string $name = '';
+
     public string $description = '';
+
     public ?string $price = null;
+
     public string $currency = 'USD';
+
     public array $images = [];
+
     public string $imageInput = '';
+
     public array $attributes = [];
+
     public string $attrKey = '';
+
     public string $attrValue = '';
+
     public string $outputPath = '';
+
     public string $status = 'draft';
 
     protected $rules = [
-        'name'        => 'required|string|max:255',
+        'name' => 'required|string|max:255',
         'description' => 'nullable|string',
-        'price'       => 'nullable|numeric|min:0',
-        'currency'    => 'required|string|size:3',
-        'status'      => 'required|in:draft,active,archived',
-        'outputPath'  => 'nullable|string|max:500',
+        'price' => 'nullable|numeric|min:0',
+        'currency' => 'required|string|size:3',
+        'status' => 'required|in:draft,active,archived',
+        'outputPath' => 'nullable|string|max:500',
     ];
 
     public function mount(): void
@@ -93,15 +104,15 @@ class ProductEditor extends Component
         SiteAccess::findOrFail($this->siteId);
 
         $data = [
-            'site_id'     => $this->siteId,
-            'name'        => $this->name,
+            'site_id' => $this->siteId,
+            'name' => $this->name,
             'description' => $this->description ?: null,
-            'price'       => $this->price,
-            'currency'    => strtoupper($this->currency),
-            'images'      => $this->images,
-            'attributes'  => $this->attributes,
+            'price' => $this->price,
+            'currency' => strtoupper($this->currency),
+            'images' => $this->images,
+            'attributes' => $this->attributes,
             'output_path' => $this->outputPath ?: null,
-            'status'      => $this->status,
+            'status' => $this->status,
         ];
 
         if ($this->productId) {

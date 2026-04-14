@@ -26,8 +26,8 @@ class Notification extends Model
     protected function casts(): array
     {
         return [
-            'is_read'    => 'boolean',
-            'data'       => 'array',
+            'is_read' => 'boolean',
+            'data' => 'array',
             'created_at' => 'datetime',
         ];
     }
@@ -69,11 +69,11 @@ class Notification extends Model
         ?array $data = null,
     ): static {
         return static::create([
-            'type'       => $type,
-            'title'      => $title,
-            'body'       => $body,
-            'site_id'    => $siteId,
-            'data'       => $data,
+            'type' => $type,
+            'title' => $title,
+            'body' => $body,
+            'site_id' => $siteId,
+            'data' => $data,
             'created_at' => now(),
         ]);
     }

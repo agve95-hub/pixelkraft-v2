@@ -165,10 +165,10 @@ class SystemDiagnostics extends Component
             }
 
             if ($seconds < 3600) {
-                return floor($seconds / 60) . 'm';
+                return floor($seconds / 60).'m';
             }
 
-            return floor($seconds / 3600) . 'h';
+            return floor($seconds / 3600).'h';
         } catch (\Throwable) {
             return null;
         }
@@ -343,7 +343,7 @@ class SystemDiagnostics extends Component
                 'status' => empty($missingQueues) ? 'pass' : 'fail',
                 'message' => empty($missingQueues)
                     ? 'The configured supervisors cover the queues pixelkraft dispatches to.'
-                    : 'Missing Horizon queues: ' . implode(', ', $missingQueues),
+                    : 'Missing Horizon queues: '.implode(', ', $missingQueues),
             ],
             [
                 'title' => 'Pending backlog',

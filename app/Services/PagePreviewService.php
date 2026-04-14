@@ -27,7 +27,7 @@ class PagePreviewService
 
         foreach ($this->staticOutputDirs($site) as $outputDir) {
             foreach ($candidates as $candidate) {
-                $repoRelativePath = trim($outputDir . '/' . $candidate, '/');
+                $repoRelativePath = trim($outputDir.'/'.$candidate, '/');
                 if (File::exists("{$site->repo_path}/{$repoRelativePath}")) {
                     return $repoRelativePath;
                 }

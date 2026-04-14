@@ -3,33 +3,50 @@
 namespace App\Livewire\Sites;
 
 use App\Jobs\SyncAnalyticsJob;
-use App\Services\SiteSupportService;
 use App\Services\SiteProvisioningService;
 use App\Services\SiteRuntimeService;
-use Illuminate\Contracts\View\View;
+use App\Services\SiteSupportService;
 use App\Support\SiteAccess;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class SiteSettings extends Component
 {
     public string $siteId;
+
     public string $name = '';
+
     public string $domain = '';
+
     public string $buildCommand = '';
+
     public string $buildOutputDir = '';
+
     public string $branch = 'main';
+
     public string $projectType = 'static_html';
+
     /** Per-site GitHub webhook secret. Stored encrypted. Leave blank to use the global secret. */
     public string $webhookSecret = '';
+
     public string $deploymentMode = SiteRuntimeService::MODE_STATIC;
+
     public string $deployPath = '';
+
     public string $sshHost = '';
+
     public string $healthCheckUrl = '';
+
     public string $releaseStrategy = 'symlink';
+
     public bool $deployOnWebhook = false;
+
     public bool $trackingEnabled = true;
+
     public bool $trackingConsentMode = false;
+
     public string $gaPropertyId = '';
+
     public string $gtmId = '';
 
     public function mount(): void
@@ -73,30 +90,30 @@ class SiteSettings extends Component
     public function save(): void
     {
         $this->validate([
-            'name'           => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             // Hostname: letters, digits, dots, hyphens only; no newlines or shell chars.
-            'domain'         => ['nullable', 'string', 'max:253', 'regex:/^[a-zA-Z0-9*][a-zA-Z0-9.\-*]*$/'],
+            'domain' => ['nullable', 'string', 'max:253', 'regex:/^[a-zA-Z0-9*][a-zA-Z0-9.\-*]*$/'],
             // Build command: disallow shell injection metacharacters (; | ` $ < >)
             // and newlines. The && operator is still allowed (commonly used for
             // "build && export" workflows).
-            'buildCommand'   => ['nullable', 'string', 'max:500', 'not_regex:/[;|`\$<>\r\n]/'],
+            'buildCommand' => ['nullable', 'string', 'max:500', 'not_regex:/[;|`\$<>\r\n]/'],
             'buildOutputDir' => ['nullable', 'string', 'max:255', 'not_regex:/[\r\n]/'],
             // Branch: letters, digits, hyphens, dots, underscores, forward-slashes.
-            'branch'         => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9\-._\/]*$/'],
-            'projectType'    => ['required', 'string', 'in:static_html,php_site,react,vue,svelte,astro,hugo,eleventy,nextjs,nuxt,custom'],
+            'branch' => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9\-._\/]*$/'],
+            'projectType' => ['required', 'string', 'in:static_html,php_site,react,vue,svelte,astro,hugo,eleventy,nextjs,nuxt,custom'],
             'deploymentMode' => 'required|in:static,runtime',
             // Deploy path must be an absolute filesystem path; no newlines.
-            'deployPath'     => ['nullable', 'string', 'max:255', 'regex:/^\//', 'not_regex:/[\r\n;{}]/'],
-            'sshHost'        => ['nullable', 'string', 'max:255', 'not_regex:/[\r\n]/'],
+            'deployPath' => ['nullable', 'string', 'max:255', 'regex:/^\//', 'not_regex:/[\r\n;{}]/'],
+            'sshHost' => ['nullable', 'string', 'max:255', 'not_regex:/[\r\n]/'],
             'healthCheckUrl' => 'nullable|url|max:500',
             'releaseStrategy' => 'required|in:symlink,replace,runtime',
             'deployOnWebhook' => 'boolean',
             'trackingEnabled' => 'boolean',
             'trackingConsentMode' => 'boolean',
-            'gaPropertyId'   => 'nullable|string|max:255',
-            'gtmId'          => 'nullable|string|max:255',
+            'gaPropertyId' => 'nullable|string|max:255',
+            'gtmId' => 'nullable|string|max:255',
             // Leave blank to keep the existing secret, or enter a new one to rotate it.
-            'webhookSecret'  => ['nullable', 'string', 'min:16', 'max:255', 'not_regex:/[\r\n]/'],
+            'webhookSecret' => ['nullable', 'string', 'min:16', 'max:255', 'not_regex:/[\r\n]/'],
         ]);
 
         if (
@@ -104,23 +121,24 @@ class SiteSettings extends Component
             && ! $this->runtime()->supportsRuntimeModeForProjectType($this->projectType)
         ) {
             $this->addError('deploymentMode', 'Runtime deployment is currently only supported for Next.js projects.');
+
             return;
         }
 
         $site = SiteAccess::findOrFail($this->siteId);
         $updatePayload = [
-            'name'             => $this->name,
-            'domain'           => $this->domain ?: null,
-            'deployment_mode'  => $this->deploymentMode,
-            'build_command'    => $this->buildCommand ?: null,
+            'name' => $this->name,
+            'domain' => $this->domain ?: null,
+            'deployment_mode' => $this->deploymentMode,
+            'build_command' => $this->buildCommand ?: null,
             'build_output_dir' => $this->buildOutputDir ?: null,
-            'branch'           => $this->branch,
-            'project_type'     => $this->projectType,
-            'deploy_path'      => $this->deployPath ?: null,
-            'ssh_host'         => $this->sshHost ?: null,
+            'branch' => $this->branch,
+            'project_type' => $this->projectType,
+            'deploy_path' => $this->deployPath ?: null,
+            'ssh_host' => $this->sshHost ?: null,
             'deploy_on_webhook' => $this->deployOnWebhook,
-            'ga_property_id'   => $this->gaPropertyId ?: null,
-            'gtm_id'           => $this->gtmId ?: null,
+            'ga_property_id' => $this->gaPropertyId ?: null,
+            'gtm_id' => $this->gtmId ?: null,
         ];
 
         // Only update the webhook secret when the operator explicitly types a new one.
@@ -135,7 +153,7 @@ class SiteSettings extends Component
         app(SiteProvisioningService::class)->initializeSite($site);
 
         $runtimeType = $this->runtime()->deploymentMode($site);
-        $healthCheckUrl = $this->healthCheckUrl ?: ($this->domain ? 'https://' . $this->domain . '/' : null);
+        $healthCheckUrl = $this->healthCheckUrl ?: ($this->domain ? 'https://'.$this->domain.'/' : null);
 
         $site->deploymentTargets()
             ->where('environment', 'production')
@@ -152,7 +170,7 @@ class SiteSettings extends Component
             ->where('environment', 'staging')
             ->update([
                 'host' => $this->sshHost ?: $this->domain ?: null,
-                'deploy_path' => $this->deployPath ? rtrim($this->deployPath, '/\\') . '-staging' : null,
+                'deploy_path' => $this->deployPath ? rtrim($this->deployPath, '/\\').'-staging' : null,
                 'runtime_type' => $runtimeType,
                 'release_strategy' => $this->releaseStrategy,
             ]);
