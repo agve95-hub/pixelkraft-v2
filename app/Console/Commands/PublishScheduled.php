@@ -4,7 +4,9 @@ namespace App\Console\Commands;
 
 use App\Jobs\DeploySiteJob;
 use App\Models\BlogPost;
+use App\Services\BlogPostPublisher;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class PublishScheduled extends Command
 {
@@ -12,7 +14,7 @@ class PublishScheduled extends Command
 
     protected $description = 'Publish blog posts that are scheduled for the current time';
 
-    public function handle(): int
+    public function handle(BlogPostPublisher $publisher): int
     {
         $posts = BlogPost::where('status', 'scheduled')
             ->whereNotNull('scheduled_at')
@@ -27,24 +29,44 @@ class PublishScheduled extends Command
         $sitesToDeploy = collect();
 
         foreach ($posts as $post) {
-            $post->update([
-                'status' => 'published',
-                'published_at' => now(),
-            ]);
+            $site = $post->site;
+            if (! $site) {
+                $this->warn("Skipping post {$post->id}: site missing.");
+
+                continue;
+            }
+
+            try {
+                DB::transaction(function () use ($post, $site, $publisher): void {
+                    $post->update([
+                        'status' => 'published',
+                        'published_at' => now(),
+                    ]);
+
+                    $publisher->writeToRepository(
+                        $site,
+                        $post->fresh(),
+                        "Schedule publish: {$post->title}"
+                    );
+                });
+            } catch (\Throwable $e) {
+                $publisher->logRepositoryFailure($site, $post, $e);
+                $this->error("Failed to publish {$post->title}: {$e->getMessage()}");
+
+                continue;
+            }
 
             $this->info("Published: {$post->title}");
 
-            // Track unique sites that need redeployment
-            $sitesToDeploy->put($post->site_id, $post->site);
+            $sitesToDeploy->put($site->id, $site);
         }
 
-        // Trigger deploy for each affected site
         foreach ($sitesToDeploy as $site) {
             DeploySiteJob::dispatch($site, 'schedule');
             $this->info("Deploy triggered for: {$site->name}");
         }
 
-        $this->info("Published {$posts->count()} posts, triggered {$sitesToDeploy->count()} deploys.");
+        $this->info("Processed {$posts->count()} scheduled post(s), triggered {$sitesToDeploy->count()} deploy(s).");
 
         return self::SUCCESS;
     }

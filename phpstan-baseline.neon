@@ -693,19 +693,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$body\.$#'
 			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$featured_image\.$#'
-			identifier: property.notFound
 			count: 1
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$published_at\.$#'
-			identifier: property.notFound
-			count: 2
 			path: app/Livewire/Content/BlogEditor.php
 
 		-
@@ -717,7 +705,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$slug\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Livewire/Content/BlogEditor.php
 
 		-
@@ -729,13 +717,13 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$template_id\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Livewire/Content/BlogEditor.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$title\.$#'
 			identifier: property.notFound
-			count: 7
+			count: 1
 			path: app/Livewire/Content/BlogEditor.php
 
 		-
@@ -745,19 +733,7 @@ parameters:
 			path: app/Livewire/Content/BlogEditor.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
 			message: '#^Call to an undefined static method App\\Models\\BlogPost\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\ContentTemplate\:\:find\(\)\.$#'
 			identifier: staticMethod.notFound
 			count: 1
 			path: app/Livewire/Content/BlogEditor.php
@@ -2237,6 +2213,66 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: app/Services/AnalyticsAggregator.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$body\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/BlogPostPublisher.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$featured_image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BlogPostPublisher.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BlogPostPublisher.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$published_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/BlogPostPublisher.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BlogPostPublisher.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$template_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BlogPostPublisher.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/BlogPostPublisher.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BlogPostPublisher.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BlogPostPublisher.php
+
+		-
+			message: '#^Call to an undefined static method App\\Models\\ContentTemplate\:\:find\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Services/BlogPostPublisher.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Page\:\:\$file_path\.$#'

@@ -4,11 +4,9 @@ namespace App\Livewire\Content;
 
 use App\Models\BlogPost;
 use App\Models\ContentTemplate;
-use App\Models\Site;
-use App\Services\GitSyncService;
+use App\Services\BlogPostPublisher;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -160,9 +158,16 @@ class BlogEditor extends Component
         }
 
         // Write to repo and push
-        $this->writeToRepo($site, $post);
-
-        session()->flash('success', $this->postId ? 'Post updated.' : 'Post created.');
+        try {
+            app(BlogPostPublisher::class)->writeToRepository(
+                $site,
+                $post,
+                $this->postId ? "Update post: {$post->title}" : "Add post: {$post->title}"
+            );
+            session()->flash('success', $this->postId ? 'Post updated.' : 'Post created.');
+        } catch (\Throwable $e) {
+            session()->flash('error', 'Post saved but failed to push: '.$e->getMessage());
+        }
     }
 
     public function render(): View
@@ -177,92 +182,5 @@ class BlogEditor extends Component
         return view('livewire.content.blog-editor', [
             'templates' => $templates,
         ]);
-    }
-
-    private function writeToRepo(Site $site, BlogPost $post): void
-    {
-        try {
-            $git = app(GitSyncService::class);
-
-            if (! $git->isCloned($site)) {
-                return;
-            }
-
-            // Determine output path
-            $outputPath = $post->output_path ?? "blog/{$post->slug}.html";
-            $fullPath = "{$site->repo_path}/{$outputPath}";
-
-            File::ensureDirectoryExists(dirname($fullPath));
-
-            $html = $this->renderPost($post, $site);
-
-            File::put($fullPath, $html);
-
-            // Update output path on post
-            $post->update(['output_path' => $outputPath]);
-
-            // Commit and push
-            $git->commitAndPush(
-                $site,
-                [$outputPath],
-                $this->postId ? "Update post: {$post->title}" : "Add post: {$post->title}"
-            );
-
-        } catch (\Throwable $e) {
-            session()->flash('error', 'Post saved but failed to push: '.$e->getMessage());
-        }
-    }
-
-    private function renderPost(BlogPost $post, Site $site): string
-    {
-        // Use template if available
-        if ($post->template_id) {
-            $template = ContentTemplate::find($post->template_id);
-
-            if ($template) {
-                return $template->render([
-                    'title' => e($post->title),
-                    'body' => nl2br(e($post->body)),
-                    'excerpt' => e($post->excerpt ?? ''),
-                    'featured_image' => e($post->featured_image ?? ''),
-                    'date' => $post->published_at?->format('F j, Y') ?? now()->format('F j, Y'),
-                    'tags' => implode(', ', $post->tags ?? []),
-                    'seo_title' => e($post->seo_title ?? $post->title),
-                    'seo_description' => e($post->seo_description ?? $post->excerpt ?? ''),
-                ]);
-            }
-        }
-
-        // Fallback: generate basic HTML
-        $title = e($post->title);
-        $seoTitle = e($post->seo_title ?? $post->title);
-        $seoDesc = e($post->seo_description ?? $post->excerpt ?? '');
-        $date = $post->published_at?->format('F j, Y') ?? now()->format('F j, Y');
-        $image = $post->featured_image ? '<img src="'.e($post->featured_image).'" alt="'.$title.'">' : '';
-        $tagHtml = implode('', array_map(fn ($t) => '<span class="tag">'.e($t).'</span>', $post->tags ?? []));
-        $bodyHtml = nl2br(e($post->body));
-
-        return <<<HTML
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>{$seoTitle}</title>
-            <meta name="description" content="{$seoDesc}">
-            <meta property="og:title" content="{$seoTitle}">
-            <meta property="og:description" content="{$seoDesc}">
-        </head>
-        <body>
-            <article>
-                <h1>{$title}</h1>
-                <time>{$date}</time>
-                {$image}
-                <div class="tags">{$tagHtml}</div>
-                <div class="content">{$bodyHtml}</div>
-            </article>
-        </body>
-        </html>
-        HTML;
     }
 }
