@@ -80,7 +80,21 @@ class BlogPostPublisher
         }
 
         $outputPath = $post->output_path ?? "blog/{$post->slug}.html";
-        $fullPath = "{$site->repo_path}/{$outputPath}";
+        $repoPath = rtrim((string) $site->repo_path, '/\\');
+        $fullPath = "{$repoPath}/{$outputPath}";
+
+        // Path traversal guard: the output file must remain inside the repository.
+        $realRepo = realpath($repoPath);
+        if ($realRepo !== false) {
+            $realDir = realpath(dirname($fullPath));
+            if ($realDir === false) {
+                // Directory doesn't exist yet; verify without symlink resolution.
+                $realDir = realpath($repoPath);
+            }
+            if ($realDir !== false && ! str_starts_with($realDir, $realRepo.DIRECTORY_SEPARATOR) && $realDir !== $realRepo) {
+                throw new \RuntimeException("Refusing to write blog post output outside of repository: {$outputPath}");
+            }
+        }
 
         File::ensureDirectoryExists(dirname($fullPath));
 

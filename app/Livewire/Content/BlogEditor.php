@@ -64,7 +64,8 @@ class BlogEditor extends Component
         'scheduledAt' => 'nullable|date|after:now',
         'seoTitle' => 'nullable|string|max:70',
         'seoDescription' => 'nullable|string|max:160',
-        'outputPath' => 'nullable|string|max:500',
+        // Relative path inside the repo, no .. traversal allowed.
+        'outputPath' => ['nullable', 'string', 'max:255', 'not_regex:/\.\.|^\/|[\r\n;{}]/'],
     ];
 
     public function mount(): void

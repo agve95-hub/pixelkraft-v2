@@ -367,7 +367,7 @@ class VisualEditor extends Component
             $changedFiles = [];
 
             if ($this->mode === 'code') {
-                $fullPath = "{$site->repo_path}/{$this->codeFilePath}";
+                $fullPath = $this->resolveCodePath($site);
                 File::ensureDirectoryExists(dirname($fullPath));
                 File::put($fullPath, $this->codeContent);
                 $changedFiles[] = $this->codeFilePath;
@@ -580,9 +580,56 @@ class VisualEditor extends Component
     private function loadCodeContent(): void
     {
         $site = $this->resolveSite();
-        $fullPath = "{$site->repo_path}/{$this->codeFilePath}";
+
+        try {
+            $fullPath = $this->resolveCodePath($site);
+        } catch (\RuntimeException) {
+            $this->codeContent = '';
+
+            return;
+        }
 
         $this->codeContent = File::exists($fullPath) ? File::get($fullPath) : '';
+    }
+
+    /**
+     * Resolve and canonicalize the code editor file path, ensuring it remains
+     * inside the site's repository directory. Throws if the resolved path escapes
+     * the repo root (path traversal guard).
+     *
+     * @throws \RuntimeException
+     */
+    private function resolveCodePath(Site $site): string
+    {
+        $repoPath = rtrim((string) $site->repo_path, '/\\');
+        $candidate = $repoPath.'/'.ltrim($this->codeFilePath, '/\\');
+
+        // The file may not exist yet (new file in code mode) — we must validate
+        // the directory instead; fall back to the repo root if dirname doesn't exist.
+        $realRepo = realpath($repoPath);
+
+        if ($realRepo === false) {
+            throw new \RuntimeException('Repository path does not exist on disk.');
+        }
+
+        // Resolve symlinks and collapse .. segments in the candidate path.
+        // If the file doesn't exist yet, canonicalize its parent directory.
+        $realCandidate = realpath($candidate) ?: realpath(dirname($candidate));
+
+        if ($realCandidate === false) {
+            // Parent directory also doesn't exist — resolve up the tree.
+            $realCandidate = $realRepo;
+        }
+
+        if (! str_starts_with($realCandidate, $realRepo.DIRECTORY_SEPARATOR)
+            && $realCandidate !== $realRepo
+        ) {
+            throw new \RuntimeException(
+                "Refusing to read/write outside of repository: {$this->codeFilePath}"
+            );
+        }
+
+        return $candidate;
     }
 
     private function buildPreviewUrl(Site $site, Page $page): string
