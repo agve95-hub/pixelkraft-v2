@@ -154,6 +154,11 @@ JS;
             return '';
         }
 
+        // Only inject if the stored ID matches the expected GA4 format.
+        if (! preg_match('/^G-[A-Z0-9]{4,20}$/i', (string) $site->ga_property_id)) {
+            return '';
+        }
+
         $measurementId = e($site->ga_property_id);
 
         return <<<HTML
@@ -165,6 +170,11 @@ HTML;
     private function gtmSnippet(Site $site): string
     {
         if (! $site->gtm_id) {
+            return '';
+        }
+
+        // Only inject if the stored ID matches the expected GTM format.
+        if (! preg_match('/^GTM-[A-Z0-9]{4,12}$/i', (string) $site->gtm_id)) {
             return '';
         }
 

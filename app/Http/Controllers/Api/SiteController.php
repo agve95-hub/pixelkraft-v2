@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\DeployStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\CloneRepoJob;
 use App\Jobs\DeploySiteJob;
@@ -59,6 +60,14 @@ class SiteController extends Controller
 
     public function deploy(Site $site): JsonResponse
     {
+        if ($site->deploy_status?->isActive()) {
+            return response()->json([
+                'error' => 'conflict',
+                'message' => 'A deploy is already in progress for this site.',
+                'current_status' => $site->deploy_status->value,
+            ], 409);
+        }
+
         DeploySiteJob::dispatch($site, 'api');
 
         return response()->json([

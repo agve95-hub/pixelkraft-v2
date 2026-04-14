@@ -115,8 +115,10 @@ class SiteSettings extends Component
             'deployOnWebhook' => 'boolean',
             'trackingEnabled' => 'boolean',
             'trackingConsentMode' => 'boolean',
-            'gaPropertyId' => 'nullable|string|max:255',
-            'gtmId' => 'nullable|string|max:255',
+            // GA4 Measurement ID format: G- followed by alphanumeric (e.g. G-XXXXXXXXXX)
+            'gaPropertyId' => ['nullable', 'string', 'max:50', 'regex:/^G-[A-Z0-9]{4,20}$/i'],
+            // GTM Container ID format: GTM- followed by alphanumeric (e.g. GTM-XXXXXXX)
+            'gtmId' => ['nullable', 'string', 'max:20', 'regex:/^GTM-[A-Z0-9]{4,12}$/i'],
             // Leave blank to keep the existing secret, or enter a new one to rotate it.
             'webhookSecret' => ['nullable', 'string', 'min:16', 'max:255', 'not_regex:/[\r\n]/'],
             'inboxInboundSecret' => ['nullable', 'string', 'min:32', 'max:255', 'not_regex:/[\r\n]/'],

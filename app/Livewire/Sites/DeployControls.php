@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Sites;
 
+use App\Enums\DeployStatus;
 use App\Jobs\DeploySiteJob;
 use App\Jobs\ProvisionSslJob;
 use App\Models\DeployLog;
@@ -22,6 +23,12 @@ class DeployControls extends Component
     public function deploy(): void
     {
         $site = SiteAccess::findOrFail($this->siteId);
+
+        if ($site->deploy_status?->isActive()) {
+            session()->flash('error', 'A deploy is already in progress. Please wait for it to finish.');
+
+            return;
+        }
 
         DeploySiteJob::dispatch($site, 'manual');
 

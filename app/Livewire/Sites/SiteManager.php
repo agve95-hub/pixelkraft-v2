@@ -106,9 +106,9 @@ class SiteManager extends Component
             'sslProvider' => 'nullable|string|in:letsencrypt,cloudflare,custom,none',
             'dnsProvider' => 'nullable|string|max:255',
 
-            'gaPropertyId' => 'nullable|string|max:50',
+            'gaPropertyId' => ['nullable', 'string', 'max:50', 'regex:/^G-[A-Z0-9]{4,20}$/i'],
             'gscProperty' => 'nullable|string|max:255',
-            'gtmId' => 'nullable|string|max:50',
+            'gtmId' => ['nullable', 'string', 'max:20', 'regex:/^GTM-[A-Z0-9]{4,12}$/i'],
             'googleAdsId' => 'nullable|string|max:50',
             'cfApiToken' => 'nullable|string|max:500',
             'cfZoneId' => 'nullable|string|max:100',

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\DeployStatus;
 use App\Jobs\CloneRepoJob;
 use App\Jobs\DeploySiteJob;
 use App\Jobs\ParseSiteJob;
@@ -121,6 +122,36 @@ class ApiSiteSyncDeployTest extends TestCase
         Queue::assertPushed(DeploySiteJob::class, function (DeploySiteJob $job) use ($site) {
             return $job->site->is($site) && $job->triggeredBy === 'api';
         });
+    }
+
+    public function test_deploy_returns_409_when_deploy_already_in_progress(): void
+    {
+        Queue::fake();
+
+        $user = User::create([
+            'name' => 'Ops3',
+            'email' => 'ops3-conflict@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'editor',
+        ]);
+
+        $site = Site::create([
+            'user_id' => $user->id,
+            'name' => 'Busy Site',
+            'slug' => 'busy-site-api',
+            'repo_url' => 'https://github.com/example/busy.git',
+            'branch' => 'main',
+            'project_type' => 'static_html',
+            'deploy_status' => DeployStatus::Building,
+        ]);
+
+        Sanctum::actingAs($user, ['*']);
+
+        $this->postJson("/api/v1/sites/{$site->id}/deploy")
+            ->assertStatus(409)
+            ->assertJsonFragment(['error' => 'conflict']);
+
+        Queue::assertNotPushed(DeploySiteJob::class);
     }
 
     public function test_rollback_returns_400_when_deploy_log_has_no_snapshot(): void

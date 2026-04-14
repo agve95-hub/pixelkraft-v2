@@ -30,7 +30,9 @@ class TrackingController extends Controller
             'referrer' => ['nullable', 'string', 'max:2048'],
             'visitor_id' => ['nullable', 'string', 'max:120'],
             'session_id' => ['nullable', 'string', 'max:120'],
-            'payload' => ['nullable', 'array'],
+            // Cap the free-form payload to prevent storage abuse.
+            'payload' => ['nullable', 'array', 'max:20'],
+            'payload.*' => ['nullable', 'scalar', 'max:500'],
         ]);
 
         $tracking->recordEvent($site, $payload, $request);
