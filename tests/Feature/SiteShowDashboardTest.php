@@ -25,6 +25,7 @@ class SiteShowDashboardTest extends TestCase
         ]);
 
         $site = Site::create([
+            'user_id' => $user->id,
             'name' => 'Ashton',
             'slug' => 'ashton',
             'repo_url' => 'https://github.com/example/ashton',

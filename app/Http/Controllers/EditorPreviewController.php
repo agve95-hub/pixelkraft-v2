@@ -98,7 +98,7 @@ class EditorPreviewController extends Controller
 
         // Build the candidate full path and canonicalise it. realpath() follows
         // symlinks, so a symlink inside the repo pointing outside it will be caught.
-        $fullPath = $repoRoot . DIRECTORY_SEPARATOR . ltrim(
+        $fullPath = $repoRoot.DIRECTORY_SEPARATOR.ltrim(
             str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path),
             DIRECTORY_SEPARATOR,
         );
@@ -109,16 +109,16 @@ class EditorPreviewController extends Controller
         // (e.g. /var/www/repos/site vs /var/www/repos/site-evil).
         if (
             $realFullPath === false
-            || ! str_starts_with($realFullPath, $repoRoot . DIRECTORY_SEPARATOR)
+            || ! str_starts_with($realFullPath, $repoRoot.DIRECTORY_SEPARATOR)
         ) {
             abort(404);
         }
 
         $mimeType = $this->getMimeType($path);
-        $content  = File::get($realFullPath);
+        $content = File::get($realFullPath);
 
         return response($content, 200, [
-            'Content-Type'  => $mimeType,
+            'Content-Type' => $mimeType,
             'Cache-Control' => 'public, max-age=3600',
         ]);
     }
@@ -129,7 +129,7 @@ class EditorPreviewController extends Controller
             abort(404);
         }
 
-        $response = $this->runtime->fetch($site, '/' . ltrim($path, '/'), $request->query());
+        $response = $this->runtime->fetch($site, '/'.ltrim($path, '/'), $request->query());
 
         if (! $response) {
             abort(404);
@@ -184,7 +184,7 @@ class EditorPreviewController extends Controller
 
         $html = $this->injectBaseTag(
             $this->rewriteRootRelativeAssetUrls($response->body(), $this->assetBaseUrl($site)),
-            $directoryPrefix ? $this->assetBaseUrl($site) . '/' . $directoryPrefix . '/' : $this->assetBaseUrl($site) . '/',
+            $directoryPrefix ? $this->assetBaseUrl($site).'/'.$directoryPrefix.'/' : $this->assetBaseUrl($site).'/',
         );
 
         return $this->htmlResponse($this->decoratePreview($site, $page, $html));
@@ -221,21 +221,21 @@ class EditorPreviewController extends Controller
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
         return match ($ext) {
-            'css'          => 'text/css',
-            'js', 'mjs'    => 'application/javascript',
-            'json'         => 'application/json',
-            'svg'          => 'image/svg+xml',
-            'png'          => 'image/png',
-            'jpg', 'jpeg'  => 'image/jpeg',
-            'gif'          => 'image/gif',
-            'webp'         => 'image/webp',
-            'avif'         => 'image/avif',
-            'ico'          => 'image/x-icon',
-            'woff'         => 'font/woff',
-            'woff2'        => 'font/woff2',
-            'ttf'          => 'font/ttf',
-            'xml'          => 'application/xml',
-            default        => 'application/octet-stream',
+            'css' => 'text/css',
+            'js', 'mjs' => 'application/javascript',
+            'json' => 'application/json',
+            'svg' => 'image/svg+xml',
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'avif' => 'image/avif',
+            'ico' => 'image/x-icon',
+            'woff' => 'font/woff',
+            'woff2' => 'font/woff2',
+            'ttf' => 'font/ttf',
+            'xml' => 'application/xml',
+            default => 'application/octet-stream',
         };
     }
 
@@ -285,7 +285,7 @@ class EditorPreviewController extends Controller
 
                 $repoRelativePath = ltrim($path, '/');
                 if ($rootPrefix !== '') {
-                    $repoRelativePath = trim($rootPrefix, '/') . '/' . $repoRelativePath;
+                    $repoRelativePath = trim($rootPrefix, '/').'/'.$repoRelativePath;
                 }
 
                 return "{$matches[1]}={$matches[2]}{$baseUrl}/{$repoRelativePath}{$matches[2]}";
@@ -433,7 +433,19 @@ HTML;
         $source = preg_replace('/<\?(?:php|=)?[\s\S]*?\?>/i', ' ', $source) ?? $source;
         $source = preg_replace('/\{!![\s\S]*?!!\}/', ' ', $source) ?? $source;
         $source = preg_replace('/\{\{\s*[^}]+\s*\}\}/', ' ', $source) ?? $source;
-        $source = preg_replace('/@\w+(?:\([^)]*\))?/', ' ', $source) ?? $source;
+        // Strip Blade-style @directives only — a broad @\w+ match removes valid JSX/text
+        // such as social handles (@feuerlauf) inside elements.
+        $bladeDirectives = implode('|', [
+            'if', 'elseif', 'else', 'endif', 'unless', 'endunless', 'isset', 'endisset',
+            'empty', 'endempty', 'auth', 'endauth', 'guest', 'endguest', 'switch', 'endswitch',
+            'case', 'break', 'default', 'foreach', 'endforeach', 'for', 'endfor', 'while', 'endwhile',
+            'continue', 'php', 'endphp', 'verbatim', 'endverbatim', 'component', 'endcomponent',
+            'slot', 'endslot', 'props', 'aware', 'class', 'push', 'endpush', 'prepend', 'endprepend',
+            'once', 'endonce', 'error', 'enderror', 'include', 'each', 'extends', 'section', 'show',
+            'parent', 'yield', 'stack', 'inject', 'csrf', 'method', 'json', 'production', 'env',
+            'hasSection', 'sectionMissing',
+        ]);
+        $source = preg_replace('/@(?:'.$bladeDirectives.')(?:\s*\(|\b)/', ' ', $source) ?? $source;
         $source = preg_replace('/{{--[\s\S]*?--}}/', ' ', $source) ?? $source;
         $source = preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', $source) ?? $source;
         $source = preg_replace('/<style\b[^>]*>.*?<\/style>/is', ' ', $source) ?? $source;
@@ -491,5 +503,4 @@ HTML;
 </html>
 HTML;
     }
-
 }

@@ -75,7 +75,7 @@ class SeoAnalyzer
         $this->syncSeoIssuesFromSuggestions($page, $suggestions);
 
         return [
-            'score'       => $normalizedScore,
+            'score' => $normalizedScore,
             'suggestions' => $suggestions,
         ];
     }
@@ -131,27 +131,32 @@ class SeoAnalyzer
                 [
                     'page_id' => $page->id,
                     'code' => $code,
-                    'resolved_at' => null,
                 ],
                 [
                     'site_id' => $page->site_id,
                     'severity' => $severity,
                     'message' => $message,
                     'meta' => ['field' => $field, 'source' => 'seo_analyzer'],
+                    'resolved_at' => null,
                 ],
             );
         }
 
-        $staleQuery = SeoIssue::query()
+        $prefix = 'analyzer:';
+        $prefixLen = strlen($prefix);
+        $activeFields = array_keys($byField);
+
+        SeoIssue::query()
             ->where('page_id', $page->id)
             ->whereNull('resolved_at')
-            ->where('code', 'like', 'analyzer:%');
-
-        if ($activeCodes === []) {
-            $staleQuery->update(['resolved_at' => now()]);
-        } else {
-            $staleQuery->whereNotIn('code', $activeCodes)->update(['resolved_at' => now()]);
-        }
+            ->where('code', 'like', $prefix.'%')
+            ->get()
+            ->each(function (SeoIssue $issue) use ($activeFields, $prefixLen): void {
+                $field = substr((string) $issue->code, $prefixLen);
+                if (! in_array($field, $activeFields, true)) {
+                    $issue->update(['resolved_at' => now()]);
+                }
+            });
     }
 
     private function normalizeIssueSeverity(string $severity): string
@@ -172,6 +177,7 @@ class SeoAnalyzer
 
         if (empty($page->title)) {
             $suggestions[] = ['severity' => 'error', 'message' => 'Page has no title tag. Add a unique, descriptive title.', 'field' => 'title'];
+
             return ['points' => 0, 'suggestions' => $suggestions];
         }
 
@@ -199,6 +205,7 @@ class SeoAnalyzer
 
         if (empty($page->meta_description)) {
             $suggestions[] = ['severity' => 'error', 'message' => 'No meta description. Add a compelling 120-155 character description.', 'field' => 'meta_description'];
+
             return ['points' => 0, 'suggestions' => $suggestions];
         }
 
@@ -256,6 +263,7 @@ class SeoAnalyzer
                     'message' => 'Canonical URL should be absolute and include http/https.',
                     'field' => 'canonical_url',
                 ];
+
                 return ['points' => 5, 'suggestions' => $suggestions];
             }
 
@@ -278,6 +286,7 @@ class SeoAnalyzer
                     'message' => 'Schema exists but is missing @type. Add a specific schema type (Article, Product, FAQPage, etc).',
                     'field' => 'schema_json',
                 ];
+
                 return ['points' => 6, 'suggestions' => $suggestions];
             }
 
@@ -331,6 +340,7 @@ class SeoAnalyzer
 
         if (! $page->content_hash) {
             $suggestions[] = ['severity' => 'warning', 'message' => 'Page content could not be analyzed.', 'field' => 'content'];
+
             return ['points' => 0, 'suggestions' => $suggestions];
         }
 
@@ -341,6 +351,7 @@ class SeoAnalyzer
                 'message' => "Page appears thin ({$wordCount} words). Add more useful content for stronger rankings.",
                 'field' => 'content',
             ];
+
             return ['points' => 4, 'suggestions' => $suggestions];
         }
 
@@ -350,6 +361,7 @@ class SeoAnalyzer
                 'message' => "Content depth is moderate ({$wordCount} words). Expanding can improve topical authority.",
                 'field' => 'content',
             ];
+
             return ['points' => 7, 'suggestions' => $suggestions];
         }
 
@@ -379,7 +391,7 @@ class SeoAnalyzer
             $suggestions[] = [
                 'severity' => 'info',
                 'message' => 'Title can often perform better with a clear separator (e.g., "Service | Brand").',
-                'field' => 'title',
+                'field' => 'title_format',
             ];
         }
 

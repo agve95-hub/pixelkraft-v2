@@ -86,7 +86,7 @@
                 </div>
                 @foreach ($invoices as $inv)
                     @php
-                        $sym = $inv->currencySymbol();
+                        $sym = $inv->displayCurrencySymbol();
                         $pill = $inv->status === Invoice::STATUS_PAID ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25' : ($inv->isOverdue() ? 'bg-red-500/15 text-red-400 ring-1 ring-red-500/25' : 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/25');
                         $first = $inv->items->first()?->description ?? '—';
                     @endphp
@@ -424,7 +424,7 @@
     @if ($screen === 'show' && $activeInvoice)
         @php
             $inv = $activeInvoice;
-            $sym = $inv->currencySymbol();
+            $sym = $inv->displayCurrencySymbol();
             $badge =
                 $inv->status === Invoice::STATUS_PAID
                     ? 'bg-emerald-100 text-emerald-700'

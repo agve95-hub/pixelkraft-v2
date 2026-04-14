@@ -35,10 +35,10 @@ class Invoice extends Model
     protected function casts(): array
     {
         return [
-            'invoice_date'      => 'date',
-            'due_date'          => 'date',
-            'tax_rate'          => 'decimal:4',
-            'discount_percent'  => 'decimal:4',
+            'invoice_date' => 'date',
+            'due_date' => 'date',
+            'tax_rate' => 'decimal:4',
+            'discount_percent' => 'decimal:4',
         ];
     }
 
@@ -125,7 +125,7 @@ class Invoice extends Model
         };
     }
 
-    public function currencySymbol(): string
+    public function displayCurrencySymbol(): string
     {
         return self::currencySymbol((string) $this->currency_code);
     }
@@ -149,8 +149,8 @@ class Invoice extends Model
     public function listSortKeyNewestFirst(): string
     {
         return $this->invoice_date->format('Y-m-d')
-            . '_'
-            . str_pad((string) $this->numberTrailingSequence(), 12, '0', STR_PAD_LEFT);
+            .'_'
+            .str_pad((string) $this->numberTrailingSequence(), 12, '0', STR_PAD_LEFT);
     }
 
     public static function nextNumberForSite(Site $site): string

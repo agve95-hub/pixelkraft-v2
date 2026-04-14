@@ -16,6 +16,7 @@ class BlogEditRouteTest extends TestCase
     {
         $user = User::factory()->create();
         $site = Site::create([
+            'user_id' => $user->id,
             'name' => 'Site One',
             'slug' => 'site-one',
             'repo_url' => 'https://github.com/acme/site-one.git',
@@ -41,12 +42,14 @@ class BlogEditRouteTest extends TestCase
     {
         $user = User::factory()->create();
         $site = Site::create([
+            'user_id' => $user->id,
             'name' => 'Site One',
             'slug' => 'site-one-a',
             'repo_url' => 'https://github.com/acme/site-one-a.git',
             'branch' => 'main',
         ]);
         $otherSite = Site::create([
+            'user_id' => $user->id,
             'name' => 'Site Two',
             'slug' => 'site-two-a',
             'repo_url' => 'https://github.com/acme/site-two-a.git',

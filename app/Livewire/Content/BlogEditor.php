@@ -6,10 +6,10 @@ use App\Models\BlogPost;
 use App\Models\ContentTemplate;
 use App\Models\Site;
 use App\Services\GitSyncService;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use App\Support\SiteAccess;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -18,42 +18,55 @@ class BlogEditor extends Component
     use WithFileUploads;
 
     public string $siteId;
+
     public ?string $postId = null;
 
     // Post fields
     public string $title = '';
+
     public string $slug = '';
+
     public string $body = '';
+
     public string $excerpt = '';
+
     public string $featuredImage = '';
+
     public array $tags = [];
+
     public string $tagInput = '';
+
     public string $status = 'draft';
+
     public ?string $scheduledAt = null;
 
     // SEO fields
     public string $seoTitle = '';
+
     public string $seoDescription = '';
+
     public string $ogImage = '';
 
     // Template
     public ?string $templateId = null;
+
     public string $outputPath = '';
 
     public bool $autoSlug = true;
+
     private ?string $resolvedSiteId = null;
 
     protected $rules = [
-        'title'          => 'required|string|max:255',
-        'slug'           => 'required|string|max:255',
-        'body'           => 'required|string',
-        'excerpt'        => 'nullable|string|max:500',
-        'featuredImage'  => 'nullable|string|max:500',
-        'status'         => 'required|in:draft,scheduled,published',
-        'scheduledAt'    => 'nullable|date|after:now',
-        'seoTitle'       => 'nullable|string|max:70',
+        'title' => 'required|string|max:255',
+        'slug' => 'required|string|max:255',
+        'body' => 'required|string',
+        'excerpt' => 'nullable|string|max:500',
+        'featuredImage' => 'nullable|string|max:500',
+        'status' => 'required|in:draft,scheduled,published',
+        'scheduledAt' => 'nullable|date|after:now',
+        'seoTitle' => 'nullable|string|max:70',
         'seoDescription' => 'nullable|string|max:160',
-        'outputPath'     => 'nullable|string|max:500',
+        'outputPath' => 'nullable|string|max:500',
     ];
 
     public function mount(): void
@@ -114,20 +127,20 @@ class BlogEditor extends Component
         $this->resolvedSiteId = $site->id;
 
         $data = [
-            'site_id'         => $this->resolvedSiteId,
-            'title'           => $this->title,
-            'slug'            => $this->slug,
-            'body'            => $this->body,
-            'excerpt'         => $this->excerpt ?: null,
-            'featured_image'  => $this->featuredImage ?: null,
-            'tags'            => $this->tags,
-            'status'          => $this->status,
-            'scheduled_at'    => $this->status === 'scheduled' ? $this->scheduledAt : null,
-            'seo_title'       => $this->seoTitle ?: null,
+            'site_id' => $this->resolvedSiteId,
+            'title' => $this->title,
+            'slug' => $this->slug,
+            'body' => $this->body,
+            'excerpt' => $this->excerpt ?: null,
+            'featured_image' => $this->featuredImage ?: null,
+            'tags' => $this->tags,
+            'status' => $this->status,
+            'scheduled_at' => $this->status === 'scheduled' ? $this->scheduledAt : null,
+            'seo_title' => $this->seoTitle ?: null,
             'seo_description' => $this->seoDescription ?: null,
-            'og_image'        => $this->ogImage ?: null,
-            'template_id'     => $this->templateId ?: null,
-            'output_path'     => $this->outputPath ?: null,
+            'og_image' => $this->ogImage ?: null,
+            'template_id' => $this->templateId ?: null,
+            'output_path' => $this->outputPath ?: null,
         ];
 
         if ($this->status === 'published' && ! $this->postId) {
@@ -196,7 +209,7 @@ class BlogEditor extends Component
             );
 
         } catch (\Throwable $e) {
-            session()->flash('error', 'Post saved but failed to push: ' . $e->getMessage());
+            session()->flash('error', 'Post saved but failed to push: '.$e->getMessage());
         }
     }
 
@@ -208,13 +221,13 @@ class BlogEditor extends Component
 
             if ($template) {
                 return $template->render([
-                    'title'          => e($post->title),
-                    'body'           => $post->body,
-                    'excerpt'        => e($post->excerpt ?? ''),
+                    'title' => e($post->title),
+                    'body' => nl2br(e($post->body)),
+                    'excerpt' => e($post->excerpt ?? ''),
                     'featured_image' => e($post->featured_image ?? ''),
-                    'date'           => $post->published_at?->format('F j, Y') ?? now()->format('F j, Y'),
-                    'tags'           => implode(', ', $post->tags ?? []),
-                    'seo_title'      => e($post->seo_title ?? $post->title),
+                    'date' => $post->published_at?->format('F j, Y') ?? now()->format('F j, Y'),
+                    'tags' => implode(', ', $post->tags ?? []),
+                    'seo_title' => e($post->seo_title ?? $post->title),
                     'seo_description' => e($post->seo_description ?? $post->excerpt ?? ''),
                 ]);
             }
@@ -225,8 +238,9 @@ class BlogEditor extends Component
         $seoTitle = e($post->seo_title ?? $post->title);
         $seoDesc = e($post->seo_description ?? $post->excerpt ?? '');
         $date = $post->published_at?->format('F j, Y') ?? now()->format('F j, Y');
-        $image = $post->featured_image ? '<img src="' . e($post->featured_image) . '" alt="' . $title . '">' : '';
-        $tagHtml = implode('', array_map(fn ($t) => '<span class="tag">' . e($t) . '</span>', $post->tags ?? []));
+        $image = $post->featured_image ? '<img src="'.e($post->featured_image).'" alt="'.$title.'">' : '';
+        $tagHtml = implode('', array_map(fn ($t) => '<span class="tag">'.e($t).'</span>', $post->tags ?? []));
+        $bodyHtml = nl2br(e($post->body));
 
         return <<<HTML
         <!DOCTYPE html>
@@ -245,7 +259,7 @@ class BlogEditor extends Component
                 <time>{$date}</time>
                 {$image}
                 <div class="tags">{$tagHtml}</div>
-                <div class="content">{$post->body}</div>
+                <div class="content">{$bodyHtml}</div>
             </article>
         </body>
         </html>

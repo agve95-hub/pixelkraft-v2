@@ -26,7 +26,7 @@ class FormSubmissionController extends Controller
         }
 
         // Rate limit: 10 submissions per minute per IP
-        $key = 'form-submit:' . $request->ip() . ':' . $slug;
+        $key = 'form-submit:'.$request->ip().':'.$slug;
 
         if (RateLimiter::tooManyAttempts($key, 10)) {
             return response()->json(['error' => 'Too many submissions'], 429);
@@ -42,22 +42,49 @@ class FormSubmissionController extends Controller
             'message' => ['nullable', 'string', 'max:10000'],
             'body' => ['nullable', 'string', 'max:10000'],
             'content' => ['nullable', 'string', 'max:10000'],
+            'subject' => ['nullable', 'string', 'max:200'],
+            'title' => ['nullable', 'string', 'max:200'],
+            'topic' => ['nullable', 'string', 'max:200'],
+            'comments' => ['nullable', 'string', 'max:10000'],
+            'details' => ['nullable', 'string', 'max:10000'],
+            'phone' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $data = array_merge(
-            $request->except(['_token', '_method']),
-            $validated,
-        );
+        $data = [];
+        foreach ([
+            '_form_name',
+            '_hp',
+            'email',
+            'name',
+            'message',
+            'body',
+            'content',
+            'subject',
+            'title',
+            'topic',
+            'comments',
+            'details',
+            'phone',
+        ] as $key) {
+            if (! array_key_exists($key, $validated)) {
+                continue;
+            }
+            $value = $validated[$key];
+            if ($value === null || $value === '') {
+                continue;
+            }
+            $data[$key] = $value;
+        }
 
         // Basic honeypot spam detection
         $isSpam = $this->detectSpam($request, $data);
 
         $submission = FormSubmission::create([
-            'site_id'    => $site->id,
-            'form_name'  => (string) ($validated['_form_name'] ?? 'contact'),
-            'data'       => $data,
+            'site_id' => $site->id,
+            'form_name' => (string) ($validated['_form_name'] ?? 'contact'),
+            'data' => $data,
             'ip_address' => $request->ip(),
-            'is_spam'    => $isSpam,
+            'is_spam' => $isSpam,
             'created_at' => now(),
         ]);
 
@@ -65,7 +92,7 @@ class FormSubmissionController extends Controller
             Notification::createAlert(
                 type: 'form_received',
                 title: "New form submission on {$site->name}",
-                body: "From: " . ($data['email'] ?? $data['name'] ?? 'Anonymous'),
+                body: 'From: '.($data['email'] ?? $data['name'] ?? 'Anonymous'),
                 siteId: $site->id,
                 data: ['submission_id' => $submission->id],
             );
@@ -81,25 +108,25 @@ class FormSubmissionController extends Controller
             }
 
             SiteInboxMessage::create([
-                'site_id'    => $site->id,
-                'direction'  => 'inbound',
+                'site_id' => $site->id,
+                'direction' => 'inbound',
                 'from_email' => $fromEmail,
-                'from_name'  => $fromName,
-                'to_email'   => null,
-                'subject'    => SiteInboxMessage::subjectFromFormPayload($data, $submission->form_name),
-                'body'       => SiteInboxMessage::bodyFromFormPayload($data),
-                'is_read'    => false,
-                'source'     => 'form',
+                'from_name' => $fromName,
+                'to_email' => null,
+                'subject' => SiteInboxMessage::subjectFromFormPayload($data, $submission->form_name),
+                'body' => SiteInboxMessage::bodyFromFormPayload($data),
+                'is_read' => false,
+                'source' => 'form',
             ]);
         }
 
         Log::info("Form submission received for [{$slug}]", [
             'form_name' => $submission->form_name,
-            'is_spam'   => $isSpam,
+            'is_spam' => $isSpam,
         ]);
 
         return response()->json([
-            'status'  => 'ok',
+            'status' => 'ok',
             'message' => 'Submission received',
         ], 201);
     }
