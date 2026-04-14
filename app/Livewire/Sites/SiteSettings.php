@@ -29,6 +29,11 @@ class SiteSettings extends Component
     /** Per-site GitHub webhook secret. Stored encrypted. Leave blank to use the global secret. */
     public string $webhookSecret = '';
 
+    /** Per-site Bearer for POST /api/inbox/{slug}. Stored encrypted. Leave blank to keep unchanged. */
+    public string $inboxInboundSecret = '';
+
+    public bool $clearInboxInboundSecret = false;
+
     public string $deploymentMode = SiteRuntimeService::MODE_STATIC;
 
     public string $deployPath = '';
@@ -114,6 +119,8 @@ class SiteSettings extends Component
             'gtmId' => 'nullable|string|max:255',
             // Leave blank to keep the existing secret, or enter a new one to rotate it.
             'webhookSecret' => ['nullable', 'string', 'min:16', 'max:255', 'not_regex:/[\r\n]/'],
+            'inboxInboundSecret' => ['nullable', 'string', 'min:32', 'max:255', 'not_regex:/[\r\n]/'],
+            'clearInboxInboundSecret' => 'boolean',
         ]);
 
         if (
@@ -145,6 +152,12 @@ class SiteSettings extends Component
         // An empty submission leaves the existing encrypted value untouched.
         if ($this->webhookSecret !== '') {
             $updatePayload['webhook_secret'] = $this->webhookSecret;
+        }
+
+        if ($this->clearInboxInboundSecret) {
+            $updatePayload['inbox_inbound_secret'] = null;
+        } elseif ($this->inboxInboundSecret !== '') {
+            $updatePayload['inbox_inbound_secret'] = $this->inboxInboundSecret;
         }
 
         $site->update($updatePayload);
@@ -193,6 +206,9 @@ class SiteSettings extends Component
             'is_active' => $this->trackingEnabled,
         ]);
 
+        $this->inboxInboundSecret = '';
+        $this->clearInboxInboundSecret = false;
+
         session()->flash('success', 'Site settings, deployment targets, and tracking installation updated.');
     }
 
@@ -218,7 +234,9 @@ class SiteSettings extends Component
         $site = SiteAccess::findOrFail($this->siteId);
 
         return view('livewire.sites.site-settings', [
+            'site' => $site,
             'supportProfile' => app(SiteSupportService::class)->siteProfile($site),
+            'hasInboxInboundSecret' => filled($site->getAttribute('inbox_inbound_secret')),
             'deploymentOptions' => $this->runtime()->supportedDeploymentModesForProjectType($this->projectType),
             'productionTarget' => $site->deploymentTargets()->where('environment', 'production')->first(),
             'currentRelease' => $site->currentDeploymentRelease()->first(),

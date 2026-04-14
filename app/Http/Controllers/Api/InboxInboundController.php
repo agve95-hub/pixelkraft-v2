@@ -16,33 +16,41 @@ class InboxInboundController extends Controller
      */
     public function store(Request $request, string $slug): JsonResponse
     {
-        $secret = config('pixelkraft.inbox_inbound_secret');
+        $globalSecret = config('pixelkraft.inbox_inbound_secret');
         $requireSecret = (bool) config('pixelkraft.inbox_inbound_require_secret', ! app()->isLocal());
-
-        if ($requireSecret && (! is_string($secret) || trim($secret) === '')) {
-            report(new \RuntimeException('Inbound inbox webhook is enabled without INBOX_INBOUND_SECRET.'));
-
-            return response()->json(['error' => 'Inbound inbox endpoint is not configured'], 503);
-        }
-
-        // Enforce a minimum secret length to prevent trivially weak tokens.
-        if (is_string($secret) && trim($secret) !== '' && strlen($secret) < 32) {
-            report(new \RuntimeException('INBOX_INBOUND_SECRET is set but is shorter than the required 32 characters.'));
-
-            return response()->json(['error' => 'Inbound inbox endpoint is not configured'], 503);
-        }
-
-        if (is_string($secret) && trim($secret) !== '') {
-            $token = $request->bearerToken();
-            if (! hash_equals($secret, (string) $token)) {
-                return response()->json(['error' => 'Unauthorized'], 401);
-            }
-        }
 
         $site = Site::where('slug', $slug)->where('is_active', true)->first();
 
         if (! $site) {
             return response()->json(['error' => 'Site not found'], 404);
+        }
+
+        $siteSecret = $site->getAttribute('inbox_inbound_secret');
+        $effectiveSecret = null;
+        if (is_string($siteSecret) && trim($siteSecret) !== '') {
+            $effectiveSecret = trim($siteSecret);
+        } elseif (is_string($globalSecret) && trim($globalSecret) !== '') {
+            $effectiveSecret = trim($globalSecret);
+        }
+
+        if ($requireSecret && $effectiveSecret === null) {
+            report(new \RuntimeException('Inbound inbox webhook is enabled without INBOX_INBOUND_SECRET or per-site inbox secret.'));
+
+            return response()->json(['error' => 'Inbound inbox endpoint is not configured'], 503);
+        }
+
+        // Enforce a minimum secret length to prevent trivially weak tokens.
+        if ($effectiveSecret !== null && strlen($effectiveSecret) < 32) {
+            report(new \RuntimeException('Inbound inbox bearer secret is shorter than the required 32 characters.'));
+
+            return response()->json(['error' => 'Inbound inbox endpoint is not configured'], 503);
+        }
+
+        if ($effectiveSecret !== null) {
+            $token = $request->bearerToken();
+            if (! hash_equals($effectiveSecret, (string) $token)) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
         }
 
         $key = 'inbox-inbound:'.$request->ip().':'.$slug;

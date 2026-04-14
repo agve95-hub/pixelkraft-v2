@@ -113,7 +113,7 @@ Git conflicts between a webhook push and an in-progress editor session throw `Gi
 
 ### Encrypted model fields
 
-The following `Site` fields are cast to `encrypted` and stored encrypted at rest: `github_token`, `cf_api_token`, `smtp_password`, `ftp_ssh_password`. Never read these in bulk queries; always access them on a loaded model instance.
+The following `Site` fields are cast to `encrypted` and stored encrypted at rest: `github_token`, `webhook_secret`, `inbox_inbound_secret`, `cf_api_token`, `smtp_password`, `ftp_ssh_password`. Never read these in bulk queries; always access them on a loaded model instance.
 
 ### Scheduled commands (app/Console/Commands)
 

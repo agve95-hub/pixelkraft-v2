@@ -67,7 +67,7 @@ Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and so
 - Site-scoped notifications
 
 ### 🔒 Security Architecture
-- All credentials encrypted at rest (`github_token`, `cf_api_token`, `smtp_password`, `ftp_ssh_password`)
+- All credentials encrypted at rest (`github_token`, `webhook_secret`, `inbox_inbound_secret`, `cf_api_token`, `smtp_password`, `ftp_ssh_password`)
 - HMAC-SHA256 webhook signature verification (constant-time `hash_equals`)
 - Role-based access control (admin / user)
 - Laravel Sanctum API tokens (scoped personal access tokens for `/api/v1` machine clients) + Fortify 2FA
@@ -335,6 +335,18 @@ Issue tokens with only the abilities you need (wildcard **`['*']`** is supported
 | `pixelkraft:notifications:write` | `POST /api/v1/notifications/{id}/read`, `POST /api/v1/notifications/read-all` |
 
 Example (Artisan tinker or your own admin UI): create a token with `['pixelkraft:sites:read', 'pixelkraft:sites:deploy']` for a read-only dashboard plus deploy from CI.
+
+---
+
+## Project inbox inbound webhook (`/api/inbox/{slug}`)
+
+Relay tools (email forwarding, Zapier, custom scripts) can create inbox rows with **`POST /api/inbox/{slug}`** (active sites only).
+
+| Item | Detail |
+|---|---|
+| **Auth** | Optional **`Authorization: Bearer {token}`** — when `INBOX_INBOUND_REQUIRE_SECRET` is true, the bearer must match either the site’s **per-site inbox secret** (set in site settings; stored encrypted) or, if unset, the global **`INBOX_INBOUND_SECRET`** from `.env` |
+| **Minimum length** | 32 characters for any configured secret (global or per-site) |
+| **Body** | JSON: required `subject`, `body`; optional `from_email`, `from_name`, `to_email` |
 
 ---
 

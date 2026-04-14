@@ -175,8 +175,10 @@ return [
     | Project inbox (inbound webhook)
     |--------------------------------------------------------------------------
     |
-    | POST /api/inbox/{site-slug} with JSON body. When set, requests must send
-    | Authorization: Bearer {secret}. Leave empty in local dev to rely on throttle only.
+    | POST /api/inbox/{site-slug} with JSON body. When a site has
+    | inbox_inbound_secret set (encrypted), Bearer must match that value;
+    | otherwise the global secret below is used. Leave empty in local dev to
+    | rely on throttle only when INBOX_INBOUND_REQUIRE_SECRET is false.
     |
     */
     'inbox_inbound_secret' => env('INBOX_INBOUND_SECRET'),

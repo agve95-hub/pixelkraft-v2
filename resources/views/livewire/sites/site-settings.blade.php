@@ -122,6 +122,30 @@
                     <div style="font-size:12px;color:var(--zinc-500)">When enabled, webhook sync also triggers a deploy after pull and parse succeed.</div>
                 </div>
             </label>
+
+            <div class="form-field" style="margin-top:4px">
+                <label class="form-label" for="per-site-webhook-secret">GitHub webhook secret (optional)</label>
+                <input id="per-site-webhook-secret" type="password" wire:model="webhookSecret" class="form-input" placeholder="{{ $site->webhook_secret ? 'Leave blank to keep current secret' : 'Leave blank to use global secret' }}" autocomplete="new-password" style="font-family:var(--mono);font-size:13px" />
+                <div class="form-hint">Stored encrypted. When set, GitHub must sign with this secret instead of the global <code style="font-size:11px">GITHUB_WEBHOOK_SECRET</code>.</div>
+                @error('webhookSecret')
+                    <div class="form-hint" style="color:var(--red)">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="form-field">
+                <label class="form-label" for="inbox-inbound-secret">Inbound inbox Bearer (optional)</label>
+                <input id="inbox-inbound-secret" type="password" wire:model="inboxInboundSecret" class="form-input" placeholder="{{ $hasInboxInboundSecret ? 'Leave blank to keep current token' : 'min. 32 characters' }}" autocomplete="new-password" style="font-family:var(--mono);font-size:13px" />
+                <div class="form-hint">For <code style="font-size:11px">POST /api/inbox/{{ $site->slug }}</code>. When set, this token is used instead of <code style="font-size:11px">INBOX_INBOUND_SECRET</code> for this site only (32+ chars).</div>
+                @error('inboxInboundSecret')
+                    <div class="form-hint" style="color:var(--red)">{{ $message }}</div>
+                @enderror
+                @if ($hasInboxInboundSecret)
+                    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:rgba(255,255,255,0.75);cursor:pointer">
+                        <input type="checkbox" wire:model="clearInboxInboundSecret" style="accent-color:var(--accent)" />
+                        <span>Remove per-site inbox secret (fall back to global)</span>
+                    </label>
+                @endif
+            </div>
         </div>
 
         <div class="dash-card">
