@@ -1,13 +1,17 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "pixelkraft/pixelkraft",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Self-hosted Git-to-Render site operations platform (Laravel + Livewire).",
     "keywords": [
+        "pixelkraft",
         "laravel",
-        "framework"
+        "livewire",
+        "deployment",
+        "git",
+        "hosting"
     ],
-    "license": "MIT",
+    "license": "proprietary",
     "require": {
         "php": "^8.3",
         "czproject/git-php": "^4.6",
