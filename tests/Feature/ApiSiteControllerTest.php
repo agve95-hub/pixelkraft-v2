@@ -47,7 +47,7 @@ class ApiSiteControllerTest extends TestCase
             'project_type' => 'static_html',
         ]);
 
-        Sanctum::actingAs($alice);
+        Sanctum::actingAs($alice, ['*']);
 
         $response = $this->getJson('/api/v1/sites');
 
@@ -75,7 +75,7 @@ class ApiSiteControllerTest extends TestCase
             'project_type' => 'static_html',
         ]);
 
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['*']);
 
         $this->getJson("/api/v1/sites/{$site->id}")
             ->assertOk()

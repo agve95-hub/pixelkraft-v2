@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureSanctumApiTokenCan;
 use App\Http\Middleware\EnsureSiteAccess;
 use App\Http\Middleware\RememberExpandedSite;
 use Illuminate\Foundation\Application;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'site.access' => EnsureSiteAccess::class,
             'expand.site.sidebar' => RememberExpandedSite::class,
+            'sanctum.token.can' => EnsureSanctumApiTokenCan::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
