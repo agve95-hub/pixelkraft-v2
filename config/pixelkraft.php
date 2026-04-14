@@ -95,6 +95,14 @@ return [
         'lighthouse_schedule' => 'weekly',
         'broken_links_schedule' => 'weekly',
         'analytics_sync_schedule' => 'daily',
+        /**
+         * Data retention windows for high-volume monitoring tables.
+         * uptime_checks grows at up to ~288 rows/site/day; raw analytics events
+         * are aggregated nightly into analytics_snapshots so can be pruned sooner.
+         * Both tables are pruned by `pixelkraft:prune-monitoring` (runs weekly).
+         */
+        'uptime_retention_days' => (int) env('UPTIME_RETENTION_DAYS', 30),
+        'events_retention_days' => (int) env('EVENTS_RETENTION_DAYS', 90),
     ],
 
     /*
@@ -108,6 +116,19 @@ return [
     |
     */
     'google_analytics_credentials_path' => env('GOOGLE_ANALYTICS_CREDENTIALS_PATH', storage_path('app/google-credentials.json')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | PageSpeed Insights API
+    |--------------------------------------------------------------------------
+    |
+    | Optional Google Cloud API key for the PageSpeed Insights v5 API.
+    | Without a key the API still works but is rate-limited to ~25 req/100s.
+    | Create a key at console.cloud.google.com → APIs & Services → Credentials
+    | and enable the "PageSpeed Insights API".
+    |
+    */
+    'psi_api_key' => env('PSI_API_KEY'),
 
     /*
     |--------------------------------------------------------------------------

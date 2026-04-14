@@ -49,7 +49,7 @@ class ApiSiteControllerTest extends TestCase
 
         Sanctum::actingAs($alice);
 
-        $response = $this->getJson('/api/sites');
+        $response = $this->getJson('/api/v1/sites');
 
         $response->assertOk();
         $data = $response->json('data');
@@ -77,7 +77,7 @@ class ApiSiteControllerTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->getJson("/api/sites/{$site->id}")
+        $this->getJson("/api/v1/sites/{$site->id}")
             ->assertOk()
             ->assertJsonPath('data.name', 'Show Me')
             ->assertJsonPath('data.slug', 'show-me-api');

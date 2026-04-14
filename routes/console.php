@@ -56,6 +56,14 @@ Schedule::command('pixelkraft:send-campaigns')
     ->everyMinute()
     ->withoutOverlapping();
 
+// ── Data retention ──────────────────────────────
+
+// Prune old uptime_checks and analytics_events rows weekly (Sunday 1am).
+// Defaults: 30 days for uptime samples, 90 days for raw analytics events.
+Schedule::command('pixelkraft:prune-monitoring')
+    ->weeklyOn(0, '01:00')
+    ->withoutOverlapping();
+
 // ── Horizon ─────────────────────────────────────
 
 Schedule::command('horizon:snapshot')

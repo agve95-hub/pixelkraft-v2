@@ -101,7 +101,11 @@ return [
             'handler_with' => [
                 'stream' => 'php://stderr',
             ],
-            'formatter' => env('LOG_STDERR_FORMATTER'),
+            // Set LOG_STDERR_FORMATTER=json in production to emit structured JSON
+            // logs consumable by Datadog, Loki, or any log aggregation pipeline.
+            'formatter' => env('LOG_STDERR_FORMATTER') === 'json'
+                ? \Monolog\Formatter\JsonFormatter::class
+                : env('LOG_STDERR_FORMATTER'),
             'processors' => [PsrLogMessageProcessor::class],
         ],
 

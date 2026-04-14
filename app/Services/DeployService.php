@@ -344,6 +344,8 @@ class DeployService
             return;
         }
 
+        $this->validateBuildCommand($buildCommand);
+
         $result = $this->runCommand(
             $buildCommand,
             $site->repo_path,
@@ -414,7 +416,9 @@ class DeployService
             $envOverrides,
         );
 
-        $nodeVersion = $site->node_version ?? '20';
+        $nodeVersion = trim((string) ($site->node_version ?? '20'));
+        $this->validateNodeVersion($nodeVersion);
+
         $nvmPrefix = "export NVM_DIR=\"\$HOME/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && nvm use {$nodeVersion} 2>/dev/null;";
         $fullCommand = "{$nvmPrefix} {$command}";
 
@@ -682,5 +686,43 @@ class DeployService
     private function elapsedDuration(DeployLog $log): int
     {
         return max(0, (int) $log->created_at?->diffInMilliseconds(now()));
+    }
+
+    /**
+     * Reject node_version values that could inject into the nvm shell prefix.
+     * Allows: "20", "18.12.1", "lts/iron", "lts/hydrogen", "current", "node".
+     */
+    private function validateNodeVersion(string $version): void
+    {
+        if ($version === '') {
+            return;
+        }
+
+        if (! preg_match('/^\d+(\.\d+){0,2}$|^lts\/[a-z]+$|^(current|node|stable)$/i', $version)) {
+            throw new \RuntimeException(
+                "Invalid Node.js version specifier [{$version}]. Allowed formats: '20', '18.12.1', 'lts/iron', 'current'."
+            );
+        }
+    }
+
+    /**
+     * Reject build commands that contain shell metacharacters capable of command injection.
+     * Called on the raw/resolved build command before it is passed to bash -c.
+     */
+    private function validateBuildCommand(string $command): void
+    {
+        // Newlines can break the command boundary inside the bash -c string
+        if (preg_match('/[\r\n]/', $command)) {
+            throw new \RuntimeException('Build command must not contain newline characters.');
+        }
+
+        // These metacharacters enable shell injection: ; | ` $ < >
+        // The && operator is deliberately permitted (commonly used as "build && export").
+        if (preg_match('/[;|`$<>]/', $command)) {
+            throw new \RuntimeException(
+                "Build command contains a disallowed shell character (one of: ; | \` \$ < >). " .
+                "Edit the build command in Site Settings to remove it."
+            );
+        }
     }
 }

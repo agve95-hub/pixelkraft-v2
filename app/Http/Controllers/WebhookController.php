@@ -96,11 +96,28 @@ class WebhookController extends Controller
             return response()->json(['status' => 'no_matching_site']);
         }
 
+        $rawBody   = $request->getContent();
+        $signature = $request->header('X-Hub-Signature-256');
+
         $dispatched = 0;
         foreach ($sites as $site) {
             if ($branch !== $site->branch) {
                 Log::info("Webhook push to [{$branch}] ignored for site [{$site->slug}] (configured: {$site->branch})");
                 continue;
+            }
+
+            // Per-site secret verification — if the site has its own webhook_secret,
+            // the incoming signature must also be valid for that secret.  This gives
+            // each connected repo an independent signing key so a leaked global secret
+            // cannot be used to trigger a specific site's deployment.
+            if (! empty($site->webhook_secret)) {
+                if (! $this->verifyGitHubSignature($rawBody, $signature, $site->webhook_secret)) {
+                    Log::warning('Per-site webhook signature verification failed, skipping dispatch.', [
+                        'site'        => $site->slug,
+                        'delivery_id' => $deliveryId,
+                    ]);
+                    continue;
+                }
             }
 
             SyncFromWebhookJob::dispatch($site, $payload, $deliveryId);

@@ -19,6 +19,8 @@ class SiteSettings extends Component
     public string $buildOutputDir = '';
     public string $branch = 'main';
     public string $projectType = 'static_html';
+    /** Per-site GitHub webhook secret. Stored encrypted. Leave blank to use the global secret. */
+    public string $webhookSecret = '';
     public string $deploymentMode = SiteRuntimeService::MODE_STATIC;
     public string $deployPath = '';
     public string $sshHost = '';
@@ -44,6 +46,7 @@ class SiteSettings extends Component
 
         $this->name = $site->name;
         $this->domain = $site->domain ?? '';
+        $this->webhookSecret = ''; // Never pre-fill secrets into the form — write-only.
         $this->buildCommand = $site->build_command ?? '';
         $this->buildOutputDir = $site->build_output_dir ?? '';
         $this->branch = $site->branch;
@@ -71,14 +74,20 @@ class SiteSettings extends Component
     {
         $this->validate([
             'name'           => 'required|string|max:255',
-            'domain'         => 'nullable|string|max:255',
-            'buildCommand'   => 'nullable|string|max:500',
-            'buildOutputDir' => 'nullable|string|max:255',
-            'branch'         => 'required|string|max:100',
-            'projectType'    => 'required|string',
+            // Hostname: letters, digits, dots, hyphens only; no newlines or shell chars.
+            'domain'         => ['nullable', 'string', 'max:253', 'regex:/^[a-zA-Z0-9*][a-zA-Z0-9.\-*]*$/'],
+            // Build command: disallow shell injection metacharacters (; | ` $ < >)
+            // and newlines. The && operator is still allowed (commonly used for
+            // "build && export" workflows).
+            'buildCommand'   => ['nullable', 'string', 'max:500', 'not_regex:/[;|`\$<>\r\n]/'],
+            'buildOutputDir' => ['nullable', 'string', 'max:255', 'not_regex:/[\r\n]/'],
+            // Branch: letters, digits, hyphens, dots, underscores, forward-slashes.
+            'branch'         => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9\-._\/]*$/'],
+            'projectType'    => ['required', 'string', 'in:static_html,php_site,react,vue,svelte,astro,hugo,eleventy,nextjs,nuxt,custom'],
             'deploymentMode' => 'required|in:static,runtime',
-            'deployPath'     => 'nullable|string|max:255',
-            'sshHost'        => 'nullable|string|max:255',
+            // Deploy path must be an absolute filesystem path; no newlines.
+            'deployPath'     => ['nullable', 'string', 'max:255', 'regex:/^\//', 'not_regex:/[\r\n;{}]/'],
+            'sshHost'        => ['nullable', 'string', 'max:255', 'not_regex:/[\r\n]/'],
             'healthCheckUrl' => 'nullable|url|max:500',
             'releaseStrategy' => 'required|in:symlink,replace,runtime',
             'deployOnWebhook' => 'boolean',
@@ -86,6 +95,8 @@ class SiteSettings extends Component
             'trackingConsentMode' => 'boolean',
             'gaPropertyId'   => 'nullable|string|max:255',
             'gtmId'          => 'nullable|string|max:255',
+            // Leave blank to keep the existing secret, or enter a new one to rotate it.
+            'webhookSecret'  => ['nullable', 'string', 'min:16', 'max:255', 'not_regex:/[\r\n]/'],
         ]);
 
         if (
@@ -97,7 +108,7 @@ class SiteSettings extends Component
         }
 
         $site = SiteAccess::findOrFail($this->siteId);
-        $site->update([
+        $updatePayload = [
             'name'             => $this->name,
             'domain'           => $this->domain ?: null,
             'deployment_mode'  => $this->deploymentMode,
@@ -110,7 +121,15 @@ class SiteSettings extends Component
             'deploy_on_webhook' => $this->deployOnWebhook,
             'ga_property_id'   => $this->gaPropertyId ?: null,
             'gtm_id'           => $this->gtmId ?: null,
-        ]);
+        ];
+
+        // Only update the webhook secret when the operator explicitly types a new one.
+        // An empty submission leaves the existing encrypted value untouched.
+        if ($this->webhookSecret !== '') {
+            $updatePayload['webhook_secret'] = $this->webhookSecret;
+        }
+
+        $site->update($updatePayload);
 
         $site->refresh();
         app(SiteProvisioningService::class)->initializeSite($site);

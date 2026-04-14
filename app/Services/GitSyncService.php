@@ -34,6 +34,11 @@ class GitSyncService
             File::ensureDirectoryExists(dirname($repoPath), 0755, true);
 
             try {
+                // The token must be embedded in the URL for the initial clone because
+                // no .git directory exists yet for a credential helper to reference.
+                // Immediately after clone we strip the token from the remote URL and
+                // configure a repo-scoped credential helper so it is never stored in
+                // .git/config going forward.
                 $authUrl = $this->buildAuthUrl($site);
                 $repo = $this->git->cloneRepository($authUrl, $repoPath, [
                     '-b' => $site->branch,
@@ -41,12 +46,18 @@ class GitSyncService
                     '--depth' => 50,
                 ]);
 
+                // Remove token from remote URL and set up credential helper.
+                if (! empty($site->github_token)) {
+                    $repo->execute('remote', 'set-url', 'origin', $site->repo_url);
+                    $this->setupCredentialHelper($site, $repo);
+                }
+
                 $site->update(['last_synced_at' => now()]);
                 $this->finishOperation($operation, 'success', output: "Cloned {$site->repo_url} into {$repoPath}");
 
                 return $repo;
             } catch (\Throwable $e) {
-                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                $this->finishOperation($operation, 'failed', error: $this->scrubSecrets($e->getMessage()));
                 throw $e;
             }
         });
@@ -85,7 +96,7 @@ class GitSyncService
                         // Ignore when no merge is in progress.
                     }
 
-                    $this->finishOperation($operation, 'conflict', error: $e->getMessage());
+                    $this->finishOperation($operation, 'conflict', error: $this->scrubSecrets($e->getMessage()));
 
                     throw new GitConflictException(
                         "Merge conflict detected for site [{$site->slug}]. Remote changes conflict with local edits.",
@@ -93,7 +104,7 @@ class GitSyncService
                     );
                 }
 
-                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                $this->finishOperation($operation, 'failed', error: $this->scrubSecrets($e->getMessage()));
                 throw $e;
             }
         });
@@ -149,15 +160,15 @@ class GitSyncService
                         $this->finishOperation($operation, 'success', commitSha: $sha, output: 'Push rejected, recovered with pull --rebase.');
                         return $sha;
                     } catch (\Throwable $rebaseException) {
-                        $this->finishOperation($operation, 'conflict', error: $rebaseException->getMessage());
+                        $this->finishOperation($operation, 'conflict', error: $this->scrubSecrets($rebaseException->getMessage()));
                         throw $rebaseException;
                     }
                 }
 
-                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                $this->finishOperation($operation, 'failed', error: $this->scrubSecrets($e->getMessage()));
                 throw $e;
             } catch (\Throwable $e) {
-                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                $this->finishOperation($operation, 'failed', error: $this->scrubSecrets($e->getMessage()));
                 throw $e;
             }
         });
@@ -197,12 +208,12 @@ class GitSyncService
                         $this->finishOperation($operation, 'success', commitSha: $sha, output: 'Push rejected, recovered with pull --rebase.');
                         return $sha;
                     } catch (\Throwable $rebaseException) {
-                        $this->finishOperation($operation, 'conflict', error: $rebaseException->getMessage());
+                        $this->finishOperation($operation, 'conflict', error: $this->scrubSecrets($rebaseException->getMessage()));
                         throw $rebaseException;
                     }
                 }
 
-                $this->finishOperation($operation, 'failed', error: $e->getMessage());
+                $this->finishOperation($operation, 'failed', error: $this->scrubSecrets($e->getMessage()));
                 throw $e;
             }
         });
@@ -356,7 +367,68 @@ class GitSyncService
             return;
         }
 
-        $repo->execute('remote', 'set-url', 'origin', $this->buildAuthUrl($site));
+        // Use a repo-scoped credential helper file rather than embedding the token
+        // in the remote URL. This prevents the token from appearing in .git/config,
+        // git remote -v output, and process-level error messages.
+        $this->setupCredentialHelper($site, $repo);
+    }
+
+    /**
+     * Write a credential store file into .git/ and configure git to read from it.
+     * The remote URL is always the unauthenticated form; authentication goes through
+     * the credential helper only.
+     */
+    private function setupCredentialHelper(Site $site, GitRepository $repo): void
+    {
+        $this->writeCredentialFile($site);
+
+        // Use an absolute path so git does not search PATH for the file.
+        $credFile = $this->credentialFilePath($site);
+        $repo->execute('config', 'credential.helper', "store --file {$credFile}");
+
+        // Ensure the remote URL itself never contains the token.
+        $repo->execute('remote', 'set-url', 'origin', (string) $site->repo_url);
+    }
+
+    /**
+     * Write (or refresh) the per-repo git credential store file.
+     * Mode 0600 — readable only by the process owner.
+     */
+    private function writeCredentialFile(Site $site): void
+    {
+        $credFile = $this->credentialFilePath($site);
+        $dir      = dirname($credFile);
+
+        if (! File::isDirectory($dir)) {
+            File::ensureDirectoryExists($dir, 0700, true);
+        }
+
+        $parsed  = parse_url((string) $site->repo_url);
+        $scheme  = $parsed['scheme'] ?? 'https';
+        $host    = $parsed['host'] ?? 'github.com';
+        $content = "{$scheme}://x-access-token:{$site->github_token}@{$host}\n";
+
+        file_put_contents($credFile, $content, LOCK_EX);
+        chmod($credFile, 0600);
+    }
+
+    private function credentialFilePath(Site $site): string
+    {
+        return rtrim((string) $site->repo_path, '/') . '/.git/.pk_credentials';
+    }
+
+    /**
+     * Remove embedded tokens from git error/output messages before they are
+     * persisted to the GitOperation audit log or surfaced in the UI.
+     */
+    private function scrubSecrets(?string $text): ?string
+    {
+        if ($text === null) {
+            return null;
+        }
+
+        // Strip tokens embedded in HTTPS git URLs: x-access-token:TOKEN@host
+        return preg_replace('/x-access-token:[^@\s]+@/', 'x-access-token:[REDACTED]@', $text);
     }
 
     private function configureCommitIdentity(GitRepository $repo): void

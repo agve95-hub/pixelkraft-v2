@@ -84,17 +84,41 @@ class EditorPreviewController extends Controller
 
     private function serveLocalAsset(Site $site, string $path): Response
     {
-        $fullPath = "{$site->repo_path}/{$path}";
+        // First-pass checks: extension whitelist + literal path-traversal sequences.
+        if (! $this->isAllowedLocalAsset($path)) {
+            abort(404);
+        }
 
-        if (! File::exists($fullPath) || ! $this->isAllowedLocalAsset($path)) {
+        // Resolve the repo root to a canonical absolute path. This must succeed for
+        // a valid, already-cloned site.
+        $repoRoot = realpath((string) $site->repo_path);
+        if ($repoRoot === false) {
+            abort(404);
+        }
+
+        // Build the candidate full path and canonicalise it. realpath() follows
+        // symlinks, so a symlink inside the repo pointing outside it will be caught.
+        $fullPath = $repoRoot . DIRECTORY_SEPARATOR . ltrim(
+            str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path),
+            DIRECTORY_SEPARATOR,
+        );
+        $realFullPath = realpath($fullPath);
+
+        // Reject if the file does not exist or resolves outside the repo root.
+        // The trailing separator on $repoRoot prevents a sibling-directory prefix match
+        // (e.g. /var/www/repos/site vs /var/www/repos/site-evil).
+        if (
+            $realFullPath === false
+            || ! str_starts_with($realFullPath, $repoRoot . DIRECTORY_SEPARATOR)
+        ) {
             abort(404);
         }
 
         $mimeType = $this->getMimeType($path);
-        $content = File::get($fullPath);
+        $content  = File::get($realFullPath);
 
         return response($content, 200, [
-            'Content-Type' => $mimeType,
+            'Content-Type'  => $mimeType,
             'Cache-Control' => 'public, max-age=3600',
         ]);
     }

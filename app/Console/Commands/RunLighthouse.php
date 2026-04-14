@@ -5,16 +5,33 @@ namespace App\Console\Commands;
 use App\Models\Page;
 use App\Models\Site;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Process;
 
+/**
+ * Fetch Lighthouse-equivalent scores from the Google PageSpeed Insights API.
+ *
+ * Unlike running the Lighthouse CLI, this approach:
+ *  - Requires no Chromium / headless-Chrome on the server.
+ *  - Uses Google's own infrastructure to audit pages from the public internet.
+ *  - Requires a free Google Cloud API key (PSI_API_KEY in .env).
+ *    Without a key, the API still works but is capped at ~25 req/100 sec.
+ *
+ * PSI v5 docs: https://developers.google.com/speed/docs/insights/v5/reference/pagespeedapi/runpagespeed
+ */
 class RunLighthouse extends Command
 {
-    protected $signature = 'pixelkraft:run-lighthouse {--site= : Specific site slug}';
-    protected $description = 'Run Lighthouse audits on all live site pages';
+    protected $signature = 'pixelkraft:run-lighthouse {--site= : Specific site slug} {--strategy=mobile : mobile or desktop}';
+    protected $description = 'Fetch PageSpeed Insights scores for all live site pages';
+
+    private const PSI_ENDPOINT = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
 
     public function handle(): int
     {
+        $strategy = in_array($this->option('strategy'), ['mobile', 'desktop'], true)
+            ? $this->option('strategy')
+            : 'mobile';
+
         $query = Site::where('is_active', true)
             ->where('deploy_status', 'live')
             ->whereNotNull('domain');
@@ -26,19 +43,25 @@ class RunLighthouse extends Command
         $sites = $query->get();
 
         foreach ($sites as $site) {
-            $this->info("Running Lighthouse for [{$site->name}]...");
+            $this->info("Running PageSpeed Insights for [{$site->name}]...");
 
             $pages = $site->pages()
                 ->where('is_published', true)
-                ->limit(10) // Limit to avoid overwhelming the VPS
+                ->limit(10)
                 ->get();
 
             foreach ($pages as $page) {
-                $scores = $this->auditPage($site, $page);
+                $scores = $this->auditPage($site, $page, $strategy);
 
                 if ($scores) {
                     $page->update(['lighthouse_score' => $scores]);
-                    $this->info("  {$page->url_path}: perf={$scores['performance']}, a11y={$scores['accessibility']}, bp={$scores['best_practices']}, seo={$scores['seo']}");
+                    $this->info(
+                        "  {$page->url_path}: " .
+                        "perf={$scores['performance']}, " .
+                        "a11y={$scores['accessibility']}, " .
+                        "bp={$scores['best_practices']}, " .
+                        "seo={$scores['seo']}"
+                    );
                 }
             }
         }
@@ -46,55 +69,58 @@ class RunLighthouse extends Command
         return self::SUCCESS;
     }
 
-    private function auditPage(Site $site, Page $page): ?array
+    private function auditPage(Site $site, Page $page, string $strategy): ?array
     {
-        $url = "https://{$site->domain}" . ($page->url_path ?? '/');
+        $url = 'https://' . $site->domain . ($page->url_path ?? '/');
+        $apiKey = config('pixelkraft.psi_api_key');
 
-        // Use lighthouse CLI if available
-        $result = Process::timeout(60)->run(
-            'lighthouse ' . escapeshellarg($url) .
-            ' --output=json --quiet --chrome-flags="--headless --no-sandbox" 2>/dev/null'
-        );
+        $params = [
+            'url'      => $url,
+            'strategy' => $strategy,
+            'category' => ['performance', 'accessibility', 'best-practices', 'seo'],
+        ];
 
-        if ($result->successful()) {
-            $data = json_decode($result->output(), true);
-
-            if ($data && isset($data['categories'])) {
-                return [
-                    'performance'    => (int) (($data['categories']['performance']['score'] ?? 0) * 100),
-                    'accessibility'  => (int) (($data['categories']['accessibility']['score'] ?? 0) * 100),
-                    'best_practices' => (int) (($data['categories']['best-practices']['score'] ?? 0) * 100),
-                    'seo'            => (int) (($data['categories']['seo']['score'] ?? 0) * 100),
-                ];
-            }
+        if ($apiKey) {
+            $params['key'] = $apiKey;
         }
 
-        // Fallback: basic performance check via HTTP timing
         try {
-            $start = microtime(true);
-            $response = \Illuminate\Support\Facades\Http::timeout(15)->get($url);
-            $loadTime = (microtime(true) - $start) * 1000;
+            $response = Http::timeout(60)
+                ->retry(2, 5000)
+                ->get(self::PSI_ENDPOINT, $params);
 
-            if ($response->successful()) {
-                $perfScore = match (true) {
-                    $loadTime < 1000 => 95,
-                    $loadTime < 2000 => 80,
-                    $loadTime < 3000 => 60,
-                    $loadTime < 5000 => 40,
-                    default          => 20,
-                };
+            if (! $response->successful()) {
+                Log::warning("PageSpeed Insights request failed for [{$url}]", [
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                ]);
 
-                return [
-                    'performance'    => $perfScore,
-                    'accessibility'  => null,
-                    'best_practices' => null,
-                    'seo'            => $page->seo_score,
-                ];
+                return null;
             }
+
+            $data = $response->json();
+            $categories = $data['lighthouseResult']['categories'] ?? [];
+
+            return [
+                'performance'    => $this->scoreToInt($categories['performance']['score'] ?? null),
+                'accessibility'  => $this->scoreToInt($categories['accessibility']['score'] ?? null),
+                'best_practices' => $this->scoreToInt($categories['best-practices']['score'] ?? null),
+                'seo'            => $this->scoreToInt($categories['seo']['score'] ?? null),
+            ];
         } catch (\Throwable $e) {
-            Log::warning("Lighthouse fallback failed for [{$url}]", ['error' => $e->getMessage()]);
+            Log::warning("PageSpeed Insights error for [{$url}]", ['error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    private function scoreToInt(mixed $score): ?int
+    {
+        if ($score === null) {
+            return null;
         }
 
-        return null;
+        // PSI scores are floats in [0, 1]; multiply by 100 for integer percent.
+        return (int) round((float) $score * 100);
     }
 }

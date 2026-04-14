@@ -52,7 +52,7 @@ class ApiSiteSyncDeployTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/sites/{$site->id}/sync")
+        $this->postJson("/api/v1/sites/{$site->id}/sync")
             ->assertOk()
             ->assertJsonPath('status', 'dispatched');
 
@@ -86,7 +86,7 @@ class ApiSiteSyncDeployTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/sites/{$site->id}/sync")->assertOk();
+        $this->postJson("/api/v1/sites/{$site->id}/sync")->assertOk();
 
         Queue::assertPushed(ParseSiteJob::class, fn (ParseSiteJob $job) => $job->site->is($site));
         Queue::assertNotPushed(CloneRepoJob::class);
@@ -114,7 +114,7 @@ class ApiSiteSyncDeployTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/sites/{$site->id}/deploy")
+        $this->postJson("/api/v1/sites/{$site->id}/deploy")
             ->assertOk()
             ->assertJsonPath('status', 'dispatched');
 
@@ -153,7 +153,7 @@ class ApiSiteSyncDeployTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/sites/{$site->id}/rollback/{$log->id}")
+        $this->postJson("/api/v1/sites/{$site->id}/rollback/{$log->id}")
             ->assertStatus(400)
             ->assertJsonFragment(['error' => 'No snapshot available for this deploy']);
     }

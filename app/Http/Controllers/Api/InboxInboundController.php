@@ -25,6 +25,13 @@ class InboxInboundController extends Controller
             return response()->json(['error' => 'Inbound inbox endpoint is not configured'], 503);
         }
 
+        // Enforce a minimum secret length to prevent trivially weak tokens.
+        if (is_string($secret) && trim($secret) !== '' && strlen($secret) < 32) {
+            report(new \RuntimeException('INBOX_INBOUND_SECRET is set but is shorter than the required 32 characters.'));
+
+            return response()->json(['error' => 'Inbound inbox endpoint is not configured'], 503);
+        }
+
         if (is_string($secret) && trim($secret) !== '') {
             $token = $request->bearerToken();
             if (! hash_equals($secret, (string) $token)) {

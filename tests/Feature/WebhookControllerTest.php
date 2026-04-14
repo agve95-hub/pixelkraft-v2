@@ -230,6 +230,78 @@ class WebhookControllerTest extends TestCase
         });
     }
 
+    public function test_per_site_secret_blocks_dispatch_when_signature_does_not_match(): void
+    {
+        config()->set('pixelkraft.github_webhook_require_signature', true);
+        config()->set('pixelkraft.github_webhook_secret', 'global-secret');
+
+        // Site has its own per-site secret; the incoming request is signed only with the global secret.
+        $site = Site::create([
+            'name' => 'Per-Site Secret',
+            'slug' => 'per-site-secret',
+            'repo_url' => 'https://github.com/acme/demo.git',
+            'branch' => 'main',
+            'webhook_secret' => 'per-site-supersecret-value-here',
+        ]);
+
+        Queue::fake();
+
+        // Sign the request with the global secret — NOT the per-site secret.
+        $payload = $this->pushPayload();
+        $body = json_encode($payload, JSON_THROW_ON_ERROR);
+        $headers = $this->githubHeaders($payload, deliveryId: 'per-site-bad');
+        // Override signature to be signed with global secret only (not per-site).
+        $headers['X-Hub-Signature-256'] = 'sha256=' . hash_hmac('sha256', $body, 'global-secret');
+
+        $response = $this
+            ->withHeaders($headers)
+            ->postJson('/api/webhooks/github', $payload);
+
+        // Controller should accept the delivery (global sig valid) but dispatch=0 because per-site sig fails.
+        $response->assertOk()->assertJson(['status' => 'ok', 'dispatched' => 0]);
+        Queue::assertNotPushed(SyncFromWebhookJob::class);
+    }
+
+    public function test_per_site_secret_allows_dispatch_when_site_route_used_and_signature_matches(): void
+    {
+        // When GitHub is configured per-repo with a site-specific secret, operators
+        // point the webhook at /api/webhooks/github/{site} and disable the global
+        // signature requirement (no shared global secret needed).
+        config()->set('pixelkraft.github_webhook_require_signature', false);
+        config()->set('pixelkraft.github_webhook_secret', null);
+
+        $perSiteSecret = 'per-site-supersecret-value-here';
+
+        $site = Site::create([
+            'name' => 'Per-Site OK',
+            'slug' => 'per-site-ok',
+            'repo_url' => 'https://github.com/acme/demo.git',
+            'branch' => 'main',
+            'webhook_secret' => $perSiteSecret,
+        ]);
+
+        Queue::fake();
+
+        $payload = $this->pushPayload();
+        $body = json_encode($payload, JSON_THROW_ON_ERROR);
+
+        // Sign with the per-site secret only.
+        $headers = [
+            'X-GitHub-Event' => 'push',
+            'Accept' => 'application/json',
+            'X-GitHub-Delivery' => 'per-site-good',
+            'X-Hub-Signature-256' => 'sha256=' . hash_hmac('sha256', $body, $perSiteSecret),
+        ];
+
+        // Use the site-scoped route so the per-site secret is the only verification needed.
+        $response = $this
+            ->withHeaders($headers)
+            ->postJson(route('webhooks.github.site', ['site' => $site]), $payload);
+
+        $response->assertOk()->assertJson(['status' => 'ok', 'dispatched' => 1]);
+        Queue::assertPushed(SyncFromWebhookJob::class, fn (SyncFromWebhookJob $job) => $job->site->id === $site->id);
+    }
+
     private function pushPayload(string $fullName = 'acme/demo', string $ref = 'refs/heads/main'): array
     {
         return [

@@ -20,5 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Forward exceptions to Sentry when the SDK is installed and SENTRY_DSN is set.
+        // Install: composer require sentry/sentry-laravel
+        if (class_exists(\Sentry\Laravel\Integration::class)) {
+            \Sentry\Laravel\Integration::handles($exceptions);
+        }
     })->create();

@@ -31,6 +31,7 @@ class Site extends Model
         'branch',
         'deploy_on_webhook',
         'github_token',
+        'webhook_secret',
         'project_type',
         'billing_cycle',
         'monthly_retainer',
@@ -81,6 +82,7 @@ class Site extends Model
     {
         return [
             'github_token'      => 'encrypted',
+            'webhook_secret'    => 'encrypted',
             'cf_api_token'      => 'encrypted',
             'smtp_password'     => 'encrypted',
             'ftp_ssh_password'  => 'encrypted',

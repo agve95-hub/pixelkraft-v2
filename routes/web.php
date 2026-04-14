@@ -9,7 +9,42 @@ use App\Models\Page;
 use App\Models\Site;
 use App\Support\SeoIssueSummary;
 use App\Support\SiteAccess;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+
+// ── Health check (no auth) ───────────────────────
+// Used by post-deploy CI smoke tests, load balancers, and external uptime monitors.
+Route::get('/health', function () {
+    $checks  = [];
+    $healthy = true;
+
+    // Database connectivity
+    try {
+        DB::connection()->getPdo();
+        $checks['database'] = 'ok';
+    } catch (\Throwable) {
+        $checks['database'] = 'error';
+        $healthy = false;
+    }
+
+    // Cache / Redis connectivity
+    try {
+        $key = 'pixelkraft:health:' . uniqid('', true);
+        Cache::put($key, 1, 10);
+        Cache::forget($key);
+        $checks['cache'] = 'ok';
+    } catch (\Throwable) {
+        $checks['cache'] = 'error';
+        $healthy = false;
+    }
+
+    return response()->json([
+        'status'    => $healthy ? 'ok' : 'degraded',
+        'checks'    => $checks,
+        'timestamp' => now()->toIso8601String(),
+    ], $healthy ? 200 : 503);
+})->name('health');
 
 // ── Guest ───────────────────────────────────────
 Route::get('/', fn () => redirect()->route('login'));

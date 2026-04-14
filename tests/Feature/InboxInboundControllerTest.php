@@ -43,7 +43,7 @@ class InboxInboundControllerTest extends TestCase
     {
         config([
             'pixelkraft.inbox_inbound_require_secret' => true,
-            'pixelkraft.inbox_inbound_secret' => 'correct-token',
+            'pixelkraft.inbox_inbound_secret' => 'correct-token-that-is-32-chars-ok',
         ]);
 
         Site::create([
@@ -66,7 +66,7 @@ class InboxInboundControllerTest extends TestCase
     {
         config([
             'pixelkraft.inbox_inbound_require_secret' => true,
-            'pixelkraft.inbox_inbound_secret' => 'correct-token',
+            'pixelkraft.inbox_inbound_secret' => 'correct-token-that-is-32-chars-ok',
         ]);
 
         $site = Site::create([
@@ -77,7 +77,7 @@ class InboxInboundControllerTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->withHeaders(['Authorization' => 'Bearer correct-token'])
+        $this->withHeaders(['Authorization' => 'Bearer correct-token-that-is-32-chars-ok'])
             ->postJson('/api/inbox/secured-ok', [
                 'subject' => 'API inbound',
                 'body' => 'Content',
