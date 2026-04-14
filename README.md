@@ -327,7 +327,7 @@ Sites can accept **anonymous** form posts from the marketing site or static page
 |---|---|
 | **Endpoint** | `POST /api/forms/{slug}` where `{slug}` is the site’s `slug` (active sites only) |
 | **Rate limit** | 10 requests per minute per client IP and slug (returns `429` when exceeded) |
-| **Anti-spam** | Optional honeypot field **`_hp`** — if it has any value, the submission is stored as spam and skipped for inbox/notifications |
+| **Anti-spam** | Optional honeypot field **`_hp`** — if it has any value, the submission is stored as spam and skipped for inbox/notifications (checked even when **`_hp`** is omitted from the per-form stored-field subset) |
 | **Form name** | Optional **`_form_name`** (default `contact`) — stored on the submission record |
 
 ### Allowed fields (allowlisted)

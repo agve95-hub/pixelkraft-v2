@@ -162,7 +162,7 @@ class FormSubmissionController extends Controller
     private function detectSpam(Request $request, array $data): bool
     {
         // Honeypot: if a hidden field named '_hp' has a value, it's a bot
-        if (! empty($data['_hp'])) {
+        if ($request->filled('_hp') || ! empty($data['_hp'])) {
             return true;
         }
 

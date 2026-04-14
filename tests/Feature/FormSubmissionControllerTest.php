@@ -183,6 +183,33 @@ class FormSubmissionControllerTest extends TestCase
         $this->assertSame('sales@client.example', $inbox->to_email);
     }
 
+    public function test_honeypot_still_detected_when_hp_not_in_stored_allowlist(): void
+    {
+        config([
+            'pixelkraft.form_submission_allowed_fields' => [
+                '*' => ['email', 'message'],
+            ],
+        ]);
+
+        $site = Site::create([
+            'name' => 'Hp Allow Site',
+            'slug' => 'hp-allow-site',
+            'repo_url' => 'https://github.com/example/hp.git',
+            'branch' => 'main',
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/forms/hp-allow-site', [
+            'email' => 'bot@example.com',
+            'message' => 'Hi',
+            '_hp' => 'filled',
+        ])->assertCreated();
+
+        $submission = FormSubmission::query()->where('site_id', $site->id)->firstOrFail();
+        $this->assertTrue($submission->is_spam);
+        $this->assertArrayNotHasKey('_hp', $submission->data);
+    }
+
     public function test_honeypot_marks_spam_and_skips_inbox(): void
     {
         $site = Site::create([
