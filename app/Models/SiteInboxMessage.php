@@ -85,7 +85,7 @@ class SiteInboxMessage extends Model
 
         $lines = [];
         foreach ($data as $key => $value) {
-            if (str_starts_with((string) $key, '_') || in_array($key, ['subject', 'title', 'topic'], true)) {
+            if (str_starts_with((string) $key, '_') || in_array($key, ['subject', 'title', 'topic', 'to_email'], true)) {
                 continue;
             }
             if (is_string($value) || is_numeric($value)) {

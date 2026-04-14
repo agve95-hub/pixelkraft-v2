@@ -123,6 +123,26 @@ class FormSubmissionControllerTest extends TestCase
         $this->assertSame('Hi', $submission->data['message']);
     }
 
+    public function test_to_email_is_stored_on_inbox_when_provided(): void
+    {
+        $site = Site::create([
+            'name' => 'Routed Site',
+            'slug' => 'routed-form-site',
+            'repo_url' => 'https://github.com/example/routed.git',
+            'branch' => 'main',
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/forms/routed-form-site', [
+            'email' => 'sender@example.com',
+            'message' => 'Please route this.',
+            'to_email' => 'sales@client.example',
+        ])->assertCreated();
+
+        $inbox = SiteInboxMessage::query()->where('site_id', $site->id)->where('source', 'form')->firstOrFail();
+        $this->assertSame('sales@client.example', $inbox->to_email);
+    }
+
     public function test_honeypot_marks_spam_and_skips_inbox(): void
     {
         $site = Site::create([

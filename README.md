@@ -319,6 +319,39 @@ echo "✅ Deployment complete"
 
 ---
 
+## Public contact forms API
+
+Sites can accept **anonymous** form posts from the marketing site or static pages.
+
+| Item | Detail |
+|---|---|
+| **Endpoint** | `POST /api/forms/{slug}` where `{slug}` is the site’s `slug` (active sites only) |
+| **Rate limit** | 10 requests per minute per client IP and slug (returns `429` when exceeded) |
+| **Anti-spam** | Optional honeypot field **`_hp`** — if it has any value, the submission is stored as spam and skipped for inbox/notifications |
+| **Form name** | Optional **`_form_name`** (default `contact`) — stored on the submission record |
+
+### Allowed fields (allowlisted)
+
+Only these JSON keys are validated and stored on `form_submissions.data`. Any other keys are ignored.
+
+| Field | Notes |
+|---|---|
+| `email` | Valid email, optional |
+| `name` | Display name; optional if `first_name` / `last_name` used |
+| `first_name`, `last_name` | Combined for inbox **From** name when `name` is empty |
+| `phone` | Short string |
+| `company`, `department` | Short strings |
+| `website`, `url` | Optional URLs or site strings (max 500 chars) |
+| `to_email` | Optional routed destination; stored on inbox row only |
+| `subject`, `title`, `topic` | First non-empty is used as the inbox **subject** |
+| `message`, `body`, `content`, `inquiry`, `comments`, `details` | First non-empty is used as the inbox **body**; all are scanned for basic spam patterns |
+
+### Spam handling
+
+Submissions matching simple patterns (e.g. obvious spam phrases or many URLs in the combined text) are marked **`is_spam`** and do not create inbox messages or notifications.
+
+---
+
 ## Configuration Reference
 
 ### `config/pixelkraft.php`

@@ -55,6 +55,7 @@ class FormSubmissionController extends Controller
             'website' => ['nullable', 'string', 'max:500'],
             'url' => ['nullable', 'string', 'max:500'],
             'department' => ['nullable', 'string', 'max:100'],
+            'to_email' => ['nullable', 'email', 'max:255'],
         ]);
 
         $data = [];
@@ -79,6 +80,7 @@ class FormSubmissionController extends Controller
             'website',
             'url',
             'department',
+            'to_email',
         ] as $key) {
             if (! array_key_exists($key, $validated)) {
                 continue;
@@ -130,7 +132,9 @@ class FormSubmissionController extends Controller
                 'direction' => 'inbound',
                 'from_email' => $fromEmail,
                 'from_name' => $fromName,
-                'to_email' => null,
+                'to_email' => isset($data['to_email']) && is_string($data['to_email'])
+                    ? $data['to_email']
+                    : null,
                 'subject' => SiteInboxMessage::subjectFromFormPayload($data, $submission->form_name),
                 'body' => SiteInboxMessage::bodyFromFormPayload($data),
                 'is_read' => false,
