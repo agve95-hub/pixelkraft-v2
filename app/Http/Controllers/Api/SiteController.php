@@ -157,13 +157,14 @@ class SiteController extends Controller
         ]);
     }
 
-    public function deploys(Site $site): JsonResponse
+    public function deploys(Site $site, Request $request): JsonResponse
     {
-        $deploys = $site->deployLogs()
+        $perPage = min(50, max(10, (int) $request->query('per_page', 25)));
+
+        $paginator = $site->deployLogs()
             ->latest('created_at')
-            ->limit(25)
-            ->get()
-            ->map(fn ($log) => [
+            ->paginate($perPage)
+            ->through(fn ($log) => [
                 'id' => $log->id,
                 'status' => $log->status,
                 'commit_sha' => $log->commit_sha,
@@ -174,16 +175,25 @@ class SiteController extends Controller
                 'created_at' => $log->created_at?->toIso8601String(),
             ]);
 
-        return response()->json(['data' => $deploys]);
+        return response()->json([
+            'data' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 
-    public function releases(Site $site): JsonResponse
+    public function releases(Site $site, Request $request): JsonResponse
     {
-        $releases = $site->deploymentReleases()
+        $perPage = min(50, max(10, (int) $request->query('per_page', 25)));
+
+        $paginator = $site->deploymentReleases()
             ->latest('created_at')
-            ->limit(25)
-            ->get()
-            ->map(fn ($release) => [
+            ->paginate($perPage)
+            ->through(fn ($release) => [
                 'id' => $release->id,
                 'status' => $release->status,
                 'source_commit_sha' => $release->source_commit_sha,
@@ -195,16 +205,25 @@ class SiteController extends Controller
                 'created_at' => $release->created_at?->toIso8601String(),
             ]);
 
-        return response()->json(['data' => $releases]);
+        return response()->json([
+            'data' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 
-    public function gitOperations(Site $site): JsonResponse
+    public function gitOperations(Site $site, Request $request): JsonResponse
     {
-        $operations = $site->gitOperations()
+        $perPage = min(100, max(10, (int) $request->query('per_page', 50)));
+
+        $paginator = $site->gitOperations()
             ->latest('started_at')
-            ->limit(50)
-            ->get()
-            ->map(fn ($operation) => [
+            ->paginate($perPage)
+            ->through(fn ($operation) => [
                 'id' => $operation->id,
                 'operation' => $operation->operation,
                 'status' => $operation->status,
@@ -216,7 +235,15 @@ class SiteController extends Controller
                 'completed_at' => $operation->completed_at?->toIso8601String(),
             ]);
 
-        return response()->json(['data' => $operations]);
+        return response()->json([
+            'data' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 
     private function formatSite(Site $site, bool $detailed = false): array
