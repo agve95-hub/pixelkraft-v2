@@ -14,6 +14,7 @@
     "license": "proprietary",
     "require": {
         "php": "^8.3",
+        "barryvdh/laravel-dompdf": "^3.0",
         "czproject/git-php": "^4.6",
         "google/analytics-data": "^0.22",
         "laravel/fortify": "^1.36",
@@ -24,9 +25,8 @@
         "league/flysystem-aws-s3-v3": "^3.32",
         "livewire/flux": "^2.13",
         "livewire/livewire": "^4.2",
-        "barryvdh/laravel-dompdf": "^3.0",
         "sentry/sentry-laravel": "^4.0",
-        "spatie/laravel-backup": "^9.0",
+        "spatie/laravel-backup": "^10.0",
         "spatie/laravel-model-states": "^2.7",
         "symfony/css-selector": "^7.4",
         "symfony/dom-crawler": "^7.4"
