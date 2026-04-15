@@ -46,6 +46,7 @@
             $searchIndex->push(['label' => $s->name . ' — Overview', 'href' => route('sites.show', $s)]);
             $searchIndex->push(['label' => $s->name . ' — Inbox', 'href' => route('sites.inbox', $s)]);
             $searchIndex->push(['label' => $s->name . ' — Reports', 'href' => route('sites.reports', $s)]);
+            $searchIndex->push(['label' => $s->name . ' — Campaigns', 'href' => route('sites.campaigns', $s)]);
             $searchIndex->push(['label' => $s->name . ' — Expenses', 'href' => route('sites.expenses', $s)]);
             $searchIndex->push(['label' => $s->name . ' — Invoices', 'href' => route('sites.invoices', $s)]);
             $searchIndex->push(['label' => $s->name . ' — Reminders', 'href' => route('sites.reminders', $s)]);
@@ -117,6 +118,14 @@
                                 class="!py-1.5 text-zinc-400"
                             >
                                 Reports
+                            </flux:sidebar.item>
+                            <flux:sidebar.item
+                                icon="megaphone"
+                                href="{{ route('sites.campaigns', $navSite) }}"
+                                :current="request()->routeIs('sites.campaigns')"
+                                class="!py-1.5 text-zinc-400"
+                            >
+                                Campaigns
                             </flux:sidebar.item>
                             <flux:sidebar.item
                                 icon="banknotes"
