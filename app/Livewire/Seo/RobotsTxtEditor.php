@@ -8,6 +8,7 @@ use App\Services\SiteRuntimeService;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class RobotsTxtEditor extends Component
@@ -59,7 +60,8 @@ class RobotsTxtEditor extends Component
             $git->commitAndPush($site, [$relativePath], 'Update robots.txt');
             session()->flash('success', 'robots.txt saved and pushed.');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Saved locally but push failed: '.$e->getMessage());
+            Log::error('robots.txt push failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Saved locally but push failed. Check application logs for details.');
         }
 
         $this->exists = true;

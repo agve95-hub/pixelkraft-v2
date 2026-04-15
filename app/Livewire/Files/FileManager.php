@@ -6,6 +6,7 @@ use App\Services\GitSyncService;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -87,7 +88,8 @@ class FileManager extends Component
             $git->commitAndPush($site, [$this->viewingFile], "Edit {$this->viewingFile}");
             session()->flash('success', 'File saved and pushed.');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Saved locally but push failed: '.$e->getMessage());
+            Log::error('File save push failed', ['site_id' => $this->siteId, 'file' => $this->viewingFile, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Saved locally but push failed. Check application logs for details.');
         }
     }
 
@@ -127,7 +129,8 @@ class FileManager extends Component
             $git->commitAndPush($site, [$relativePath], "Upload {$filename}");
             session()->flash('success', "Uploaded {$filename}.");
         } catch (\Throwable $e) {
-            session()->flash('error', 'Uploaded locally but push failed: '.$e->getMessage());
+            Log::error('File upload push failed', ['site_id' => $this->siteId, 'filename' => $filename, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Uploaded locally but push failed. Check application logs for details.');
         }
 
         $this->uploadFile = null;
@@ -150,7 +153,8 @@ class FileManager extends Component
             $git->commitAllAndPush($site, "Delete {$relativePath}");
             session()->flash('success', "Deleted {$relativePath}.");
         } catch (\Throwable $e) {
-            session()->flash('error', 'Deleted locally but push failed: '.$e->getMessage());
+            Log::error('File delete push failed', ['site_id' => $this->siteId, 'file' => $relativePath, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Deleted locally but push failed. Check application logs for details.');
         }
 
         if ($this->viewingFile === $relativePath) {

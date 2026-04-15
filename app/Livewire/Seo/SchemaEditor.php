@@ -7,6 +7,7 @@ use App\Services\GitSyncService;
 use App\Services\SiteSupportService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class SchemaEditor extends Component
@@ -56,7 +57,8 @@ class SchemaEditor extends Component
 
                 return;
             } catch (\Throwable $e) {
-                session()->flash('error', 'Schema removal failed: '.$e->getMessage());
+                Log::error('Schema removal failed', ['page_id' => $this->pageId, 'error' => $e->getMessage()]);
+                session()->flash('error', 'Schema removal failed. Check application logs for details.');
 
                 return;
             }
@@ -75,7 +77,8 @@ class SchemaEditor extends Component
             $page->update(['schema_json' => $decoded]);
             session()->flash('success', 'Schema markup saved and pushed.');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Schema save failed: '.$e->getMessage());
+            Log::error('Schema save failed', ['page_id' => $this->pageId, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Schema save failed. Check application logs for details.');
         }
     }
 

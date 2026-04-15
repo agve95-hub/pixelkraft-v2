@@ -10,6 +10,7 @@ use App\Services\SiteSupportService;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class MetaEditor extends Component
@@ -100,7 +101,8 @@ class MetaEditor extends Component
             $this->patchSourceFile($page);
             $page->update($attributes);
         } catch (\Throwable $e) {
-            session()->flash('error', 'SEO save failed: '.$e->getMessage());
+            Log::error('SEO meta save failed', ['page_id' => $this->pageId, 'error' => $e->getMessage()]);
+            session()->flash('error', 'SEO save failed. Check application logs for details.');
 
             return;
         }

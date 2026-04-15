@@ -157,7 +157,8 @@ class VisualEditor extends Component
             session()->flash('success', 'Page marked published and deploy queued.');
             $this->dispatch('reload-iframe');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Publish failed: '.$e->getMessage());
+            Log::error('Page publish failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Publish failed. Check application logs for details.');
         }
     }
 
@@ -255,7 +256,8 @@ class VisualEditor extends Component
             $this->dispatch('reload-iframe');
         } catch (\Throwable $e) {
             $this->debugTelemetry['last_error'] = $e->getMessage();
-            session()->flash('error', 'Re-parse failed: '.$e->getMessage());
+            Log::error('Editor re-parse failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Re-parse failed. Check application logs for details.');
         }
     }
 
@@ -470,8 +472,8 @@ class VisualEditor extends Component
             if (empty($this->debugTelemetry['patch'])) {
                 $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
             }
-            Log::error('Editor save failed', ['error' => $e->getMessage()]);
-            session()->flash('error', 'Save failed: '.$e->getMessage());
+            Log::error('Editor save failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Save failed. Check application logs for details.');
         } finally {
             $this->debugTelemetry['save_finished_at'] = now()->toIso8601String();
             $this->isSaving = false;

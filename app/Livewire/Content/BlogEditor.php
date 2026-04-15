@@ -7,6 +7,7 @@ use App\Models\ContentTemplate;
 use App\Services\BlogPostPublisher;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -167,7 +168,8 @@ class BlogEditor extends Component
             );
             session()->flash('success', $this->postId ? 'Post updated.' : 'Post created.');
         } catch (\Throwable $e) {
-            session()->flash('error', 'Post saved but failed to push: '.$e->getMessage());
+            Log::error('Blog post push failed', ['post_id' => $post->id ?? null, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Post saved but failed to push. Check application logs for details.');
         }
     }
 
