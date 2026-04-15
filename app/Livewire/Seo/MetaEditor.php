@@ -144,6 +144,13 @@ class MetaEditor extends Component
             throw new \RuntimeException('Source file not found.');
         }
 
+        // Prevent path traversal via symlinks in user-pushed repos.
+        $realFull = realpath($fullPath);
+        $realRepo = realpath((string) $site->repo_path);
+        if ($realFull === false || $realRepo === false || ! str_starts_with($realFull, $realRepo.DIRECTORY_SEPARATOR)) {
+            throw new \RuntimeException('Refusing to write outside of repository.');
+        }
+
         $html = File::get($fullPath);
 
         if ($this->metaEditingMode === 'next_metadata') {
