@@ -47,12 +47,13 @@ return [
                 /*
                  * Determines if it should avoid unreadable folders.
                  */
-                'ignoreUnreadableDirs' => true,
+                'ignore_unreadable_directories' => true,
 
                 /*
-                 * This path is used to make directories in resulting zip-file relative.
+                 * This path is used to make directories in the resulting zip-file relative.
+                 * Set to null to use absolute paths.
                  */
-                'relativePathForExcludedDirs' => base_path(),
+                'relative_path' => null,
             ],
 
             /*

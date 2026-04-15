@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Livewire\Livewire;
+use Illuminate\Support\Facades\Vite;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -36,10 +36,9 @@ class SetSecurityHeaders
         $nonce = base64_encode(random_bytes(16));
         app()->instance('csp-nonce', $nonce);
 
-        // Wire the nonce into Livewire 4 so @livewireScripts carries nonce="…".
-        if (class_exists(Livewire::class)) {
-            Livewire::setNonce($nonce);
-        }
+        // Register the nonce with Vite so that @livewireScripts and
+        // @vite directives embed the same nonce attribute automatically.
+        Vite::useCspNonce($nonce);
 
         /** @var Response $response */
         $response = $next($request);
