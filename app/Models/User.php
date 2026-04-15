@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Role;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -34,12 +35,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'discord_webhook' => 'encrypted',
+            'role' => Role::class,
         ];
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === Role::Admin;
     }
 
     public function contentRevisions()

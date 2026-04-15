@@ -2,6 +2,7 @@
 
 namespace App\Actions\Fortify;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -39,7 +40,7 @@ class CreateNewUser implements CreatesNewUsers
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
             // Bootstrap flow: first account is admin, later signups default to editor.
-            'role' => User::query()->exists() ? 'editor' : 'admin',
+            'role' => User::query()->exists() ? Role::Editor : Role::Admin,
         ]);
     }
 }
