@@ -191,7 +191,14 @@ class ContentPatcher
 
         $pattern = '/(<!--\s*(?:cms:editable\s+id="'.$escapedId.'"[^>]*|pk:editable:start:'.$escapedId.'[^>]*)-->)\s*(.*?)\s*(<!--\s*(?:\/cms:editable|pk:editable:end:'.$escapedId.')\s*-->)/s';
 
-        return preg_replace($pattern, "$1\n{$newContent}\n$3", $html, 1);
+        // Use preg_replace_callback so $newContent is never parsed for backreferences.
+        // Capture groups $1 and $3 (open/close markers) are preserved explicitly.
+        return preg_replace_callback(
+            $pattern,
+            fn (array $m) => $m[1]."\n".$newContent."\n".$m[3],
+            $html,
+            1
+        ) ?? $html;
     }
 
     /**

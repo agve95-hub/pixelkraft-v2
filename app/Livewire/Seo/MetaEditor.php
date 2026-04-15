@@ -178,7 +178,10 @@ class MetaEditor extends Component
     {
         if ($type === 'title') {
             if (preg_match('/<title[^>]*>.*?<\/title>/si', $html)) {
-                return preg_replace('/<title[^>]*>.*?<\/title>/si', '<title>'.e($value).'</title>', $html, 1);
+                $escaped = '<title>'.e($value).'</title>';
+
+                // Use preg_replace_callback so $escaped is never parsed for backreferences.
+                return preg_replace_callback('/<title[^>]*>.*?<\/title>/si', fn () => $escaped, $html, 1) ?? $html;
             }
             if (preg_match('/<head[^>]*>/i', $html, $m, PREG_OFFSET_CAPTURE)) {
                 $pos = $m[0][1] + strlen($m[0][0]);
@@ -204,7 +207,8 @@ class MetaEditor extends Component
         }
 
         if (preg_match($pattern, $html)) {
-            return preg_replace($pattern, $replacement, $html, 1);
+            // Use preg_replace_callback so $replacement is never parsed for backreferences.
+            return preg_replace_callback($pattern, fn () => $replacement, $html, 1) ?? $html;
         }
 
         // Insert before </head>
@@ -224,7 +228,8 @@ class MetaEditor extends Component
         $tag = '<link rel="canonical" href="'.e($url).'">';
 
         if (preg_match('/<link[^>]*rel=["\']canonical["\'][^>]*>/i', $html)) {
-            return preg_replace('/<link[^>]*rel=["\']canonical["\'][^>]*>/i', $tag, $html, 1);
+            // Use preg_replace_callback so $tag is never parsed for backreferences.
+            return preg_replace_callback('/<link[^>]*rel=["\']canonical["\'][^>]*>/i', fn () => $tag, $html, 1) ?? $html;
         }
 
         if (preg_match('/<\/head>/i', $html, $m, PREG_OFFSET_CAPTURE)) {

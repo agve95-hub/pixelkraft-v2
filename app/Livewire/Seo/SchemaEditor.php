@@ -177,7 +177,9 @@ class SchemaEditor extends Component
             $scriptTag = '<script type="application/ld+json">'."\n".$json."\n".'</script>';
 
             if (preg_match($pattern, $html)) {
-                $html = preg_replace($pattern, $scriptTag, $html, 1);
+                // Use preg_replace_callback so $scriptTag is never parsed for
+                // backreferences ($1, \1, etc.) even if the JSON contains those sequences.
+                $html = preg_replace_callback($pattern, fn () => $scriptTag, $html, 1) ?? $html;
             } elseif (preg_match('/<\/head>/i', $html, $m, PREG_OFFSET_CAPTURE)) {
                 $html = substr_replace($html, "    {$scriptTag}\n", $m[0][1], 0);
             }
