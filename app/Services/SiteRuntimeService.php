@@ -146,11 +146,16 @@ class SiteRuntimeService
             );
         }
 
-        $execution = $this->prepareExecution($site, $log);
+        // Resolve a free port before stopping the old process so that a conflict
+        // between two sites — or between a redeploying site and an unrelated listener
+        // — is caught before the old process is torn down.
+        $port = $this->allocatePort($site);
+
+        $execution = $this->prepareExecution($site, $log, $port);
 
         $this->stopShellProcess($site);
         $this->startShellProcess($site, $execution);
-        $this->waitUntilHealthy($site, $log);
+        $this->waitUntilHealthy($site, $log, $port);
 
         // Write a Supervisor config so the process survives server reboots.
         // Requires supervisord to be installed and the pixelkraft app user to
@@ -178,7 +183,7 @@ class SiteRuntimeService
     {
         $confPath = $this->supervisorConfPath($site);
         $logFile = $this->logFile($site);
-        $port = $this->portFor($site);
+        $port = $execution['port'];
         $host = $this->host();
         $nodeVersion = $site->node_version ?? '20';
 
@@ -275,7 +280,7 @@ class SiteRuntimeService
         return "{$confDir}/pixelkraft-{$site->slug}.conf";
     }
 
-    private function prepareExecution(Site $site, DeployLog $log): array
+    private function prepareExecution(Site $site, DeployLog $log, int $port): array
     {
         if ($this->hasStandaloneServer($site)) {
             $runtimeRoot = $this->runtimeRoot($site);
@@ -286,6 +291,7 @@ class SiteRuntimeService
                 'working_dir' => $runtimeRoot,
                 'command' => 'node server.js',
                 'bin_dir' => null,
+                'port' => $port,
             ];
         }
 
@@ -293,8 +299,9 @@ class SiteRuntimeService
 
         return [
             'working_dir' => $site->repo_path,
-            'command' => 'next start -H '.$this->host().' -p '.$this->portFor($site),
+            'command' => 'next start -H '.$this->host().' -p '.$port,
             'bin_dir' => "{$site->repo_path}/node_modules/.bin",
+            'port' => $port,
         ];
     }
 
@@ -327,7 +334,7 @@ class SiteRuntimeService
 
         $nodeVersion = $site->node_version ?? '20';
         $host = $this->host();
-        $port = $this->portFor($site);
+        $port = $execution['port'];
         $script = 'cd '.escapeshellarg($execution['working_dir']).' && '
             ."export PORT={$port} HOSTNAME=".escapeshellarg($host).' NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 && '
             .$this->nvmBootstrap($nodeVersion);
@@ -370,11 +377,11 @@ class SiteRuntimeService
         unset($this->activePortCache[(string) $site->id]);
     }
 
-    private function waitUntilHealthy(Site $site, DeployLog $log): void
+    private function waitUntilHealthy(Site $site, DeployLog $log, int $port): void
     {
         $timeout = max(5, (int) config('pixelkraft.runtime.startup_timeout_seconds', 30));
         $deadline = microtime(true) + $timeout;
-        $desiredPort = $this->portFor($site);
+        $desiredPort = $port;
 
         while (microtime(true) < $deadline) {
             if ($this->isReachableOnPort($desiredPort, '/')) {
@@ -544,6 +551,67 @@ class SiteRuntimeService
         }
 
         return null;
+    }
+
+    /**
+     * Resolve a port that is actually free on the local machine for this site.
+     *
+     * `portFor()` produces a deterministic preferred port from the site's UUID, but
+     * two sites can hash to the same port, and any port can be occupied by an
+     * unrelated OS process.  This method checks whether the preferred port is
+     * currently listening, and if so scans forward through the configured range
+     * until a free slot is found.
+     *
+     * A port with our own process running on it (re-deploy of the same site) is
+     * treated as free — we are about to stop that process before starting the new one.
+     */
+    private function allocatePort(Site $site): int
+    {
+        $preferred = $this->portFor($site);
+
+        // On a re-deploy the current process may already own the preferred port.
+        // That is fine — we will stop it before binding again.
+        $ownPort = $this->activePortFor($site);
+        if ($ownPort !== null && $ownPort === $preferred) {
+            return $preferred;
+        }
+
+        if (! $this->isPortListening($preferred)) {
+            return $preferred;
+        }
+
+        // Preferred port is occupied by something else.  Scan forward.
+        $portStart = (int) config('pixelkraft.runtime.port_start', 4100);
+        $portSpan  = max(100, (int) config('pixelkraft.runtime.port_span', 2000));
+
+        for ($offset = 1; $offset < $portSpan; $offset++) {
+            $candidate = $portStart + (($preferred - $portStart + $offset) % $portSpan);
+
+            if (! $this->isPortListening($candidate)) {
+                return $candidate;
+            }
+        }
+
+        throw new \RuntimeException(
+            "No free port found in range [{$portStart}–".($portStart + $portSpan - 1).'] for site ['.$site->slug.'].'
+        );
+    }
+
+    /**
+     * Returns true when something is already listening on the given port.
+     * Uses a sub-second TCP connect attempt so it is safe to call in a tight loop.
+     */
+    private function isPortListening(int $port): bool
+    {
+        $connection = @fsockopen($this->host(), $port, $errno, $errstr, 0.3);
+
+        if ($connection !== false) {
+            fclose($connection);
+
+            return true;
+        }
+
+        return false;
     }
 
     private function isReachableOnPort(int $port, string $path = '/'): bool
