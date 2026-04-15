@@ -87,7 +87,7 @@ class SyncFromWebhookJob implements ShouldQueue
             Notification::createAlert(
                 type: 'deploy_failed',
                 title: "Sync failed for {$this->site->name}",
-                body: $e->getMessage(),
+                body: self::scrubGitMessage($e->getMessage()),
                 siteId: $this->site->id,
             );
             $this->markDeliveryProcessed('failed');
@@ -99,6 +99,16 @@ class SyncFromWebhookJob implements ShouldQueue
     public function tags(): array
     {
         return ['webhook-sync', "site:{$this->site->id}"];
+    }
+
+    /**
+     * Strip embedded git tokens from error messages before they are stored in
+     * the notifications table and surfaced in the dashboard.
+     * Mirrors the same pattern used in GitSyncService::scrubSecrets().
+     */
+    private static function scrubGitMessage(string $message): string
+    {
+        return preg_replace('/x-access-token:[^@\s]+@/', 'x-access-token:[REDACTED]@', $message) ?? $message;
     }
 
     private function markDeliveryProcessed(string $status): void

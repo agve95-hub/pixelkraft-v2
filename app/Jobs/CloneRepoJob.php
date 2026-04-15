@@ -56,7 +56,7 @@ class CloneRepoJob implements ShouldQueue
             Notification::createAlert(
                 type: 'deploy_failed',
                 title: "Failed to clone {$this->site->name}",
-                body: $e->getMessage(),
+                body: self::scrubGitMessage($e->getMessage()),
                 siteId: $this->site->id,
             );
 
@@ -67,5 +67,15 @@ class CloneRepoJob implements ShouldQueue
     public function tags(): array
     {
         return ['clone', "site:{$this->site->id}"];
+    }
+
+    /**
+     * Strip embedded git tokens from error messages before they are stored in
+     * the notifications table and surfaced in the dashboard.
+     * Mirrors the same pattern used in GitSyncService::scrubSecrets().
+     */
+    private static function scrubGitMessage(string $message): string
+    {
+        return preg_replace('/x-access-token:[^@\s]+@/', 'x-access-token:[REDACTED]@', $message) ?? $message;
     }
 }
