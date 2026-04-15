@@ -264,14 +264,15 @@ class ContentPatcher
     private function replaceImageSrc(string $html, string $oldSrc, string $newSrc): string
     {
         $escapedOld = preg_quote($oldSrc, '/');
+        $replacement = $newSrc; // captured via closure — no preg_replace backreference expansion
 
-        // Replace in src="..." attribute
-        return preg_replace(
+        // Use preg_replace_callback so $newSrc is never parsed for backreferences ($1, \1, etc.)
+        return preg_replace_callback(
             '/src=(["\'])'.$escapedOld.'\1/',
-            'src=$1'.$newSrc.'$1',
+            fn (array $m) => 'src='.$m[1].$replacement.$m[1],
             $html,
             1
-        );
+        ) ?? $html;
     }
 
     /**
@@ -282,13 +283,14 @@ class ContentPatcher
         // If the new content looks like a URL, replace href
         if (filter_var($newContent, FILTER_VALIDATE_URL)) {
             $escapedOld = preg_quote($oldContent, '/');
+            $replacement = $newContent; // captured via closure — no preg_replace backreference expansion
 
-            return preg_replace(
+            return preg_replace_callback(
                 '/href=(["\'])'.$escapedOld.'\1/',
-                'href=$1'.$newContent.'$1',
+                fn (array $m) => 'href='.$m[1].$replacement.$m[1],
                 $html,
                 1
-            );
+            ) ?? $html;
         }
 
         // Otherwise replace the visible text
