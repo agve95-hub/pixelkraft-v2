@@ -7,6 +7,24 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string $message
+ * @property string|null $style
+ * @property string|null $cta_text
+ * @property string|null $cta_url
+ * @property string|null $placement
+ * @property bool $is_dismissible
+ * @property \Carbon\Carbon|null $starts_at
+ * @property \Carbon\Carbon|null $ends_at
+ * @property int $priority
+ * @property string|null $locale
+ * @property bool $is_enabled
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class Announcement extends Model
 {
     use HasUuids;

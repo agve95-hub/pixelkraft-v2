@@ -5,6 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string $subject
+ * @property string|null $body_html
+ * @property string|null $template_id
+ * @property array|null $segment_filter
+ * @property string $status
+ * @property \Carbon\Carbon|null $scheduled_at
+ * @property \Carbon\Carbon|null $sent_at
+ * @property array|null $stats
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ * @property-read \App\Models\ContentTemplate|null $template
+ */
 class NewsletterCampaign extends Model
 {
     use HasUuids;

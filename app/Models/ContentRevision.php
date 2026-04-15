@@ -5,6 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $region_id
+ * @property string|null $user_id
+ * @property string|null $content_before
+ * @property string|null $content_after
+ * @property string|null $commit_sha
+ * @property \Carbon\Carbon|null $created_at
+ * @property-read \App\Models\EditableRegion|null $region
+ * @property-read \App\Models\User|null $user
+ */
 class ContentRevision extends Model
 {
     use HasUuids;

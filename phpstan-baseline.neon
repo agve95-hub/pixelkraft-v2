@@ -1,128 +1,26 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Call to an undefined static method App\\Models\\User\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Actions/Fortify/CreateNewUser.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\User\:\:\$email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Actions/Fortify/UpdateUserProfileInformation.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\User\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Actions/Fortify/UpdateUserProfileInformation.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Console/Commands/AnalyzeSeo.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Site\:\:\$pages\.$#'
 			identifier: property.notFound
 			count: 2
 			path: app/Console/Commands/AnalyzeSeo.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Console/Commands/AnalyzeSeo.php
-
-		-
-			message: '#^Parameter \#2 \$site of method App\\Console\\Commands\\AnalyzeSeo\:\:analyzeSite\(\) expects App\\Models\\Site, stdClass given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Console/Commands/AnalyzeSeo.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Site\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Console/Commands/CheckUptime.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\UptimeCheck\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Console/Commands/CheckUptime.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Site\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Console/Commands/CrawlLinks.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\BlogPost\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
+			message: '#^Relation ''site'' is not found in App\\Models\\BlogPost model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
 			path: app/Console/Commands/PublishScheduled.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$domain\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Console/Commands/RunLighthouse.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Site\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Console/Commands/RunLighthouse.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\NewsletterCampaign\:\:\$body_html\.$#'
-			identifier: property.notFound
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
 			count: 1
 			path: app/Console/Commands/SendCampaigns.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\NewsletterCampaign\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Console/Commands/SendCampaigns.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\NewsletterCampaign\:\:\$site_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Console/Commands/SendCampaigns.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\NewsletterCampaign\:\:\$subject\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Console/Commands/SendCampaigns.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\NewsletterSubscriber\:\:\$email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Console/Commands/SendCampaigns.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\NewsletterSubscriber\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Console/Commands/SendCampaigns.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\NewsletterCampaign\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 2
-			path: app/Console/Commands/SendCampaigns.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\NewsletterSubscriber\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
+			message: '#^Relation ''site'' is not found in App\\Models\\NewsletterCampaign model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
 			path: app/Console/Commands/SendCampaigns.php
 
@@ -139,310 +37,16 @@ parameters:
 			path: app/Console/Commands/SendCampaigns.php
 
 		-
-			message: '#^Call to an undefined static method App\\Models\\FormSubmission\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Http/Controllers/Api/FormSubmissionController.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Site\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Http/Controllers/Api/FormSubmissionController.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\SiteInboxMessage\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Http/Controllers/Api/FormSubmissionController.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Site\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Http/Controllers/Api/InboxInboundController.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\SiteInboxMessage\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Http/Controllers/Api/InboxInboundController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Notification\:\:\$body\.$#'
-			identifier: property.notFound
+			message: '#^Relation ''site'' is not found in App\\Models\\Notification model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
 			path: app/Http/Controllers/Api/NotificationController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Notification\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Notification\:\:\$data\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Notification\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Notification\:\:\$is_read\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Notification\:\:\$site\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Notification\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Notification\:\:\$type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\Notification\>\:\:unread\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\Site\>\:\:visibleTo\(\)\.$#'
-			identifier: method.notFound
-			count: 3
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,stdClass\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,stdClass\>\:\:map\(\) expects callable\(stdClass, int\)\: array\{id\: mixed, type\: mixed, title\: mixed, body\: mixed, is_read\: mixed, site\: array\{id\: mixed, name\: mixed\}\|null, data\: mixed, created_at\: mixed\}, Closure\(App\\Models\\Notification\)\: array\{id\: mixed, type\: mixed, title\: mixed, body\: mixed, is_read\: mixed, site\: array\{id\: mixed, name\: mixed\}\|null, data\: mixed, created_at\: mixed\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$branch\.$#'
-			identifier: property.notFound
+			message: '#^Relation ''latestDeploy'' is not found in App\\Models\\Site model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
 			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$build_command\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$build_output_dir\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deploy_status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$domain\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$last_deployed_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$last_synced_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$latestUptimeCheck\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_url\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$ssl_status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\Site\>\:\:visibleTo\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Parameter \#2 \$default of method Illuminate\\Http\\Request\:\:query\(\) expects array\|string\|null, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Http/Controllers/Dashboard/SiteAnalyticsController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\UptimeCheck\:\:\$checked_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Dashboard/SiteAnalyticsController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\UptimeCheck\:\:\$is_degraded\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Dashboard/SiteAnalyticsController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\UptimeCheck\:\:\$is_up\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Dashboard/SiteAnalyticsController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\Dashboard\\SiteAnalyticsController\:\:__invoke\(\) should return Illuminate\\View\\View but returns Illuminate\\Contracts\\View\\View\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/Dashboard/SiteAnalyticsController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,stdClass\>\:\:filter\(\) expects \(callable\(stdClass, int\)\: bool\)\|null, Closure\(App\\Models\\UptimeCheck\)\: bool given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Dashboard/SiteAnalyticsController.php
-
-		-
-			message: '#^Parameter \#1 \$key of method Illuminate\\Support\\Collection\<int,stdClass\>\:\:contains\(\) expects \(callable\(stdClass, int\)\: bool\)\|stdClass\|string, Closure\(App\\Models\\UptimeCheck\)\: bool given\.$#'
-			identifier: argument.type
-			count: 2
-			path: app/Http/Controllers/Dashboard/SiteAnalyticsController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$file_path\.$#'
-			identifier: property.notFound
-			count: 7
-			path: app/Http/Controllers/EditorPreviewController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/EditorPreviewController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$site_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/EditorPreviewController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$url_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/EditorPreviewController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$build_output_dir\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/EditorPreviewController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Http/Controllers/EditorPreviewController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/EditorPreviewController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Http/Controllers/EditorPreviewController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Http/Controllers/EditorPreviewController.php
 
 		-
 			message: '#^Offset 1 on array\{list\<string\>, list\<non\-falsy\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
@@ -451,106 +55,16 @@ parameters:
 			path: app/Http/Controllers/EditorPreviewController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/TrackingController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$branch\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/WebhookController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/WebhookController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Http/Controllers/WebhookController.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\WebhookDelivery\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Http/Controllers/WebhookController.php
-
-		-
 			message: '#^Call to function is_array\(\) with list\<string\|null\> will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1
 			path: app/Http/Controllers/WebhookController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
+			message: '#^Call to an undefined static method Livewire\\Livewire\:\:setNonce\(\)\.$#'
+			identifier: staticMethod.notFound
 			count: 1
-			path: app/Http/Middleware/EnsureSiteAccess.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\Site\>\:\:visibleTo\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Middleware/EnsureSiteAccess.php
-
-		-
-			message: '#^Cannot access property \$id on object\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Http/Middleware/RememberExpandedSite.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Jobs/CloneRepoJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Jobs/CloneRepoJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Jobs/CloneRepoJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Jobs/DeploySiteJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeploymentRelease\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Jobs/DeploySiteJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Jobs/DeploySiteJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Jobs/ParseSiteJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Jobs/ParseSiteJob.php
+			path: app/Http/Middleware/SetSecurityHeaders.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Site\:\:\$pages\.$#'
@@ -559,73 +73,7 @@ parameters:
 			path: app/Jobs/ParseSiteJob.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Jobs/ParseSiteJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Jobs/ProvisionSslJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Jobs/SyncAnalyticsJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deploy_on_webhook\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Jobs/SyncFromWebhookJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Jobs/SyncFromWebhookJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Jobs/SyncFromWebhookJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 6
-			path: app/Jobs/SyncFromWebhookJob.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$latestUptimeCheck\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$pages_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
+			message: '#^Access to an undefined property App\\Models\\AnalyticsSnapshot\:\:\$site_id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Livewire/Analytics/UnifiedDashboard.php
@@ -661,13 +109,13 @@ parameters:
 			path: app/Livewire/Analytics/UnifiedDashboard.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),array\<string, mixed\>\>\:\:sortByDesc\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
+			message: '#^Method App\\Livewire\\Analytics\\UnifiedDashboard\:\:rawAnalyticsRows\(\) should return Illuminate\\Support\\Collection\<int, array\{site_id\: string, page_id\: string, date\: string, visitors\: int, pageviews\: int\}\> but returns Illuminate\\Support\\Collection\<int, array\{site_id\: mixed, page_id\: mixed, date\: mixed, visitors\: int, pageviews\: int\}\>\.$#'
+			identifier: return.type
 			count: 1
 			path: app/Livewire/Analytics/UnifiedDashboard.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),mixed\>\:\:map\(\) contains unresolvable type\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\AnalyticsSnapshot\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
 			count: 1
 			path: app/Livewire/Analytics/UnifiedDashboard.php
@@ -685,178 +133,40 @@ parameters:
 			path: app/Livewire/Analytics/UnifiedDashboard.php
 
 		-
-			message: '#^Parameter \#1 \.\.\.\$values of method Illuminate\\Support\\Collection\<int,stdClass\>\:\:push\(\) expects stdClass, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
+			message: '#^Relation ''site'' is not found in App\\Models\\Page model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
 			path: app/Livewire/Analytics/UnifiedDashboard.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$body\.$#'
-			identifier: property.notFound
+			message: '#^Relation ''site'' is not found in App\\Models\\DeployLog model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$scheduled_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$template_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\BlogPost\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Content/BlogEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ProductListing\:\:\$currency\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/ProductEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ProductListing\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/ProductEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ProductListing\:\:\$price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/ProductEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ProductListing\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/ProductEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/ProductEditor.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\ProductListing\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Content/ProductEditor.php
-
-		-
-			message: '#^Property Illuminate\\Database\\Eloquent\\Model\:\:\$attributes \(array\<string, mixed\>\) on left side of \?\? is not nullable\.$#'
-			identifier: nullCoalesce.property
-			count: 1
-			path: app/Livewire/Content/ProductEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ContentTemplate\:\:\$fields_schema\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/TemplateManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ContentTemplate\:\:\$html_template\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/TemplateManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ContentTemplate\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/TemplateManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ContentTemplate\:\:\$type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/TemplateManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Content/TemplateManager.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\ContentTemplate\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Content/TemplateManager.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Livewire/Dashboard/AlertsPanel.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\Notification\>\:\:unread\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Dashboard/AlertsPanel.php
+			path: app/Livewire/Dashboard/ActivityFeed.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:visibleTo\(\)\.$#'
 			identifier: method.notFound
-			count: 1
+			count: 2
 			path: app/Livewire/Dashboard/AlertsPanel.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\SeoIssue\:\:\$message\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/SeoIssuesPanel.php
+			message: '#^Relation ''site'' is not found in App\\Models\\Notification model\.$#'
+			identifier: larastan.relationExistence
+			count: 3
+			path: app/Livewire/Dashboard/AlertsPanel.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\SeoIssue\:\:\$page\.$#'
+			message: '#^Access to an undefined property App\\Models\\Expense\:\:\$total\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Livewire/Dashboard/SeoIssuesPanel.php
+			path: app/Livewire/Dashboard/ExpensesPanel.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\SeoIssue\:\:\$severity\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Livewire/Dashboard/SeoIssuesPanel.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\SeoIssue\>\:\:open\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Livewire/Dashboard/SeoIssuesPanel.php
+			path: app/Livewire/Dashboard/ExpensesPanel.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -865,58 +175,34 @@ parameters:
 			path: app/Livewire/Dashboard/SeoIssuesPanel.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$latestUptimeCheck\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/SiteHealthTable.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Site\:\:\$notifications_count\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Livewire/Dashboard/SiteHealthTable.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$pages_count\.$#'
+			message: '#^Access to an undefined property App\\Models\\Site\:\:\$seo_issues_count\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Livewire/Dashboard/SiteHealthTable.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$ssl_status\.$#'
+			message: '#^Access to an undefined property App\\Models\\Site\:\:\$uptimeChecks\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Livewire/Dashboard/SiteHealthTable.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,stdClass\>\:\:map\(\) contains unresolvable type\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
 			count: 1
 			path: app/Livewire/Dashboard/SiteHealthTable.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,stdClass\>\:\:map\(\) expects callable\(stdClass, int\)\: array\{site\: App\\Models\\Site, is_up\: mixed, ssl_status\: mixed, uptime_percent\: float\|null, response_time\: mixed, pages_count\: mixed, error_count\: mixed, seo_issues\: int\}, Closure\(App\\Models\\Site\)\: array\{site\: App\\Models\\Site, is_up\: mixed, ssl_status\: mixed, uptime_percent\: float\|null, response_time\: mixed, pages_count\: mixed, error_count\: mixed, seo_issues\: int\} given\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{site\: App\\Models\\Site, is_up\: bool\|null, ssl_status\: string\|null, uptime_percent\: float\|null, response_time\: string\|null, pages_count\: int, error_count\: mixed, seo_issues\: mixed\}, Closure\(App\\Models\\Site\)\: array\{site\: App\\Models\\Site, is_up\: bool\|null, ssl_status\: string\|null, uptime_percent\: float\|null, response_time\: string\|null, pages_count\: int, error_count\: mixed, seo_issues\: mixed\} given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Livewire/Dashboard/SiteHealthTable.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Reminder\:\:\$due_date\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/UpcomingPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Reminder\:\:\$site\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/UpcomingPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Reminder\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/UpcomingPanel.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -927,56 +213,8 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 4
 			path: app/Livewire/Dashboard/UpcomingPanel.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Query\\Builder\:\:with\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Dashboard/UpcomingPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$is_static\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$selector\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$source_location\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$site\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:visibleTo\(\)\.$#'
@@ -991,88 +229,16 @@ parameters:
 			path: app/Livewire/Editor/RegionPanel.php
 
 		-
+			message: '#^Relation ''site'' is not found in App\\Models\\Page model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Livewire/Editor/RegionPanel.php
+
+		-
 			message: '#^Using nullsafe property access "\?\-\>selector" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditSession\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditSession\:\:\$working_branch\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$current_content\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$detection_method\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$is_static\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$last_verified_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$marker_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$page\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$region_type\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$selector\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$source_anchor\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$source_location\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Page\:\:\$editableRegions\.$#'
@@ -1081,57 +247,15 @@ parameters:
 			path: app/Livewire/Editor/VisualEditor.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$file_path\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$title\.$#'
-			identifier: property.notFound
+			message: '#^Relation ''editableRegions'' is not found in App\\Models\\Page model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
 			path: app/Livewire/Editor/VisualEditor.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$url_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 6
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:id\(\)\.$#'
-			identifier: method.notFound
+			message: '#^Relation ''page'' is not found in App\\Models\\EditableRegion model\.$#'
+			identifier: larastan.relationExistence
 			count: 2
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\ContentRevision\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
 			path: app/Livewire/Editor/VisualEditor.php
 
 		-
@@ -1153,32 +277,20 @@ parameters:
 			path: app/Livewire/Editor/VisualEditor.php
 
 		-
-			message: '#^Call to an undefined static method App\\Models\\NewsletterCampaign\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
+			message: '#^Relation ''site'' is not found in App\\Models\\NewsletterCampaign model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
 			path: app/Livewire/Email/CampaignEditor.php
 
 		-
-			message: '#^Call to an undefined static method App\\Models\\NewsletterSubscriber\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
+			message: '#^Relation ''site'' is not found in App\\Models\\FormSubmission model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
-			path: app/Livewire/Email/CampaignEditor.php
+			path: app/Livewire/Email/FormInbox.php
 
 		-
-			message: '#^Cannot call method delete\(\) on stdClass\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Livewire/Email/CampaignEditor.php
-
-		-
-			message: '#^Cannot call method update\(\) on stdClass\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: app/Livewire/Email/CampaignEditor.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\NewsletterSubscriber\:\:updateOrCreate\(\)\.$#'
-			identifier: staticMethod.notFound
+			message: '#^Relation ''site'' is not found in App\\Models\\NewsletterSubscriber model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
 			path: app/Livewire/Email/SubscriberList.php
 
@@ -1237,142 +349,10 @@ parameters:
 			path: app/Livewire/Files/FileManager.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Layout/NotificationBell.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$file_path\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Seo/MetaEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$site\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Seo/MetaEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$site_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Seo/MetaEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$url_path\.$#'
-			identifier: property.notFound
+			message: '#^Relation ''site'' is not found in App\\Models\\Page model\.$#'
+			identifier: larastan.relationExistence
 			count: 1
 			path: app/Livewire/Seo/MetaEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/MetaEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Redirect\:\:\$from_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/RedirectManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Redirect\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/RedirectManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Redirect\:\:\$status_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/RedirectManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Redirect\:\:\$to_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/RedirectManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/RedirectManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$nginx_conf_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/RedirectManager.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Redirect\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Seo/RedirectManager.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Redirect\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Seo/RedirectManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$build_output_dir\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/RobotsTxtEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deploy_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/RobotsTxtEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$domain\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Seo/RobotsTxtEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Livewire/Seo/RobotsTxtEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$file_path\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Seo/SchemaEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$schema_json\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/SchemaEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$site\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Seo/SchemaEditor.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$url_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Seo/SchemaEditor.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Seo/SchemaEditor.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:visibleTo\(\)\.$#'
@@ -1381,16 +361,10 @@ parameters:
 			path: app/Livewire/Seo/SchemaEditor.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 3
-			path: app/Livewire/Settings/ApiTokens.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 4
-			path: app/Livewire/Settings/DiscordWebhook.php
+			message: '#^Relation ''site'' is not found in App\\Models\\Page model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Livewire/Seo/SchemaEditor.php
 
 		-
 			message: '#^Access to property \$created_at on an unknown class App\\Livewire\\Settings\\Site\.$#'
@@ -1423,19 +397,19 @@ parameters:
 			path: app/Livewire/Settings/SystemDiagnostics.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Redis\\Connections\\Connection\:\:ping\(\)\.$#'
-			identifier: method.notFound
-			count: 1
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
 			path: app/Livewire/Settings/SystemDiagnostics.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,stdClass\>\:\:map\(\) expects callable\(stdClass, int\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Created but never finished the initial clone/parse step\.''\}, Closure\(App\\Livewire\\Settings\\Site\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Created but never finished the initial clone/parse step\.''\} given\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Created but never finished the initial clone/parse step\.''\}, Closure\(App\\Livewire\\Settings\\Site\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Created but never finished the initial clone/parse step\.''\} given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Livewire/Settings/SystemDiagnostics.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,stdClass\>\:\:map\(\) expects callable\(stdClass, int\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Status has not changed for more than 10 minutes\.''\}, Closure\(App\\Livewire\\Settings\\Site\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Status has not changed for more than 10 minutes\.''\} given\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Status has not changed for more than 10 minutes\.''\}, Closure\(App\\Livewire\\Settings\\Site\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Status has not changed for more than 10 minutes\.''\} given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Livewire/Settings/SystemDiagnostics.php
@@ -1447,99 +421,21 @@ parameters:
 			path: app/Livewire/Settings/SystemDiagnostics.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/DeployControls.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/DeployControls.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Livewire/Sites/ExpenseManager.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Expense\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Sites/ExpenseManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$due_date\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$invoice_date\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$items\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Livewire/Sites/InvoiceManager.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$number\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Livewire/Sites/InvoiceManager.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$payment_terms\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$rate\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$client_address\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Invoice\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\InvoiceItem\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 2
 			path: app/Livewire/Sites/InvoiceManager.php
 
 		-
@@ -1555,142 +451,16 @@ parameters:
 			path: app/Livewire/Sites/InvoiceManager.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$maintenance_settings\.$#'
-			identifier: property.notFound
+			message: '#^Property App\\Models\\Invoice\:\:\$due_date \(Carbon\\Carbon\|null\) does not accept string\.$#'
+			identifier: assign.propertyType
 			count: 2
-			path: app/Livewire/Sites/MaintenanceMode.php
+			path: app/Livewire/Sites/InvoiceManager.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
+			message: '#^Property App\\Models\\Invoice\:\:\$invoice_date \(Carbon\\Carbon\|null\) does not accept string\.$#'
+			identifier: assign.propertyType
 			count: 1
-			path: app/Livewire/Sites/PageListing.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Reminder\:\:\$is_done\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/ReminderManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Livewire/Sites/ReminderManager.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Reminder\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Sites/ReminderManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Sites/ReportManager.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Report\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Sites/ReportManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Livewire/Sites/SiteInbox.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteInbox.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\SiteInboxMessage\:\:\$direction\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteInbox.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\SiteInboxMessage\:\:\$is_read\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteInbox.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:id\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteInbox.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 4
-			path: app/Livewire/Sites/SiteInbox.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\SiteInboxMessage\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteInbox.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\SiteInboxMessage\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteInbox.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:id\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteManager.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Site\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteManager.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$branch\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteSettings.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deploy_on_webhook\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteSettings.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deployment_mode\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteSettings.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteSettings.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Sites/SiteSettings.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/SiteSettings.php
+			path: app/Livewire/Sites/InvoiceManager.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>consent_mode" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -1741,464 +511,50 @@ parameters:
 			path: app/Livewire/Sites/SiteSettings.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\AnalyticsSnapshot\:\:\$source\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/AnalyticsSnapshot.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$scheduled_at\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/BlogPost.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Models/BlogPost.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ContentTemplate\:\:\$html_template\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/ContentTemplate.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ContentTemplate\:\:\$site_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/ContentTemplate.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$commit_sha\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/DeployLog.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/DeployLog.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$duration_ms\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/DeployLog.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/DeployLog.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$output_log\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/DeployLog.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/DeployLog.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$confidence_score\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/EditableRegion.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$detection_method\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/EditableRegion.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$is_static\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/EditableRegion.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$source_anchor\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/EditableRegion.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$currency_code\.$#'
-			identifier: property.notFound
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sum\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model\)\: float\)\|string\|null, Closure\(App\\Models\\InvoiceItem\)\: float given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Models/Invoice.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$discount_percent\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$due_date\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$invoice_date\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$items\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$number\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Invoice\:\:\$tax_rate\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\InvoiceItem\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\InvoiceItem\:\:\$rate\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Method App\\Models\\Invoice\:\:items\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany but returns Illuminate\\Database\\Query\\Builder\.$#'
+			message: '#^Method App\\Models\\Notification\:\:createAlert\(\) should return static\(App\\Models\\Notification\) but returns App\\Models\\Notification\.$#'
 			identifier: return.type
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\InvoiceItem\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/InvoiceItem.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\InvoiceItem\:\:\$rate\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/InvoiceItem.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\NewsletterCampaign\:\:\$scheduled_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/NewsletterCampaign.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\NewsletterCampaign\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/NewsletterCampaign.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\NewsletterSubscriber\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/NewsletterSubscriber.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Notification\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
 			count: 1
 			path: app/Models/Notification.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$is_published\.$#'
+			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$cnt\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Models/Page.php
+			path: app/Services/AnalyticsAggregator.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$url_path\.$#'
+			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$count\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Models/Page.php
+			path: app/Services/AnalyticsAggregator.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\ProductListing\:\:\$currency\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/ProductListing.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\ProductListing\:\:\$price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/ProductListing.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Redirect\:\:\$status_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Redirect.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$client_first_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$client_last_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deploy_path\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deploy_status\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$nginx_conf_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$r2_bucket_prefix\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_url\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 17
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$ssl_expires_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$ssl_status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\User\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:check\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:id\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\DeploymentRelease\>\:\:latestOfMany\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<static\(App\\Models\\Site\)\>\:\:visibleTo\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Method App\\Models\\Site\:\:scopeVisibleTo\(\) should return Illuminate\\Database\\Eloquent\\Builder but returns Illuminate\\Database\\Query\\Builder\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Models/Site.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\SiteInboxMessage\:\:\$body\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/SiteInboxMessage.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\SiteInboxMessage\:\:\$direction\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/SiteInboxMessage.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\SiteInboxMessage\:\:\$from_email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/SiteInboxMessage.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\SiteInboxMessage\:\:\$from_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/SiteInboxMessage.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\UptimeCheck\:\:\$response_time_ms\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/UptimeCheck.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\User\:\:\$role\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/User.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Support\\Optional\:\:isAdmin\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Providers/HorizonServiceProvider.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Optional\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Providers/HorizonServiceProvider.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$event_name\.$#'
+			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$event_date\.$#'
 			identifier: property.notFound
 			count: 2
 			path: app/Services/AnalyticsAggregator.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$occurred_at\.$#'
+			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$page_views\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/AnalyticsAggregator.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$path\.$#'
+			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$unique_visitors\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/AnalyticsAggregator.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$url_path\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$cf_zone_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$ga_property_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\AnalyticsSnapshot\:\:updateOrCreate\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 3
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\AnalyticsSnapshot\:\:whereIn\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\Site\:\:where\(\)\.$#'
-			identifier: staticMethod.notFound
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
 			count: 1
 			path: app/Services/AnalyticsAggregator.php
 
@@ -2215,168 +571,6 @@ parameters:
 			path: app/Services/AnalyticsAggregator.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$body\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/BlogPostPublisher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$featured_image\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BlogPostPublisher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BlogPostPublisher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$published_at\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/BlogPostPublisher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BlogPostPublisher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$template_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BlogPostPublisher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\BlogPost\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/BlogPostPublisher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BlogPostPublisher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BlogPostPublisher.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\ContentTemplate\:\:find\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Services/BlogPostPublisher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$file_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BrokenLinkCrawler.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$url_path\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/BrokenLinkCrawler.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$build_output_dir\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BrokenLinkCrawler.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$domain\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BrokenLinkCrawler.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BrokenLinkCrawler.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BrokenLinkCrawler.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/BrokenLinkCrawler.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BrokenLinkCrawler.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$current_content\.$#'
-			identifier: property.notFound
-			count: 6
-			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$is_static\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$marker_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$page\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$region_type\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$selector\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$source_location\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\EditableRegion\:\:find\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Services/ContentPatcher.php
-
-		-
 			message: '#^Offset 1 on array\{string, int\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
 			count: 1
@@ -2387,252 +581,6 @@ parameters:
 			identifier: notIdentical.alwaysTrue
 			count: 1
 			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$commit_sha\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$snapshot_tag\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeployLog\:\:\$triggered_by\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeploymentRelease\:\:\$artifact_path\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeploymentRelease\:\:\$rollback_of_release_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeploymentRelease\:\:\$source_commit_sha\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeploymentTarget\:\:\$deploy_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeploymentTarget\:\:\$environment\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeploymentTarget\:\:\$health_check_url\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\DeploymentTarget\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$branch\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deploy_path\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 7
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\DeployLog\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 2
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\DeploymentRelease\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Services/DeployService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$build_output_dir\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Deployment/StaticDeploymentAdapter.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deploy_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Deployment/StaticDeploymentAdapter.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Deployment/StaticDeploymentAdapter.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Deployment/StaticDeploymentAdapter.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Deployment/StaticDeploymentAdapter.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$file_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/EditSessionService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/EditSessionService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/EditSessionService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/EditSessionService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\User\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/EditSessionService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Services/EditSessionService.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\EditSession\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Services/EditSessionService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditSession\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/GitSyncService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditSession\:\:\$working_branch\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/GitSyncService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\GitOperation\:\:\$commit_sha\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/GitSyncService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$branch\.$#'
-			identifier: property.notFound
-			count: 10
-			path: app/Services/GitSyncService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$github_token\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/GitSyncService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/GitSyncService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 6
-			path: app/Services/GitSyncService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_url\.$#'
-			identifier: property.notFound
-			count: 6
-			path: app/Services/GitSyncService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/GitSyncService.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\GitOperation\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Services/GitSyncService.php
 
 		-
 			message: '#^Match arm comparison between ''js'' and ''js'' is always true\.$#'
@@ -2653,66 +601,6 @@ parameters:
 			path: app/Services/NextMetadataPatcher.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deploy_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/NginxConfigService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$domain\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/NginxConfigService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/NginxConfigService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 17
-			path: app/Services/NginxConfigService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$build_output_dir\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/PagePreviewService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/PagePreviewService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/PagePreviewService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/ParserService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/ParserService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/ParserService.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>region_type" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -2723,12 +611,6 @@ parameters:
 			identifier: identical.alwaysFalse
 			count: 1
 			path: app/Services/Parsers/RenderedPhpParser.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/Parsers/SpaComponentParser.php
 
 		-
 			message: '#^Offset 1 on array\{list\<string\>, list\<non\-empty\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
@@ -2743,18 +625,6 @@ parameters:
 			path: app/Services/Parsers/SpaComponentParser.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Parsers/SsgOutputParser.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$build_output_dir\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Parsers/StaticHtmlParser.php
-
-		-
 			message: '#^Instanceof between DOMElement and DOMElement will always evaluate to true\.$#'
 			identifier: instanceof.alwaysTrue
 			count: 1
@@ -2767,43 +637,7 @@ parameters:
 			path: app/Services/Parsers/StaticHtmlParser.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$current_content\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$dom_fingerprint\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$marker_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$region_type\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$render_selector\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$selector\.$#'
+			message: '#^Access to an undefined property App\\Models\\Page\:\:\$editableRegions\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/PreviewOverlayService.php
@@ -2812,169 +646,7 @@ parameters:
 			message: '#^Access to an undefined property App\\Models\\Page\:\:\$editableRegions\.$#'
 			identifier: property.notFound
 			count: 1
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$url_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/ProjectDetector.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/ProjectDetector.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$confidence_score\.$#'
-			identifier: property.notFound
-			count: 1
 			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$page\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\EditableRegion\:\:\$region_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$editableRegions\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$site\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$url_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$canonical_url\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$content_hash\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$file_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$meta_description\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$meta_keywords\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$og_description\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$og_image\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$og_title\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$schema_json\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$site\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$site_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\SeoIssue\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SeoAnalyzer.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Site\:\:\$pages\.$#'
@@ -2983,193 +655,7 @@ parameters:
 			path: app/Services/SeoAnalyzer.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,stdClass\>\:\:each\(\) expects callable\(stdClass, int\)\: mixed, Closure\(App\\Models\\SeoIssue\)\: void given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SiteLockService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SiteLockService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$deploy_path\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/SiteProvisioningService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$domain\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SiteProvisioningService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$ga_property_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SiteProvisioningService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$gtm_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SiteProvisioningService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/SiteProvisioningService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/SiteProvisioningService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$ssh_host\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SiteProvisioningService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$build_output_dir\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SiteRuntimeService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Services/SiteRuntimeService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 6
-			path: app/Services/SiteRuntimeService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Services/SiteRuntimeService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/SiteRuntimeService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$file_path\.$#'
-			identifier: property.notFound
-			count: 5
-			path: app/Services/SiteSupportService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$project_type\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/SiteSupportService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$repo_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SiteSupportService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SslService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SslService.php
-
-		-
-			message: '#^Cannot call method update\(\) on stdClass\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: app/Services/SslService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$ga_property_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/TrackingScriptService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$gtm_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/TrackingScriptService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/TrackingScriptService.php
-
-		-
-			message: '#^Call to an undefined static method App\\Models\\AnalyticsEvent\:\:create\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: app/Services/TrackingScriptService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\SeoIssue\:\:\$code\.$#'
-			identifier: property.notFound
+			message: '#^Method App\\Support\\SeoIssueSummary\:\:openAggregatesForSite\(\) should return Illuminate\\Support\\Collection\<int, array\{severity\: string, message\: string, count\: int\}\> but returns Illuminate\\Support\\Collection\<int, array\{severity\: mixed, message\: mixed, count\: int\<0, max\>\}\>\.$#'
+			identifier: return.type
 			count: 1
 			path: app/Support/SeoIssueSummary.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\SeoIssue\:\:\$message\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Support/SeoIssueSummary.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\SeoIssue\:\:\$severity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Support/SeoIssueSummary.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Support/SeoIssueSummary.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\SeoIssue\>\:\:open\(\)\.$#'
-			identifier: method.notFound
-			count: 4
-			path: app/Support/SeoIssueSummary.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\Factory\:\:user\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Support/SiteAccess.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\Site\>\:\:visibleTo\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Support/SiteAccess.php

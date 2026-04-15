@@ -6,6 +6,25 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $page_id
+ * @property string|null $selector
+ * @property string|null $render_selector
+ * @property string|null $marker_id
+ * @property string|null $region_type
+ * @property bool $is_static
+ * @property string|null $detection_method
+ * @property float|null $confidence_score
+ * @property string|null $current_content
+ * @property array|null $source_location
+ * @property array|null $dom_fingerprint
+ * @property array|null $source_anchor
+ * @property \Carbon\Carbon|null $last_verified_at
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Page|null $page
+ */
 class EditableRegion extends Model
 {
     use HasFactory, HasUuids;

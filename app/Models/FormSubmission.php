@@ -5,6 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string $form_name
+ * @property array|null $data
+ * @property string|null $ip_address
+ * @property bool $is_read
+ * @property bool $is_spam
+ * @property \Carbon\Carbon|null $created_at
+ * @property-read \App\Models\Site|null $site
+ */
 class FormSubmission extends Model
 {
     use HasUuids;

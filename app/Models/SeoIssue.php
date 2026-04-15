@@ -6,6 +6,20 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string|null $page_id
+ * @property string $severity
+ * @property string $code
+ * @property string|null $message
+ * @property array|null $meta
+ * @property \Carbon\Carbon|null $resolved_at
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ * @property-read \App\Models\Page|null $page
+ */
 class SeoIssue extends Model
 {
     use HasUuids;

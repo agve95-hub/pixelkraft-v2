@@ -7,6 +7,29 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string $name
+ * @property string|null $headline
+ * @property string|null $body
+ * @property string|null $cta_text
+ * @property string|null $cta_url
+ * @property string|null $trigger
+ * @property int|null $trigger_delay_ms
+ * @property array|null $target_pages
+ * @property array|null $audience_conditions
+ * @property \Carbon\Carbon|null $starts_at
+ * @property \Carbon\Carbon|null $ends_at
+ * @property int $priority
+ * @property bool $is_dismissible
+ * @property array|null $dismissal_rules
+ * @property string|null $locale
+ * @property bool $is_enabled
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class Campaign extends Model
 {
     use HasUuids;

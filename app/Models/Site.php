@@ -12,6 +12,73 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+/**
+ * @property string $id
+ * @property string $user_id
+ * @property string $name
+ * @property string|null $client_name
+ * @property string $slug
+ * @property string|null $client_first_name
+ * @property string|null $client_last_name
+ * @property string|null $client_email
+ * @property string|null $client_phone
+ * @property string|null $client_company
+ * @property string|null $client_address
+ * @property string|null $client_notes
+ * @property string|null $repo_url
+ * @property string|null $branch
+ * @property bool $deploy_on_webhook
+ * @property string|null $github_token
+ * @property string|null $webhook_secret
+ * @property string|null $inbox_inbound_secret
+ * @property string|null $project_type
+ * @property string|null $billing_cycle
+ * @property string|null $monthly_retainer
+ * @property string|null $deployment_mode
+ * @property string|null $build_command
+ * @property string|null $build_output_dir
+ * @property string|null $node_version
+ * @property array|null $env_variables
+ * @property string|null $domain
+ * @property string|null $ssl_provider
+ * @property string|null $dns_provider
+ * @property string|null $ssl_status
+ * @property string|null $uptime_percent
+ * @property int|null $response_avg_ms
+ * @property int|null $response_p95_ms
+ * @property int|null $downtime_minutes
+ * @property int|null $visitors_today
+ * @property float|null $visitors_change_percent
+ * @property \Carbon\Carbon|null $ssl_expires_at
+ * @property \App\Enums\DeployStatus|null $deploy_status
+ * @property \Carbon\Carbon|null $last_deployed_at
+ * @property \Carbon\Carbon|null $last_synced_at
+ * @property string|null $ga_property_id
+ * @property string|null $gtm_id
+ * @property string|null $google_ads_id
+ * @property string|null $cf_zone_id
+ * @property string|null $cf_api_token
+ * @property string|null $gsc_property
+ * @property string|null $smtp_host
+ * @property int|null $smtp_port
+ * @property string|null $smtp_username
+ * @property string|null $smtp_password
+ * @property string|null $hosting_provider
+ * @property string|null $ssh_host
+ * @property string|null $ftp_ssh_user
+ * @property string|null $ftp_ssh_password
+ * @property string|null $r2_bucket_prefix
+ * @property string|null $nginx_conf_path
+ * @property string|null $deploy_path
+ * @property string|null $repo_path
+ * @property array|null $maintenance_settings
+ * @property bool $is_active
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read int $pages_count
+ * @property-read \App\Models\DeployLog|null $latestDeploy
+ * @property-read \App\Models\UptimeCheck|null $latestUptimeCheck
+ */
 class Site extends Model
 {
     use HasFactory, HasUuids;

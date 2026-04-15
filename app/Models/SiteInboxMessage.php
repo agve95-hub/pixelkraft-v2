@@ -7,6 +7,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string|null $user_id
+ * @property string $direction
+ * @property string|null $from_email
+ * @property string|null $from_name
+ * @property string|null $to_email
+ * @property string|null $subject
+ * @property string|null $body
+ * @property bool $is_read
+ * @property string|null $source
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class SiteInboxMessage extends Model
 {
     use HasUuids;

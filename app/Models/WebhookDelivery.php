@@ -6,6 +6,22 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $provider
+ * @property string|null $delivery_id
+ * @property string|null $event
+ * @property string|null $repository
+ * @property string|null $site_id
+ * @property string $status
+ * @property array|null $headers
+ * @property array|null $payload
+ * @property \Carbon\Carbon|null $received_at
+ * @property \Carbon\Carbon|null $processed_at
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class WebhookDelivery extends Model
 {
     use HasFactory, HasUuids;

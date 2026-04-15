@@ -5,6 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string|null $deployment_target_id
+ * @property string|null $deploy_log_id
+ * @property string|null $rollback_of_release_id
+ * @property string|null $source_commit_sha
+ * @property string|null $source_branch
+ * @property string|null $artifact_path
+ * @property string|null $tracking_version
+ * @property string $status
+ * @property bool $is_current
+ * @property array|null $meta
+ * @property \Carbon\Carbon|null $activated_at
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class DeploymentRelease extends Model
 {
     use HasUuids;

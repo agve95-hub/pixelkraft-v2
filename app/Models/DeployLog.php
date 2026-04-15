@@ -7,6 +7,20 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string $status
+ * @property string|null $commit_sha
+ * @property string|null $commit_message
+ * @property string|null $output_log
+ * @property int|null $duration_ms
+ * @property string|null $triggered_by
+ * @property string|null $snapshot_tag
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class DeployLog extends Model
 {
     use HasUuids;

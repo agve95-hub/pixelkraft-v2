@@ -7,6 +7,28 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string|null $file_path
+ * @property string|null $url_path
+ * @property string|null $title
+ * @property string|null $meta_description
+ * @property string|null $meta_keywords
+ * @property string|null $og_title
+ * @property string|null $og_description
+ * @property string|null $og_image
+ * @property string|null $canonical_url
+ * @property array|null $schema_json
+ * @property int|null $seo_score
+ * @property array|null $lighthouse_score
+ * @property string|null $screenshot_url
+ * @property string|null $content_hash
+ * @property bool $is_published
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class Page extends Model
 {
     use HasFactory, HasUuids;

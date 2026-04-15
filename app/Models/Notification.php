@@ -5,6 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string|null $site_id
+ * @property string $type
+ * @property string $title
+ * @property string|null $body
+ * @property bool $is_read
+ * @property array|null $data
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class Notification extends Model
 {
     use HasUuids;

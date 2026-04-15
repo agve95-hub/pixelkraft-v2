@@ -7,6 +7,28 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string|null $template_id
+ * @property string $title
+ * @property string $slug
+ * @property string|null $body
+ * @property string|null $excerpt
+ * @property string|null $featured_image
+ * @property array|null $tags
+ * @property string|null $seo_title
+ * @property string|null $seo_description
+ * @property string|null $og_image
+ * @property array|null $schema_json
+ * @property string|null $output_path
+ * @property \App\Enums\BlogPostStatus $status
+ * @property \Carbon\Carbon|null $published_at
+ * @property \Carbon\Carbon|null $scheduled_at
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class BlogPost extends Model
 {
     use HasFactory, HasUuids;

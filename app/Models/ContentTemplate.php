@@ -6,6 +6,17 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string|null $site_id
+ * @property string $name
+ * @property string|null $type
+ * @property string|null $html_template
+ * @property array|null $fields_schema
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class ContentTemplate extends Model
 {
     use HasFactory, HasUuids;

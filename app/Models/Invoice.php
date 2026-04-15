@@ -8,6 +8,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string $number
+ * @property \Carbon\Carbon|null $invoice_date
+ * @property \Carbon\Carbon|null $due_date
+ * @property string $status
+ * @property string $currency_code
+ * @property string|null $tax_rate
+ * @property string|null $discount_percent
+ * @property string|null $payment_terms
+ * @property string|null $notes
+ * @property string|null $payment_details
+ * @property string|null $from_address
+ * @property string|null $bill_to
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class Invoice extends Model
 {
     use HasUuids;

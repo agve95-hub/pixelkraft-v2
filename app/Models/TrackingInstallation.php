@@ -5,6 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string $provider
+ * @property string|null $measurement_id
+ * @property string|null $container_id
+ * @property string|null $script_route
+ * @property string|null $collector_path
+ * @property bool $consent_mode
+ * @property bool $is_active
+ * @property array|null $settings
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class TrackingInstallation extends Model
 {
     use HasUuids;

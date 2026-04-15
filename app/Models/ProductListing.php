@@ -6,6 +6,21 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string $name
+ * @property string|null $description
+ * @property string $price
+ * @property string|null $currency
+ * @property array|null $images
+ * @property array|null $attributes
+ * @property string|null $output_path
+ * @property string $status
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class ProductListing extends Model
 {
     use HasFactory, HasUuids;

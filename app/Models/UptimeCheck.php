@@ -5,6 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property int|null $status_code
+ * @property int|null $response_time_ms
+ * @property bool $is_up
+ * @property bool $is_degraded
+ * @property \Carbon\Carbon|null $checked_at
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ */
 class UptimeCheck extends Model
 {
     use HasUuids;

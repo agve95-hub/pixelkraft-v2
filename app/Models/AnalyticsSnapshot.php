@@ -5,6 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string|null $page_id
+ * @property \Carbon\Carbon $date
+ * @property string $source
+ * @property int $visitors
+ * @property int $pageviews
+ * @property float|null $bounce_rate
+ * @property int|null $avg_session_sec
+ * @property array|null $custom_events
+ * @property \Carbon\Carbon|null $created_at
+ * @property-read \App\Models\Page|null $page
+ */
 class AnalyticsSnapshot extends Model
 {
     use HasUuids;

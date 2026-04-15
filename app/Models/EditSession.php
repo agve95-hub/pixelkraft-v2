@@ -5,6 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $id
+ * @property string $site_id
+ * @property string|null $page_id
+ * @property string $started_by
+ * @property string|null $base_commit_sha
+ * @property string|null $working_branch
+ * @property string $status
+ * @property array|null $metadata
+ * @property \Carbon\Carbon|null $started_at
+ * @property \Carbon\Carbon|null $ended_at
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property-read \App\Models\Site|null $site
+ * @property-read \App\Models\Page|null $page
+ * @property-read \App\Models\User|null $startedBy
+ */
 class EditSession extends Model
 {
     use HasUuids;
