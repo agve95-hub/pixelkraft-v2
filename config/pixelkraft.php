@@ -186,6 +186,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Allowed Git Hosts
+    |--------------------------------------------------------------------------
+    |
+    | Comma-separated list of additional git hosts beyond the built-in defaults
+    | (github.com, gitlab.com, bitbucket.org). Used by the GitRemoteUrl
+    | validation rule. Example: "github.mycompany.com,git.example.com"
+    |
+    */
+    'allowed_git_hosts' => array_filter(array_map(
+        'trim',
+        explode(',', (string) env('ALLOWED_GIT_HOSTS', ''))
+    )),
+
+    /*
+    |--------------------------------------------------------------------------
     | Public form submissions (/api/forms/{slug})
     |--------------------------------------------------------------------------
     |
