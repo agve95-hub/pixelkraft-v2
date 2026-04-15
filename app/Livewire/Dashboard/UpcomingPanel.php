@@ -14,10 +14,20 @@ class UpcomingPanel extends Component
     {
         $upcoming = collect();
 
-        $visibleSiteIds = SiteAccess::query()->pluck('id');
+        // Load all visible sites once to avoid N+1 queries across the checks below.
+        $allSites = SiteAccess::query()->get();
+        $visibleSiteIds = $allSites->pluck('id');
 
-        $sslPending = SiteAccess::query()->where('ssl_status', 'pending')->get();
-        foreach ($sslPending as $site) {
+        // Batch the monthly-report check: one query for all sites instead of
+        // one exists() call per site inside the loop.
+        $sitesWithReportThisMonth = Report::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->whereYear('report_date', now()->year)
+            ->whereMonth('report_date', now()->month)
+            ->pluck('site_id')
+            ->flip(); // keyed by site_id for O(1) membership checks
+
+        foreach ($allSites->where('ssl_status', 'pending') as $site) {
             $upcoming->push([
                 'icon' => 'shield-exclamation',
                 'color' => 'red',
@@ -29,12 +39,7 @@ class UpcomingPanel extends Component
             ]);
         }
 
-        $noDomain = SiteAccess::query()
-            ->where(function ($query) {
-                $query->whereNull('domain')->orWhere('domain', '');
-            })
-            ->get();
-        foreach ($noDomain as $site) {
+        foreach ($allSites->filter(fn ($s) => empty($s->domain)) as $site) {
             $upcoming->push([
                 'icon' => 'globe-alt',
                 'color' => 'blue',
@@ -75,14 +80,8 @@ class UpcomingPanel extends Component
                 ]);
             });
 
-        foreach (SiteAccess::query()->get() as $site) {
-            $hasReportThisMonth = Report::query()
-                ->where('site_id', $site->id)
-                ->whereYear('report_date', now()->year)
-                ->whereMonth('report_date', now()->month)
-                ->exists();
-
-            if (! $hasReportThisMonth) {
+        foreach ($allSites as $site) {
+            if (! $sitesWithReportThisMonth->has($site->id)) {
                 $upcoming->push([
                     'icon' => 'clipboard-document',
                     'color' => 'zinc',
@@ -95,13 +94,7 @@ class UpcomingPanel extends Component
             }
         }
 
-        $noAnalytics = SiteAccess::query()
-            ->where(function ($query) {
-                $query->whereNull('ga_property_id')->orWhere('ga_property_id', '');
-            })
-            ->limit(3)
-            ->get();
-        foreach ($noAnalytics as $site) {
+        foreach ($allSites->filter(fn ($s) => empty($s->ga_property_id))->take(3) as $site) {
             $upcoming->push([
                 'icon' => 'chart-bar',
                 'color' => 'zinc',

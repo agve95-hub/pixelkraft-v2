@@ -19,7 +19,7 @@ class SeoIssuesPanel extends Component
             ->whereNotNull('page_id')
             ->with(['page' => fn ($q) => $q->select('id', 'site_id', 'url_path', 'title'), 'site:id,name'])
             ->orderByDesc('updated_at')
-            ->limit(25)
+            ->limit(5)
             ->get()
             ->map(fn (SeoIssue $issue) => [
                 'severity' => (string) $issue->severity,
@@ -34,7 +34,7 @@ class SeoIssuesPanel extends Component
             ->count();
 
         return view('livewire.dashboard.seo-issues-panel', [
-            'issues' => $issues->take(5),
+            'issues' => $issues,
             'totalCount' => $totalCount,
         ]);
     }
