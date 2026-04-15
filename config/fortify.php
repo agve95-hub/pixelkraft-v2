@@ -143,8 +143,9 @@ return [
     |
     */
 
-    'features' => [
-        Features::registration(),
+    'features' => array_values(array_filter([
+        // Open registration is off by default; enable via REGISTRATION_ENABLED=true.
+        env('REGISTRATION_ENABLED', false) ? Features::registration() : null,
         Features::resetPasswords(),
         // Features::emailVerification(),
         Features::updateProfileInformation(),
@@ -154,6 +155,6 @@ return [
             'confirmPassword' => true,
             // 'window' => 0,
         ]),
-    ],
+    ])),
 
 ];
