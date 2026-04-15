@@ -245,6 +245,8 @@ class InvoiceManager extends Component
 
     public function markPaid(): void
     {
+        SiteAccess::findOrFail($this->siteId);
+
         $invoice = $this->resolveActiveInvoice();
         if (! $invoice) {
             return;
