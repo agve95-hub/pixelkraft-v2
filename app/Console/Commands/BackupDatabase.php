@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
@@ -103,7 +104,9 @@ class BackupDatabase extends Command
                 }
             }
         } catch (\Throwable $e) {
-            // Silent fail — don't break backup over cleanup issues
+            // Non-fatal — don't break backup over cleanup issues, but log it
+            $this->warn("Remote backup cleanup failed: {$e->getMessage()}");
+            Log::warning('Remote backup cleanup failed', ['disk' => $disk, 'error' => $e->getMessage()]);
         }
     }
 }
