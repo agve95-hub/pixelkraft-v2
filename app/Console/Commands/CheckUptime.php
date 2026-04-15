@@ -26,8 +26,35 @@ class CheckUptime extends Command
 
             $degradedAfterMs = (int) config('pixelkraft.monitoring.uptime_degraded_after_ms', 3000);
 
+            // SSRF guard: resolve the domain to an IP and reject requests to
+            // private / loopback / link-local ranges.  A user-configured domain
+            // could point to an internal service via DNS (rebinding attack).
+            $domain = (string) $site->domain;
+            $resolvedIp = gethostbyname($domain);
+            $isPublicIp = $resolvedIp !== $domain
+                && filter_var(
+                    $resolvedIp,
+                    FILTER_VALIDATE_IP,
+                    FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+                );
+
+            if (! $isPublicIp) {
+                // Record as "unknown" (status 0) rather than silently skipping so
+                // the dashboard still shows a check was attempted.
+                UptimeCheck::create([
+                    'site_id' => $site->id,
+                    'status_code' => 0,
+                    'response_time_ms' => 0,
+                    'is_up' => false,
+                    'is_degraded' => false,
+                    'checked_at' => now(),
+                ]);
+
+                continue;
+            }
+
             try {
-                $response = Http::timeout(15)->get("https://{$site->domain}");
+                $response = Http::timeout(15)->get("https://{$domain}");
                 $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
                 $isUp = $response->successful();
                 $statusCode = $response->status();

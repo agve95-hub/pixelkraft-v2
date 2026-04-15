@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Settings;
 
+use App\Rules\PublicUrl;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class DiscordWebhook extends Component
@@ -22,8 +24,8 @@ class DiscordWebhook extends Component
     public function save(): void
     {
         $this->validate([
-            // Must be a Discord webhook URL when provided.
-            'webhookUrl' => ['nullable', 'url', 'max:500'],
+            // Restrict to publicly routable https URLs to prevent SSRF.
+            'webhookUrl' => ['nullable', 'url', 'max:500', new PublicUrl],
         ]);
 
         $user = auth()->user();
@@ -62,7 +64,8 @@ class DiscordWebhook extends Component
             ]);
             session()->flash('success', 'Test message sent to Discord.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to send test: '.$e->getMessage());
+            Log::warning('Discord webhook test failed', ['error' => $e->getMessage()]);
+            session()->flash('error', 'Failed to send test notification. Check application logs for details.');
         }
     }
 
