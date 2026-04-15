@@ -57,13 +57,17 @@ class MaintenanceMode extends Component
 
     public function save(): void
     {
+        // Hex color regex: #RGB, #RRGGBB, or #RRGGBBAA.  Restricting to hex prevents
+        // CSS injection via style-attribute context (e.g. "red; display:none").
+        $hexColor = '/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/';
+
         $this->validate([
             'heading' => 'required|string|max:255',
             'message' => 'nullable|string|max:5000',
             'countdownTo' => 'nullable|string|max:64',
-            'bgColor' => 'required|string|max:32',
-            'textColor' => 'required|string|max:32',
-            'accentColor' => 'required|string|max:32',
+            'bgColor' => ['required', 'string', 'max:9', 'regex:'.$hexColor],
+            'textColor' => ['required', 'string', 'max:9', 'regex:'.$hexColor],
+            'accentColor' => ['required', 'string', 'max:9', 'regex:'.$hexColor],
             'customCss' => 'nullable|string|max:10000',
             'allowedIps' => 'nullable|string|max:2000',
         ]);

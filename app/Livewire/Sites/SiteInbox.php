@@ -116,11 +116,20 @@ class SiteInbox extends Component
 
         $messages = SiteInboxMessage::where('site_id', $site->id)
             ->latest('created_at')
+            ->limit(100)
             ->get();
 
-        $selected = $this->selectedId
-            ? $messages->firstWhere('id', $this->selectedId)
-            : null;
+        // If the selected message was not loaded in the capped result set (e.g.
+        // it's older than the 100-message window), fetch it individually so the
+        // thread view still works correctly.
+        $selected = null;
+        if ($this->selectedId) {
+            $selected = $messages->firstWhere('id', $this->selectedId)
+                ?? SiteInboxMessage::query()
+                    ->where('site_id', $site->id)
+                    ->whereKey($this->selectedId)
+                    ->first();
+        }
 
         return view('livewire.sites.site-inbox', [
             'site' => $site,
