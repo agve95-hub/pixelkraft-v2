@@ -12,9 +12,13 @@ use Illuminate\Support\Facades\Route;
 // ── Public (no auth) ────────────────────────────
 
 // GitHub webhook receiver
+// Rate limited to 120/min per IP — well above GitHub's realistic delivery rate but
+// prevents blind flood attacks before the HMAC signature check runs.
 Route::post('/webhooks/github', [WebhookController::class, 'github'])
+    ->middleware('throttle:120,1')
     ->name('webhooks.github');
 Route::post('/webhooks/github/{site}', [WebhookController::class, 'github'])
+    ->middleware('throttle:120,1')
     ->name('webhooks.github.site');
 
 Route::get('/tracking/{site}/pixelkraft.js', [TrackingController::class, 'script'])
