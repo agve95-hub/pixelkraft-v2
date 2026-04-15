@@ -63,28 +63,41 @@ class AnalyticsAggregator
 
     public function summarizeSiteEvents(Site $site, int $days = 30): array
     {
-        $events = AnalyticsEvent::query()
+        $since = now()->subDays($days);
+
+        // Aggregate counts directly in the database instead of hydrating all rows.
+        $totals = AnalyticsEvent::query()
             ->where('site_id', $site->id)
-            ->where('occurred_at', '>=', now()->subDays($days))
-            ->get();
+            ->where('occurred_at', '>=', $since)
+            ->selectRaw('
+                COUNT(*) as total_events,
+                SUM(CASE WHEN event_name = ? THEN 1 ELSE 0 END) as page_views,
+                SUM(CASE WHEN event_name = ? THEN 1 ELSE 0 END) as forms,
+                SUM(CASE WHEN event_name NOT IN (?, ?) THEN 1 ELSE 0 END) as interactions
+            ', ['page_view', 'form_submit', 'page_view', 'form_submit'])
+            ->first();
+
+        $topEvents = AnalyticsEvent::query()
+            ->where('site_id', $site->id)
+            ->where('occurred_at', '>=', $since)
+            ->selectRaw('event_name, COUNT(*) as count')
+            ->groupBy('event_name')
+            ->orderByDesc('count')
+            ->limit(8)
+            ->get()
+            ->map(fn ($row) => [
+                'event_name' => $row->event_name,
+                'count' => (int) $row->count,
+            ])
+            ->values()
+            ->all();
 
         return [
-            'total_events' => $events->count(),
-            'page_views' => $events->where('event_name', 'page_view')->count(),
-            'forms' => $events->where('event_name', 'form_submit')->count(),
-            'interactions' => $events
-                ->reject(fn (AnalyticsEvent $event) => in_array($event->event_name, ['page_view', 'form_submit'], true))
-                ->count(),
-            'top_events' => $events
-                ->groupBy('event_name')
-                ->map(fn ($group, $eventName) => [
-                    'event_name' => $eventName,
-                    'count' => $group->count(),
-                ])
-                ->sortByDesc('count')
-                ->take(8)
-                ->values()
-                ->all(),
+            'total_events' => (int) ($totals->total_events ?? 0),
+            'page_views' => (int) ($totals->page_views ?? 0),
+            'forms' => (int) ($totals->forms ?? 0),
+            'interactions' => (int) ($totals->interactions ?? 0),
+            'top_events' => $topEvents,
         ];
     }
 
