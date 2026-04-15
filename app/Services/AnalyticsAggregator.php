@@ -169,67 +169,91 @@ class AnalyticsAggregator
             ];
         }
 
-        $query = AnalyticsSnapshot::whereIn('page_id', $pageIds)
-            ->where('date', '>=', now()->subDays($days));
+        $since = now()->subDays($days);
 
-        if ($source !== null) {
-            $query->where('source', $source);
-        }
+        $base = AnalyticsSnapshot::whereIn('page_id', $pageIds)
+            ->where('date', '>=', $since)
+            ->when($source !== null, fn ($q) => $q->where('source', $source));
 
-        $snapshots = $query->get();
+        // Aggregate totals entirely in the database instead of hydrating all rows.
+        $totals = (clone $base)
+            ->selectRaw('
+                SUM(visitors)        as total_visitors,
+                SUM(pageviews)       as total_pageviews,
+                AVG(bounce_rate)     as avg_bounce_rate,
+                AVG(avg_session_sec) as avg_session_sec
+            ')
+            ->first();
+
+        $daily = (clone $base)
+            ->selectRaw('date, SUM(visitors) as visitors, SUM(pageviews) as pageviews')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->map(fn ($row) => [
+                'date' => $row->date instanceof \DateTimeInterface
+                    ? $row->date->format('Y-m-d')
+                    : (string) $row->date,
+                'visitors' => (int) $row->visitors,
+                'pageviews' => (int) $row->pageviews,
+            ])
+            ->values()
+            ->all();
+
+        $topPages = (clone $base)
+            ->selectRaw('page_id, SUM(visitors) as visitors, SUM(pageviews) as pageviews')
+            ->groupBy('page_id')
+            ->orderByDesc('pageviews')
+            ->limit(10)
+            ->get()
+            ->map(fn ($row) => [
+                'page_id' => (string) $row->page_id,
+                'visitors' => (int) $row->visitors,
+                'pageviews' => (int) $row->pageviews,
+            ])
+            ->values()
+            ->all();
 
         return [
-            'total_visitors' => (int) $snapshots->sum('visitors'),
-            'total_pageviews' => (int) $snapshots->sum('pageviews'),
-            'avg_bounce_rate' => round((float) ($snapshots->avg('bounce_rate') ?? 0), 1),
-            'avg_session_sec' => (int) ($snapshots->avg('avg_session_sec') ?? 0),
-            'daily' => $snapshots->groupBy(fn ($s) => $s->date->format('Y-m-d'))
-                ->map(fn ($group) => [
-                    'date' => $group->first()->date->format('Y-m-d'),
-                    'visitors' => (int) $group->sum('visitors'),
-                    'pageviews' => (int) $group->sum('pageviews'),
-                ])
-                ->sortBy('date')
-                ->values()
-                ->all(),
-            'top_pages' => $snapshots->groupBy('page_id')
-                ->map(fn ($group) => [
-                    'page_id' => (string) $group->first()->page_id,
-                    'visitors' => (int) $group->sum('visitors'),
-                    'pageviews' => (int) $group->sum('pageviews'),
-                ])
-                ->sortByDesc('pageviews')
-                ->take(10)
-                ->values()
-                ->all(),
+            'total_visitors' => (int) ($totals->total_visitors ?? 0),
+            'total_pageviews' => (int) ($totals->total_pageviews ?? 0),
+            'avg_bounce_rate' => round((float) ($totals->avg_bounce_rate ?? 0), 1),
+            'avg_session_sec' => (int) ($totals->avg_session_sec ?? 0),
+            'daily' => $daily,
+            'top_pages' => $topPages,
         ];
     }
 
     private function aggregatePageSnapshots(Page $page, int $days, ?string $source): array
     {
-        $query = $page->analyticsSnapshots()
+        $base = $page->analyticsSnapshots()
             ->where('date', '>=', now()->subDays($days))
-            ->orderBy('date');
+            ->when($source !== null, fn ($q) => $q->where('source', $source));
 
-        if ($source !== null) {
-            $query->where('source', $source);
-        }
+        $totals = (clone $base)
+            ->selectRaw('SUM(visitors) as total_visitors, SUM(pageviews) as total_pageviews, AVG(bounce_rate) as avg_bounce_rate')
+            ->first();
 
-        $snapshots = $query->get();
+        $daily = (clone $base)
+            ->selectRaw('date, SUM(visitors) as visitors, SUM(pageviews) as pageviews')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->map(fn ($row) => [
+                'date' => $row->date instanceof \DateTimeInterface
+                    ? $row->date->format('Y-m-d')
+                    : (string) $row->date,
+                'visitors' => (int) $row->visitors,
+                'pageviews' => (int) $row->pageviews,
+            ])
+            ->values()
+            ->all();
 
         return [
-            'total_visitors' => (int) $snapshots->sum('visitors'),
-            'total_pageviews' => (int) $snapshots->sum('pageviews'),
-            'avg_bounce_rate' => round((float) ($snapshots->avg('bounce_rate') ?? 0), 1),
-            'daily' => $snapshots->groupBy(fn ($s) => $s->date->format('Y-m-d'))
-                ->map(fn ($group) => [
-                    'date' => $group->first()->date->format('Y-m-d'),
-                    'visitors' => (int) $group->sum('visitors'),
-                    'pageviews' => (int) $group->sum('pageviews'),
-                ])
-                ->sortBy('date')
-                ->values()
-                ->all(),
+            'total_visitors' => (int) ($totals->total_visitors ?? 0),
+            'total_pageviews' => (int) ($totals->total_pageviews ?? 0),
+            'avg_bounce_rate' => round((float) ($totals->avg_bounce_rate ?? 0), 1),
+            'daily' => $daily,
         ];
     }
 
