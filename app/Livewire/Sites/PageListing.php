@@ -17,8 +17,17 @@ class PageListing extends Component
 
     public string $sortDir = 'asc';
 
+    /** Allowlist of columns the user is permitted to sort by. */
+    private const SORTABLE_COLUMNS = ['url_path', 'title', 'seo_score', 'updated_at'];
+
     public function sort(string $column): void
     {
+        // Validate column against allowlist to prevent SQL injection via
+        // orderBy() — the column name is not parameterized by Eloquent.
+        if (! in_array($column, self::SORTABLE_COLUMNS, true)) {
+            return;
+        }
+
         if ($this->sortBy === $column) {
             $this->sortDir = $this->sortDir === 'asc' ? 'desc' : 'asc';
         } else {
@@ -31,15 +40,21 @@ class PageListing extends Component
     {
         $site = SiteAccess::findOrFail($this->siteId);
 
+        // Clamp the search term and re-validate sortBy/sortDir on render so
+        // a manipulated Livewire snapshot cannot inject an arbitrary column.
+        $search = mb_substr($this->search, 0, 255);
+        $sortBy = in_array($this->sortBy, self::SORTABLE_COLUMNS, true) ? $this->sortBy : 'url_path';
+        $sortDir = $this->sortDir === 'desc' ? 'desc' : 'asc';
+
         $pages = Page::query()
             ->where('site_id', $site->id)
-            ->when($this->search, function ($query): void {
-                $query->where(function ($nested): void {
-                    $nested->where('title', 'like', "%{$this->search}%")
-                        ->orWhere('url_path', 'like', "%{$this->search}%");
+            ->when($search, function ($query) use ($search): void {
+                $query->where(function ($nested) use ($search): void {
+                    $nested->where('title', 'like', '%'.$search.'%')
+                        ->orWhere('url_path', 'like', '%'.$search.'%');
                 });
             })
-            ->orderBy($this->sortBy, $this->sortDir)
+            ->orderBy($sortBy, $sortDir)
             ->get();
 
         return view('livewire.sites.page-listing', [

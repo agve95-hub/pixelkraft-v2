@@ -10,6 +10,7 @@ use App\Services\DeployService;
 use App\Services\NginxConfigService;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class DeployControls extends Component
@@ -59,7 +60,8 @@ class DeployControls extends Component
             ProvisionSslJob::dispatch($site);
 
         } catch (\Throwable $e) {
-            session()->flash('error', 'Domain setup failed: '.$e->getMessage());
+            Log::error('Domain setup failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Domain setup failed. Check application logs for details.');
         }
     }
 
@@ -82,7 +84,8 @@ class DeployControls extends Component
 
             session()->flash('success', "Rolled back to {$log->snapshot_tag}.");
         } catch (\Throwable $e) {
-            session()->flash('error', 'Rollback failed: '.$e->getMessage());
+            Log::error('Rollback failed', ['site_id' => $site->id, 'log_id' => $logId, 'error' => $e->getMessage()]);
+            session()->flash('error', 'Rollback failed. Check application logs for details.');
         }
     }
 
