@@ -6,9 +6,11 @@ use App\Models\Page;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class PageListing extends Component
 {
+    use WithPagination;
     public string $siteId;
 
     public string $search = '';
@@ -34,6 +36,13 @@ class PageListing extends Component
             $this->sortBy = $column;
             $this->sortDir = 'asc';
         }
+
+        $this->resetPage();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
     }
 
     public function render(): View
@@ -55,7 +64,7 @@ class PageListing extends Component
                 });
             })
             ->orderBy($sortBy, $sortDir)
-            ->get();
+            ->paginate(50);
 
         return view('livewire.sites.page-listing', [
             'pages' => $pages,

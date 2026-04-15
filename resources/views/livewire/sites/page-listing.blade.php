@@ -66,4 +66,10 @@
             @endforelse
         </flux:table.rows>
     </flux:table>
+
+    @if ($pages->hasPages())
+        <div class="mt-4">
+            {{ $pages->links() }}
+        </div>
+    @endif
 </div>
