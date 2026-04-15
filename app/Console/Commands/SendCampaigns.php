@@ -53,11 +53,11 @@ class SendCampaigns extends Command
             return;
         }
 
-        $subscribers = NewsletterSubscriber::where('site_id', $campaign->site_id)
+        $totalCount = NewsletterSubscriber::where('site_id', $campaign->site_id)
             ->where('status', 'active')
-            ->get();
+            ->count();
 
-        if ($subscribers->isEmpty()) {
+        if ($totalCount === 0) {
             $campaign->update([
                 'status' => 'sent',
                 'sent_at' => now(),
@@ -72,37 +72,43 @@ class SendCampaigns extends Command
         $sent = 0;
         $failed = 0;
 
-        foreach ($subscribers as $subscriber) {
-            try {
-                $response = Http::withHeaders([
-                    'Authorization' => "Bearer {$apiKey}",
-                    'Content-Type' => 'application/json',
-                ])->post('https://api.resend.com/emails', [
-                    'from' => "{$fromName} <{$fromEmail}>",
-                    'to' => [$subscriber->email],
-                    'subject' => $campaign->subject,
-                    'html' => $this->personalizeHtml($campaign->body_html, $subscriber),
-                ]);
+        // Chunk to avoid loading the entire subscriber list into memory at once.
+        NewsletterSubscriber::where('site_id', $campaign->site_id)
+            ->where('status', 'active')
+            ->orderBy('id')
+            ->chunk(200, function ($subscribers) use ($apiKey, $fromName, $fromEmail, $campaign, &$sent, &$failed) {
+                foreach ($subscribers as $subscriber) {
+                    try {
+                        $response = Http::withHeaders([
+                            'Authorization' => "Bearer {$apiKey}",
+                            'Content-Type' => 'application/json',
+                        ])->post('https://api.resend.com/emails', [
+                            'from' => "{$fromName} <{$fromEmail}>",
+                            'to' => [$subscriber->email],
+                            'subject' => $campaign->subject,
+                            'html' => $this->personalizeHtml($campaign->body_html, $subscriber),
+                        ]);
 
-                if ($response->successful()) {
-                    $sent++;
-                } else {
-                    $failed++;
-                    Log::warning("Resend failed for [{$subscriber->email}]", ['status' => $response->status()]);
+                        if ($response->successful()) {
+                            $sent++;
+                        } else {
+                            $failed++;
+                            Log::warning("Resend failed for [{$subscriber->email}]", ['status' => $response->status()]);
 
-                    // Mark as bounced if permanent failure
-                    if ($response->status() === 422) {
-                        $subscriber->update(['status' => 'bounced']);
+                            // Mark as bounced if permanent failure
+                            if ($response->status() === 422) {
+                                $subscriber->update(['status' => 'bounced']);
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        $failed++;
+                        Log::warning("Email send error for [{$subscriber->email}]", ['error' => $e->getMessage()]);
                     }
-                }
-            } catch (\Throwable $e) {
-                $failed++;
-                Log::warning("Email send error for [{$subscriber->email}]", ['error' => $e->getMessage()]);
-            }
 
-            // Rate limiting: ~10 emails per second
-            usleep(100000);
-        }
+                    // Rate limiting: ~10 emails per second
+                    usleep(100000);
+                }
+            });
 
         $campaign->update([
             'status' => 'sent',
