@@ -77,23 +77,20 @@ class FormInbox extends Component
 
         $submissions = $query->latest('created_at')->paginate(20);
 
+        // Single query with conditional aggregation instead of 3 separate COUNT queries.
+        $countRow = FormSubmission::query()
+            ->whereIn('site_id', $this->visibleSiteIds())
+            ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
+            ->selectRaw('
+                SUM(CASE WHEN is_spam = 0 THEN 1 ELSE 0 END) as all_count,
+                SUM(CASE WHEN is_read = 0 AND is_spam = 0 THEN 1 ELSE 0 END) as unread_count,
+                SUM(CASE WHEN is_spam = 1 THEN 1 ELSE 0 END) as spam_count
+            ')
+            ->first();
         $counts = [
-            'all' => FormSubmission::query()
-                ->whereIn('site_id', $this->visibleSiteIds())
-                ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
-                ->where('is_spam', false)
-                ->count(),
-            'unread' => FormSubmission::query()
-                ->whereIn('site_id', $this->visibleSiteIds())
-                ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
-                ->where('is_read', false)
-                ->where('is_spam', false)
-                ->count(),
-            'spam' => FormSubmission::query()
-                ->whereIn('site_id', $this->visibleSiteIds())
-                ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
-                ->where('is_spam', true)
-                ->count(),
+            'all' => (int) ($countRow->all_count ?? 0),
+            'unread' => (int) ($countRow->unread_count ?? 0),
+            'spam' => (int) ($countRow->spam_count ?? 0),
         ];
 
         return view('livewire.email.form-inbox', [
