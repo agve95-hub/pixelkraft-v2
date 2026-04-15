@@ -76,20 +76,20 @@ class RegionPanel extends Component
         $support = app(SiteSupportService::class);
         $editorProfile = $support->editorProfile($page->site, $page);
 
-        $query = $page->editableRegions();
+        // Load all regions once; derive filtered view and all count stats from
+        // the in-memory collection to avoid 5 redundant round-trips to the DB.
+        $allRegions = $page->editableRegions()->get();
 
-        $query = match ($this->filter) {
-            'dynamic' => $query->where('is_static', false),
-            'static' => $query->where('is_static', true),
-            'unconfirmed' => $query->where('detection_method', 'auto'),
-            default => $query,
+        $regions = match ($this->filter) {
+            'dynamic' => $allRegions->where('is_static', false)->values(),
+            'static' => $allRegions->where('is_static', true)->values(),
+            'unconfirmed' => $allRegions->where('detection_method', 'auto')->values(),
+            default => $allRegions,
         };
 
-        $regions = $query->get()
-            ->sortBy(function (EditableRegion $region) {
-                return $this->regionSortKey($region);
-            })
-            ->values();
+        $regions = $regions->sortBy(function (EditableRegion $region) {
+            return $this->regionSortKey($region);
+        })->values();
 
         $regionTags = $regions
             ->mapWithKeys(fn (EditableRegion $region) => [
@@ -130,17 +130,15 @@ class RegionPanel extends Component
             ])
             ->all();
 
+        // Derive counts from the already-loaded $allRegions collection — no extra queries.
         $counts = [
-            'all' => $page->editableRegions()->count(),
-            'dynamic' => $page->editableRegions()->where('is_static', false)->count(),
-            'static' => $page->editableRegions()->where('is_static', true)->count(),
-            'unconfirmed' => $page->editableRegions()->where('detection_method', 'auto')->count(),
+            'all' => $allRegions->count(),
+            'dynamic' => $allRegions->where('is_static', false)->count(),
+            'static' => $allRegions->where('is_static', true)->count(),
+            'unconfirmed' => $allRegions->where('detection_method', 'auto')->count(),
         ];
         $visualEditableCount = $editorProfile['visual_editing_supported']
-            ? $page->editableRegions()
-                ->get()
-                ->filter(fn (EditableRegion $region) => $patcher->canVisuallyEditRegion($region))
-                ->count()
+            ? $allRegions->filter(fn (EditableRegion $region) => $patcher->canVisuallyEditRegion($region))->count()
             : 0;
 
         return view('livewire.editor.region-panel', [

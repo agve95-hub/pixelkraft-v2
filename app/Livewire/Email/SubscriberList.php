@@ -98,22 +98,20 @@ class SubscriberList extends Component
 
         $subscribers = $query->latest()->paginate(25);
 
+        // Consolidate the three per-status counts into a single GROUP BY query
+        // instead of running three separate COUNT queries.
+        $statusCounts = NewsletterSubscriber::query()
+            ->whereIn('site_id', $this->visibleSiteIds())
+            ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
+            ->whereIn('status', ['active', 'unsubscribed', 'bounced'])
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
         $stats = [
-            'active' => NewsletterSubscriber::query()
-                ->whereIn('site_id', $this->visibleSiteIds())
-                ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
-                ->where('status', 'active')
-                ->count(),
-            'unsubscribed' => NewsletterSubscriber::query()
-                ->whereIn('site_id', $this->visibleSiteIds())
-                ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
-                ->where('status', 'unsubscribed')
-                ->count(),
-            'bounced' => NewsletterSubscriber::query()
-                ->whereIn('site_id', $this->visibleSiteIds())
-                ->when($this->siteId, fn ($q) => $q->where('site_id', $this->siteId))
-                ->where('status', 'bounced')
-                ->count(),
+            'active' => (int) ($statusCounts['active'] ?? 0),
+            'unsubscribed' => (int) ($statusCounts['unsubscribed'] ?? 0),
+            'bounced' => (int) ($statusCounts['bounced'] ?? 0),
         ];
 
         return view('livewire.email.subscriber-list', [

@@ -6,6 +6,7 @@ use App\Models\Redirect;
 use App\Services\NginxConfigService;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class RedirectManager extends Component
@@ -125,6 +126,7 @@ class RedirectManager extends Component
             }
         } catch (\Throwable $e) {
             // Non-fatal — nginx will pick up changes on next deploy
+            Log::warning('Nginx reload after redirect change failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
         }
     }
 }
