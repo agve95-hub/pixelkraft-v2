@@ -755,6 +755,27 @@ class DeployService
     }
 
     /**
+     * Run the site's pre- or post-deploy shell hook.
+     *
+     * SECURITY CONTRACT — must be honoured before this method is called in production:
+     *
+     *  1. The hook string MUST be validated with validateBuildCommand() before execution.
+     *  2. The hook MUST be run as a restricted OS user (not www-data / root).
+     *     Use `sudo -u deploy-user --` or a dedicated sudoers rule.
+     *  3. The hook MUST be executed via Process::command([...]) (array form) or with
+     *     escapeshellarg() on every interpolated value — never raw string concatenation.
+     *  4. The hook MUST NOT inherit the application's env vars (no APP_KEY, DB_PASSWORD,
+     *     github_token, etc.). Strip env or pass an explicit safe allowlist.
+     *  5. A timeout (≤ 120 s) MUST be enforced.
+     *  6. Output MUST be scrubbed with scrubSecrets() before being appended to the log.
+     *  7. Hooks MUST be disabled when APP_ENV=local unless explicitly opted in.
+     *
+     * These columns currently exist in the schema but are NOT executed anywhere.
+     * Do not remove this comment when implementing — use it as the checklist.
+     */
+    // private function runDeployHook(Site $site, DeployLog $log, string $hookColumn): void { ... }
+
+    /**
      * Reject node_version values that could inject into the nvm shell prefix.
      * Allows: "20", "18.12.1", "lts/iron", "lts/hydrogen", "current", "node".
      */

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ActiveCampaignsController;
 use App\Http\Controllers\Api\FormSubmissionController;
 use App\Http\Controllers\Api\InboxInboundController;
 use App\Http\Controllers\Api\NotificationController;
@@ -45,6 +46,12 @@ Route::get('/unsubscribe/{subscriber}', function (NewsletterSubscriber $subscrib
 Route::post('/inbox/{slug}', [InboxInboundController::class, 'store'])
     ->middleware('throttle:30,1')
     ->name('api.inbox.inbound');
+
+// Active campaigns + announcements for a managed site (consumed by client-side JS)
+// Public, cached 60s server-side, rate-limited to 60/min per IP.
+Route::get('/sites/{site}/active-campaigns', ActiveCampaignsController::class)
+    ->middleware('throttle:60,1')
+    ->name('api.sites.active-campaigns');
 // ── Authenticated API (Sanctum) — /api/v1/* ─────
 
 Route::prefix('v1')->middleware(['auth:sanctum', 'sanctum.token.can', 'site.access'])->group(function () {

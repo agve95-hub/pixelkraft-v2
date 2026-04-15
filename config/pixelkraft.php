@@ -34,6 +34,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Registration
+    |--------------------------------------------------------------------------
+    |
+    | Open user registration is disabled by default for self-hosted deployments.
+    | Enable only when you need to onboard new users (e.g., during initial setup).
+    | Set REGISTRATION_ENABLED=true in .env to allow sign-ups.
+    |
+    */
+    'registration_enabled' => env('REGISTRATION_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | GitHub
     |--------------------------------------------------------------------------
     */
@@ -81,6 +93,12 @@ return [
         'pid_path' => env('SITE_RUNTIME_PID_PATH', storage_path('app/runtime-pids')),
         'log_path' => env('SITE_RUNTIME_LOG_PATH', storage_path('logs/runtime-sites')),
         'startup_timeout_seconds' => (int) env('SITE_RUNTIME_STARTUP_TIMEOUT_SECONDS', 30),
+        // Set to true to have Pixelkraft write a Supervisor .conf file on every
+        // runtime deployment so the Node.js process survives server reboots.
+        // Requires supervisord to be installed and the web server user to have
+        // write access to SUPERVISOR_CONF_PATH.
+        'supervisor_enabled' => env('SITE_RUNTIME_SUPERVISOR_ENABLED', false),
+        'supervisor_conf_path' => env('SUPERVISOR_CONF_PATH', '/etc/supervisor/conf.d'),
     ],
 
     /*
@@ -119,7 +137,10 @@ return [
     | search traffic only (session default channel group = Organic Search).
     |
     */
-    'google_analytics_credentials_path' => env('GOOGLE_ANALYTICS_CREDENTIALS_PATH', storage_path('app/google-credentials.json')),
+    // Store the service account JSON in storage/app/private/ so it is never
+    // web-accessible and is excluded from the default R2 backup path.
+    // Add `location ~* \.json$ { deny all; }` to Nginx as a defence-in-depth measure.
+    'google_analytics_credentials_path' => env('GOOGLE_ANALYTICS_CREDENTIALS_PATH', storage_path('app/private/google-credentials.json')),
 
     /*
     |--------------------------------------------------------------------------

@@ -112,12 +112,14 @@ class SiteController extends Controller
         }
     }
 
-    public function pages(Site $site): JsonResponse
+    public function pages(Site $site, Request $request): JsonResponse
     {
-        $pages = $site->pages()
+        $perPage = min(100, max(10, (int) $request->query('per_page', 50)));
+
+        $paginator = $site->pages()
             ->orderBy('url_path')
-            ->get()
-            ->map(fn ($page) => [
+            ->paginate($perPage)
+            ->through(fn ($page) => [
                 'id' => $page->id,
                 'file_path' => $page->file_path,
                 'url_path' => $page->url_path,
@@ -129,7 +131,15 @@ class SiteController extends Controller
                 'updated_at' => $page->updated_at?->toIso8601String(),
             ]);
 
-        return response()->json(['data' => $pages]);
+        return response()->json([
+            'data' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 
     public function analytics(Site $site, Request $request, AnalyticsAggregator $analytics): JsonResponse

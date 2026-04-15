@@ -33,6 +33,13 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
+        // Registration is disabled by default for self-hosted deployments.
+        // Set REGISTRATION_ENABLED=true in .env only when you want to allow sign-ups
+        // (e.g., during initial setup or invite-based onboarding).
+        if (! config('pixelkraft.registration_enabled', false)) {
+            Fortify::withoutRegistration();
+        }
+
         // ── Views ───────────────────────────────
         Fortify::loginView(fn () => view('auth.login'));
         Fortify::registerView(fn () => view('auth.register'));

@@ -151,6 +151,128 @@ class SiteRuntimeService
         $this->stopShellProcess($site);
         $this->startShellProcess($site, $execution);
         $this->waitUntilHealthy($site, $log);
+
+        // Write a Supervisor config so the process survives server reboots.
+        // Requires supervisord to be installed and the pixelkraft app user to
+        // have write access to SUPERVISOR_CONF_PATH (default: /etc/supervisor/conf.d/).
+        if ($this->supervisorEnabled()) {
+            try {
+                $this->writeSupervisorConfig($site, $execution);
+                $this->reloadSupervisor();
+                $log->appendLog('  Supervisor config written and reloaded.');
+            } catch (\Throwable $e) {
+                // Non-fatal: the site is already running via nohup. Log a warning
+                // so the operator knows to configure Supervisor manually.
+                $log->appendLog('  WARNING: Could not write Supervisor config — site will not auto-restart on reboot. ('.$e->getMessage().')');
+            }
+        }
+    }
+
+    /**
+     * Generate and write a Supervisor program config for a runtime site.
+     *
+     * The config file is written to SUPERVISOR_CONF_PATH/pixelkraft-{slug}.conf.
+     * supervisorctl reread + update are issued so the change takes effect immediately.
+     */
+    public function writeSupervisorConfig(Site $site, array $execution): void
+    {
+        $confPath = $this->supervisorConfPath($site);
+        $logFile = $this->logFile($site);
+        $port = $this->portFor($site);
+        $host = $this->host();
+        $nodeVersion = $site->node_version ?? '20';
+
+        File::ensureDirectoryExists(dirname($confPath), 0755, true);
+
+        $nvmBootstrap = 'export NVM_DIR="$HOME/.nvm"; '
+            .'[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"; '
+            .'nvm use '.escapeshellarg($nodeVersion).' >/dev/null 2>&1 || true';
+
+        $command = "bash -lc '"
+            .$nvmBootstrap.'; '
+            .'export PORT='.$port.' HOSTNAME='.escapeshellarg($host).' NODE_ENV=production NEXT_TELEMETRY_DISABLED=1; '
+            .(! empty($execution['bin_dir']) ? 'export PATH="'.addcslashes($execution['bin_dir'], "'\\").':$PATH"; ' : '')
+            .$execution['command']
+            ."'";
+
+        $conf = implode("\n", [
+            '; Pixelkraft-managed — do not edit manually. Re-generated on every deploy.',
+            "[program:pixelkraft-{$site->slug}]",
+            "command={$command}",
+            "directory={$execution['working_dir']}",
+            'autostart=true',
+            'autorestart=true',
+            'startretries=3',
+            'startsecs=5',
+            'stopwaitsecs=15',
+            "stdout_logfile={$logFile}",
+            "stderr_logfile={$logFile}",
+            'stdout_logfile_maxbytes=10MB',
+            'stdout_logfile_backups=3',
+            'redirect_stderr=true',
+            '',
+        ]);
+
+        File::put($confPath, $conf);
+    }
+
+    /**
+     * Ask supervisorctl to re-read config files and update running programs.
+     */
+    public function reloadSupervisor(): void
+    {
+        $result = Process::timeout(15)->run(['supervisorctl', 'reread']);
+
+        if (! $result->successful()) {
+            throw new \RuntimeException('supervisorctl reread failed: '.trim($result->errorOutput()));
+        }
+
+        $result = Process::timeout(15)->run(['supervisorctl', 'update']);
+
+        if (! $result->successful()) {
+            throw new \RuntimeException('supervisorctl update failed: '.trim($result->errorOutput()));
+        }
+    }
+
+    /**
+     * Remove the Supervisor config for a site (called on site deletion or mode change).
+     */
+    public function removeSupervisorConfig(Site $site): void
+    {
+        if (! $this->supervisorEnabled()) {
+            return;
+        }
+
+        $confPath = $this->supervisorConfPath($site);
+
+        if (! File::exists($confPath)) {
+            return;
+        }
+
+        // Stop the supervised process before removing the config.
+        Process::timeout(15)->run(['supervisorctl', 'stop', "pixelkraft-{$site->slug}"]);
+        File::delete($confPath);
+
+        try {
+            $this->reloadSupervisor();
+        } catch (\Throwable) {
+            // Best-effort — the file is already gone.
+        }
+    }
+
+    private function supervisorEnabled(): bool
+    {
+        return (bool) config('pixelkraft.runtime.supervisor_enabled', false);
+    }
+
+    private function supervisorConfPath(Site $site): string
+    {
+        $confDir = rtrim(
+            (string) config('pixelkraft.runtime.supervisor_conf_path', '/etc/supervisor/conf.d'),
+            '/'
+        );
+
+        return "{$confDir}/pixelkraft-{$site->slug}.conf";
     }
 
     private function prepareExecution(Site $site, DeployLog $log): array

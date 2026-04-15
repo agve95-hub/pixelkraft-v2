@@ -439,6 +439,16 @@ class Site extends Model
         return $this->hasMany(Report::class)->orderByDesc('report_date');
     }
 
+    public function campaigns()
+    {
+        return $this->hasMany(Campaign::class);
+    }
+
+    public function announcements()
+    {
+        return $this->hasMany(Announcement::class);
+    }
+
     // ── Computed ─────────────────────────────────
 
     public function latestDeploy()
