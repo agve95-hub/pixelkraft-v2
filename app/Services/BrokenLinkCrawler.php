@@ -222,6 +222,13 @@ class BrokenLinkCrawler
 
     private function checkExternalLink(string $url): array
     {
+        // SSRF guard: reject requests to private/loopback/link-local addresses.
+        // Links in a site's HTML are user-controlled content; without this check
+        // the crawler could be used as an SSRF relay to internal services.
+        if (! $this->isPublicUrl($url)) {
+            return ['status' => 0, 'redirect_to' => null];
+        }
+
         try {
             $response = Http::timeout(10)
                 ->withOptions(['allow_redirects' => false])
@@ -234,5 +241,43 @@ class BrokenLinkCrawler
         } catch (\Throwable $e) {
             return ['status' => 0, 'redirect_to' => null];
         }
+    }
+
+    /**
+     * Return true only if the URL resolves to a publicly routable IP address.
+     * Rejects localhost, RFC 1918 ranges, link-local (169.254.x.x), and non-HTTP schemes.
+     */
+    private function isPublicUrl(string $url): bool
+    {
+        $parsed = parse_url($url);
+        $scheme = strtolower($parsed['scheme'] ?? '');
+
+        if (! in_array($scheme, ['http', 'https'], true)) {
+            return false;
+        }
+
+        $host = $parsed['host'] ?? '';
+
+        if ($host === '') {
+            return false;
+        }
+
+        // Resolve hostname to IP (or use raw IP directly).
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            $ip = $host;
+        } else {
+            $resolved = gethostbyname($host);
+            if ($resolved === $host) {
+                // Hostname could not be resolved — skip to avoid hanging.
+                return false;
+            }
+            $ip = $resolved;
+        }
+
+        return (bool) filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        );
     }
 }
