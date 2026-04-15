@@ -27,7 +27,6 @@
         "livewire/livewire": "^4.2",
         "sentry/sentry-laravel": "^4.0",
         "spatie/laravel-backup": "^10.0",
-        "spatie/laravel-model-states": "^2.7",
         "symfony/css-selector": "^7.4",
         "symfony/dom-crawler": "^7.4"
     },
