@@ -28,6 +28,9 @@ vendor/bin/pint --test
 # Code style — auto-fix
 vendor/bin/pint
 
+# Platform deploy (maintenance mode → migrate → cache clear → workers restart)
+php artisan app:deploy
+
 # Artisan utilities
 php artisan pixelkraft:replay-webhooks --since="2 hours ago"
 php artisan pixelkraft:prune-webhooks --days=30
@@ -35,6 +38,17 @@ php artisan horizon:list-failed
 ```
 
 CI runs `vendor/bin/pint --test` and `php artisan test` (no parallelism). Tests use in-memory SQLite and `QUEUE_CONNECTION=sync` (jobs run inline, no Redis required).
+
+### Docker dev environment
+
+```bash
+# Start full stack: app, nginx, vite HMR, horizon, scheduler, MariaDB, Redis, Mailpit
+docker compose up
+
+# Dashboard: http://localhost:8080  Mailpit: http://localhost:8025
+```
+
+Services: `app` (php-fpm:9000), `nginx` (:8080), `vite` (:5173 HMR), `horizon`, `scheduler`, `db` (MariaDB 11.4 on host :3307), `redis` (7.4 on host :6380), `mailpit` (SMTP :1025). DB/Redis use non-standard host ports to avoid conflicts with local installs.
 
 ## Architecture overview
 
@@ -82,7 +96,7 @@ POST /api/webhooks/github
 `DeployService` selects between two adapters based on `site->deployment_mode`:
 
 - **`StaticDeploymentAdapter`** — copies build artifacts to `site->deploy_path`, writes an Nginx vhost config via `NginxConfigService`, reloads Nginx. Used by `static_html`, `hugo`, `eleventy`, `react`, `vue`, `svelte`, `astro`, and static-export Next.js.
-- **`RuntimeDeploymentAdapter`** — starts a Node.js process on an auto-assigned port (starting at `config('pixelkraft.runtime.port_start')`, default 4100), writes an Nginx reverse-proxy config. Used by server-rendered `nextjs` and `nuxt`.
+- **`RuntimeDeploymentAdapter`** — starts a Node.js process via `SiteRuntimeService`. The port is resolved by `allocatePort()`: starts at `crc32(site->id) % portSpan + portStart` (default range 4100–6099), then TCP-probes that port and scans forward if it is already listening. The resolved port is threaded through the execution config — never call `portFor()` directly inside the deploy flow.
 
 ### Parser strategy
 
@@ -111,6 +125,29 @@ Git conflicts between a webhook push and an in-progress editor session throw `Gi
 
 `Site::scopeVisibleTo(User $user)` on the `Site` model scopes results: admins see all sites, regular users see only `sites.user_id = auth()->id()`. Always use `SiteAccess::query()` (or `SiteAccess::findOrFail()`) instead of `Site::query()` directly when building user-facing site lists. The `EnsureSiteAccess` middleware (alias `site.access`) enforces this on all route-bound `{site}` parameters.
 
+### Authorization
+
+Gates and policies are registered in `AppServiceProvider::boot()`:
+- `SitePolicy`, `BlogPostPolicy`, `PagePolicy`, `InvoicePolicy` — all follow the same pattern: `before()` returns `true` for admins (bypasses all checks), `view/update/delete` check `site->user_id === $user->id`.
+- `App\Enums\Role` (backed string enum: `Admin`/`Editor`) is cast on `User::role`. Use `$user->isAdmin()` (compares against `Role::Admin`) rather than raw string comparisons.
+- The first registered user becomes admin; subsequent registrations default to `Role::Editor` — see `CreateNewUser`.
+- Registration is gated by `REGISTRATION_ENABLED` env var. This is controlled entirely via `config/fortify.php` features array — `Features::registration()` is conditionally included. Do **not** call `Fortify::withoutRegistration()`; that method does not exist.
+
+### CSP nonce system
+
+`SetSecurityHeaders` middleware generates a per-request nonce (`base64_encode(random_bytes(16))`) **before** `$next($request)` (before view rendering) and binds it to the container:
+
+```php
+app()->instance('csp-nonce', $nonce);
+Livewire::setNonce($nonce);   // Livewire 4 nonce support
+```
+
+The nonce is used in the `Content-Security-Policy` header after the response is rendered. Two ways to consume it in views:
+- `csp_nonce()` — global helper from `app/helpers.php` (autoloaded via `composer.json` `files` array)
+- `@cspNonce` — Blade directive registered in `AppServiceProvider`, emits `nonce="..."` attribute
+
+The `@vite()` directive receives the nonce via `nonce: csp_nonce()` in all layout files. `style-src` keeps `'unsafe-inline'` (required by Tailwind/Flux at runtime).
+
 ### Encrypted model fields
 
 The following `Site` fields are cast to `encrypted` and stored encrypted at rest: `github_token`, `webhook_secret`, `inbox_inbound_secret`, `cf_api_token`, `smtp_password`, `ftp_ssh_password`. Never read these in bulk queries; always access them on a loaded model instance.
@@ -119,6 +156,10 @@ The following `Site` fields are cast to `encrypted` and stored encrypted at rest
 
 The scheduler runs: `CheckUptime`, `CheckSsl`, `CrawlLinks`, `AnalyzeSeo`, `SyncAnalytics`, `RunLighthouse`, `SendCampaigns`, `PublishScheduled`, `BackupDatabase`. Each operates per-site and dispatches to the `monitoring` queue where appropriate.
 
+### Pre/post deploy hooks (schema-only)
+
+`sites.pre_deploy_hook` and `post_deploy_hook` columns exist in the schema but are **intentionally excluded from `$fillable`** and **never executed**. `DeployService` contains a commented security contract (`runDeployHook`) listing the 7 requirements that must be met before these are wired up. Do not execute these columns without satisfying that checklist.
+
 ### Key config
 
-`config/pixelkraft.php` is the primary application config. Notable keys: `repos_path` (where repos are cloned), `sites_deploy_path` (Nginx-served root), `nginx_sites_path`, `deploy.build_timeout_seconds` (300), `deploy.rollback_snapshots` (10), `runtime.port_start` (4100).
+`config/pixelkraft.php` is the primary application config. Notable keys: `repos_path` (where repos are cloned), `sites_deploy_path` (Nginx-served root), `nginx_sites_path`, `deploy.build_timeout_seconds` (300), `deploy.rollback_snapshots` (10), `runtime.port_start` (4100), `registration_enabled` (mirrors `REGISTRATION_ENABLED` env var).
