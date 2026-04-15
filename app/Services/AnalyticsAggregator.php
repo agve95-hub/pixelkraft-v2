@@ -263,12 +263,15 @@ class AnalyticsAggregator
             ->get()
             ->keyBy(fn (Page $page) => $this->normalizePath($page->url_path ?: '/'));
 
-        $events = AnalyticsEvent::query()
-            ->where('site_id', $site->id)
-            ->where('occurred_at', '>=', now()->subDays(30)->startOfDay())
-            ->get();
+        $since = now()->subDays(30)->startOfDay();
 
-        if ($events->isEmpty()) {
+        // Check for any events without hydrating — only proceed if rows exist.
+        $hasEvents = AnalyticsEvent::query()
+            ->where('site_id', $site->id)
+            ->where('occurred_at', '>=', $since)
+            ->exists();
+
+        if (! $hasEvents) {
             $site->update([
                 'visitors_today' => 0,
                 'visitors_change_percent' => null,
@@ -277,33 +280,51 @@ class AnalyticsAggregator
             return 0;
         }
 
-        $groups = $events->groupBy(function (AnalyticsEvent $event): string {
-            return $event->occurred_at->toDateString().'|'.$this->normalizePath($event->path ?: '/');
-        });
+        // Aggregate unique visitors + page views per date+path entirely in the DB
+        // instead of loading all raw events into PHP memory.
+        $pageViewGroups = AnalyticsEvent::query()
+            ->where('site_id', $site->id)
+            ->where('occurred_at', '>=', $since)
+            ->selectRaw('
+                DATE(occurred_at) as event_date,
+                path,
+                COUNT(DISTINCT visitor_id) as unique_visitors,
+                SUM(CASE WHEN event_name = ? THEN 1 ELSE 0 END) as page_views
+            ', ['page_view'])
+            ->groupByRaw('DATE(occurred_at), path')
+            ->get()
+            ->keyBy(fn ($row) => $row->event_date.'|'.($row->path ?? '/'));
+
+        // Aggregate custom (non-page_view) event counts per date+path+event_name.
+        $customEventRows = AnalyticsEvent::query()
+            ->where('site_id', $site->id)
+            ->where('occurred_at', '>=', $since)
+            ->where('event_name', '!=', 'page_view')
+            ->selectRaw('DATE(occurred_at) as event_date, path, event_name, COUNT(*) as cnt')
+            ->groupByRaw('DATE(occurred_at), path, event_name')
+            ->get();
+
+        // Index custom events by date|path → [event_name => count].
+        $customByGroup = [];
+        foreach ($customEventRows as $row) {
+            $key = $row->event_date.'|'.($row->path ?? '/');
+            $customByGroup[$key][(string) $row->event_name] = (int) $row->cnt;
+        }
 
         $writes = 0;
 
-        foreach ($groups as $key => $group) {
+        foreach ($pageViewGroups as $key => $row) {
             [$date, $path] = explode('|', $key, 2);
+            $path = $this->normalizePath($path ?: '/');
             $page = $pagesByPath->get($path) ?? $pagesByPath->get('/');
 
             if (! $page) {
                 continue;
             }
 
-            $visitorIds = $group
-                ->pluck('visitor_id')
-                ->filter()
-                ->unique()
-                ->count();
-
-            $pageViews = $group->where('event_name', 'page_view')->count();
-
-            $customEvents = $group
-                ->reject(fn (AnalyticsEvent $event) => $event->event_name === 'page_view')
-                ->groupBy('event_name')
-                ->map(fn (Collection $events, string $eventName) => $events->count())
-                ->all();
+            $visitorIds = (int) $row->unique_visitors;
+            $pageViews = (int) $row->page_views;
+            $customEvents = $customByGroup[$key] ?? [];
 
             AnalyticsSnapshot::updateOrCreate(
                 [
