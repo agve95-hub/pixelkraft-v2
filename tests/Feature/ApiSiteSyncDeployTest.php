@@ -93,6 +93,37 @@ class ApiSiteSyncDeployTest extends TestCase
         Queue::assertNotPushed(CloneRepoJob::class);
     }
 
+    public function test_sync_returns_409_when_deploy_already_in_progress(): void
+    {
+        Queue::fake();
+
+        $user = User::create([
+            'name' => 'DevBusy',
+            'email' => 'dev-busy-sync@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'editor',
+        ]);
+
+        $site = Site::create([
+            'user_id' => $user->id,
+            'name' => 'Busy Sync Site',
+            'slug' => 'busy-sync-site',
+            'repo_url' => 'https://github.com/example/busy-sync.git',
+            'branch' => 'main',
+            'project_type' => 'static_html',
+            'deploy_status' => DeployStatus::Building,
+        ]);
+
+        Sanctum::actingAs($user, ['*']);
+
+        $this->postJson("/api/v1/sites/{$site->id}/sync")
+            ->assertStatus(409)
+            ->assertJsonFragment(['error' => 'conflict']);
+
+        Queue::assertNotPushed(CloneRepoJob::class);
+        Queue::assertNotPushed(ParseSiteJob::class);
+    }
+
     public function test_deploy_dispatches_deploy_site_job(): void
     {
         Queue::fake();

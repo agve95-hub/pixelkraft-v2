@@ -19,6 +19,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SetSecurityHeaders::class);
 
+        // Prepend CORS handling to the API group so preflight OPTIONS requests
+        // to the public tracking / form / inbox endpoints are answered before
+        // any authentication or throttle middleware can reject them.
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+
         $middleware->alias([
             'site.access' => EnsureSiteAccess::class,
             'expand.site.sidebar' => RememberExpandedSite::class,
