@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -16,14 +17,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $cta_url
  * @property string|null $placement
  * @property bool $is_dismissible
- * @property \Carbon\Carbon|null $starts_at
- * @property \Carbon\Carbon|null $ends_at
+ * @property Carbon|null $starts_at
+ * @property Carbon|null $ends_at
  * @property int $priority
  * @property string|null $locale
  * @property bool $is_enabled
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property-read \App\Models\Site|null $site
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Site|null $site
  */
 class Announcement extends Model
 {

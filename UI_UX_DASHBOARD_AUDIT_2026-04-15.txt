@@ -1,0 +1,199 @@
+Pixelkraft v2 UI/UX Dashboard Audit
+Date: 2026-04-15
+Repo: C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2
+
+Scope
+- Dashboard shell, sidebar/navigation, major page patterns, buttons, and the page editor.
+- Focused on user-facing behavior plus the internal implementation choices that shape responsiveness and reliability.
+
+Summary
+- The app has a strong visual direction, but several controls and page patterns over-promise.
+- The biggest issues are not cosmetic: there are multiple places where the UI implies an action happened even though the underlying function is only partial, deferred, or stubbed.
+- The editor is the highest-risk area from a UX perspective because "Publish", "Schedule", "Undo", and revision/history affordances do not behave like a user would reasonably expect.
+
+Status tags
+- REPRODUCED: behavior confirmed by running the app/tests or verifying the actual control path.
+- CODE AUDIT: high-confidence finding from source inspection.
+
+1. [P1] [CODE AUDIT] Editor "Publish" does not save the current work before deploying
+Why it matters
+- This is the most dangerous UX mismatch in the product.
+- A user can click "Publish" expecting the currently edited content to go live, but the method only flips the page to published and queues a deploy.
+- Unsaved code-mode or visual-mode edits are not persisted by this action.
+
+Evidence
+- Toolbar button:
+  `resources/views/livewire/editor/visual-editor.blade.php:97-103`
+- Handler:
+  `app/Livewire/Editor/VisualEditor.php:150-157`
+- `publishPage()` updates `is_published` and dispatches `DeploySiteJob`, but does not call `save()`, `saveDraft()`, or any content-persistence path.
+
+Recommendation
+- Rename the action to reflect what it actually does, or make it atomically save current edits before publishing/deploying.
+- Add a regression test for "edit content -> click Publish -> deployed source includes the edit".
+
+2. [P1] [CODE AUDIT] Sites index claims the user can select a site, but the UI does not provide a selection path
+Why it matters
+- The Sites page is presented like a master-detail workspace.
+- In practice, the "selected site" panel falls back to the first alphabetical site unless the URL already contains `?site=...`.
+- That makes the deploy-controls panel misleading and unpredictable.
+
+Evidence
+- `resources/views/dashboard/sites/index.blade.php:5-14` resolves the active detail panel from `request()->query('site')`, else first site.
+- `resources/views/dashboard/sites/index.blade.php:31` says "Select a site to view status and deploy controls."
+- `resources/views/livewire/dashboard/site-list.blade.php:47-50` only offers `Open` and `Settings`; there is no UI action that sets the `site` query parameter.
+
+Recommendation
+- Make site rows selectable and update `?site=...`, or remove the detail panel from this page and treat it as a pure list.
+
+3. [P2] [CODE AUDIT] The command palette promises page search, but it only indexes dashboard and site-section routes
+Why it matters
+- Search is a key escape hatch in large multi-site dashboards.
+- The overlay says "Search sites and pages..." but it does not include individual page records.
+- Users will assume search is broken when page results never appear.
+
+Evidence
+- Search input placeholder:
+  `resources/views/components/layouts/app.blade.php:292-297`
+- Search data source only pushes dashboard-level routes and site subsections:
+  `resources/views/components/layouts/app.blade.php:35-55`
+- No page-level entries are added to `$searchIndex`.
+
+Secondary UX gap
+- The visible search trigger is hidden on mobile:
+  `resources/views/components/layouts/app.blade.php:219-228`
+- The mobile header does not add a replacement search trigger.
+
+Recommendation
+- Either index actual pages/blog posts/templates or narrow the placeholder text to match the real result set.
+- Add a mobile-visible search entry point.
+
+4. [P2] [CODE AUDIT] Several prominent buttons do not perform the action their labels imply
+Why it matters
+- This creates trust erosion fast, especially in admin software where actions are high-stakes.
+
+Examples
+- `resources/views/dashboard/sites/show.blade.php:82-87`
+  "Deploy now" is only an anchor link to `#deploy-controls`, not a deploy action.
+- `resources/views/dashboard/sites/analytics.blade.php:25-27`
+  date-range control is present but disabled.
+- `resources/views/dashboard/sites/analytics.blade.php:219-220`
+  deploy "Log" button is rendered but disabled.
+
+Recommendation
+- Demote these to secondary links with explanatory labels until they are wired.
+- Avoid primary-action styling for navigation-to-action surfaces.
+
+5. [P2] [CODE AUDIT] The editor exposes multiple production-looking controls that are explicitly stubbed
+Why it matters
+- The editor looks like a polished, full-featured publishing surface, but several core controls are placeholders.
+- This is especially risky because it sits next to real Git push/deploy behavior.
+
+Evidence
+- Undo/redo are not wired:
+  `app/Livewire/Editor/VisualEditor.php:119-127`
+- Scheduling is not persisted:
+  `app/Livewire/Editor/VisualEditor.php:106-117`
+  `resources/views/livewire/editor/visual-editor.blade.php:459-479`
+- Revision restore is not wired:
+  `resources/views/livewire/editor/visual-editor.blade.php:349-356`
+- New page is visibly present but disabled:
+  `resources/views/livewire/editor/visual-editor.blade.php:175`
+
+Recommendation
+- Hide or relabel stub controls behind "Coming soon" copy until their back-end behavior exists.
+- Keep the primary toolbar limited to actions with end-to-end guarantees.
+
+6. [P2] [CODE AUDIT] Site overview auto-refresh does full-page reloads every 5 seconds during active sync/deploy states
+Why it matters
+- This interrupts reading, resets scroll position, and can disrupt work inside the deploy-controls area.
+- Full reloads are a blunt instrument for a dashboard page with interactive controls.
+
+Evidence
+- `resources/views/dashboard/sites/show.blade.php:274-277`
+- When the site is syncing or actively deploying, the page executes `window.location.reload()` after 5 seconds.
+
+Recommendation
+- Replace full reloads with targeted polling for deploy status/log sections.
+
+7. [P2] [CODE AUDIT] Shared layout and dashboard pages perform heavy data work directly in Blade
+Why it matters
+- This makes the dashboard shell harder to reason about and slower to scale.
+- Every dashboard page render pulls sidebar counts, site lists, and search data from inside the layout view itself.
+- The home dashboard also performs multi-query aggregation and chart building inline in the template.
+
+Evidence
+- Sidebar data loading in layout:
+  `resources/views/components/layouts/app.blade.php:17-56`
+- Home dashboard data/query logic in Blade:
+  `resources/views/dashboard/index.blade.php:13-35`
+  `resources/views/dashboard/index.blade.php:48-152`
+
+Likely user impact
+- Slower page loads as the account/site count grows.
+- More fragile rendering because navigation state and data aggregation are spread across templates instead of dedicated view models/components.
+
+Recommendation
+- Move shell data into dedicated view composers or components.
+- Move dashboard aggregation into controller/service/view-model code.
+
+8. [P3] [CODE AUDIT] Dashboard summary copy reports healthy status even when the data does not support it
+Why it matters
+- Dashboards should be operationally trustworthy.
+- Hard-coded optimistic copy trains users to ignore status surfaces.
+
+Evidence
+- `resources/views/dashboard/index.blade.php:165-169`
+- The Sites summary card always shows `All online` under the total site count; it is not derived from actual uptime or deploy state.
+
+Recommendation
+- Replace with a real computed count, or remove the status text entirely.
+
+9. [P3] [CODE AUDIT] Some important actions collapse to icon-only controls with weak affordance and no visible label
+Why it matters
+- This hurts discoverability and accessibility.
+- On data-empty states, some controls become harder to identify because the visible text disappears.
+
+Examples
+- Site overview inbox action:
+  `resources/views/dashboard/sites/show.blade.php:67-73`
+  When unread count is zero, the button effectively shows only the envelope icon.
+- Site list settings action:
+  `resources/views/livewire/dashboard/site-list.blade.php:49-50`
+  Icon-only settings button has no visible text.
+
+Recommendation
+- Add visible labels or explicit `aria-label` values for icon-only actions.
+
+10. [P3] [CODE AUDIT] The editor's page navigation rail is artificially capped and incomplete for larger sites
+Why it matters
+- The editor is positioned as a page workspace, but it only loads the first 20 site pages into the Pages tab.
+- There is no working "new page" flow from inside the editor.
+
+Evidence
+- Page list query is capped:
+  `app/Livewire/Editor/VisualEditor.php:541-545`
+- The "New page" action is disabled:
+  `resources/views/livewire/editor/visual-editor.blade.php:175`
+
+Recommendation
+- Add search/pagination to the editor page rail, or make it explicit that the rail is a shortcut list rather than the full site map.
+
+11. [P3] [CODE AUDIT] Site analytics page uses a noticeably different interaction language than the rest of the dashboard
+Why it matters
+- Most dashboard pages use Flux components and a shared shell vocabulary.
+- `dashboard/sites/analytics.blade.php` switches to a different custom class system (`dash-card`, `stat`, `page-head`, `thread`, etc.) and mixes in disabled controls.
+- The result feels like a separate product surface rather than a coherent dashboard section.
+
+Evidence
+- `resources/views/dashboard/sites/analytics.blade.php:19-30`
+- `resources/views/dashboard/sites/analytics.blade.php:61-126`
+- `resources/views/dashboard/sites/analytics.blade.php:206-230`
+
+Recommendation
+- Normalize analytics pages onto the same component vocabulary as the rest of the dashboard before adding more controls there.
+
+Overall assessment
+- The dashboard shell is visually credible, but the product currently relies too much on interface theater: controls that look complete while the backing behavior is partial or missing.
+- The editor needs the most urgent UX tightening because it sits on top of Git pushes and deploys, so ambiguous actions can cause real publishing mistakes.
+- The next highest-value fixes are the Sites index selection flow, search accuracy/mobile access, and removing deceptive button labels across site overview and analytics.

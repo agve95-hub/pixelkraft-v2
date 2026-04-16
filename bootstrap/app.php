@@ -7,6 +7,7 @@ use App\Http\Middleware\SetSecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\HandleCors;
 use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -23,7 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // to the public tracking / form / inbox endpoints are answered before
         // any authentication or throttle middleware can reject them.
         $middleware->api(prepend: [
-            \Illuminate\Http\Middleware\HandleCors::class,
+            HandleCors::class,
         ]);
 
         $middleware->alias([

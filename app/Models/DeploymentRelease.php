@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -18,10 +19,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $status
  * @property bool $is_current
  * @property array|null $meta
- * @property \Carbon\Carbon|null $activated_at
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property-read \App\Models\Site|null $site
+ * @property Carbon|null $activated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Site|null $site
  */
 class DeploymentRelease extends Model
 {

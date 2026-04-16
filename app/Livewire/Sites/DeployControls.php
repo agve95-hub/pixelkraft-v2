@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Sites;
 
-use App\Enums\DeployStatus;
 use App\Jobs\DeploySiteJob;
 use App\Jobs\ProvisionSslJob;
 use App\Models\DeployLog;

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -13,13 +14,13 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $template_id
  * @property array|null $segment_filter
  * @property string $status
- * @property \Carbon\Carbon|null $scheduled_at
- * @property \Carbon\Carbon|null $sent_at
+ * @property Carbon|null $scheduled_at
+ * @property Carbon|null $sent_at
  * @property array|null $stats
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property-read \App\Models\Site|null $site
- * @property-read \App\Models\ContentTemplate|null $template
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Site|null $site
+ * @property-read ContentTemplate|null $template
  */
 class NewsletterCampaign extends Model
 {

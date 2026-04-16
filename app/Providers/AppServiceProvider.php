@@ -67,16 +67,16 @@ class AppServiceProvider extends ServiceProvider
             ]);
 
             foreach ($navSites as $s) {
-                $searchIndex->push(['label' => $s->name . ' — Overview', 'href' => route('sites.show', $s)]);
-                $searchIndex->push(['label' => $s->name . ' — Inbox', 'href' => route('sites.inbox', $s)]);
-                $searchIndex->push(['label' => $s->name . ' — Reports', 'href' => route('sites.reports', $s)]);
-                $searchIndex->push(['label' => $s->name . ' — Campaigns', 'href' => route('sites.campaigns', $s)]);
-                $searchIndex->push(['label' => $s->name . ' — Expenses', 'href' => route('sites.expenses', $s)]);
-                $searchIndex->push(['label' => $s->name . ' — Invoices', 'href' => route('sites.invoices', $s)]);
-                $searchIndex->push(['label' => $s->name . ' — Reminders', 'href' => route('sites.reminders', $s)]);
-                $searchIndex->push(['label' => $s->name . ' — Analytics', 'href' => route('sites.analytics', $s)]);
-                $searchIndex->push(['label' => $s->name . ' — Maintenance', 'href' => route('sites.maintenance', $s)]);
-                $searchIndex->push(['label' => $s->name . ' — Media', 'href' => route('sites.files', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Overview', 'href' => route('sites.show', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Inbox', 'href' => route('sites.inbox', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Reports', 'href' => route('sites.reports', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Campaigns', 'href' => route('sites.campaigns', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Expenses', 'href' => route('sites.expenses', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Invoices', 'href' => route('sites.invoices', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Reminders', 'href' => route('sites.reminders', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Analytics', 'href' => route('sites.analytics', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Maintenance', 'href' => route('sites.maintenance', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Media', 'href' => route('sites.files', $s)]);
             }
 
             $view->with(compact('navSites', 'searchIndex'));

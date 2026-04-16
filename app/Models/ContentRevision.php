@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,9 +13,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $content_before
  * @property string|null $content_after
  * @property string|null $commit_sha
- * @property \Carbon\Carbon|null $created_at
- * @property-read \App\Models\EditableRegion|null $region
- * @property-read \App\Models\User|null $user
+ * @property Carbon|null $created_at
+ * @property-read EditableRegion|null $region
+ * @property-read User|null $user
  */
 class ContentRevision extends Model
 {

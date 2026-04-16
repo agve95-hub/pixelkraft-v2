@@ -11,6 +11,7 @@ use Livewire\WithPagination;
 class PageListing extends Component
 {
     use WithPagination;
+
     public string $siteId;
 
     public string $search = '';

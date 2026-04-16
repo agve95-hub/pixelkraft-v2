@@ -2,21 +2,22 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property string $id
  * @property string|null $page_id
- * @property \Carbon\Carbon $date
+ * @property Carbon $date
  * @property string $source
  * @property int $visitors
  * @property int $pageviews
  * @property float|null $bounce_rate
  * @property int|null $avg_session_sec
  * @property array|null $custom_events
- * @property \Carbon\Carbon|null $created_at
- * @property-read \App\Models\Page|null $page
+ * @property Carbon|null $created_at
+ * @property-read Page|null $page
  */
 class AnalyticsSnapshot extends Model
 {

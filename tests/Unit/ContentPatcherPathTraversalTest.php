@@ -67,7 +67,7 @@ class ContentPatcherPathTraversalTest extends TestCase
         return $region;
     }
 
-    public function test_canVisuallyEditRegion_returns_false_for_traversal_path(): void
+    public function test_can_visually_edit_region_returns_false_for_traversal_path(): void
     {
         // Mock SiteSupportService so it doesn't abort on unhydrated models
         $this->mock(SiteSupportService::class, function ($mock) {
@@ -86,7 +86,7 @@ class ContentPatcherPathTraversalTest extends TestCase
         $this->assertFalse($patcher->canVisuallyEditRegion($region));
     }
 
-    public function test_canVisuallyEditRegion_returns_true_for_legitimate_path(): void
+    public function test_can_visually_edit_region_returns_true_for_legitimate_path(): void
     {
         $this->mock(SiteSupportService::class, function ($mock) {
             $mock->shouldReceive('supportsVisualEditing')->andReturn(true);
@@ -104,7 +104,7 @@ class ContentPatcherPathTraversalTest extends TestCase
         $this->assertTrue($patcher->canVisuallyEditRegion($region));
     }
 
-    public function test_applyEdit_throws_for_traversal_path(): void
+    public function test_apply_edit_throws_for_traversal_path(): void
     {
         $this->mock(SiteSupportService::class, function ($mock) {
             $mock->shouldReceive('supportsVisualEditing')->andReturn(true);

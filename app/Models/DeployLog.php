@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -17,9 +18,9 @@ use Illuminate\Support\Str;
  * @property int|null $duration_ms
  * @property string|null $triggered_by
  * @property string|null $snapshot_tag
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property-read \App\Models\Site|null $site
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Site|null $site
  */
 class DeployLog extends Model
 {

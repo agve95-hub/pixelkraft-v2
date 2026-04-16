@@ -18,21 +18,21 @@ class ApiTokens extends Component
 
     /** All abilities the UI can grant, keyed by ability string => human label. */
     public const ABILITIES = [
-        'pixelkraft:sites:read'           => 'Read sites, pages, deploys, analytics',
-        'pixelkraft:sites:sync'           => 'Trigger git sync',
-        'pixelkraft:sites:deploy'         => 'Trigger deploys',
-        'pixelkraft:sites:rollback'       => 'Trigger rollbacks',
-        'pixelkraft:notifications:read'   => 'Read notifications',
-        'pixelkraft:notifications:write'  => 'Mark notifications read',
+        'pixelkraft:sites:read' => 'Read sites, pages, deploys, analytics',
+        'pixelkraft:sites:sync' => 'Trigger git sync',
+        'pixelkraft:sites:deploy' => 'Trigger deploys',
+        'pixelkraft:sites:rollback' => 'Trigger rollbacks',
+        'pixelkraft:notifications:read' => 'Read notifications',
+        'pixelkraft:notifications:write' => 'Mark notifications read',
     ];
 
     public function createToken(): void
     {
         $this->validate([
-            'tokenName'        => 'required|string|max:255',
+            'tokenName' => 'required|string|max:255',
             'selectedAbilities' => 'required|array|min:1',
-            'selectedAbilities.*' => 'string|in:' . implode(',', array_keys(self::ABILITIES)),
-            'expiresInDays'    => 'nullable|integer|min:1|max:365',
+            'selectedAbilities.*' => 'string|in:'.implode(',', array_keys(self::ABILITIES)),
+            'expiresInDays' => 'nullable|integer|min:1|max:365',
         ]);
 
         $expiry = $this->expiresInDays !== ''
@@ -61,7 +61,7 @@ class ApiTokens extends Component
         $tokens = auth()->user()->tokens()->orderBy('created_at', 'desc')->get();
 
         return view('livewire.settings.api-tokens', [
-            'tokens'    => $tokens,
+            'tokens' => $tokens,
             'abilities' => self::ABILITIES,
         ]);
     }

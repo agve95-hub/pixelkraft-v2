@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BlogPostStatus;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,12 +23,12 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $og_image
  * @property array|null $schema_json
  * @property string|null $output_path
- * @property \App\Enums\BlogPostStatus $status
- * @property \Carbon\Carbon|null $published_at
- * @property \Carbon\Carbon|null $scheduled_at
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property-read \App\Models\Site|null $site
+ * @property BlogPostStatus $status
+ * @property Carbon|null $published_at
+ * @property Carbon|null $scheduled_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Site|null $site
  */
 class BlogPost extends Model
 {
@@ -59,7 +60,7 @@ class BlogPost extends Model
             'schema_json' => 'array',
             'published_at' => 'datetime',
             'scheduled_at' => 'datetime',
-            'status'       => BlogPostStatus::class,
+            'status' => BlogPostStatus::class,
         ];
     }
 

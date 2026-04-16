@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class AuthPagesTest extends TestCase
@@ -15,7 +16,7 @@ class AuthPagesTest extends TestCase
 
     public function test_register_page_renders(): void
     {
-        if (! \Illuminate\Support\Facades\Route::has('register')) {
+        if (! Route::has('register')) {
             $this->markTestSkipped('Registration is disabled.');
         }
 

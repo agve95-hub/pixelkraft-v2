@@ -111,13 +111,16 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         $trafficSeries = collect(range(29, 0))->map(function (int $daysAgo) use ($trafficRows) {
             $date = now()->subDays($daysAgo);
             $day = $date->toDateString();
+
             return ['day' => $day, 'label' => $date->format('M j'), 'visitors' => (int) ($trafficRows[$day] ?? 0)];
         })->values();
 
         $maxTraffic = max(1, $trafficSeries->max('visitors'));
         $trafficVisitors = $trafficSeries->sum('visitors');
 
-        $vbW = 820; $vbH = 220; $pad = 16;
+        $vbW = 820;
+        $vbH = 220;
+        $pad = 16;
         $plotW = $vbW - ($pad * 2);
         $plotH = $vbH - ($pad * 2);
         $pointCount = max(1, $trafficSeries->count() - 1);
@@ -125,13 +128,13 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         foreach ($trafficSeries as $i => $point) {
             $x = $pad + (($i / $pointCount) * $plotW);
             $y = $pad + $plotH - (($point['visitors'] / $maxTraffic) * $plotH);
-            $chartPoints[] = round($x, 2) . ',' . round($y, 2);
+            $chartPoints[] = round($x, 2).','.round($y, 2);
         }
-        $lineD = 'M ' . implode(' L ', $chartPoints);
+        $lineD = 'M '.implode(' L ', $chartPoints);
         $firstX = (float) explode(',', $chartPoints[0])[0];
         $lastX = (float) explode(',', $chartPoints[count($chartPoints) - 1])[0];
         $baseY = $pad + $plotH;
-        $areaD = $lineD . ' L ' . $lastX . ' ' . $baseY . ' L ' . $firstX . ' ' . $baseY . ' Z';
+        $areaD = $lineD.' L '.$lastX.' '.$baseY.' L '.$firstX.' '.$baseY.' Z';
 
         $siteInsights = $activeSites->take(2)->map(function (Site $site) {
             $checks = UptimeCheck::query()
@@ -147,9 +150,16 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $dailyBars = collect(range(29, 0))->map(function (int $daysAgo) use ($checks) {
                 $day = now()->subDays($daysAgo)->toDateString();
                 $dayChecks = $checks->filter(fn ($check) => $check->checked_at->toDateString() === $day);
-                if ($dayChecks->isEmpty()) return 'unknown';
-                if ($dayChecks->contains(fn ($check) => ! $check->is_up)) return 'down';
-                if ($dayChecks->contains(fn ($check) => (bool) $check->is_degraded)) return 'degraded';
+                if ($dayChecks->isEmpty()) {
+                    return 'unknown';
+                }
+                if ($dayChecks->contains(fn ($check) => ! $check->is_up)) {
+                    return 'down';
+                }
+                if ($dayChecks->contains(fn ($check) => (bool) $check->is_degraded)) {
+                    return 'degraded';
+                }
+
                 return 'up';
             })->values();
 
@@ -162,12 +172,12 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 : (int) $responseSeries->sort()->values()->get(max(0, (int) ceil($responseSeries->count() * 0.95) - 1));
 
             return [
-                'site'            => $site,
-                'uptime_percent'  => $uptimePercent,
-                'daily_bars'      => $dailyBars,
+                'site' => $site,
+                'uptime_percent' => $uptimePercent,
+                'daily_bars' => $dailyBars,
                 'response_series' => $responseSeries,
-                'avg_response'    => $avgResponse,
-                'p95_response'    => $p95Response,
+                'avg_response' => $avgResponse,
+                'p95_response' => $p95Response,
             ];
         });
 

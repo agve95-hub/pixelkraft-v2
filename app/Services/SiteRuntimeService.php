@@ -630,7 +630,7 @@ class SiteRuntimeService
 
         // Preferred port is occupied by something else.  Scan forward.
         $portStart = (int) config('pixelkraft.runtime.port_start', 4100);
-        $portSpan  = max(100, (int) config('pixelkraft.runtime.port_span', 2000));
+        $portSpan = max(100, (int) config('pixelkraft.runtime.port_span', 2000));
 
         for ($offset = 1; $offset < $portSpan; $offset++) {
             $candidate = $portStart + (($preferred - $portStart + $offset) % $portSpan);

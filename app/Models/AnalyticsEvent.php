@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,11 +18,11 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $ip_hash
  * @property string|null $user_agent
  * @property array|null $payload
- * @property \Carbon\Carbon|null $occurred_at
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property-read \App\Models\Site|null $site
- * @property-read \App\Models\Page|null $page
+ * @property Carbon|null $occurred_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Site|null $site
+ * @property-read Page|null $page
  */
 class AnalyticsEvent extends Model
 {

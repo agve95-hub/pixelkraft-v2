@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -13,8 +14,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $ip_address
  * @property bool $is_read
  * @property bool $is_spam
- * @property \Carbon\Carbon|null $created_at
- * @property-read \App\Models\Site|null $site
+ * @property Carbon|null $created_at
+ * @property-read Site|null $site
  */
 class FormSubmission extends Model
 {

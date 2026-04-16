@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DeployStatus;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -49,10 +50,10 @@ use Illuminate\Support\Str;
  * @property int|null $downtime_minutes
  * @property int|null $visitors_today
  * @property float|null $visitors_change_percent
- * @property \Carbon\Carbon|null $ssl_expires_at
- * @property \App\Enums\DeployStatus|null $deploy_status
- * @property \Carbon\Carbon|null $last_deployed_at
- * @property \Carbon\Carbon|null $last_synced_at
+ * @property Carbon|null $ssl_expires_at
+ * @property DeployStatus|null $deploy_status
+ * @property Carbon|null $last_deployed_at
+ * @property Carbon|null $last_synced_at
  * @property string|null $ga_property_id
  * @property string|null $gtm_id
  * @property string|null $google_ads_id
@@ -73,11 +74,11 @@ use Illuminate\Support\Str;
  * @property string|null $repo_path
  * @property array|null $maintenance_settings
  * @property bool $is_active
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read int $pages_count
- * @property-read \App\Models\DeployLog|null $latestDeploy
- * @property-read \App\Models\UptimeCheck|null $latestUptimeCheck
+ * @property-read DeployLog|null $latestDeploy
+ * @property-read UptimeCheck|null $latestUptimeCheck
  */
 class Site extends Model
 {
@@ -171,7 +172,7 @@ class Site extends Model
             'maintenance_settings' => 'array',
             'is_active' => 'boolean',
             'deploy_on_webhook' => 'boolean',
-            'deploy_status'     => DeployStatus::class,
+            'deploy_status' => DeployStatus::class,
         ];
     }
 

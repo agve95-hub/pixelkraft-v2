@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Livewire\Seo\SchemaEditor;
 use App\Services\ContentPatcher;
 use Tests\TestCase;
 
@@ -90,7 +91,7 @@ class PregReplaceBackrefInjectionTest extends TestCase
     /** @test */
     public function test_schema_inject_with_dollar_sequence_in_json(): void
     {
-        $service = app(\App\Livewire\Seo\SchemaEditor::class);
+        $service = app(SchemaEditor::class);
         $reflection = new \ReflectionClass($service);
         $method = $reflection->getMethod('injectSchema');
         $method->setAccessible(false); // intentional — tested via actual method route below

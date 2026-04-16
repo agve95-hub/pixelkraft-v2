@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,9 +14,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $quantity
  * @property string $rate
  * @property int $sort_order
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property-read \App\Models\Invoice|null $invoice
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Invoice|null $invoice
  */
 class InvoiceItem extends Model
 {

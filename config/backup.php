@@ -1,5 +1,17 @@
 <?php
 
+use Spatie\Backup\Notifications\Notifiable;
+use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
+use Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification;
+use Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification;
+use Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification;
+use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
+use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
+use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
+use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
+use Spatie\DbDumper\Compressors\GzipCompressor;
+
 return [
 
     'backup' => [
@@ -69,7 +81,7 @@ return [
          * The database dump can be compressed to decrease disk space usage.
          * Out of the box options are: Gzip, Bzip2, and Zstd compressors.
          */
-        'database_dump_compressor' => \Spatie\DbDumper\Compressors\GzipCompressor::class,
+        'database_dump_compressor' => GzipCompressor::class,
 
         /*
          * If specified, the database dumped file name will contain a timestamp prefixed
@@ -140,18 +152,18 @@ return [
     'notifications' => [
 
         'notifications' => [
-            \Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\CleanupHasFailedNotification::class => ['mail'],
-            \Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification::class => [],
-            \Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification::class => [],
-            \Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification::class => [],
+            BackupHasFailedNotification::class => ['mail'],
+            UnhealthyBackupWasFoundNotification::class => ['mail'],
+            CleanupHasFailedNotification::class => ['mail'],
+            BackupWasSuccessfulNotification::class => [],
+            HealthyBackupWasFoundNotification::class => [],
+            CleanupWasSuccessfulNotification::class => [],
         ],
 
         /*
          * Here you can specify the notifiable to which the notifications should be sent.
          */
-        'notifiable' => \Spatie\Backup\Notifications\Notifiable::class,
+        'notifiable' => Notifiable::class,
 
         'mail' => [
             'to' => env('BACKUP_NOTIFICATION_EMAIL', env('MAIL_FROM_ADDRESS', 'admin@example.com')),
@@ -185,8 +197,8 @@ return [
             'name' => env('APP_NAME', 'pixelkraft'),
             'disks' => [config('pixelkraft.backup.disk', 'r2')],
             'health_checks' => [
-                \Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays::class => 2,
-                \Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes::class => 5000,
+                MaximumAgeInDays::class => 2,
+                MaximumStorageInMegabytes::class => 5000,
             ],
         ],
     ],
@@ -202,7 +214,7 @@ return [
          * No matter how you configure it, the default strategy will never
          * delete the newest backup.
          */
-        'strategy' => \Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy::class,
+        'strategy' => DefaultStrategy::class,
 
         'default_strategy' => [
 
