@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'], nonce: csp_nonce())
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @fluxAppearance
     @livewireStyles
 </head>
@@ -247,6 +247,14 @@
     <flux:header class="lg:hidden">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
         <flux:spacer />
+        <button
+            type="button"
+            id="pk-search-trigger-mobile"
+            aria-label="Search"
+            class="flex items-center justify-center rounded-lg p-1.5 text-zinc-400 hover:text-zinc-100"
+        >
+            <flux:icon.magnifying-glass class="size-5" />
+        </button>
         @livewire('layout.notification-bell')
         <flux:dropdown position="top" align="start">
             <flux:profile
@@ -293,7 +301,7 @@
                     id="pk-search-input"
                     type="search"
                     autocomplete="off"
-                    placeholder="Search sites and pages…"
+                    placeholder="Search sites and sections…"
                     class="w-full border-0 bg-transparent text-sm text-white outline-none placeholder:text-zinc-600"
                 />
             </div>

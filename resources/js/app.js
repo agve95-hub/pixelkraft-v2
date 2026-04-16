@@ -16,7 +16,10 @@ function initSearchPalette() {
     const overlay = document.getElementById('pk-search-overlay');
     const input = document.getElementById('pk-search-input');
     const results = document.getElementById('pk-search-results');
-    const trigger = document.getElementById('pk-search-trigger');
+    const triggers = [
+        document.getElementById('pk-search-trigger'),
+        document.getElementById('pk-search-trigger-mobile'),
+    ].filter(Boolean);
 
     if (!overlay || !input || !results) {
         return;
@@ -75,7 +78,7 @@ function initSearchPalette() {
         overlay.classList.remove('flex');
     }
 
-    trigger?.addEventListener('click', open);
+    triggers.forEach((t) => t.addEventListener('click', open));
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
