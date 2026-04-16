@@ -8,10 +8,12 @@ use App\Models\EditableRegion;
 use App\Models\EditSession;
 use App\Models\Page;
 use App\Models\Site;
+use App\Enums\DeployStatus;
 use App\Services\ContentPatcher;
 use App\Services\EditSessionService;
 use App\Services\GitConflictException;
 use App\Services\GitSyncService;
+use App\Services\PagePreviewService;
 use App\Services\ParserService;
 use App\Services\RegionDetector;
 use App\Services\SiteSupportService;
@@ -70,6 +72,12 @@ class VisualEditor extends Component
 
     public ?string $editorError = null;
 
+    /**
+     * True while a preview build is in flight so the blade can show a
+     * "Building preview…" banner and wire:poll for completion.
+     */
+    public bool $previewBuildQueued = false;
+
     public string $codeLanguage = 'plaintext';
 
     public function mount(string $siteId, string $pageId): void
@@ -91,6 +99,9 @@ class VisualEditor extends Component
         $this->resetDebugTelemetry();
 
         $this->loadCodeContent();
+
+        // Auto-trigger a build when the editor opens for a framework site with no built output yet.
+        $this->maybeAutoTriggerPreviewBuild($site, $page);
     }
 
     public function openScheduleModal(): void
@@ -600,6 +611,49 @@ class VisualEditor extends Component
         ]);
     }
 
+    /**
+     * Manually trigger a preview build from the editor toolbar.
+     */
+    public function buildPreview(): void
+    {
+        $site = $this->resolveSite();
+
+        if ($site->deploy_status?->isActive()) {
+            $this->previewBuildQueued = true;
+
+            return;
+        }
+
+        DeploySiteJob::dispatch($site->fresh(), 'preview-build');
+        $this->previewBuildQueued = true;
+    }
+
+    /**
+     * Called by wire:poll while a preview build is in flight.
+     * Reloads the iframe once the deploy completes (success or failure).
+     */
+    public function checkPreviewBuildStatus(): void
+    {
+        if (! $this->previewBuildQueued) {
+            return;
+        }
+
+        $site = $this->resolveSite()->fresh();
+        $status = $site->deploy_status;
+
+        if ($status === DeployStatus::Live) {
+            $this->previewBuildQueued = false;
+            $this->dispatch('reload-iframe');
+
+            return;
+        }
+
+        if ($status === DeployStatus::Failed) {
+            $this->previewBuildQueued = false;
+            session()->flash('error', 'Preview build failed. Check deploy logs for details.');
+        }
+    }
+
     // ── Private ─────────────────────────────────
 
     private function loadCodeContent(): void
@@ -842,6 +896,41 @@ class VisualEditor extends Component
         }
 
         return $out;
+    }
+
+    /**
+     * Auto-trigger a preview build when the editor is opened for a framework site
+     * that has no built output yet.  We only dispatch once per editor load so the
+     * user is not surprised by repeated deploys.
+     */
+    private function maybeAutoTriggerPreviewBuild(Site $site, Page $page): void
+    {
+        // Only buildable framework types
+        $buildableTypes = ['nextjs', 'nuxt', 'astro', 'react', 'vue', 'svelte', 'hugo', 'eleventy'];
+        if (! in_array($site->project_type, $buildableTypes, true)) {
+            return;
+        }
+
+        // Repo must exist on disk
+        if (! $site->repo_path || ! app(GitSyncService::class)->isCloned($site)) {
+            return;
+        }
+
+        // If a build is already running, just set the waiting flag
+        if ($site->deploy_status?->isActive()) {
+            $this->previewBuildQueued = true;
+
+            return;
+        }
+
+        // If built HTML already exists for this page, nothing to do
+        if (app(PagePreviewService::class)->findBuiltHtmlPath($site, $page->url_path)) {
+            return;
+        }
+
+        // Kick off the build silently
+        DeploySiteJob::dispatch($site->fresh(), 'preview-build');
+        $this->previewBuildQueued = true;
     }
 
     private function resetDebugTelemetry(): void

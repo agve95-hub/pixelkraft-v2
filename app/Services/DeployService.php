@@ -520,6 +520,13 @@ class DeployService
     {
         $buildCommand = trim((string) ($site->build_command ?? ''));
 
+        // Auto-infer a build command for framework sites that have none configured.
+        // This lets Pixelkraft build the app internally without requiring the user
+        // to manually set a build command in site settings.
+        if ($buildCommand === '') {
+            $buildCommand = $this->inferDefaultBuildCommand($site);
+        }
+
         if ($buildCommand === '') {
             return null;
         }
@@ -563,6 +570,34 @@ class DeployService
         }
 
         return $buildCommand;
+    }
+
+    /**
+     * Return a sensible default build command for framework sites that have none
+     * explicitly configured. Returns an empty string when no default applies.
+     * The caller will then pass this through the normal resolveBuildCommand logic
+     * so the correct package-manager binary is selected automatically.
+     */
+    private function inferDefaultBuildCommand(Site $site): string
+    {
+        $repoPath = $site->repo_path;
+
+        if (! $repoPath || ! File::exists("{$repoPath}/package.json")) {
+            return '';
+        }
+
+        $packageJson = json_decode(File::get("{$repoPath}/package.json"), true);
+        if (! is_array($packageJson) || ! isset($packageJson['scripts']['build'])) {
+            return '';
+        }
+
+        // Framework types that build to a static output directory.
+        $buildableTypes = ['nextjs', 'nuxt', 'astro', 'react', 'vue', 'svelte', 'hugo', 'eleventy'];
+        if (in_array($site->project_type, $buildableTypes, true)) {
+            return 'npm run build';
+        }
+
+        return '';
     }
 
     private function packageManager(string $repoPath): string

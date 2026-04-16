@@ -206,6 +206,15 @@
                         <span x-text="bordersVisible ? 'Overlays on' : 'Overlays off'"></span>
                     </button>
                     <button type="button" wire:click="reparsePage" class="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-[11px] text-zinc-300 hover:border-zinc-500" wire:loading.attr="disabled" wire:target="reparsePage">Re-parse</button>
+                    @if (! $previewBuildQueued)
+                        <button type="button" wire:click="buildPreview" class="rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-[11px] text-zinc-300 hover:border-zinc-500" wire:loading.attr="disabled" wire:target="buildPreview" title="Run the site build and refresh the preview">Build preview</button>
+                    @else
+                        <span class="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-200">
+                            <svg class="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                            Building preview…
+                        </span>
+                        <div wire:poll.5000ms="checkPreviewBuildStatus"></div>
+                    @endif
                     <span class="ml-auto hidden font-mono text-[10px] text-zinc-600 sm:inline">{{ $codeFilePath }}</span>
                 </div>
 
