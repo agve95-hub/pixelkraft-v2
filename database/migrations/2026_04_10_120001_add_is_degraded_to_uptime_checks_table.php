@@ -8,15 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('uptime_checks', function (Blueprint $table) {
-            $table->boolean('is_degraded')->default(false)->after('is_up');
-        });
+        if (! Schema::hasColumn('uptime_checks', 'is_degraded')) {
+            Schema::table('uptime_checks', function (Blueprint $table) {
+                $table->boolean('is_degraded')->default(false)->after('is_up');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('uptime_checks', function (Blueprint $table) {
-            $table->dropColumn('is_degraded');
-        });
+        if (Schema::hasColumn('uptime_checks', 'is_degraded')) {
+            Schema::table('uptime_checks', function (Blueprint $table) {
+                $table->dropColumn('is_degraded');
+            });
+        }
     }
 };

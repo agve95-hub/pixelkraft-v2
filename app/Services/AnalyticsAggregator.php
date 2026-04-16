@@ -19,6 +19,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class AnalyticsAggregator
 {
@@ -63,6 +64,10 @@ class AnalyticsAggregator
 
     public function summarizeSiteEvents(Site $site, int $days = 30): array
     {
+        if (! Schema::hasTable('analytics_events')) {
+            return ['total_events' => 0, 'page_views' => 0, 'forms' => 0, 'interactions' => 0, 'top_events' => []];
+        }
+
         $since = now()->subDays($days);
 
         // Aggregate counts directly in the database instead of hydrating all rows.

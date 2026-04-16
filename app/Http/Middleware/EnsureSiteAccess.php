@@ -14,6 +14,11 @@ class EnsureSiteAccess
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Livewire update requests don't carry route-model bindings; pass them through.
+        if ($request->hasHeader('X-Livewire') || $request->routeIs('livewire.*')) {
+            return $next($request);
+        }
+
         $siteParam = $request->route('site');
 
         if ($siteParam === null) {

@@ -85,7 +85,7 @@
                 'border-violet-500/50 bg-violet-500/15 text-violet-100' => $mode === 'code',
                 'border-zinc-700 bg-zinc-950 text-zinc-300 hover:border-zinc-500' => $mode !== 'code',
             ])>Code</button>
-            <button type="button" wire:click="openScheduleModal" class="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-[12px] font-medium text-zinc-200 hover:border-zinc-500" title="Scheduled publishing is not yet persisted — preview only">Schedule</button>
+            <button type="button" disabled title="Scheduled publishing coming soon" style="opacity: 0.4; cursor: not-allowed; pointer-events: none;" class="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-[12px] font-medium text-zinc-200">Schedule</button>
             <button
                 type="button"
                 wire:click="saveDraft"
@@ -400,6 +400,9 @@
                     <span class="truncate font-mono text-[11px] text-zinc-500">{{ $codeFilePath }}</span>
                     <span class="ml-auto rounded border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400">{{ $codeLanguage }}</span>
                 </div>
+                @if ($editorError)
+                    <div class="border-b border-red-500/30 bg-red-500/10 px-4 py-2 text-xs text-red-300">{{ $editorError }}</div>
+                @endif
                 <div class="min-h-0 flex-1 overflow-hidden">
                     <textarea
                         wire:model.blur="codeContent"

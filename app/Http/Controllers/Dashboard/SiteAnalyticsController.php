@@ -9,6 +9,7 @@ use App\Models\UptimeCheck;
 use App\Services\AnalyticsAggregator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class SiteAnalyticsController
@@ -79,10 +80,16 @@ class SiteAnalyticsController
             ->limit(25)
             ->get();
 
-        $currentRelease = $site->currentDeploymentRelease()->first();
-        $releaseCount = DeploymentRelease::query()->where('site_id', $site->id)->count();
+        $currentRelease = Schema::hasTable('deployment_releases')
+            ? $site->currentDeploymentRelease()->first()
+            : null;
+        $releaseCount = Schema::hasTable('deployment_releases')
+            ? DeploymentRelease::query()->where('site_id', $site->id)->count()
+            : 0;
 
-        $eventSummary = $analytics->summarizeSiteEvents($site, 30);
+        $eventSummary = Schema::hasTable('analytics_events')
+            ? $analytics->summarizeSiteEvents($site, 30)
+            : ['total_events' => 0, 'page_views' => 0, 'forms' => 0, 'interactions' => 0, 'top_events' => []];
 
         return view('dashboard.sites.analytics', [
             'site' => $site,

@@ -68,6 +68,8 @@ class VisualEditor extends Component
 
     public string $codeFilePath = '';
 
+    public ?string $editorError = null;
+
     public string $codeLanguage = 'plaintext';
 
     public function mount(string $siteId, string $pageId): void
@@ -602,17 +604,26 @@ class VisualEditor extends Component
 
     private function loadCodeContent(): void
     {
+        $this->editorError = null;
         $site = $this->resolveSite();
 
         try {
             $fullPath = $this->resolveCodePath($site);
-        } catch (\RuntimeException) {
+        } catch (\RuntimeException $e) {
             $this->codeContent = '';
+            $this->editorError = 'Source file could not be loaded: '.($this->codeFilePath ?: 'path unknown');
 
             return;
         }
 
-        $this->codeContent = File::exists($fullPath) ? File::get($fullPath) : '';
+        if (! File::exists($fullPath)) {
+            $this->codeContent = '';
+            $this->editorError = 'Source file could not be loaded: '.($this->codeFilePath ?: 'path unknown');
+
+            return;
+        }
+
+        $this->codeContent = File::get($fullPath);
     }
 
     /**

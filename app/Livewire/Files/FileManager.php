@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Files;
 
+use App\Models\Site;
 use App\Services\GitSyncService;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
