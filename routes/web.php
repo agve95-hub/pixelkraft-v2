@@ -5,9 +5,11 @@ use App\Http\Controllers\EditorPreviewController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Models\AnalyticsSnapshot;
 use App\Models\BlogPost;
+use App\Models\FormSubmission;
 use App\Models\Notification;
 use App\Models\Page;
 use App\Models\Site;
+use App\Models\UptimeCheck;
 use App\Support\SeoIssueSummary;
 use App\Support\SiteAccess;
 use Illuminate\Support\Facades\Cache;
@@ -55,10 +57,119 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
     Route::get('/', function () {
         $visibleSiteIds = SiteAccess::query()->pluck('id');
+        $seoIssueCount = SeoIssueSummary::openCountForSiteIds($visibleSiteIds);
 
-        return view('dashboard.index', [
-            'seoIssueCount' => SeoIssueSummary::openCountForSiteIds($visibleSiteIds),
-        ]);
+        $totalSites = $visibleSiteIds->count();
+        $totalPages = Page::query()->whereIn('site_id', $visibleSiteIds)->count();
+
+        $latestChecks = UptimeCheck::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->select('site_id', DB::raw('MAX(checked_at) as last_check'))
+            ->groupBy('site_id')
+            ->get()
+            ->pluck('last_check', 'site_id');
+
+        $uptimePercent = 0;
+        if ($latestChecks->isNotEmpty()) {
+            $upCount = UptimeCheck::query()
+                ->whereIn(DB::raw("CONCAT(site_id, '|', checked_at)"),
+                    $latestChecks->map(fn ($date, $id) => "{$id}|{$date}")->values()
+                )->where('is_up', true)->count();
+            $uptimePercent = round(($upCount / max(1, $latestChecks->count())) * 100, 1);
+        }
+
+        $unreadMessages = FormSubmission::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->where('is_read', false)
+            ->where('is_spam', false)
+            ->count();
+
+        $errorCount = Notification::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->where('is_read', false)
+            ->whereIn('type', ['deploy_failed', 'uptime_down', 'ssl_expiring'])
+            ->count();
+
+        $activeSites = SiteAccess::query()
+            ->with(['latestUptimeCheck', 'pages:id,site_id,title,meta_description,seo_score'])
+            ->withCount('pages')
+            ->orderBy('name')
+            ->get();
+
+        $trafficRows = collect();
+        if ($activeSites->isNotEmpty()) {
+            $trafficRows = AnalyticsSnapshot::query()
+                ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
+                ->whereIn('pages.site_id', $activeSites->pluck('id'))
+                ->where('analytics_snapshots.date', '>=', now()->subDays(29)->toDateString())
+                ->selectRaw('analytics_snapshots.date as day, SUM(analytics_snapshots.visitors) as visitors')
+                ->groupBy('analytics_snapshots.date')
+                ->orderBy('analytics_snapshots.date')
+                ->pluck('visitors', 'day');
+        }
+
+        $trafficSeries = collect(range(29, 0))->map(function (int $daysAgo) use ($trafficRows) {
+            $date = now()->subDays($daysAgo);
+            $day = $date->toDateString();
+            return ['day' => $day, 'label' => $date->format('M j'), 'visitors' => (int) ($trafficRows[$day] ?? 0)];
+        })->values();
+
+        $maxTraffic = max(1, $trafficSeries->max('visitors'));
+        $trafficVisitors = $trafficSeries->sum('visitors');
+
+        $vbW = 820; $vbH = 220; $pad = 16;
+        $plotW = $vbW - ($pad * 2);
+        $plotH = $vbH - ($pad * 2);
+        $pointCount = max(1, $trafficSeries->count() - 1);
+        $chartPoints = [];
+        foreach ($trafficSeries as $i => $point) {
+            $x = $pad + (($i / $pointCount) * $plotW);
+            $y = $pad + $plotH - (($point['visitors'] / $maxTraffic) * $plotH);
+            $chartPoints[] = round($x, 2) . ',' . round($y, 2);
+        }
+        $lineD = 'M ' . implode(' L ', $chartPoints);
+        $firstX = (float) explode(',', $chartPoints[0])[0];
+        $lastX = (float) explode(',', $chartPoints[count($chartPoints) - 1])[0];
+        $baseY = $pad + $plotH;
+        $areaD = $lineD . ' L ' . $lastX . ' ' . $baseY . ' L ' . $firstX . ' ' . $baseY . ' Z';
+
+        $siteInsights = $activeSites->take(2)->map(function (Site $site) {
+            $checks = UptimeCheck::query()
+                ->where('site_id', $site->id)
+                ->where('checked_at', '>=', now()->subDays(30))
+                ->orderBy('checked_at')
+                ->get(['checked_at', 'is_up', 'is_degraded', 'response_time_ms']);
+
+            $uptimePercent = $checks->isEmpty()
+                ? 100.0
+                : round(($checks->where('is_up', true)->count() / max(1, $checks->count())) * 100, 1);
+
+            $dailyBars = collect(range(29, 0))->map(function (int $daysAgo) use ($checks) {
+                $day = now()->subDays($daysAgo)->toDateString();
+                $dayChecks = $checks->filter(fn ($check) => $check->checked_at->toDateString() === $day);
+                if ($dayChecks->isEmpty()) return 'unknown';
+                if ($dayChecks->contains(fn ($check) => ! $check->is_up)) return 'down';
+                if ($dayChecks->contains(fn ($check) => (bool) $check->is_degraded)) return 'degraded';
+                return 'up';
+            })->values();
+
+            $responseSeries = $checks->pluck('response_time_ms')
+                ->filter(fn ($ms) => $ms !== null)->take(-24)->map(fn ($ms) => (int) $ms)->values();
+
+            $avgResponse = $responseSeries->isEmpty() ? 0 : (int) round($responseSeries->avg());
+            $p95Response = $responseSeries->isEmpty()
+                ? 0
+                : (int) $responseSeries->sort()->values()->get(max(0, (int) ceil($responseSeries->count() * 0.95) - 1));
+
+            return compact('site', 'uptimePercent', 'dailyBars', 'responseSeries', 'avgResponse', 'p95Response');
+        });
+
+        return view('dashboard.index', compact(
+            'seoIssueCount', 'totalSites', 'totalPages', 'uptimePercent',
+            'unreadMessages', 'errorCount', 'activeSites', 'trafficSeries',
+            'maxTraffic', 'trafficVisitors', 'vbW', 'vbH', 'pad',
+            'chartPoints', 'lineD', 'areaD', 'siteInsights'
+        ));
     })->name('dashboard');
 
     // Sites

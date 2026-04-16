@@ -15,45 +15,9 @@
 <body class="min-h-screen bg-[#27272a] antialiased text-white dark:bg-[#27272a]">
 
     @php
+        // $navSites and $searchIndex are injected by the AppServiceProvider View composer.
         $activeSite = request()->route('site');
         $expandedSiteId = $activeSite?->id ?? session('expanded_site_id');
-        $navSites = \App\Support\SiteAccess::query()
-            ->select('id', 'name', 'slug', 'deploy_status', 'maintenance_settings')
-            ->withCount([
-                'inboxMessages as unread_inbox_count' => function ($q) {
-                    $q->where('direction', 'inbound')->where('is_read', false);
-                },
-                'invoices as unpaid_invoices_count' => function ($q) {
-                    $q->where('status', 'unpaid');
-                },
-                'reminders as overdue_reminders_count' => function ($q) {
-                    $q->where('is_done', false)->whereDate('due_date', '<', now()->toDateString());
-                },
-            ])
-            ->orderBy('name')
-            ->get();
-        $searchIndex = collect([
-            ['label' => 'Dashboard', 'href' => route('dashboard')],
-            ['label' => 'All sites', 'href' => route('sites.index')],
-            ['label' => 'New project', 'href' => route('sites.create')],
-            ['label' => 'Settings', 'href' => route('settings')],
-            ['label' => 'Analytics (all sites)', 'href' => route('analytics')],
-            ['label' => 'Inbox (accounts)', 'href' => route('inbox')],
-            ['label' => 'Subscribers', 'href' => route('subscribers')],
-            ['label' => 'Newsletters', 'href' => route('newsletters')],
-        ]);
-        foreach ($navSites as $s) {
-            $searchIndex->push(['label' => $s->name . ' — Overview', 'href' => route('sites.show', $s)]);
-            $searchIndex->push(['label' => $s->name . ' — Inbox', 'href' => route('sites.inbox', $s)]);
-            $searchIndex->push(['label' => $s->name . ' — Reports', 'href' => route('sites.reports', $s)]);
-            $searchIndex->push(['label' => $s->name . ' — Campaigns', 'href' => route('sites.campaigns', $s)]);
-            $searchIndex->push(['label' => $s->name . ' — Expenses', 'href' => route('sites.expenses', $s)]);
-            $searchIndex->push(['label' => $s->name . ' — Invoices', 'href' => route('sites.invoices', $s)]);
-            $searchIndex->push(['label' => $s->name . ' — Reminders', 'href' => route('sites.reminders', $s)]);
-            $searchIndex->push(['label' => $s->name . ' — Analytics', 'href' => route('sites.analytics', $s)]);
-            $searchIndex->push(['label' => $s->name . ' — Maintenance', 'href' => route('sites.maintenance', $s)]);
-            $searchIndex->push(['label' => $s->name . ' — Media', 'href' => route('sites.files', $s)]);
-        }
     @endphp
 
     <flux:sidebar sticky collapsible="mobile" class="border-r border-zinc-700 bg-zinc-900 dark:border-zinc-700 dark:bg-zinc-900">
