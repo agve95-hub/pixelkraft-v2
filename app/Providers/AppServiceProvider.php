@@ -66,6 +66,7 @@ class AppServiceProvider extends ServiceProvider
                 ['label' => 'Newsletters', 'href' => route('newsletters')],
             ]);
 
+            /** @var \Illuminate\Database\Eloquent\Collection<int, Site> $navSites */
             foreach ($navSites as $s) {
                 $searchIndex->push(['label' => $s->name.' — Overview', 'href' => route('sites.show', $s)]);
                 $searchIndex->push(['label' => $s->name.' — Inbox', 'href' => route('sites.inbox', $s)]);
