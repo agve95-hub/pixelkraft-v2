@@ -1,8 +1,12 @@
 <div class="space-y-6 text-zinc-100">
+    <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+        <span class="font-semibold">Preview only.</span> These settings are saved but not yet served to live traffic. The maintenance page shown here is a design preview — enabling the toggle does not currently block public access to your site.
+    </div>
+
     <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
             <flux:heading size="lg">Maintenance mode</flux:heading>
-            <flux:text class="mt-1 !text-zinc-500">Visitor-facing page when the site is under maintenance.</flux:text>
+            <flux:text class="mt-1 !text-zinc-500">Design your maintenance page. Enforcement will be wired in a future release.</flux:text>
         </div>
         <div class="flex flex-wrap gap-2">
             <flux:button type="submit" form="maintenance-form" variant="primary" icon="check" class="!bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950">

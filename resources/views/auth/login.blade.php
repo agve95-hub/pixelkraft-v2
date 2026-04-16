@@ -28,7 +28,9 @@
         <flux:button type="submit" variant="primary" class="w-full">Sign in</flux:button>
     </form>
 
+    @if (Route::has('register'))
     <x-slot:footer>
         Don't have an account? <flux:link href="{{ route('register') }}">Create one</flux:link>
     </x-slot:footer>
+    @endif
 </x-layouts.auth>

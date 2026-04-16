@@ -32,7 +32,7 @@ class TrackingController extends Controller
             'session_id' => ['nullable', 'string', 'max:120'],
             // Cap the free-form payload to prevent storage abuse.
             'payload' => ['nullable', 'array', 'max:20'],
-            'payload.*' => ['nullable', 'scalar', 'max:500'],
+            'payload.*' => ['nullable', 'string', 'max:500'],
         ]);
 
         $tracking->recordEvent($site, $payload, $request);

@@ -604,22 +604,31 @@ class VisualEditor extends Component
     private function resolveCodePath(Site $site): string
     {
         $repoPath = rtrim((string) $site->repo_path, '/\\');
-        $candidate = $repoPath.'/'.ltrim($this->codeFilePath, '/\\');
+        $relativePath = ltrim($this->codeFilePath, '/\\');
 
-        // The file may not exist yet (new file in code mode) — we must validate
-        // the directory instead; fall back to the repo root if dirname doesn't exist.
+        // Reject traversal segments before any filesystem interaction.
+        // A non-existent parent directory causes realpath() to return false,
+        // which previously made the guard fall back to the repo root and allow
+        // the original traversal path through unchanged.
+        if (str_contains($relativePath, '..')) {
+            throw new \RuntimeException(
+                "Refusing to read/write outside of repository: {$this->codeFilePath}"
+            );
+        }
+
+        $candidate = $repoPath.'/'.$relativePath;
+
         $realRepo = realpath($repoPath);
 
         if ($realRepo === false) {
             throw new \RuntimeException('Repository path does not exist on disk.');
         }
 
-        // Resolve symlinks and collapse .. segments in the candidate path.
+        // Resolve symlinks in the candidate path as a secondary guard.
         // If the file doesn't exist yet, canonicalize its parent directory.
         $realCandidate = realpath($candidate) ?: realpath(dirname($candidate));
 
         if ($realCandidate === false) {
-            // Parent directory also doesn't exist — resolve up the tree.
             $realCandidate = $realRepo;
         }
 

@@ -227,7 +227,7 @@ NGINX;
     private function renderRuntimeTemplate(Site $site, string $redirectBlock): string
     {
         $host = config('pixelkraft.runtime.host', '127.0.0.1');
-        $port = $this->runtime->portFor($site);
+        $port = $this->runtime->effectivePortFor($site);
 
         return <<<NGINX
 server {

@@ -89,7 +89,7 @@ class MaintenanceMode extends Component
         ];
         $site->save();
 
-        session()->flash('success', 'Maintenance settings saved.');
+        session()->flash('success', 'Maintenance settings saved. Note: these are not yet enforced on live traffic — this is a preview only.');
     }
 
     public function render(): View

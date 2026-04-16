@@ -83,12 +83,19 @@ class BlogPostPublisher
         $repoPath = rtrim((string) $site->repo_path, '/\\');
         $fullPath = "{$repoPath}/{$outputPath}";
 
-        // Path traversal guard: the output file must remain inside the repository.
+        // Reject traversal segments before any filesystem interaction.
+        // A non-existent parent directory causes realpath() to return false,
+        // which previously made the guard fall back to the repo root and allow
+        // traversal paths through unchanged.
+        if (str_contains($outputPath, '..')) {
+            throw new \RuntimeException("Refusing to write blog post output outside of repository: {$outputPath}");
+        }
+
+        // Secondary guard via realpath for symlink resolution.
         $realRepo = realpath($repoPath);
         if ($realRepo !== false) {
             $realDir = realpath(dirname($fullPath));
             if ($realDir === false) {
-                // Directory doesn't exist yet; verify without symlink resolution.
                 $realDir = realpath($repoPath);
             }
             if ($realDir !== false && ! str_starts_with($realDir, $realRepo.DIRECTORY_SEPARATOR) && $realDir !== $realRepo) {

@@ -97,6 +97,20 @@ class SiteRuntimeService
         return $portStart + (abs(crc32((string) $site->id)) % $portSpan);
     }
 
+    /**
+     * The port the runtime process is actually listening on.
+     *
+     * Returns the persisted allocated port when available (written by deploy()),
+     * falls back to the deterministic preferred port otherwise.  Use this
+     * everywhere a live port is needed — Nginx config generation, preview URLs,
+     * health checks — so that a busy-preferred-port scenario never causes a
+     * mismatch between the process and the proxy.
+     */
+    public function effectivePortFor(Site $site): int
+    {
+        return $this->activePortFor($site) ?? $this->portFor($site);
+    }
+
     public function baseUrl(Site $site): string
     {
         return $this->urlForPort($this->portFor($site));
@@ -156,6 +170,10 @@ class SiteRuntimeService
         $this->stopShellProcess($site);
         $this->startShellProcess($site, $execution);
         $this->waitUntilHealthy($site, $log, $port);
+
+        // Persist the allocated port so Nginx config generation and port
+        // rediscovery always agree with the port the process is actually on.
+        $this->writePortFile($site, $port);
 
         // Write a Supervisor config so the process survives server reboots.
         // Requires supervisord to be installed and the pixelkraft app user to
@@ -374,6 +392,7 @@ class SiteRuntimeService
             ->path(dirname($pidFile))
             ->run(['bash', '-lc', $script]);
 
+        File::delete($this->portFile($site));
         unset($this->activePortCache[(string) $site->id]);
     }
 
@@ -410,6 +429,19 @@ class SiteRuntimeService
     {
         return rtrim((string) config('pixelkraft.runtime.pid_path', storage_path('app/runtime-pids')), '/')
             .'/'.$site->slug.'.pid';
+    }
+
+    private function portFile(Site $site): string
+    {
+        return rtrim((string) config('pixelkraft.runtime.pid_path', storage_path('app/runtime-pids')), '/')
+            .'/'.$site->slug.'.port';
+    }
+
+    private function writePortFile(Site $site, int $port): void
+    {
+        $portFile = $this->portFile($site);
+        File::ensureDirectoryExists(dirname($portFile), 0755, true);
+        File::put($portFile, (string) $port);
     }
 
     private function logFile(Site $site): string
@@ -518,6 +550,22 @@ class SiteRuntimeService
 
     private function discoverActivePort(Site $site): ?int
     {
+        // The port file is written by deploy() after the process passes its
+        // health check.  It is the most reliable source for the allocated port,
+        // and it also covers standalone `node server.js` processes whose command
+        // line does not carry a port flag.
+        $portFile = $this->portFile($site);
+
+        if (File::exists($portFile)) {
+            $stored = trim((string) File::get($portFile));
+
+            if ($stored !== '' && ctype_digit($stored)) {
+                return (int) $stored;
+            }
+        }
+
+        // Fall back to parsing the process command line for backwards
+        // compatibility with processes started before the port file existed.
         $pidFile = $this->pidFile($site);
 
         if (! File::exists($pidFile)) {
