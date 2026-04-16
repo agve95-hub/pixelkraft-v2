@@ -24,7 +24,11 @@
             <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
                 <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Sites</p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ $totalSites }}</p>
-                <p class="mt-0.5 text-xs text-emerald-400">All online</p>
+                @if ($sitesDown > 0)
+                    <p class="mt-0.5 text-xs text-red-400">{{ $sitesDown }} down</p>
+                @elseif ($activeSites->whereNotNull('latestUptimeCheck')->isNotEmpty())
+                    <p class="mt-0.5 text-xs text-emerald-400">All online</p>
+                @endif
             </div>
             <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
                 <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Uptime</p>

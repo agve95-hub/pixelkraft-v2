@@ -164,11 +164,13 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return compact('site', 'uptimePercent', 'dailyBars', 'responseSeries', 'avgResponse', 'p95Response');
         });
 
+        $sitesDown = $activeSites->filter(fn ($site) => $site->latestUptimeCheck?->is_up === false)->count();
+
         return view('dashboard.index', compact(
             'seoIssueCount', 'totalSites', 'totalPages', 'uptimePercent',
             'unreadMessages', 'errorCount', 'activeSites', 'trafficSeries',
             'maxTraffic', 'trafficVisitors', 'vbW', 'vbH', 'pad',
-            'chartPoints', 'lineD', 'areaD', 'siteInsights'
+            'chartPoints', 'lineD', 'areaD', 'siteInsights', 'sitesDown'
         ));
     })->name('dashboard');
 
