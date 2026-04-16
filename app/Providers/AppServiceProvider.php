@@ -11,6 +11,7 @@ use App\Policies\InvoicePolicy;
 use App\Policies\PagePolicy;
 use App\Policies\SitePolicy;
 use App\Support\SiteAccess;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -66,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
                 ['label' => 'Newsletters', 'href' => route('newsletters')],
             ]);
 
-            /** @var \Illuminate\Database\Eloquent\Collection<int, Site> $navSites */
+            /** @var Collection<int, Site> $navSites */
             foreach ($navSites as $s) {
                 $searchIndex->push(['label' => $s->name.' — Overview', 'href' => route('sites.show', $s)]);
                 $searchIndex->push(['label' => $s->name.' — Inbox', 'href' => route('sites.inbox', $s)]);
