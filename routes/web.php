@@ -323,5 +323,5 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
     // Settings
     Route::get('/settings', fn () => view('dashboard.settings.index'))->name('settings');
-    Route::get('/system', fn () => view('dashboard.settings.system'))->name('system.diagnostics');
+    Route::get('/system', fn () => view('dashboard.settings.system'))->name('system.diagnostics')->middleware('can:viewHorizon');
 });

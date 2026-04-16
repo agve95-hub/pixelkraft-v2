@@ -73,7 +73,7 @@ class SetSecurityHeaders
                 implode('; ', [
                     "default-src 'self'",
                     "script-src 'self' 'nonce-{$nonce}'",
-                    "style-src 'self' 'unsafe-inline'",
+                    "style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com",
                     "img-src 'self' data: https:",
                     "font-src 'self' data: https:",
                     "connect-src 'self' wss: https:",
