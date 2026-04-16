@@ -102,6 +102,14 @@ class SiteSupportService
             return true;
         }
 
+        // Component-based frameworks: allow editing attempts.
+        // ContentPatcher gates on whether the text can be located uniquely in the
+        // JSX/TSX/Vue/Svelte source on a per-region basis via canPatchComponentRegion(),
+        // so regions that cannot be safely patched will still show as "Preview Only".
+        if (in_array($site->project_type, ['nextjs', 'nuxt', 'react', 'vue', 'svelte', 'astro'], true)) {
+            return true;
+        }
+
         return false;
     }
 
