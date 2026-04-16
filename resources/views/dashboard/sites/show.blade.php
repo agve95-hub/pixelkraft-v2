@@ -82,8 +82,8 @@
                 <flux:button href="#deploy-controls" variant="subtle" size="sm" icon="clock">
                     {{ $site->deploy_logs_count }} deploy{{ $site->deploy_logs_count === 1 ? '' : 's' }}
                 </flux:button>
-                <flux:button href="#deploy-controls" variant="primary" size="sm" icon="cloud-arrow-up" class="!bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950">
-                    Deploy now
+                <flux:button href="#deploy-controls" variant="subtle" size="sm" icon="arrow-down">
+                    Deploy controls
                 </flux:button>
                 <flux:button href="{{ route('sites.settings', $site) }}" variant="subtle" icon="cog-6-tooth" size="sm">Settings</flux:button>
             </div>

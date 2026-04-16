@@ -22,7 +22,7 @@
                 <div class="page-sub">Traffic, uptime, and performance over the last 30 days</div>
             </div>
 
-            <select class="form-input" style="width:auto;padding:6px 32px 6px 12px;font-size:12px;cursor:pointer" disabled>
+            <select class="form-input" style="width:auto;padding:6px 32px 6px 12px;font-size:12px;cursor:not-allowed;opacity:0.45" disabled title="Date range filtering coming soon">
                 <option>Last 30 days</option>
             </select>
         </div>
@@ -217,7 +217,7 @@
                         <span class="deploy-dur">{{ $deploy->duration }}</span>
                         <span class="deploy-time">{{ $deploy->created_at?->diffForHumans() ?? 'recently' }}</span>
                         <div style="display:flex;gap:8px">
-                            <button type="button" class="btn-ghost btn btn-sm" disabled>Log</button>
+                            <button type="button" class="btn-ghost btn btn-sm" disabled title="Deploy log viewer coming soon" style="opacity:0.45;cursor:not-allowed">Log</button>
                         </div>
                     </div>
                 @empty
