@@ -61,10 +61,10 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" wire:click="undo" class="rounded-md border border-zinc-700 bg-zinc-950 p-1.5 text-zinc-400 hover:text-zinc-100 disabled:opacity-40" title="Undo" @disabled(! $canUndo)>
+            <button type="button" wire:click="undo" class="rounded-md border border-zinc-700 bg-zinc-950 p-1.5 text-zinc-400 hover:text-zinc-100 disabled:opacity-40" title="Undo (coming soon)" @disabled(! $canUndo)>
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 6 6v0"/></svg>
             </button>
-            <button type="button" wire:click="redo" class="rounded-md border border-zinc-700 bg-zinc-950 p-1.5 text-zinc-400 hover:text-zinc-100 disabled:opacity-40" title="Redo" @disabled(! $canRedo)>
+            <button type="button" wire:click="redo" class="rounded-md border border-zinc-700 bg-zinc-950 p-1.5 text-zinc-400 hover:text-zinc-100 disabled:opacity-40" title="Redo (coming soon)" @disabled(! $canRedo)>
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 9 6 6m0 0-6 6m6-6H9a6 6 0 0 0-6 6v0"/></svg>
             </button>
         </div>
@@ -85,7 +85,7 @@
                 'border-violet-500/50 bg-violet-500/15 text-violet-100' => $mode === 'code',
                 'border-zinc-700 bg-zinc-950 text-zinc-300 hover:border-zinc-500' => $mode !== 'code',
             ])>Code</button>
-            <button type="button" wire:click="openScheduleModal" class="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-[12px] font-medium text-zinc-200 hover:border-zinc-500">Schedule</button>
+            <button type="button" wire:click="openScheduleModal" class="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-[12px] font-medium text-zinc-200 hover:border-zinc-500" title="Scheduled publishing is not yet persisted — preview only">Schedule</button>
             <button
                 type="button"
                 wire:click="saveDraft"
@@ -350,7 +350,7 @@
                                     <li class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-2">
                                         <div class="flex items-center justify-between gap-2">
                                             <span class="font-mono text-[10px] text-zinc-500">{{ Str::limit($revision->id, 7, '') }}</span>
-                                            <span class="text-[11px] text-zinc-600" title="Revision restore is not wired yet">Restore</span>
+                                            <span class="text-[11px] text-zinc-600 opacity-40 cursor-default select-none" title="Revision restore coming soon">Restore</span>
                                         </div>
                                         <p class="mt-1 text-[11px] text-zinc-500">{{ $revision->created_at?->diffForHumans() }} · {{ $revision->user?->name ?? 'Unknown' }}</p>
                                         <p class="mt-1 line-clamp-2 text-[12px] text-zinc-300">{{ Str::limit(strip_tags($revision->content_after ?? ''), 140) }}</p>
@@ -459,8 +459,8 @@
     @if ($showScheduleModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" x-on:keydown.escape.window="$wire.closeScheduleModal()">
             <div class="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl" x-on:click.outside="$wire.closeScheduleModal()">
-                <h3 class="text-sm font-semibold text-white">Schedule publish</h3>
-                <p class="mt-1 text-[12px] leading-relaxed text-zinc-500">Page scheduling is not persisted yet; this modal mirrors the mockup while we keep deploys explicit.</p>
+                <h3 class="text-sm font-semibold text-white">Schedule publish <span class="ml-1.5 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">Coming soon</span></h3>
+                <p class="mt-1 text-[12px] leading-relaxed text-zinc-500">Scheduled publishing is not yet persisted. Use Save draft + Publish when ready.</p>
                 <div class="mt-4 space-y-3">
                     <div>
                         <label class="mb-1 block text-[11px] font-medium text-zinc-400">Publish date &amp; time</label>
