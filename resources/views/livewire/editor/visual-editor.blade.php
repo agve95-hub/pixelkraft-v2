@@ -172,7 +172,10 @@
                                 </li>
                             @endforeach
                         </ul>
-                        <button type="button" disabled class="mt-3 w-full rounded-lg border border-dashed border-zinc-700 py-2 text-[11px] text-zinc-500" title="Coming soon">+ New page</button>
+                        @if ($sitePages->count() >= 20)
+                            <p class="mt-2 text-[10px] text-zinc-600">Showing first 20 pages. <a href="{{ route('sites.show', $site) }}" target="_blank" class="underline hover:text-zinc-400">View all</a></p>
+                        @endif
+                        <button type="button" disabled class="mt-3 w-full rounded-lg border border-dashed border-zinc-700 py-2 text-[11px] text-zinc-500 cursor-not-allowed opacity-50" title="New page coming soon">+ New page</button>
                     </div>
 
                     <div x-show="leftTab === 'media'" x-cloak class="h-full overflow-y-auto p-3 text-[12px]">
