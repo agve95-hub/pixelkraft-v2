@@ -4,6 +4,7 @@ namespace App\Livewire\Dashboard;
 
 use App\Models\Reminder;
 use App\Models\Report;
+use App\Support\SchemaState;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -13,6 +14,8 @@ class UpcomingPanel extends Component
     public function render(): View
     {
         $upcoming = collect();
+        $hasReminders = SchemaState::hasTable('reminders');
+        $hasReports = SchemaState::hasTable('reports');
 
         // Load all visible sites once to avoid N+1 queries across the checks below.
         $allSites = SiteAccess::query()->get();
@@ -20,12 +23,14 @@ class UpcomingPanel extends Component
 
         // Batch the monthly-report check: one query for all sites instead of
         // one exists() call per site inside the loop.
-        $sitesWithReportThisMonth = Report::query()
-            ->whereIn('site_id', $visibleSiteIds)
-            ->whereYear('report_date', now()->year)
-            ->whereMonth('report_date', now()->month)
-            ->pluck('site_id')
-            ->flip(); // keyed by site_id for O(1) membership checks
+        $sitesWithReportThisMonth = $hasReports
+            ? Report::query()
+                ->whereIn('site_id', $visibleSiteIds)
+                ->whereYear('report_date', now()->year)
+                ->whereMonth('report_date', now()->month)
+                ->pluck('site_id')
+                ->flip()
+            : collect(); // keyed by site_id for O(1) membership checks
 
         foreach ($allSites->where('ssl_status', 'pending') as $site) {
             $upcoming->push([
@@ -51,46 +56,50 @@ class UpcomingPanel extends Component
             ]);
         }
 
-        Reminder::query()
-            ->whereIn('site_id', $visibleSiteIds)
-            ->where('is_done', false)
-            ->whereNotNull('due_date')
-            ->with('site:id,name,slug')
-            ->where('due_date', '>=', now()->subDay()->toDateString())
-            ->where('due_date', '<=', now()->addDays(90)->toDateString())
-            ->orderBy('due_date')
-            ->limit(8)
-            ->get()
-            ->each(function (Reminder $reminder) use (&$upcoming) {
-                $site = $reminder->site;
-                if (! $site) {
-                    return;
+        if ($hasReminders) {
+            Reminder::query()
+                ->whereIn('site_id', $visibleSiteIds)
+                ->where('is_done', false)
+                ->whereNotNull('due_date')
+                ->with('site:id,name,slug')
+                ->where('due_date', '>=', now()->subDay()->toDateString())
+                ->where('due_date', '<=', now()->addDays(90)->toDateString())
+                ->orderBy('due_date')
+                ->limit(8)
+                ->get()
+                ->each(function (Reminder $reminder) use (&$upcoming) {
+                    $site = $reminder->site;
+                    if (! $site) {
+                        return;
+                    }
+                    $due = $reminder->due_date->startOfDay();
+                    $overdue = $due->isPast() && ! $due->isToday();
+
+                    $upcoming->push([
+                        'icon' => 'clock',
+                        'color' => $overdue ? 'red' : 'zinc',
+                        'title' => $reminder->title,
+                        'subtitle' => $site->name,
+                        'date' => $due,
+                        'overdue' => $overdue,
+                        'href' => route('sites.reminders', $site),
+                    ]);
+                });
+        }
+
+        if ($hasReports) {
+            foreach ($allSites as $site) {
+                if (! $sitesWithReportThisMonth->has($site->id)) {
+                    $upcoming->push([
+                        'icon' => 'clipboard-document',
+                        'color' => 'zinc',
+                        'title' => 'Add monthly site report',
+                        'subtitle' => $site->name,
+                        'date' => now()->endOfMonth()->startOfDay(),
+                        'overdue' => false,
+                        'href' => route('sites.reports', $site),
+                    ]);
                 }
-                $due = $reminder->due_date->startOfDay();
-                $overdue = $due->isPast() && ! $due->isToday();
-
-                $upcoming->push([
-                    'icon' => 'clock',
-                    'color' => $overdue ? 'red' : 'zinc',
-                    'title' => $reminder->title,
-                    'subtitle' => $site->name,
-                    'date' => $due,
-                    'overdue' => $overdue,
-                    'href' => route('sites.reminders', $site),
-                ]);
-            });
-
-        foreach ($allSites as $site) {
-            if (! $sitesWithReportThisMonth->has($site->id)) {
-                $upcoming->push([
-                    'icon' => 'clipboard-document',
-                    'color' => 'zinc',
-                    'title' => 'Add monthly site report',
-                    'subtitle' => $site->name,
-                    'date' => now()->endOfMonth()->startOfDay(),
-                    'overdue' => false,
-                    'href' => route('sites.reports', $site),
-                ]);
             }
         }
 

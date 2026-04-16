@@ -3,6 +3,7 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\Expense;
+use App\Support\SchemaState;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -11,6 +12,13 @@ class ExpensesPanel extends Component
 {
     public function render(): View
     {
+        if (! SchemaState::hasTable('expenses')) {
+            return view('livewire.dashboard.expenses-panel', [
+                'siteExpenses' => collect(),
+                'grandTotal' => 0.0,
+            ]);
+        }
+
         $visibleSiteIds = SiteAccess::query()->pluck('id');
 
         $totalsBySite = Expense::query()

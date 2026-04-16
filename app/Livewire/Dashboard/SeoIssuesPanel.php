@@ -3,6 +3,7 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\SeoIssue;
+use App\Support\SchemaState;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -11,6 +12,13 @@ class SeoIssuesPanel extends Component
 {
     public function render(): View
     {
+        if (! SchemaState::hasTable('seo_issues')) {
+            return view('livewire.dashboard.seo-issues-panel', [
+                'issues' => collect(),
+                'totalCount' => 0,
+            ]);
+        }
+
         $visibleSiteIds = SiteAccess::query()->pluck('id');
 
         $issues = SeoIssue::query()

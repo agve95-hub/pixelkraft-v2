@@ -10,6 +10,7 @@ use App\Policies\BlogPostPolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\PagePolicy;
 use App\Policies\SitePolicy;
+use App\Support\SchemaState;
 use App\Support\SiteAccess;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Blade;
@@ -46,15 +47,38 @@ class AppServiceProvider extends ServiceProvider
         // Injects sidebar navigation and search index data into the app shell
         // so the layout view itself stays free of DB queries.
         View::composer('components.layouts.app', function ($view) {
-            $navSites = SiteAccess::query()
-                ->select('id', 'name', 'slug', 'deploy_status', 'maintenance_settings')
-                ->withCount([
-                    'inboxMessages as unread_inbox_count' => fn ($q) => $q->where('direction', 'inbound')->where('is_read', false),
-                    'invoices as unpaid_invoices_count' => fn ($q) => $q->where('status', 'unpaid'),
-                    'reminders as overdue_reminders_count' => fn ($q) => $q->where('is_done', false)->whereDate('due_date', '<', now()->toDateString()),
-                ])
-                ->orderBy('name')
-                ->get();
+            $navSitesQuery = SiteAccess::query()
+                ->select('id', 'name', 'slug', 'deploy_status')
+                ->orderBy('name');
+
+            if (SchemaState::hasColumn('sites', 'maintenance_settings')) {
+                $navSitesQuery->addSelect('maintenance_settings');
+            }
+
+            $withCounts = [];
+
+            if (SchemaState::hasTable('site_inbox_messages')) {
+                $withCounts['inboxMessages as unread_inbox_count'] = fn ($q) => $q
+                    ->where('direction', 'inbound')
+                    ->where('is_read', false);
+            }
+
+            if (SchemaState::hasTable('invoices')) {
+                $withCounts['invoices as unpaid_invoices_count'] = fn ($q) => $q
+                    ->where('status', 'unpaid');
+            }
+
+            if (SchemaState::hasTable('reminders')) {
+                $withCounts['reminders as overdue_reminders_count'] = fn ($q) => $q
+                    ->where('is_done', false)
+                    ->whereDate('due_date', '<', now()->toDateString());
+            }
+
+            if ($withCounts !== []) {
+                $navSitesQuery->withCount($withCounts);
+            }
+
+            $navSites = $navSitesQuery->get();
 
             $searchIndex = collect([
                 ['label' => 'Dashboard', 'href' => route('dashboard')],

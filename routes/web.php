@@ -10,6 +10,7 @@ use App\Models\Notification;
 use App\Models\Page;
 use App\Models\Site;
 use App\Models\UptimeCheck;
+use App\Support\SchemaState;
 use App\Support\SeoIssueSummary;
 use App\Support\SiteAccess;
 use Illuminate\Support\Facades\Cache;
@@ -57,7 +58,9 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
     Route::get('/', function () {
         $visibleSiteIds = SiteAccess::query()->pluck('id');
-        $seoIssueCount = SeoIssueSummary::openCountForSiteIds($visibleSiteIds);
+        $seoIssueCount = SchemaState::hasTable('seo_issues')
+            ? SeoIssueSummary::openCountForSiteIds($visibleSiteIds)
+            : 0;
 
         $totalSites = $visibleSiteIds->count();
         $totalPages = Page::query()->whereIn('site_id', $visibleSiteIds)->count();
