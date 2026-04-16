@@ -18,7 +18,8 @@ class DemoSiteSeederTest extends TestCase
         $this->seed(DemoSiteSeeder::class);
 
         $user = User::query()->where('email', 'demo@pixelkraft.local')->firstOrFail();
-        $this->assertSame('admin', $user->role);
+        $role = $user->role instanceof \BackedEnum ? $user->role->value : $user->role;
+        $this->assertSame('admin', $role);
 
         $site = Site::query()->where('slug', 'demo-studio')->firstOrFail();
         $this->assertTrue($site->pages()->count() >= 1);

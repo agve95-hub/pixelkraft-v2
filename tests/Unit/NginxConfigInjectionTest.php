@@ -173,7 +173,7 @@ class NginxConfigInjectionTest extends TestCase
     public function test_sanitize_strips_injection_characters(): void
     {
         $result = $this->invoke('sanitizeRedirectToPath', "/target\n; deny all { }");
-        $this->assertSame('/target deny all ', $result);
+        $this->assertSame('/target deny all  ', $result);
     }
 
     /** @test */

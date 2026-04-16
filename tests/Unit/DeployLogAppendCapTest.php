@@ -3,17 +3,45 @@
 namespace Tests\Unit;
 
 use App\Models\DeployLog;
+use App\Models\Site;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class DeployLogAppendCapTest extends TestCase
 {
     use RefreshDatabase;
 
+    private string $siteId;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $user = User::create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+        ]);
+
+        $site = Site::create([
+            'user_id' => $user->id,
+            'name' => 'Test Site',
+            'slug' => 'test-site',
+            'repo_url' => 'https://github.com/example/test-site.git',
+            'branch' => 'main',
+            'repo_path' => '/tmp/test-site',
+        ]);
+
+        $this->siteId = $site->id;
+    }
+
     public function test_short_output_is_stored_verbatim(): void
     {
         $log = DeployLog::create([
-            'site_id' => 'test-site-001',
+            'site_id' => $this->siteId,
             'status' => 'queued',
             'triggered_by' => 'test',
             'created_at' => now(),
@@ -31,7 +59,7 @@ class DeployLogAppendCapTest extends TestCase
     public function test_output_is_capped_at_512kb_and_truncation_notice_prepended(): void
     {
         $log = DeployLog::create([
-            'site_id' => 'test-site-002',
+            'site_id' => $this->siteId,
             'status' => 'building',
             'triggered_by' => 'test',
             'created_at' => now(),
@@ -55,7 +83,7 @@ class DeployLogAppendCapTest extends TestCase
     public function test_newest_lines_are_kept_when_truncated(): void
     {
         $log = DeployLog::create([
-            'site_id' => 'test-site-003',
+            'site_id' => $this->siteId,
             'status' => 'building',
             'triggered_by' => 'test',
             'created_at' => now(),

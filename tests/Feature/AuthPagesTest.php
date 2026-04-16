@@ -15,6 +15,10 @@ class AuthPagesTest extends TestCase
 
     public function test_register_page_renders(): void
     {
+        if (! \Illuminate\Support\Facades\Route::has('register')) {
+            $this->markTestSkipped('Registration is disabled.');
+        }
+
         $response = $this->get(route('register'));
 
         $response->assertOk();

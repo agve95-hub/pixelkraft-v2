@@ -47,7 +47,8 @@ class PublishScheduledCommandTest extends TestCase
         $this->artisan('pixelkraft:publish-scheduled')->assertSuccessful();
 
         $post->refresh();
-        $this->assertSame('published', $post->status);
+        $status = $post->status instanceof \BackedEnum ? $post->status->value : $post->status;
+        $this->assertSame('published', $status);
         $this->assertNotNull($post->published_at);
     }
 

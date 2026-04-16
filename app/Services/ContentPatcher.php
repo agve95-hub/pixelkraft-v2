@@ -39,6 +39,11 @@ class ContentPatcher
         $sourceType = $sourceLocation['source_type'] ?? 'html';
         $fullPath = "{$repoPath}/{$targetFile}";
 
+        // Fast early rejection before any filesystem access.
+        if (str_contains($targetFile, '..')) {
+            throw new \RuntimeException("Refusing to write outside of repository: {$targetFile}");
+        }
+
         if (! File::exists($fullPath)) {
             throw new \RuntimeException("Source file not found: {$targetFile}");
         }

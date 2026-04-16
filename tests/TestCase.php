@@ -12,6 +12,8 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        $this->withoutVite();
+
         $hot = public_path('hot');
         if (is_file($hot)) {
             @unlink($hot);

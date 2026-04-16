@@ -161,7 +161,14 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 ? 0
                 : (int) $responseSeries->sort()->values()->get(max(0, (int) ceil($responseSeries->count() * 0.95) - 1));
 
-            return compact('site', 'uptimePercent', 'dailyBars', 'responseSeries', 'avgResponse', 'p95Response');
+            return [
+                'site'            => $site,
+                'uptime_percent'  => $uptimePercent,
+                'daily_bars'      => $dailyBars,
+                'response_series' => $responseSeries,
+                'avg_response'    => $avgResponse,
+                'p95_response'    => $p95Response,
+            ];
         });
 
         $sitesDown = $activeSites->filter(fn ($site) => $site->latestUptimeCheck?->is_up === false)->count();
@@ -169,7 +176,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         return view('dashboard.index', compact(
             'seoIssueCount', 'totalSites', 'totalPages', 'uptimePercent',
             'unreadMessages', 'errorCount', 'activeSites', 'trafficSeries',
-            'maxTraffic', 'trafficVisitors', 'vbW', 'vbH', 'pad',
+            'maxTraffic', 'trafficVisitors', 'vbW', 'vbH', 'pad', 'plotH',
             'chartPoints', 'lineD', 'areaD', 'siteInsights', 'sitesDown'
         ));
     })->name('dashboard');
