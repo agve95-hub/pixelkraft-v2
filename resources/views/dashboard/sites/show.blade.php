@@ -2,8 +2,6 @@
     <x-slot:title>{{ $site->name }}</x-slot:title>
 
     @php
-        $shouldAutoRefresh = is_null($site->last_synced_at) || $site->deploy_status?->isActive();
-
         $deployStatus = $site->deploy_status?->value ?? 'draft';
         $deployStatusLabel = $site->status; // computed attribute on Site model
         $deployStatusClasses = match ($deployStatus) {
@@ -271,9 +269,7 @@
         </div>
     </div>
 
-    @if ($shouldAutoRefresh)
-        <script>
-            setTimeout(() => window.location.reload(), 5000);
-        </script>
-    @endif
+    {{-- Deploy status is polled via wire:poll.5s on the deploy-controls
+         component itself. A full-page reload is not needed and would reset
+         scroll position and interrupt reading during active deployments. --}}
 </x-layouts.app>
