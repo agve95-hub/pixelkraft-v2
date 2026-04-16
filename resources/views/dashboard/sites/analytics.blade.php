@@ -1,143 +1,126 @@
 <x-layouts.app>
-    <x-slot:title>{{ $site->name }} - Analytics</x-slot:title>
+    <x-slot:title>Analytics — {{ $site->name }}</x-slot:title>
 
     @php
         $trendLabel = is_null($trafficTrendPercent)
             ? 'No baseline data'
             : (($trafficTrendPercent >= 0 ? '+' : '') . $trafficTrendPercent . '% vs prev');
-        $trendColor = is_null($trafficTrendPercent)
-            ? 'var(--zinc-500)'
-            : ($trafficTrendPercent >= 0 ? 'var(--accent)' : 'var(--red)');
+        $trendPositive = ! is_null($trafficTrendPercent) && $trafficTrendPercent >= 0;
     @endphp
 
-    <div>
-        <a href="{{ route('sites.show', $site) }}" class="back-link">
-            <x-icons.arrow />
-            <span>{{ $site->name }}</span>
-        </a>
+    <div class="space-y-6 text-zinc-100">
 
-        <div class="page-head">
-            <div>
-                <div class="page-title">{{ $site->name }} - Analytics</div>
-                <div class="page-sub">Traffic, uptime, and performance over the last 30 days</div>
-            </div>
-
-            <select class="form-input" style="width:auto;padding:6px 32px 6px 12px;font-size:12px;cursor:not-allowed;opacity:0.45" disabled title="Date range filtering coming soon">
-                <option>Last 30 days</option>
-            </select>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,0.1);border-radius:12px;overflow:hidden;margin-bottom:24px">
-            <div class="stat">
-                <div class="stat-label">Visitors</div>
-                <div class="stat-val">{{ number_format($trafficTotal) }}</div>
-                <div class="stat-note" style="color:{{ $trendColor }}">{{ $trendLabel }}</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Uptime</div>
-                <div class="stat-val">{{ rtrim(rtrim(number_format($uptimePercent, 1, '.', ''), '0'), '.') }}<span style="font-size:13px;color:var(--zinc-500)">%</span></div>
-                <div class="stat-note">
-                    {{ $upDays }} days up
-                    @if ($degradedDays)
-                        , {{ $degradedDays }} degraded
-                    @endif
-                    @if ($downDays)
-                        , <span style="color:var(--red)">{{ $downDays }} down</span>
-                    @endif
+        {{-- Header --}}
+        <div>
+            <a href="{{ route('sites.show', $site) }}" class="text-xs text-zinc-500 hover:text-violet-400 transition">← {{ $site->name }}</a>
+            <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <flux:heading size="xl">Analytics</flux:heading>
+                    <flux:subheading>Traffic, uptime, and performance over the last 30 days</flux:subheading>
                 </div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Avg response</div>
-                <div class="stat-val">{{ $avgResponseMs }}<span style="font-size:13px;color:var(--zinc-500)">ms</span></div>
-                <div class="stat-note">P95: {{ $p95ResponseMs }}ms</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Deploys</div>
-                <div class="stat-val">{{ $deployCount }}</div>
-                <div class="stat-note">Recent deploy history</div>
+                <select class="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300 opacity-50 cursor-not-allowed" disabled title="Date range filtering coming soon">
+                    <option>Last 30 days</option>
+                </select>
             </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-            <div class="dash-card">
-                <div class="dash-card-head">
-                    <div class="dash-card-title">First-party events</div>
-                    <span style="font-family:var(--mono);font-size:12px;color:var(--zinc-400)">{{ number_format($eventSummary['total_events']) }} total</span>
-                </div>
-                <div class="stats stats-3" style="margin-bottom:14px">
-                    <div class="stat">
-                        <div class="stat-label">Page views</div>
-                        <div class="stat-val-sm">{{ number_format($eventSummary['page_views']) }}</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Forms</div>
-                        <div class="stat-val-sm">{{ number_format($eventSummary['forms']) }}</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Interactions</div>
-                        <div class="stat-val-sm">{{ number_format($eventSummary['interactions']) }}</div>
-                    </div>
-                </div>
+        {{-- Top-level stats --}}
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 px-4 py-3">
+                <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500">Visitors</p>
+                <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ number_format($trafficTotal) }}</p>
+                <p class="mt-0.5 text-xs {{ $trendPositive ? 'text-emerald-400' : 'text-zinc-500' }}">{{ $trendLabel }}</p>
+            </div>
+            <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 px-4 py-3">
+                <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500">Uptime</p>
+                <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ rtrim(rtrim(number_format($uptimePercent, 1, '.', ''), '0'), '.') }}<span class="text-sm text-zinc-500">%</span></p>
+                <p class="mt-0.5 text-xs text-zinc-500">
+                    {{ $upDays }}d up@if ($degradedDays), {{ $degradedDays }}d degraded@endif@if ($downDays), <span class="text-red-400">{{ $downDays }}d down</span>@endif
+                </p>
+            </div>
+            <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 px-4 py-3">
+                <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500">Avg response</p>
+                <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ $avgResponseMs }}<span class="text-sm text-zinc-500">ms</span></p>
+                <p class="mt-0.5 text-xs text-zinc-500">P95: {{ $p95ResponseMs }}ms</p>
+            </div>
+            <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 px-4 py-3">
+                <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500">Deploys</p>
+                <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ $deployCount }}</p>
+                <p class="mt-0.5 text-xs text-zinc-500">Recent deploy history</p>
+            </div>
+        </div>
 
-                <div class="thread-list">
+        {{-- Events + Release --}}
+        <div class="grid gap-4 lg:grid-cols-2">
+            <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 p-5">
+                <div class="flex items-center justify-between gap-2 mb-4">
+                    <p class="text-sm font-semibold text-zinc-200">First-party events</p>
+                    <span class="font-mono text-xs text-zinc-400">{{ number_format($eventSummary['total_events']) }} total</span>
+                </div>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+                        <p class="text-[10px] uppercase tracking-[0.12em] text-zinc-500">Page views</p>
+                        <p class="mt-1 text-lg font-semibold tabular-nums">{{ number_format($eventSummary['page_views']) }}</p>
+                    </div>
+                    <div class="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+                        <p class="text-[10px] uppercase tracking-[0.12em] text-zinc-500">Forms</p>
+                        <p class="mt-1 text-lg font-semibold tabular-nums">{{ number_format($eventSummary['forms']) }}</p>
+                    </div>
+                    <div class="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+                        <p class="text-[10px] uppercase tracking-[0.12em] text-zinc-500">Interactions</p>
+                        <p class="mt-1 text-lg font-semibold tabular-nums">{{ number_format($eventSummary['interactions']) }}</p>
+                    </div>
+                </div>
+                <div class="divide-y divide-zinc-800/80">
                     @forelse ($eventSummary['top_events'] as $event)
-                        <div class="thread" style="cursor:default">
-                            <div>
-                                <div class="thread-from">{{ $event['event_name'] }}</div>
-                                <div class="thread-preview">Captured by pixelkraft tracker</div>
+                        <div class="flex items-center justify-between gap-3 py-2.5">
+                            <div class="min-w-0">
+                                <p class="truncate text-[13px] font-medium text-zinc-200">{{ $event['event_name'] }}</p>
+                                <p class="text-[11px] text-zinc-500">Captured by pixelkraft tracker</p>
                             </div>
-                            <div class="thread-time">{{ number_format($event['count']) }}</div>
+                            <span class="shrink-0 font-mono text-sm text-zinc-300">{{ number_format($event['count']) }}</span>
                         </div>
                     @empty
-                        <div class="empty">
-                            <div class="empty-icon"><x-icons.chart /></div>
-                            No custom events yet
-                        </div>
+                        <div class="py-8 text-center text-sm text-zinc-500">No custom events yet</div>
                     @endforelse
                 </div>
             </div>
 
-            <div class="dash-card">
-                <div class="dash-card-head">
-                    <div class="dash-card-title">Release status</div>
-                    <span style="font-family:var(--mono);font-size:12px;color:var(--zinc-400)">{{ $releaseCount }} release{{ $releaseCount === 1 ? '' : 's' }}</span>
+            <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 p-5">
+                <div class="flex items-center justify-between gap-2 mb-4">
+                    <p class="text-sm font-semibold text-zinc-200">Release status</p>
+                    <span class="font-mono text-xs text-zinc-400">{{ $releaseCount }} release{{ $releaseCount === 1 ? '' : 's' }}</span>
                 </div>
-                <div class="stats stats-2" style="margin-bottom:14px">
-                    <div class="stat">
-                        <div class="stat-label">Current</div>
-                        <div class="stat-val-sm">{{ $currentRelease?->status ? ucfirst($currentRelease->status) : 'None' }}</div>
-                        <div class="stat-note">{{ $currentRelease?->activated_at?->diffForHumans() ?? 'No active release' }}</div>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+                        <p class="text-[10px] uppercase tracking-[0.12em] text-zinc-500">Current</p>
+                        <p class="mt-1 text-lg font-semibold">{{ $currentRelease?->status ? ucfirst($currentRelease->status) : 'None' }}</p>
+                        <p class="mt-0.5 text-[11px] text-zinc-500">{{ $currentRelease?->activated_at?->diffForHumans() ?? 'No active release' }}</p>
                     </div>
-                    <div class="stat">
-                        <div class="stat-label">Tracking</div>
-                        <div class="stat-val-sm">{{ $currentRelease?->tracking_version ?: 'Pending' }}</div>
-                        <div class="stat-note">{{ $currentRelease?->artifact_path ? 'artifact ready' : 'no artifact recorded' }}</div>
+                    <div class="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+                        <p class="text-[10px] uppercase tracking-[0.12em] text-zinc-500">Tracking</p>
+                        <p class="mt-1 text-lg font-semibold">{{ $currentRelease?->tracking_version ?: 'Pending' }}</p>
+                        <p class="mt-0.5 text-[11px] text-zinc-500">{{ $currentRelease?->artifact_path ? 'artifact ready' : 'no artifact recorded' }}</p>
                     </div>
                 </div>
-
-                <div class="issue-item" style="border-bottom:none;padding-top:0">
-                    <div class="issue-icon issue-icon-blue"><x-icons.chart /></div>
-                    <div>
-                        <div class="issue-text">Current release commit: {{ $currentRelease?->source_commit_sha ? \Illuminate\Support\Str::limit($currentRelease->source_commit_sha, 12, '') : 'n/a' }}</div>
-                        <div class="issue-meta">Source branch: {{ $currentRelease?->source_branch ?: $site->branch }}</div>
-                    </div>
+                <div class="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2.5">
+                    <p class="text-[12px] text-zinc-300">Commit: <span class="font-mono">{{ $currentRelease?->source_commit_sha ? \Illuminate\Support\Str::limit($currentRelease->source_commit_sha, 12, '') : 'n/a' }}</span></p>
+                    <p class="mt-0.5 text-[11px] text-zinc-500">Branch: {{ $currentRelease?->source_branch ?: $site->branch }}</p>
                 </div>
             </div>
         </div>
 
-        <div class="dash-card" style="margin-bottom:20px">
-            <div class="dash-card-head">
-                <div class="dash-card-title">Visitors</div>
-                <span style="font-family:var(--mono);font-size:12px;color:var(--zinc-400)">{{ number_format($trafficTotal) }} total</span>
+        {{-- Visitors chart --}}
+        <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 p-5">
+            <div class="flex items-center justify-between gap-2 mb-4">
+                <p class="text-sm font-semibold text-zinc-200">Visitors</p>
+                <span class="font-mono text-xs text-zinc-400">{{ number_format($trafficTotal) }} total</span>
             </div>
-            <div class="chart-container">
+            <div class="h-36 w-full">
                 @if ($trafficChart['line_path'] === '')
-                    <div class="empty">
-                        <div class="empty-icon"><x-icons.chart /></div>
-                        No traffic data yet
-                    </div>
+                    <div class="flex h-full items-center justify-center text-sm text-zinc-500">No traffic data yet</div>
                 @else
-                    <svg viewBox="0 0 {{ $trafficChart['width'] }} {{ $trafficChart['height'] }}" preserveAspectRatio="none">
+                    <svg class="h-full w-full" viewBox="0 0 {{ $trafficChart['width'] }} {{ $trafficChart['height'] }}" preserveAspectRatio="none">
                         <defs>
                             <linearGradient id="analyticsTrafficFill" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%" stop-color="rgb(52 211 153)" stop-opacity="0.28" />
@@ -151,51 +134,40 @@
             </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-            <div class="dash-card">
-                <div class="dash-card-head">
-                    <div class="dash-card-title">Uptime</div>
-                    <span style="font-family:var(--mono);font-size:12px;color:{{ $uptimePercent >= 99.9 ? 'var(--accent)' : 'var(--amber)' }}">{{ rtrim(rtrim(number_format($uptimePercent, 1, '.', ''), '0'), '.') }}%</span>
+        {{-- Uptime + Response time --}}
+        <div class="grid gap-4 lg:grid-cols-2">
+            <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 p-5">
+                <div class="flex items-center justify-between gap-2 mb-4">
+                    <p class="text-sm font-semibold text-zinc-200">Uptime</p>
+                    <span class="font-mono text-xs {{ $uptimePercent >= 99.9 ? 'text-emerald-400' : 'text-amber-400' }}">{{ rtrim(rtrim(number_format($uptimePercent, 1, '.', ''), '0'), '.') }}%</span>
                 </div>
-                <div class="uptime-bar">
+                <div class="flex gap-0.5">
                     @foreach ($dailyBars as $bar)
-                        <span class="uptime-bar-seg" style="background:
-                            @switch($bar)
-                                @case('up')
-                                    var(--accent)
-                                    @break
-                                @case('degraded')
-                                    var(--amber)
-                                    @break
-                                @case('down')
-                                    var(--red)
-                                    @break
-                                @default
-                                    rgba(255,255,255,0.12)
-                            @endswitch
-                        "></span>
+                        <span class="flex-1 rounded-sm h-6 @switch($bar)
+                            @case('up') bg-emerald-400 @break
+                            @case('degraded') bg-amber-400 @break
+                            @case('down') bg-red-400 @break
+                            @default bg-zinc-700/50
+                        @endswitch"></span>
                     @endforeach
                 </div>
-                <div class="uptime-legend">
-                    <span><span class="uptime-legend-dot" style="background:var(--accent)"></span>Up</span>
-                    <span><span class="uptime-legend-dot" style="background:var(--amber)"></span>Degraded</span>
-                    <span><span class="uptime-legend-dot" style="background:var(--red)"></span>Down</span>
+                <div class="mt-3 flex gap-4 text-[11px] text-zinc-500">
+                    <span class="flex items-center gap-1.5"><span class="inline-block h-2 w-2 rounded-full bg-emerald-400"></span>Up</span>
+                    <span class="flex items-center gap-1.5"><span class="inline-block h-2 w-2 rounded-full bg-amber-400"></span>Degraded</span>
+                    <span class="flex items-center gap-1.5"><span class="inline-block h-2 w-2 rounded-full bg-red-400"></span>Down</span>
                 </div>
             </div>
 
-            <div class="dash-card">
-                <div class="dash-card-head">
-                    <div class="dash-card-title">Response time</div>
-                    <span style="font-family:var(--mono);font-size:12px;color:var(--zinc-400)">avg {{ $avgResponseMs }}ms - p95 {{ $p95ResponseMs }}ms</span>
+            <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 p-5">
+                <div class="flex items-center justify-between gap-2 mb-4">
+                    <p class="text-sm font-semibold text-zinc-200">Response time</p>
+                    <span class="font-mono text-xs text-zinc-400">avg {{ $avgResponseMs }}ms · p95 {{ $p95ResponseMs }}ms</span>
                 </div>
-                <div class="chart-container">
+                <div class="h-24 w-full">
                     @if ($responseChart['path'] === '')
-                        <div class="empty">
-                            <div class="empty-icon"><x-icons.chart /></div>
-                            No response samples yet
-                        </div>
+                        <div class="flex h-full items-center justify-center text-sm text-zinc-500">No response samples yet</div>
                     @else
-                        <svg viewBox="0 0 {{ $responseChart['width'] }} {{ $responseChart['height'] }}" preserveAspectRatio="none">
+                        <svg class="h-full w-full" viewBox="0 0 {{ $responseChart['width'] }} {{ $responseChart['height'] }}" preserveAspectRatio="none">
                             <path d="{{ $responseChart['path'] }}" fill="none" stroke="rgb(52 211 153)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     @endif
@@ -203,30 +175,39 @@
             </div>
         </div>
 
-        <div class="dash-card">
-            <div class="dash-card-head">
-                <div class="dash-card-title">Recent deploys</div>
-            </div>
-            <div class="deploy-list">
-                @forelse ($deploys as $deploy)
-                    <div class="deploy-item">
-                        <span class="pill {{ $deploy->isSuccess() ? 'pill-green' : 'pill-red' }}" style="font-size:10px;width:fit-content">
-                            {{ $deploy->isSuccess() ? 'Success' : 'Failed' }}
-                        </span>
-                        <span class="deploy-hash">{{ $deploy->hash ?: 'snapshot' }}</span>
-                        <span class="deploy-dur">{{ $deploy->duration }}</span>
-                        <span class="deploy-time">{{ $deploy->created_at?->diffForHumans() ?? 'recently' }}</span>
-                        <div style="display:flex;gap:8px">
-                            <button type="button" class="btn-ghost btn btn-sm" disabled title="Deploy log viewer coming soon" style="opacity:0.45;cursor:not-allowed">Log</button>
-                        </div>
-                    </div>
-                @empty
-                    <div class="empty">
-                        <div class="empty-icon"><x-icons.chart /></div>
-                        No deploy history yet
-                    </div>
-                @endforelse
-            </div>
+        {{-- Recent deploys --}}
+        <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 p-5">
+            <p class="text-sm font-semibold text-zinc-200 mb-4">Recent deploys</p>
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Commit</flux:table.column>
+                    <flux:table.column class="hidden sm:table-cell">Duration</flux:table.column>
+                    <flux:table.column>When</flux:table.column>
+                    <flux:table.column></flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
+                    @forelse ($deploys as $deploy)
+                        <flux:table.row>
+                            <flux:table.cell>
+                                <flux:badge size="sm" color="{{ $deploy->isSuccess() ? 'lime' : 'red' }}">
+                                    {{ $deploy->isSuccess() ? 'Success' : 'Failed' }}
+                                </flux:badge>
+                            </flux:table.cell>
+                            <flux:table.cell class="font-mono text-xs">{{ $deploy->hash ?: 'snapshot' }}</flux:table.cell>
+                            <flux:table.cell class="hidden sm:table-cell text-xs text-zinc-400">{{ $deploy->duration }}</flux:table.cell>
+                            <flux:table.cell class="text-xs text-zinc-400">{{ $deploy->created_at?->diffForHumans() ?? 'recently' }}</flux:table.cell>
+                            <flux:table.cell>
+                                <button type="button" class="text-xs text-zinc-600 opacity-50 cursor-not-allowed" disabled title="Deploy log viewer coming soon">Log</button>
+                            </flux:table.cell>
+                        </flux:table.row>
+                    @empty
+                        <flux:table.row>
+                            <flux:table.cell colspan="5" class="py-8 text-center text-sm text-zinc-500">No deploy history yet</flux:table.cell>
+                        </flux:table.row>
+                    @endforelse
+                </flux:table.rows>
+            </flux:table>
         </div>
     </div>
 </x-layouts.app>
