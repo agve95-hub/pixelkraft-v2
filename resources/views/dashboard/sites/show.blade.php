@@ -62,7 +62,8 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <flux:button href="{{ route('sites.inbox', $site) }}" variant="subtle" size="sm" icon="envelope">
+                <flux:button href="{{ route('sites.inbox', $site) }}" variant="subtle" size="sm" icon="envelope" aria-label="Inbox{{ ($site->inbox_unread_count ?? 0) > 0 ? ' (' . $site->inbox_unread_count . ' unread)' : '' }}">
+                    Inbox
                     @if (($site->inbox_unread_count ?? 0) > 0)
                         <span class="inline-flex min-w-[1.2rem] items-center justify-center rounded bg-emerald-500/20 px-1 py-0.5 text-[10px] font-semibold text-emerald-300">
                             {{ $site->inbox_unread_count > 99 ? '99+' : $site->inbox_unread_count }}

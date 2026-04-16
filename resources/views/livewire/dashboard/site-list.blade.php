@@ -47,7 +47,7 @@
                     <flux:table.cell>
                         <div class="flex items-center justify-end gap-1">
                             <flux:button href="{{ route('sites.show', $site) }}" size="xs" variant="ghost">Open</flux:button>
-                            <flux:button href="{{ route('sites.settings', $site) }}" size="xs" variant="ghost" icon="cog-6-tooth"></flux:button>
+                            <flux:button href="{{ route('sites.settings', $site) }}" size="xs" variant="ghost" icon="cog-6-tooth" aria-label="Settings for {{ $site->name }}"></flux:button>
                         </div>
                     </flux:table.cell>
                 </flux:table.row>
