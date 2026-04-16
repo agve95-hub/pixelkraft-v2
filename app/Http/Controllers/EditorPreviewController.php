@@ -430,11 +430,11 @@ HTML;
      */
     private function extractSourceSnippets(string $source): array
     {
+        // ── Step 1: strip server-side and template constructs ──────────────
         $source = preg_replace('/<\?(?:php|=)?[\s\S]*?\?>/i', ' ', $source) ?? $source;
         $source = preg_replace('/\{!![\s\S]*?!!\}/', ' ', $source) ?? $source;
         $source = preg_replace('/\{\{\s*[^}]+\s*\}\}/', ' ', $source) ?? $source;
-        // Strip Blade-style @directives only — a broad @\w+ match removes valid JSX/text
-        // such as social handles (@feuerlauf) inside elements.
+
         $bladeDirectives = implode('|', [
             'if', 'elseif', 'else', 'endif', 'unless', 'endunless', 'isset', 'endisset',
             'empty', 'endempty', 'auth', 'endauth', 'guest', 'endguest', 'switch', 'endswitch',
@@ -450,12 +450,29 @@ HTML;
         $source = preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', $source) ?? $source;
         $source = preg_replace('/<style\b[^>]*>.*?<\/style>/is', ' ', $source) ?? $source;
 
+        // ── Step 2: strip JSX-specific constructs ──────────────────────────
+        // JSX comments: {/* ... */}
+        $source = preg_replace('/\{\/\*[\s\S]*?\*\/\}/', ' ', $source) ?? $source;
+        // JSX expressions {expr} — collapse to a space so we don't create run-on fragments
+        // Pass twice to handle one level of nesting (e.g. {{ ... }})
+        $source = preg_replace('/\{[^{}]*\}/', ' ', $source) ?? $source;
+        $source = preg_replace('/\{[^{}]*\}/', ' ', $source) ?? $source;
+        // Strip JSX/HTML opening tags and their attributes entirely (e.g. <div className="...">)
+        $source = preg_replace('/<[A-Za-z][A-Za-z0-9.]*(?:\s[^>]*)?\/?>/u', ' ', $source) ?? $source;
+        // Strip closing tags
+        $source = preg_replace('/<\/[A-Za-z][A-Za-z0-9.]*>/u', ' ', $source) ?? $source;
+
+        // ── Step 3: extract text node candidates ───────────────────────────
+        // After the above stripping the source should be mostly bare text runs
+        // separated by spaces.  Split on whitespace boundaries that were formerly
+        // tags and collect sentence-like runs.
+        preg_match_all('/(?:^|(?<=\s))(.{4,300})(?=\s|$)/u', $source, $runMatches);
+        // Also pick up short inline segments still sitting between angle brackets
+        preg_match_all('/>\s*([^<>]{4,300})\s*</u', $source, $tagTextMatches);
+
+        $candidates = array_merge($runMatches[1] ?? [], $tagTextMatches[1] ?? []);
+
         $matches = [];
-        preg_match_all('/>\s*([^<>{}\n][^<>{}\n]{3,200})\s*</u', $source, $tagTextMatches);
-        preg_match_all('/["\']([^"\']{4,200})["\']/u', $source, $quotedMatches);
-
-        $candidates = array_merge($tagTextMatches[1] ?? [], $quotedMatches[1] ?? []);
-
         foreach ($candidates as $candidate) {
             $snippet = trim(html_entity_decode((string) $candidate, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
             $snippet = preg_replace('/\s+/u', ' ', $snippet) ?? $snippet;
@@ -464,11 +481,35 @@ HTML;
                 continue;
             }
 
-            if (preg_match('/^(import|export|const|let|var|function|return|class|if|else|for|while)\b/i', $snippet)) {
+            // Reject JS/TS keyword-led lines
+            if (preg_match('/^(import|export|const|let|var|function|return|class|if|else|for|while|type|interface|enum|async|await|throw|new|delete|typeof|void)\b/i', $snippet)) {
                 continue;
             }
 
-            if (preg_match('~^[#./@:_-]+$~u', $snippet)) {
+            // Reject remaining HTML/JSX artefacts (still contains angle brackets or JSX chars)
+            if (preg_match('/[<>{}\[\]]/', $snippet)) {
+                continue;
+            }
+
+            // Reject JSX attribute fragments (e.g. "className=" "aria-label=" "href=")
+            if (preg_match('/\b(?:className|aria-\w+|href|src|key|onClick|onChange|onSubmit|type|id|name|rel|target|style|ref|data-\w+)\s*=/i', $snippet)) {
+                continue;
+            }
+
+            // Reject Tailwind/CSS utility class strings:
+            // A class string is mostly kebab-case / colon-prefixed tokens with no spaces
+            // that read like identifiers rather than sentences.
+            if ($this->looksLikeUtilityClassString($snippet)) {
+                continue;
+            }
+
+            // Reject pure punctuation / symbol-only lines
+            if (preg_match('~^[#./@:_\-=\s]+$~u', $snippet)) {
+                continue;
+            }
+
+            // Require at least one word character (letter) to survive
+            if (! preg_match('/\pL/u', $snippet)) {
                 continue;
             }
 
@@ -484,6 +525,32 @@ HTML;
         }
 
         return array_slice(array_values($unique), 0, 80);
+    }
+
+    /**
+     * Returns true when the string looks like a CSS utility class list
+     * (e.g. Tailwind: "grid md:grid-cols-2 gap-12 items-start").
+     * We consider it a class string when the majority of its space-separated
+     * tokens are all-lowercase, kebab-case, or responsive-prefixed identifiers
+     * with no embedded spaces — i.e. they look like identifiers, not words.
+     */
+    private function looksLikeUtilityClassString(string $text): bool
+    {
+        $tokens = preg_split('/\s+/u', trim($text)) ?: [];
+        if (count($tokens) < 2) {
+            return false;
+        }
+
+        $classLike = 0;
+        foreach ($tokens as $token) {
+            // Matches: kebab-case, responsive prefixes (sm:, md:, lg:), arbitrary values [...]
+            if (preg_match('/^[a-z][a-z0-9]*(?:[-:\/][a-z0-9\.\[\]\/\%\#\_]+)*(?:!)?$/u', $token)) {
+                $classLike++;
+            }
+        }
+
+        // Call it a class string if ≥ 70 % of tokens match the pattern
+        return $classLike >= max(2, (int) round(count($tokens) * 0.7));
     }
 
     private function renderFailurePreview(Site $site, Page $page): string
