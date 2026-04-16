@@ -28,7 +28,7 @@
         <div class="space-y-6">
             <flux:card>
                 <flux:heading size="lg">Your sites</flux:heading>
-                <flux:subheading>Select a site to view status and deploy controls.</flux:subheading>
+                <flux:subheading>Click a site name to view its status and deploy controls below.</flux:subheading>
 
                 <div class="mt-4">
                     @livewire('dashboard.site-list')

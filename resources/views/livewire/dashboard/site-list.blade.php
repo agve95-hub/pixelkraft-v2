@@ -19,7 +19,7 @@
             @forelse ($sites as $site)
                 <flux:table.row>
                     <flux:table.cell>
-                        <div class="flex items-center gap-2">
+                        <a href="{{ route('sites.index', ['site' => $site->id]) }}" class="flex items-center gap-2 hover:underline underline-offset-2">
                             <span @class([
                                 'h-2 w-2 rounded-full shrink-0',
                                 'bg-lime-500' => $site->latestUptimeCheck?->is_up === true,
@@ -27,7 +27,7 @@
                                 'bg-zinc-400' => is_null($site->latestUptimeCheck?->is_up),
                             ])></span>
                             <span class="font-medium">{{ $site->name }}</span>
-                        </div>
+                        </a>
                     </flux:table.cell>
                     <flux:table.cell class="hidden md:table-cell text-xs font-mono">
                         {{ number_format($site->pages_count) }}
