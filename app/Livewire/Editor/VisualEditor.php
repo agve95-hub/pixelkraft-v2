@@ -152,9 +152,30 @@ class VisualEditor extends Component
         try {
             $site = $this->resolveSite();
             $page = $this->resolvePage();
+
+            // Persist any unsaved edits before marking the page published.
+            // Code mode: always attempt a save — the buffer may have been edited.
+            // Visual mode: save only when a region is actively selected and editable.
+            $hasPendingEdits = $this->mode === 'code'
+                || ($this->mode === 'visual' && $this->selectedRegionId && $this->selectedRegionCanBeEdited());
+
+            if ($hasPendingEdits) {
+                $this->deployAfterSave = false;
+                $this->commitMessage = $this->generateCommitMessage();
+                $this->save();
+
+                // save() sets last_save_success=false for both real errors and
+                // "no changes detected". Only abort if a real exception occurred.
+                if ($this->debugTelemetry['last_save_success'] === false
+                    && $this->debugTelemetry['last_error'] !== 'No source changes detected'
+                ) {
+                    return;
+                }
+            }
+
             $page->update(['is_published' => true]);
             DeploySiteJob::dispatch($site->fresh(), 'editor');
-            session()->flash('success', 'Page marked published and deploy queued.');
+            session()->flash('success', 'Changes saved, page published, and deploy queued.');
             $this->dispatch('reload-iframe');
         } catch (\Throwable $e) {
             Log::error('Page publish failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
