@@ -11,6 +11,7 @@ import { Save } from 'lucide-react';
 
 interface Site {
     id: string; name: string; domain: string | null; project_type: string | null;
+    repo_url: string | null; branch: string | null;
     client_first_name: string | null; client_last_name: string | null;
     client_email: string | null; client_phone: string | null;
     client_company: string | null; client_address: string | null; client_notes: string | null;
@@ -52,6 +53,8 @@ export default function SiteSettings({ site }: { site: Site }) {
     const { data, setData, put, processing, errors } = useForm({
         name: site.name,
         domain: site.domain ?? '',
+        repo_url: site.repo_url ?? '',
+        branch: site.branch ?? '',
         project_type: site.project_type ?? '',
         client_first_name: site.client_first_name ?? '',
         client_last_name: site.client_last_name ?? '',
@@ -116,6 +119,14 @@ export default function SiteSettings({ site }: { site: Site }) {
                                     <Separator className="bg-zinc-800" />
                                     <FieldGroup label="Primary domain" hint="The live URL for this site.">
                                         <Input value={data.domain} onChange={s('domain')} placeholder="example.com" className="border-zinc-700 bg-zinc-900 text-zinc-100" />
+                                    </FieldGroup>
+                                    <Separator className="bg-zinc-800" />
+                                    <FieldGroup label="Repository URL" hint="GitHub or Git remote URL.">
+                                        <Input value={data.repo_url} onChange={s('repo_url')} placeholder="https://github.com/org/repo" className="border-zinc-700 bg-zinc-900 text-zinc-100 font-mono text-xs" />
+                                    </FieldGroup>
+                                    <Separator className="bg-zinc-800" />
+                                    <FieldGroup label="Branch" hint="Git branch to deploy from.">
+                                        <Input value={data.branch} onChange={s('branch')} placeholder="main" className="border-zinc-700 bg-zinc-900 text-zinc-100" />
                                     </FieldGroup>
                                     <Separator className="bg-zinc-800" />
                                     <FieldGroup label="Project type">

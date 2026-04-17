@@ -583,6 +583,8 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $d = $request->validate([
                 'name' => 'required|string|max:255',
                 'domain' => 'nullable|string|max:255',
+                'repo_url' => 'nullable|string|max:500',
+                'branch' => 'nullable|string|max:100',
                 'project_type' => 'nullable|string|max:64',
                 'client_first_name' => 'nullable|string|max:100',
                 'client_last_name' => 'nullable|string|max:100',
@@ -654,7 +656,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         Route::put('/sites/{site}/maintenance', function (\Illuminate\Http\Request $request, Site $site) {
             $d = $request->validate(['enabled' => 'boolean', 'title' => 'nullable|string|max:255', 'message' => 'nullable|string|max:2000', 'allowed_ips' => 'nullable|string']);
             $ips = array_filter(array_map('trim', explode("\n", $d['allowed_ips'] ?? '')));
-            $site->update(['maintenance_settings' => ['enabled' => $d['enabled'] ?? false, 'title' => $d['title'], 'message' => $d['message'], 'allowed_ips' => array_values($ips)]]);
+            $site->update(['maintenance_settings' => ['enabled' => $request->boolean('enabled'), 'title' => $d['title'], 'message' => $d['message'], 'allowed_ips' => array_values($ips)]]);
             return back()->with('success', 'Maintenance settings saved.');
         })->name('sites.maintenance.update');
         Route::post('/sites/{site}/inbox/{message}/read', function (Site $site, \App\Models\SiteInboxMessage $message) {
@@ -679,6 +681,12 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         })->name('blog.edit');
         Route::post('/sites/{site}/blog', function (\Illuminate\Http\Request $request, Site $site) {
             $d = $request->validate(['title' => 'required|string|max:255', 'slug' => 'required|string|max:255', 'excerpt' => 'nullable|string', 'body' => 'nullable|string', 'status' => 'required|in:draft,published,scheduled', 'published_at' => 'nullable|date']);
+            if ($d['status'] === 'scheduled') {
+                $d['scheduled_at'] = $d['published_at'];
+                $d['published_at'] = null;
+            } elseif ($d['status'] === 'published' && empty($d['published_at'])) {
+                $d['published_at'] = now();
+            }
             $site->blogPosts()->create($d);
             return redirect("/dashboard/sites/{$site->id}/blog")->with('success', 'Post created.');
         })->name('blog.store');
@@ -726,5 +734,15 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             'twoFactorConfirmed' => (bool) $user->two_factor_confirmed_at,
         ]);
     })->name('settings');
-    Route::get('/system', fn () => Inertia::render('settings/system'))->name('system.diagnostics')->middleware('can:viewHorizon');
+    Route::get('/system', function () {
+        $diagnostics = [
+            ['label' => 'PHP version', 'value' => PHP_VERSION, 'status' => version_compare(PHP_VERSION, '8.2', '>=') ? 'ok' : 'warn'],
+            ['label' => 'APP_ENV', 'value' => config('app.env'), 'status' => config('app.env') === 'production' ? 'ok' : 'warn'],
+            ['label' => 'APP_DEBUG', 'value' => config('app.debug') ? 'true' : 'false', 'status' => config('app.debug') ? 'error' : 'ok'],
+            ['label' => 'Queue driver', 'value' => config('queue.default'), 'status' => config('queue.default') !== 'sync' ? 'ok' : 'warn'],
+            ['label' => 'Cache driver', 'value' => config('cache.default'), 'status' => 'ok'],
+            ['label' => 'DB connection', 'value' => config('database.default'), 'status' => 'ok'],
+        ];
+        return Inertia::render('settings/system', ['diagnostics' => $diagnostics]);
+    })->name('system.diagnostics')->middleware('can:viewHorizon');
 });

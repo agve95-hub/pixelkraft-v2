@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
     AlertTriangle, Globe, Users, Zap, CheckCircle2, XCircle,
-    Clock, FileText, ArrowRight, RefreshCw, TrendingUp, TrendingDown,
+    Clock, FileText, ArrowRight, RefreshCw, TrendingUp, TrendingDown, Pencil,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -61,10 +61,11 @@ function StatCard({ label, value, sub, icon: Icon, href, color = 'zinc' }: {
 }
 
 function deployStatusLabel(status: string | null) {
-    if (status === 'deployed') return { label: 'Live', color: 'emerald' as const };
+    if (status === 'live') return { label: 'Live', color: 'emerald' as const };
     if (status === 'deploying') return { label: 'Deploying', color: 'amber' as const };
+    if (status === 'queued') return { label: 'Queued', color: 'amber' as const };
     if (status === 'failed') return { label: 'Failed', color: 'red' as const };
-    return { label: 'Unknown', color: 'zinc' as const };
+    return { label: 'Not deployed', color: 'zinc' as const };
 }
 
 export default function SiteShow({
@@ -152,6 +153,10 @@ export default function SiteShow({
                                     <FileText className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
                                     <span className="flex-1 truncate font-mono text-xs text-zinc-300">{p.url_path || '/'}</span>
                                     <span className="tabular-nums text-xs text-zinc-500">{p.visitors_30d.toLocaleString()}</span>
+                                    <Link href={`/dashboard/sites/${site.id}/pages/${p.id}/edit`}
+                                        className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-zinc-500 hover:bg-zinc-700 hover:text-zinc-200 transition-colors">
+                                        <Pencil className="h-3 w-3" />Edit
+                                    </Link>
                                 </div>
                             ))}
                         </CardContent>
