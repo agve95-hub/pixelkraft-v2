@@ -119,13 +119,24 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
 
     async function pollImportStatus(id: string) {
         let attempts = 0;
-        const maxAttempts = 120;
+        const maxAttempts = 90;
+        let stuckAtZeroCount = 0;
 
         const tick = async () => {
             if (attempts++ > maxAttempts) { setImportFailed(true); return; }
             try {
                 const res = await fetch(`/dashboard/sites/${id}/import-status`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await res.json();
+                const progressMap: Record<string, number> = {
+                    queued: 0, cloning: 1, parsing: 2, deploying: 3, building: 4,
+                };
+                const activeIdx = progressMap[data.status] ?? 0;
+                if (activeIdx === 0) {
+                    stuckAtZeroCount++;
+                    if (stuckAtZeroCount >= 10) { setImportFailed(true); return; }
+                } else {
+                    stuckAtZeroCount = 0;
+                }
                 simulateStepProgress(data.status);
                 if (data.status === 'live') {
                     setImportSteps((prev) => prev.map((s) => ({ ...s, status: 'done' })));
