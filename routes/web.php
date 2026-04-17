@@ -442,6 +442,11 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $invoices = $site->invoices()->orderByDesc('invoice_date')->get();
             return Inertia::render('sites/invoices', ['site' => $site, 'invoices' => $invoices]);
         })->name('sites.invoices');
+        Route::post('/sites/{site}/invoices', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate(['number' => 'nullable|string|max:100', 'invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000']);
+            $invoice = $site->invoices()->create(array_merge($d, ['number' => $d['number'] ?? \App\Models\Invoice::nextNumberForSite($site), 'status' => 'unpaid']));
+            return redirect("/dashboard/sites/{$site->id}/invoices")->with('success', 'Invoice created.');
+        })->name('sites.invoices.store');
         Route::post('/sites/{site}/invoices/{invoice}/mark-paid', function (Site $site, \App\Models\Invoice $invoice) {
             abort_unless($invoice->site_id === $site->id, 403);
             $invoice->update(['status' => 'paid', 'paid_at' => now()]);
@@ -450,11 +455,17 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         Route::post('/sites/{site}/invoices/{invoice}/duplicate', function (Site $site, \App\Models\Invoice $invoice) {
             abort_unless($invoice->site_id === $site->id, 403);
             $copy = $invoice->replicate();
+            $copy->number = \App\Models\Invoice::nextNumberForSite($site);
             $copy->status = 'unpaid';
             $copy->paid_at = null;
             $copy->invoice_date = now()->toDateString();
             $copy->due_date = now()->addDays(30)->toDateString();
             $copy->save();
+            foreach ($invoice->items as $item) {
+                $newItem = $item->replicate();
+                $newItem->invoice_id = $copy->id;
+                $newItem->save();
+            }
             return back();
         })->name('sites.invoices.duplicate');
         Route::delete('/sites/{site}/invoices/{invoice}', function (Site $site, \App\Models\Invoice $invoice) {
@@ -650,7 +661,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         })->name('seo.redirects.destroy');
         Route::put('/sites/{site}/pages/{page}/seo', function (\Illuminate\Http\Request $request, Site $site, Page $page) {
             abort_unless($page->site_id === $site->id, 403);
-            $page->update($request->validate(['meta_title' => 'nullable|string|max:255', 'meta_description' => 'nullable|string|max:500', 'og_title' => 'nullable|string|max:255', 'og_description' => 'nullable|string|max:500', 'og_image' => 'nullable|url|max:500', 'canonical_url' => 'nullable|url|max:500', 'robots_meta' => 'nullable|string|max:100']));
+            $page->update($request->validate(['title' => 'nullable|string|max:255', 'meta_description' => 'nullable|string|max:500', 'og_title' => 'nullable|string|max:255', 'og_description' => 'nullable|string|max:500', 'og_image' => 'nullable|url|max:500', 'canonical_url' => 'nullable|url|max:500']));
             return back()->with('success', 'SEO meta saved.');
         })->name('seo.meta.update');
         Route::put('/sites/{site}/maintenance', function (\Illuminate\Http\Request $request, Site $site) {
@@ -693,6 +704,12 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         Route::put('/sites/{site}/blog/{blogPost}', function (\Illuminate\Http\Request $request, Site $site, BlogPost $blogPost) {
             abort_unless($blogPost->site_id === $site->id, 403);
             $d = $request->validate(['title' => 'required|string|max:255', 'slug' => 'required|string|max:255', 'excerpt' => 'nullable|string', 'body' => 'nullable|string', 'status' => 'required|in:draft,published,scheduled', 'published_at' => 'nullable|date']);
+            if ($d['status'] === 'scheduled') {
+                $d['scheduled_at'] = $d['published_at'];
+                $d['published_at'] = null;
+            } elseif ($d['status'] === 'published' && empty($d['published_at'])) {
+                $d['published_at'] = now();
+            }
             $blogPost->update($d);
             return back()->with('success', 'Post updated.');
         })->name('blog.update');
@@ -710,12 +727,23 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $site->productListings()->create(array_merge($d, ['currency' => $d['currency'] ?? 'EUR', 'status' => $d['status'] ?? 'draft']));
             return redirect("/dashboard/sites/{$site->id}/products")->with('success', 'Product created.');
         })->name('products.store');
+        Route::get('/sites/{site}/products/{product}/edit', function (Site $site, \App\Models\ProductListing $product) {
+            abort_unless($product->site_id === $site->id, 403);
+            return Inertia::render('sites/product-edit', ['site' => $site, 'product' => $product]);
+        })->name('products.edit');
+        Route::put('/sites/{site}/products/{product}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\ProductListing $product) {
+            abort_unless($product->site_id === $site->id, 403);
+            $d = $request->validate(['name' => 'required|string|max:255', 'description' => 'nullable|string', 'price' => 'required|numeric|min:0', 'currency' => 'nullable|string|size:3', 'status' => 'nullable|string|max:32']);
+            $product->update($d);
+            return redirect("/dashboard/sites/{$site->id}/products")->with('success', 'Product updated.');
+        })->name('products.update');
         Route::delete('/sites/{site}/products/{product}', function (Site $site, \App\Models\ProductListing $product) {
             abort_unless($product->site_id === $site->id, 403);
             $product->delete();
             return back()->with('success', 'Product deleted.');
         })->name('products.destroy');
         Route::get('/sites/{site}/templates', fn (Site $site) => Inertia::render('sites/templates', ['site' => $site]))->name('templates.index');
+        Route::get('/sites/{site}/subscribers', fn (Site $site) => Inertia::render('email/subscribers', ['site' => $site]))->name('sites.subscribers');
     });
 
     // Analytics

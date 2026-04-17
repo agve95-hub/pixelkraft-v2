@@ -16,9 +16,17 @@ class SiteAnalyticsController
 {
     public function __invoke(Request $request, Site $site, AnalyticsAggregator $analytics): View
     {
-        $stats = Schema::hasTable('analytics_snapshots')
-            ? $analytics->getSiteStats($site, 30)
-            : ['daily' => [], 'total_visitors' => 0, 'total_pageviews' => 0, 'avg_bounce_rate' => 0.0, 'avg_session_sec' => 0, 'top_pages' => [], 'traffic_label' => 'All sources'];
+        $zeroStats = ['daily' => [], 'total_visitors' => 0, 'total_pageviews' => 0, 'avg_bounce_rate' => 0.0, 'avg_session_sec' => 0, 'top_pages' => [], 'traffic_label' => 'All sources'];
+        $zeroEvents = ['total_events' => 0, 'page_views' => 0, 'forms' => 0, 'interactions' => 0, 'top_events' => []];
+
+        try {
+            $stats = Schema::hasTable('analytics_snapshots')
+                ? $analytics->getSiteStats($site, 30)
+                : $zeroStats;
+        } catch (\Throwable) {
+            $stats = $zeroStats;
+        }
+
         $daily = collect($stats['daily'] ?? []);
         $trafficTotal = (int) ($stats['total_visitors'] ?? 0);
 
@@ -28,11 +36,17 @@ class SiteAnalyticsController
             ? (int) round((($last7 - $prev7) / $prev7) * 100)
             : null;
 
-        $checks = UptimeCheck::query()
-            ->where('site_id', $site->id)
-            ->where('checked_at', '>=', now()->subDays(30))
-            ->orderBy('checked_at')
-            ->get(['checked_at', 'is_up', 'is_degraded', 'response_time_ms']);
+        try {
+            $checks = Schema::hasTable('uptime_checks')
+                ? UptimeCheck::query()
+                    ->where('site_id', $site->id)
+                    ->where('checked_at', '>=', now()->subDays(30))
+                    ->orderBy('checked_at')
+                    ->get(['checked_at', 'is_up', 'is_degraded', 'response_time_ms'])
+                : collect();
+        } catch (\Throwable) {
+            $checks = collect();
+        }
 
         $uptimePercent = $checks->isEmpty()
             ? 100.0
@@ -73,14 +87,15 @@ class SiteAnalyticsController
             : (int) $sorted->get(max(0, (int) ceil($sorted->count() * 0.95) - 1));
 
         $trafficChart = $this->buildTrafficChart($daily);
-
         $responseChart = $this->buildResponseChart($responseSeries);
 
-        $deploys = DeployLog::query()
-            ->where('site_id', $site->id)
-            ->orderByDesc('created_at')
-            ->limit(25)
-            ->get();
+        try {
+            $deploys = Schema::hasTable('deploy_logs')
+                ? DeployLog::query()->where('site_id', $site->id)->orderByDesc('created_at')->limit(25)->get()
+                : collect();
+        } catch (\Throwable) {
+            $deploys = collect();
+        }
 
         $currentRelease = Schema::hasTable('deployment_releases')
             ? $site->currentDeploymentRelease()->first()
@@ -89,9 +104,13 @@ class SiteAnalyticsController
             ? DeploymentRelease::query()->where('site_id', $site->id)->count()
             : 0;
 
-        $eventSummary = Schema::hasTable('analytics_events')
-            ? $analytics->summarizeSiteEvents($site, 30)
-            : ['total_events' => 0, 'page_views' => 0, 'forms' => 0, 'interactions' => 0, 'top_events' => []];
+        try {
+            $eventSummary = Schema::hasTable('analytics_events')
+                ? $analytics->summarizeSiteEvents($site, 30)
+                : $zeroEvents;
+        } catch (\Throwable) {
+            $eventSummary = $zeroEvents;
+        }
 
         return view('dashboard.sites.analytics', [
             'site' => $site,

@@ -10,20 +10,19 @@ import { Save } from 'lucide-react';
 interface Site { id: string; name: string; }
 interface Page {
     id: string; title: string | null; url_path: string | null;
-    meta_title: string | null; meta_description: string | null;
+    meta_description: string | null;
     og_title: string | null; og_description: string | null; og_image: string | null;
-    canonical_url: string | null; robots_meta: string | null;
+    canonical_url: string | null;
 }
 
 export default function SeoMeta({ site, page }: { site: Site; page: Page }) {
     const { data, setData, put, processing } = useForm({
-        meta_title: page.meta_title ?? '',
+        title: page.title ?? '',
         meta_description: page.meta_description ?? '',
         og_title: page.og_title ?? '',
         og_description: page.og_description ?? '',
         og_image: page.og_image ?? '',
         canonical_url: page.canonical_url ?? '',
-        robots_meta: page.robots_meta ?? '',
     });
 
     const s = (k: keyof typeof data) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setData(k, e.target.value);
@@ -48,17 +47,13 @@ export default function SeoMeta({ site, page }: { site: Site; page: Page }) {
                             <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Search engine</p>
                             <div className="space-y-1">
                                 <Label className="text-xs text-zinc-400">Meta title</Label>
-                                <Input value={data.meta_title} onChange={s('meta_title')} placeholder={page.title ?? ''} className="border-zinc-700 bg-zinc-900 text-zinc-100" />
-                                <p className="text-xs text-zinc-600">{data.meta_title.length} / 60 chars</p>
+                                <Input value={data.title} onChange={s('title')} className="border-zinc-700 bg-zinc-900 text-zinc-100" />
+                                <p className="text-xs text-zinc-600">{data.title.length} / 60 chars</p>
                             </div>
                             <div className="space-y-1">
                                 <Label className="text-xs text-zinc-400">Meta description</Label>
                                 <Textarea value={data.meta_description} onChange={s('meta_description')} rows={3} className="border-zinc-700 bg-zinc-900 text-zinc-100" />
                                 <p className="text-xs text-zinc-600">{data.meta_description.length} / 160 chars</p>
-                            </div>
-                            <div className="space-y-1">
-                                <Label className="text-xs text-zinc-400">Robots meta</Label>
-                                <Input value={data.robots_meta} onChange={s('robots_meta')} placeholder="index, follow" className="border-zinc-700 bg-zinc-900 text-zinc-100" />
                             </div>
                             <div className="space-y-1">
                                 <Label className="text-xs text-zinc-400">Canonical URL</Label>

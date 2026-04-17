@@ -82,14 +82,22 @@ class Campaign extends Model
     {
         return $query
             ->where('is_enabled', true)
-            ->where('starts_at', '<=', now())
-            ->where('ends_at', '>=', now());
+            ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', now()));
     }
 
     public function isActive(): bool
     {
-        return $this->is_enabled
-            && $this->starts_at->lte(now())
-            && $this->ends_at->gte(now());
+        if (! $this->is_enabled) {
+            return false;
+        }
+        if ($this->starts_at !== null && $this->starts_at->gt(now())) {
+            return false;
+        }
+        if ($this->ends_at !== null && $this->ends_at->lt(now())) {
+            return false;
+        }
+
+        return true;
     }
 }

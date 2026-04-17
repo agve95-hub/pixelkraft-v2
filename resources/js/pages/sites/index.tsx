@@ -142,7 +142,7 @@ export default function SitesIndex({ sites }: { sites: Site[] }) {
     function handleDeploy() {
         if (!selectedSite) return;
         setDeploying(true);
-        router.post(`/api/v1/sites/${selectedSite.id}/deploy`, {}, {
+        router.post(`/dashboard/sites/${selectedSite.id}/deploy`, {}, {
             onFinish: () => setDeploying(false),
         });
     }

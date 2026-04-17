@@ -8,7 +8,7 @@ import {
     AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
     AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, ShoppingBag } from 'lucide-react';
+import { Plus, Pencil, Trash2, ShoppingBag } from 'lucide-react';
 
 interface Site { id: string; name: string; }
 interface Product { id: string; name: string; price: string; currency: string; status: string; }
@@ -59,7 +59,12 @@ export default function Products({ site, products }: { site: Site; products: Pro
                                                     ? <Badge variant="success">Published</Badge>
                                                     : <Badge variant="secondary">Draft</Badge>}
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="px-4 py-3 flex items-center gap-1">
+                                                <Link href={`/dashboard/sites/${site.id}/products/${p.id}/edit`}>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-200">
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </Link>
                                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-300" onClick={() => setDeleteId(p.id)}>
                                                     <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>

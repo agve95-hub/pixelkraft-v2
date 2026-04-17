@@ -20,7 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SetSecurityHeaders::class);
-        $middleware->web(append: [HandleInertiaRequests::class]);
+        $middleware->web(append: [
+            \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+            HandleInertiaRequests::class,
+        ]);
 
         // Prepend CORS handling to the API group so preflight OPTIONS requests
         // to the public tracking / form / inbox endpoints are answered before
