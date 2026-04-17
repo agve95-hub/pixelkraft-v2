@@ -434,7 +434,10 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 'pages' => $pages,
             ]);
         })->name('sites.show');
-        Route::get('/sites/{site}/inbox', fn (Site $site) => Inertia::render('sites/inbox', ['site' => $site]))->name('sites.inbox');
+        Route::get('/sites/{site}/inbox', function (Site $site) {
+            $messages = $site->inboxMessages()->latest()->get();
+            return Inertia::render('sites/inbox', ['site' => $site, 'messages' => $messages]);
+        })->name('sites.inbox');
         Route::get('/sites/{site}/invoices', function (Site $site) {
             $invoices = $site->invoices()->orderByDesc('invoice_date')->get();
             return Inertia::render('sites/invoices', ['site' => $site, 'invoices' => $invoices]);
@@ -609,6 +612,11 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $site->update($d);
             return back()->with('success', 'Settings saved.');
         })->name('sites.settings.update');
+        Route::post('/sites/{site}/deploy', function (Site $site) {
+            $site->update(['deploy_status' => \App\Enums\DeployStatus::Deploying]);
+            \App\Jobs\DeploySiteJob::dispatch($site, 'manual');
+            return back()->with('success', 'Deployment started.');
+        })->name('sites.deploy');
         Route::get('/sites/{site}/files', fn (Site $site) => Inertia::render('sites/files', ['site' => $site]))->name('sites.files');
 
         // Editor — kept as Blade (Phase 3 overhaul)

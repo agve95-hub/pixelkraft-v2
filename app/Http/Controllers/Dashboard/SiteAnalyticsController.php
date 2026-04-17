@@ -16,7 +16,9 @@ class SiteAnalyticsController
 {
     public function __invoke(Request $request, Site $site, AnalyticsAggregator $analytics): View
     {
-        $stats = $analytics->getSiteStats($site, 30);
+        $stats = Schema::hasTable('analytics_snapshots')
+            ? $analytics->getSiteStats($site, 30)
+            : ['daily' => [], 'total_visitors' => 0, 'total_pageviews' => 0, 'avg_bounce_rate' => 0.0, 'avg_session_sec' => 0, 'top_pages' => [], 'traffic_label' => 'All sources'];
         $daily = collect($stats['daily'] ?? []);
         $trafficTotal = (int) ($stats['total_visitors'] ?? 0);
 
@@ -55,9 +57,9 @@ class SiteAnalyticsController
             return 'up';
         })->values();
 
-        $upDays = $dailyBars->where('up')->count();
-        $degradedDays = $dailyBars->where('degraded')->count();
-        $downDays = $dailyBars->where('down')->count();
+        $upDays = $dailyBars->filter(fn ($v) => $v === 'up')->count();
+        $degradedDays = $dailyBars->filter(fn ($v) => $v === 'degraded')->count();
+        $downDays = $dailyBars->filter(fn ($v) => $v === 'down')->count();
 
         $responseSeries = $checks->pluck('response_time_ms')
             ->filter(fn ($ms) => $ms !== null)
