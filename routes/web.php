@@ -362,11 +362,83 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             ]);
         })->name('sites.show');
         Route::get('/sites/{site}/inbox', fn (Site $site) => Inertia::render('sites/inbox', ['site' => $site]))->name('sites.inbox');
-        Route::get('/sites/{site}/invoices', fn (Site $site) => Inertia::render('sites/invoices', ['site' => $site]))->name('sites.invoices');
+        Route::get('/sites/{site}/invoices', function (Site $site) {
+            $invoices = $site->invoices()->orderByDesc('invoice_date')->get();
+            return Inertia::render('sites/invoices', ['site' => $site, 'invoices' => $invoices]);
+        })->name('sites.invoices');
+        Route::post('/sites/{site}/invoices/{invoice}/mark-paid', function (Site $site, \App\Models\Invoice $invoice) {
+            abort_unless($invoice->site_id === $site->id, 403);
+            $invoice->update(['status' => 'paid', 'paid_at' => now()]);
+            return back();
+        })->name('sites.invoices.mark-paid');
+        Route::post('/sites/{site}/invoices/{invoice}/duplicate', function (Site $site, \App\Models\Invoice $invoice) {
+            abort_unless($invoice->site_id === $site->id, 403);
+            $copy = $invoice->replicate();
+            $copy->status = 'unpaid';
+            $copy->paid_at = null;
+            $copy->invoice_date = now()->toDateString();
+            $copy->due_date = now()->addDays(30)->toDateString();
+            $copy->save();
+            return back();
+        })->name('sites.invoices.duplicate');
+        Route::delete('/sites/{site}/invoices/{invoice}', function (Site $site, \App\Models\Invoice $invoice) {
+            abort_unless($invoice->site_id === $site->id, 403);
+            $invoice->delete();
+            return back();
+        })->name('sites.invoices.destroy');
         Route::get('/sites/{site}/invoices/{invoice}/pdf', InvoicePdfController::class)->name('sites.invoices.pdf');
         Route::get('/sites/{site}/campaigns', fn (Site $site) => Inertia::render('sites/campaigns', ['site' => $site]))->name('sites.campaigns');
-        Route::get('/sites/{site}/expenses', fn (Site $site) => Inertia::render('sites/expenses', ['site' => $site]))->name('sites.expenses');
-        Route::get('/sites/{site}/reminders', fn (Site $site) => Inertia::render('sites/reminders', ['site' => $site]))->name('sites.reminders');
+        Route::get('/sites/{site}/expenses', function (Site $site) {
+            $expenses = $site->expenses()->orderByDesc('expense_date')->orderByDesc('created_at')->get();
+            $totals = $site->expenses()->selectRaw('currency, SUM(amount) as total')->groupBy('currency')->get();
+            return Inertia::render('sites/expenses', ['site' => $site, 'expenses' => $expenses, 'totals' => $totals]);
+        })->name('sites.expenses');
+        Route::post('/sites/{site}/expenses', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate(['label' => 'required|string|max:255', 'amount' => 'required|numeric|min:0.01', 'currency' => 'required|string|size:3', 'expense_date' => 'required|date']);
+            $site->expenses()->create($d);
+            return back();
+        })->name('sites.expenses.store');
+        Route::put('/sites/{site}/expenses/{expense}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Expense $expense) {
+            abort_unless($expense->site_id === $site->id, 403);
+            $d = $request->validate(['label' => 'required|string|max:255', 'amount' => 'required|numeric|min:0.01', 'currency' => 'required|string|size:3', 'expense_date' => 'required|date']);
+            $expense->update($d);
+            return back();
+        })->name('sites.expenses.update');
+        Route::delete('/sites/{site}/expenses/{expense}', function (Site $site, \App\Models\Expense $expense) {
+            abort_unless($expense->site_id === $site->id, 403);
+            $expense->delete();
+            return back();
+        })->name('sites.expenses.destroy');
+        Route::delete('/sites/{site}/expenses', function (\Illuminate\Http\Request $request, Site $site) {
+            $ids = $request->validate(['ids' => 'required|array', 'ids.*' => 'string'])['ids'];
+            $site->expenses()->whereIn('id', $ids)->delete();
+            return back();
+        })->name('sites.expenses.bulk-destroy');
+        Route::get('/sites/{site}/reminders', function (Site $site) {
+            $reminders = $site->reminders()->orderBy('due_at')->get();
+            return Inertia::render('sites/reminders', ['site' => $site, 'reminders' => $reminders]);
+        })->name('sites.reminders');
+        Route::post('/sites/{site}/reminders', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate(['title' => 'required|string|max:255', 'due_at' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
+            $site->reminders()->create($d);
+            return back();
+        })->name('sites.reminders.store');
+        Route::put('/sites/{site}/reminders/{reminder}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Reminder $reminder) {
+            abort_unless($reminder->site_id === $site->id, 403);
+            $d = $request->validate(['title' => 'required|string|max:255', 'due_at' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
+            $reminder->update($d);
+            return back();
+        })->name('sites.reminders.update');
+        Route::post('/sites/{site}/reminders/{reminder}/complete', function (Site $site, \App\Models\Reminder $reminder) {
+            abort_unless($reminder->site_id === $site->id, 403);
+            $reminder->update(['completed_at' => $reminder->completed_at ? null : now()]);
+            return back();
+        })->name('sites.reminders.complete');
+        Route::delete('/sites/{site}/reminders/{reminder}', function (Site $site, \App\Models\Reminder $reminder) {
+            abort_unless($reminder->site_id === $site->id, 403);
+            $reminder->delete();
+            return back();
+        })->name('sites.reminders.destroy');
         Route::get('/sites/{site}/reports', fn (Site $site) => Inertia::render('sites/reports', ['site' => $site]))->name('sites.reports');
         Route::get('/sites/{site}/analytics', SiteAnalyticsController::class)->name('sites.analytics');
         Route::get('/sites/{site}/maintenance', fn (Site $site) => Inertia::render('sites/maintenance', ['site' => $site]))->name('sites.maintenance');
