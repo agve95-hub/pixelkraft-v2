@@ -387,7 +387,38 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return back();
         })->name('sites.invoices.destroy');
         Route::get('/sites/{site}/invoices/{invoice}/pdf', InvoicePdfController::class)->name('sites.invoices.pdf');
-        Route::get('/sites/{site}/campaigns', fn (Site $site) => Inertia::render('sites/campaigns', ['site' => $site]))->name('sites.campaigns');
+        Route::get('/sites/{site}/campaigns', function (Site $site) {
+            return Inertia::render('sites/campaigns', ['site' => $site, 'campaigns' => $site->campaigns()->orderByDesc('created_at')->get()]);
+        })->name('sites.campaigns');
+        Route::post('/sites/{site}/campaigns', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|string|max:64', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
+            $site->campaigns()->create(array_merge($d, ['is_enabled' => false]));
+            return back();
+        })->name('sites.campaigns.store');
+        Route::put('/sites/{site}/campaigns/{campaign}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Campaign $campaign) {
+            abort_unless($campaign->site_id === $site->id, 403);
+            $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|string|max:64', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
+            $campaign->update($d);
+            return back();
+        })->name('sites.campaigns.update');
+        Route::post('/sites/{site}/campaigns/{campaign}/toggle', function (Site $site, \App\Models\Campaign $campaign) {
+            abort_unless($campaign->site_id === $site->id, 403);
+            $campaign->update(['is_enabled' => !$campaign->is_enabled]);
+            return back();
+        })->name('sites.campaigns.toggle');
+        Route::post('/sites/{site}/campaigns/{campaign}/duplicate', function (Site $site, \App\Models\Campaign $campaign) {
+            abort_unless($campaign->site_id === $site->id, 403);
+            $new = $campaign->replicate();
+            $new->name = $campaign->name . ' (copy)';
+            $new->is_enabled = false;
+            $new->save();
+            return back();
+        })->name('sites.campaigns.duplicate');
+        Route::delete('/sites/{site}/campaigns/{campaign}', function (Site $site, \App\Models\Campaign $campaign) {
+            abort_unless($campaign->site_id === $site->id, 403);
+            $campaign->delete();
+            return back();
+        })->name('sites.campaigns.destroy');
         Route::get('/sites/{site}/expenses', function (Site $site) {
             $expenses = $site->expenses()->orderByDesc('expense_date')->orderByDesc('created_at')->get();
             $totals = $site->expenses()->selectRaw('currency, SUM(amount) as total')->groupBy('currency')->get();
@@ -415,23 +446,23 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return back();
         })->name('sites.expenses.bulk-destroy');
         Route::get('/sites/{site}/reminders', function (Site $site) {
-            $reminders = $site->reminders()->orderBy('due_at')->get();
+            $reminders = $site->reminders()->orderBy('due_date')->get();
             return Inertia::render('sites/reminders', ['site' => $site, 'reminders' => $reminders]);
         })->name('sites.reminders');
         Route::post('/sites/{site}/reminders', function (\Illuminate\Http\Request $request, Site $site) {
-            $d = $request->validate(['title' => 'required|string|max:255', 'due_at' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
+            $d = $request->validate(['title' => 'required|string|max:255', 'due_date' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
             $site->reminders()->create($d);
             return back();
         })->name('sites.reminders.store');
         Route::put('/sites/{site}/reminders/{reminder}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Reminder $reminder) {
             abort_unless($reminder->site_id === $site->id, 403);
-            $d = $request->validate(['title' => 'required|string|max:255', 'due_at' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
+            $d = $request->validate(['title' => 'required|string|max:255', 'due_date' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
             $reminder->update($d);
             return back();
         })->name('sites.reminders.update');
         Route::post('/sites/{site}/reminders/{reminder}/complete', function (Site $site, \App\Models\Reminder $reminder) {
             abort_unless($reminder->site_id === $site->id, 403);
-            $reminder->update(['completed_at' => $reminder->completed_at ? null : now()]);
+            $reminder->update(['is_done' => !$reminder->is_done]);
             return back();
         })->name('sites.reminders.complete');
         Route::delete('/sites/{site}/reminders/{reminder}', function (Site $site, \App\Models\Reminder $reminder) {
@@ -439,7 +470,33 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $reminder->delete();
             return back();
         })->name('sites.reminders.destroy');
-        Route::get('/sites/{site}/reports', fn (Site $site) => Inertia::render('sites/reports', ['site' => $site]))->name('sites.reports');
+        Route::get('/sites/{site}/reports', function (\Illuminate\Http\Request $request, Site $site) {
+            $query = $site->reports()->orderByDesc('report_date');
+            return Inertia::render('sites/reports', ['site' => $site, 'reports' => $query->get()]);
+        })->name('sites.reports');
+        Route::post('/sites/{site}/reports', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string']);
+            $site->reports()->create($d);
+            return back();
+        })->name('sites.reports.store');
+        Route::put('/sites/{site}/reports/{report}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Report $report) {
+            abort_unless($report->site_id === $site->id, 403);
+            $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string']);
+            $report->update($d);
+            return back();
+        })->name('sites.reports.update');
+        Route::post('/sites/{site}/reports/{report}/duplicate', function (Site $site, \App\Models\Report $report) {
+            abort_unless($report->site_id === $site->id, 403);
+            $new = $report->replicate();
+            $new->title = $report->title . ' (copy)';
+            $new->save();
+            return back();
+        })->name('sites.reports.duplicate');
+        Route::delete('/sites/{site}/reports/{report}', function (Site $site, \App\Models\Report $report) {
+            abort_unless($report->site_id === $site->id, 403);
+            $report->delete();
+            return back();
+        })->name('sites.reports.destroy');
         Route::get('/sites/{site}/analytics', SiteAnalyticsController::class)->name('sites.analytics');
         Route::get('/sites/{site}/maintenance', fn (Site $site) => Inertia::render('sites/maintenance', ['site' => $site]))->name('sites.maintenance');
         Route::get('/sites/{site}/maintenance/preview', function (Site $site) {

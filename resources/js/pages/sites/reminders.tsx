@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import {
     AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
     AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
@@ -15,15 +14,15 @@ import { Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Site { id: string; name: string; }
-interface Reminder { id: string; title: string; due_at: string | null; notes: string | null; completed_at: string | null; }
+interface Reminder { id: string; title: string; due_date: string | null; notes: string | null; is_done: boolean; }
 
-function isOverdue(due_at: string | null, completed_at: string | null) {
-    if (completed_at || !due_at) return false;
-    return new Date(due_at) < new Date();
+function isOverdue(due_date: string | null, is_done: boolean) {
+    if (is_done || !due_date) return false;
+    return new Date(due_date) < new Date();
 }
 
 function AddForm({ siteId, onClose }: { siteId: string; onClose: () => void }) {
-    const { data, setData, post, processing, errors, reset } = useForm({ title: '', due_at: '', notes: '' });
+    const { data, setData, post, processing, errors, reset } = useForm({ title: '', due_date: '', notes: '' });
     return (
         <form onSubmit={(e) => { e.preventDefault(); post(`/dashboard/sites/${siteId}/reminders`, { onSuccess: () => { reset(); onClose(); } }); }} className="space-y-3">
             <div className="space-y-1">
@@ -32,8 +31,8 @@ function AddForm({ siteId, onClose }: { siteId: string; onClose: () => void }) {
                 {errors.title && <p className="text-xs text-red-400">{errors.title}</p>}
             </div>
             <div className="space-y-1">
-                <Label className="text-xs text-zinc-400">Due at</Label>
-                <Input type="datetime-local" value={data.due_at} onChange={(e) => setData('due_at', e.target.value)} className="border-zinc-700 bg-zinc-900 text-zinc-100" />
+                <Label className="text-xs text-zinc-400">Due date</Label>
+                <Input type="date" value={data.due_date} onChange={(e) => setData('due_date', e.target.value)} className="border-zinc-700 bg-zinc-900 text-zinc-100" />
             </div>
             <div className="space-y-1">
                 <Label className="text-xs text-zinc-400">Notes</Label>
@@ -48,11 +47,11 @@ function AddForm({ siteId, onClose }: { siteId: string; onClose: () => void }) {
 }
 
 function EditForm({ reminder, siteId, onCancel }: { reminder: Reminder; siteId: string; onCancel: () => void }) {
-    const { data, setData, put, processing } = useForm({ title: reminder.title, due_at: reminder.due_at ?? '', notes: reminder.notes ?? '' });
+    const { data, setData, put, processing } = useForm({ title: reminder.title, due_date: reminder.due_date ?? '', notes: reminder.notes ?? '' });
     return (
         <form onSubmit={(e) => { e.preventDefault(); put(`/dashboard/sites/${siteId}/reminders/${reminder.id}`, { onSuccess: onCancel }); }} className="space-y-2 mt-2">
             <Input value={data.title} onChange={(e) => setData('title', e.target.value)} className="border-zinc-600 bg-zinc-900 text-zinc-100" />
-            <Input type="datetime-local" value={data.due_at} onChange={(e) => setData('due_at', e.target.value)} className="border-zinc-600 bg-zinc-900 text-zinc-100" />
+            <Input type="date" value={data.due_date} onChange={(e) => setData('due_date', e.target.value)} className="border-zinc-600 bg-zinc-900 text-zinc-100" />
             <div className="flex gap-2">
                 <Button type="submit" size="sm" className="h-7 px-2" disabled={processing}><Check className="h-3 w-3 mr-1" />Save</Button>
                 <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={onCancel}><X className="h-3 w-3" /></Button>
@@ -69,9 +68,9 @@ export default function Reminders({ site, reminders }: { site: Site; reminders: 
     const toggle = (id: string) => router.post(`/dashboard/sites/${site.id}/reminders/${id}/complete`);
     const deleteReminder = (id: string) => { router.delete(`/dashboard/sites/${site.id}/reminders/${id}`); setDeleteId(null); };
 
-    const overdue = reminders.filter((r) => isOverdue(r.due_at, r.completed_at));
-    const pending = reminders.filter((r) => !r.completed_at && !isOverdue(r.due_at, r.completed_at));
-    const done = reminders.filter((r) => !!r.completed_at);
+    const overdue = reminders.filter((r) => isOverdue(r.due_date, r.is_done));
+    const pending = reminders.filter((r) => !r.is_done && !isOverdue(r.due_date, r.is_done));
+    const done = reminders.filter((r) => r.is_done);
 
     const ReminderRow = ({ reminder }: { reminder: Reminder }) => (
         <div className="border-b border-zinc-800/60 px-4 py-3">
@@ -83,18 +82,18 @@ export default function Reminders({ site, reminders }: { site: Site; reminders: 
                         onClick={() => toggle(reminder.id)}
                         className={cn(
                             'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
-                            reminder.completed_at
+                            reminder.is_done
                                 ? 'border-emerald-500 bg-emerald-500 text-zinc-950'
                                 : 'border-zinc-600 hover:border-zinc-400',
                         )}
                     >
-                        {reminder.completed_at && <Check className="h-2.5 w-2.5" />}
+                        {reminder.is_done && <Check className="h-2.5 w-2.5" />}
                     </button>
                     <div className="flex-1 min-w-0">
-                        <p className={cn('text-sm', reminder.completed_at && 'line-through text-zinc-500')}>{reminder.title}</p>
-                        {reminder.due_at && (
-                            <p className={cn('mt-0.5 text-xs', isOverdue(reminder.due_at, reminder.completed_at) ? 'text-amber-400' : 'text-zinc-500')}>
-                                {new Date(reminder.due_at).toLocaleString()}
+                        <p className={cn('text-sm', reminder.is_done && 'line-through text-zinc-500')}>{reminder.title}</p>
+                        {reminder.due_date && (
+                            <p className={cn('mt-0.5 text-xs', isOverdue(reminder.due_date, reminder.is_done) ? 'text-amber-400' : 'text-zinc-500')}>
+                                {new Date(reminder.due_date).toLocaleDateString()}
                             </p>
                         )}
                     </div>
