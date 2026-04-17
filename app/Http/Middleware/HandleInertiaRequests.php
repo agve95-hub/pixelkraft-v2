@@ -25,7 +25,7 @@ class HandleInertiaRequests extends Middleware
                 ->withCount([
                     'inboxMessages as unread_inbox_count' => fn ($q) => $q->where('direction', 'inbound')->where('is_read', false),
                     'invoices as unpaid_invoices_count' => fn ($q) => $q->where('status', 'unpaid'),
-                    'reminders as overdue_reminders_count' => fn ($q) => $q->whereDate('due_at', '<', now())->whereNull('completed_at'),
+                    'reminders as overdue_reminders_count' => fn ($q) => $q->whereDate('due_date', '<', now())->where('is_done', false),
                 ])
                 ->orderBy('name')
                 ->get(['id', 'name', 'deploy_status', 'maintenance_settings'])
