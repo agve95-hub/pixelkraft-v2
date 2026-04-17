@@ -16,6 +16,7 @@ use App\Support\SiteAccess;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // ── Health check (no auth) ───────────────────────
 // Used by post-deploy CI smoke tests, load balancers, and external uptime monitors.
@@ -186,17 +187,28 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
         $sitesDown = $activeSites->filter(fn ($site) => $site->latestUptimeCheck?->is_up === false)->count();
 
-        return view('dashboard.index', compact(
-            'seoIssueCount', 'totalSites', 'totalPages', 'uptimePercent',
-            'unreadMessages', 'errorCount', 'activeSites', 'trafficSeries',
-            'maxTraffic', 'trafficVisitors', 'vbW', 'vbH', 'pad', 'plotH',
-            'chartPoints', 'lineD', 'areaD', 'siteInsights', 'sitesDown'
-        ));
+        return Inertia::render('dashboard/index', [
+            'seoIssueCount' => $seoIssueCount,
+            'totalSites' => $totalSites,
+            'totalPages' => $totalPages,
+            'uptimePercent' => $uptimePercent,
+            'unreadMessages' => $unreadMessages,
+            'errorCount' => $errorCount,
+            'trafficSeries' => $trafficSeries,
+            'trafficVisitors' => $trafficVisitors,
+            'vbW' => $vbW,
+            'vbH' => $vbH,
+            'pad' => $pad,
+            'lineD' => $lineD,
+            'areaD' => $areaD,
+            'siteInsights' => $siteInsights,
+            'sitesDown' => $sitesDown,
+        ]);
     })->name('dashboard');
 
     // Sites
-    Route::get('/sites', fn () => view('dashboard.sites.index'))->name('sites.index');
-    Route::get('/sites/create', fn () => view('dashboard.sites.create'))->name('sites.create');
+    Route::get('/sites', fn () => Inertia::render('sites/index'))->name('sites.index');
+    Route::get('/sites/create', fn () => Inertia::render('sites/create'))->name('sites.create');
     Route::middleware(['site.access', 'expand.site.sidebar'])->group(function () {
         Route::get('/sites/{site}', function (Site $site) {
             $site->loadCount([
@@ -270,7 +282,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 ->limit(25)
                 ->get();
 
-            return view('dashboard.sites.show', [
+            return Inertia::render('sites/show', [
                 'site' => $site,
                 'seoIssueCount' => SeoIssueSummary::openCountForSite($site),
                 'seoWarningCount' => SeoIssueSummary::openWarningCountForSite($site),
@@ -287,22 +299,22 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 'pages' => $pages,
             ]);
         })->name('sites.show');
-        Route::get('/sites/{site}/inbox', fn (Site $site) => view('dashboard.sites.inbox', ['site' => $site]))->name('sites.inbox');
-        Route::get('/sites/{site}/invoices', fn (Site $site) => view('dashboard.sites.invoices', ['site' => $site]))->name('sites.invoices');
+        Route::get('/sites/{site}/inbox', fn (Site $site) => Inertia::render('sites/inbox', ['site' => $site]))->name('sites.inbox');
+        Route::get('/sites/{site}/invoices', fn (Site $site) => Inertia::render('sites/invoices', ['site' => $site]))->name('sites.invoices');
         Route::get('/sites/{site}/invoices/{invoice}/pdf', InvoicePdfController::class)->name('sites.invoices.pdf');
-        Route::get('/sites/{site}/campaigns', fn (Site $site) => view('dashboard.sites.campaigns', ['site' => $site]))->name('sites.campaigns');
-        Route::get('/sites/{site}/expenses', fn (Site $site) => view('dashboard.sites.expenses', ['site' => $site]))->name('sites.expenses');
-        Route::get('/sites/{site}/reminders', fn (Site $site) => view('dashboard.sites.reminders', ['site' => $site]))->name('sites.reminders');
-        Route::get('/sites/{site}/reports', fn (Site $site) => view('dashboard.sites.reports', ['site' => $site]))->name('sites.reports');
+        Route::get('/sites/{site}/campaigns', fn (Site $site) => Inertia::render('sites/campaigns', ['site' => $site]))->name('sites.campaigns');
+        Route::get('/sites/{site}/expenses', fn (Site $site) => Inertia::render('sites/expenses', ['site' => $site]))->name('sites.expenses');
+        Route::get('/sites/{site}/reminders', fn (Site $site) => Inertia::render('sites/reminders', ['site' => $site]))->name('sites.reminders');
+        Route::get('/sites/{site}/reports', fn (Site $site) => Inertia::render('sites/reports', ['site' => $site]))->name('sites.reports');
         Route::get('/sites/{site}/analytics', SiteAnalyticsController::class)->name('sites.analytics');
-        Route::get('/sites/{site}/maintenance', fn (Site $site) => view('dashboard.sites.maintenance', ['site' => $site]))->name('sites.maintenance');
+        Route::get('/sites/{site}/maintenance', fn (Site $site) => Inertia::render('sites/maintenance', ['site' => $site]))->name('sites.maintenance');
         Route::get('/sites/{site}/maintenance/preview', function (Site $site) {
             return view('dashboard.sites.maintenance-preview', ['site' => $site]);
         })->name('sites.maintenance.preview');
-        Route::get('/sites/{site}/settings', fn (Site $site) => view('dashboard.sites.settings', ['site' => $site]))->name('sites.settings');
-        Route::get('/sites/{site}/files', fn (Site $site) => view('dashboard.sites.files', ['site' => $site]))->name('sites.files');
+        Route::get('/sites/{site}/settings', fn (Site $site) => Inertia::render('sites/settings', ['site' => $site]))->name('sites.settings');
+        Route::get('/sites/{site}/files', fn (Site $site) => Inertia::render('sites/files', ['site' => $site]))->name('sites.files');
 
-        // Editor
+        // Editor — kept as Blade (Phase 3 overhaul)
         Route::get('/sites/{site}/pages/{page}/edit', fn (Site $site, Page $page) => view('dashboard.editor.index', ['site' => $site, 'page' => $page]))->name('editor');
 
         // Editor preview
@@ -310,31 +322,31 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         Route::get('/preview/{site}/asset/{path}', [EditorPreviewController::class, 'asset'])->where('path', '.*')->name('editor.asset');
 
         // SEO
-        Route::get('/sites/{site}/pages/{page}/seo', fn (Site $site, Page $page) => view('dashboard.seo.meta', ['site' => $site, 'page' => $page]))->name('seo.meta');
-        Route::get('/sites/{site}/redirects', fn (Site $site) => view('dashboard.seo.redirects', ['site' => $site]))->name('seo.redirects');
+        Route::get('/sites/{site}/pages/{page}/seo', fn (Site $site, Page $page) => Inertia::render('sites/seo-meta', ['site' => $site, 'page' => $page]))->name('seo.meta');
+        Route::get('/sites/{site}/redirects', fn (Site $site) => Inertia::render('sites/redirects', ['site' => $site]))->name('seo.redirects');
 
         // Content
-        Route::get('/sites/{site}/blog', fn (Site $site) => view('dashboard.content.blog-index', ['site' => $site]))->name('blog.index');
-        Route::get('/sites/{site}/blog/create', fn (Site $site) => view('dashboard.content.blog-create', ['site' => $site]))->name('blog.create');
+        Route::get('/sites/{site}/blog', fn (Site $site) => Inertia::render('sites/blog-index', ['site' => $site]))->name('blog.index');
+        Route::get('/sites/{site}/blog/create', fn (Site $site) => Inertia::render('sites/blog-create', ['site' => $site]))->name('blog.create');
         Route::get('/sites/{site}/blog/{blogPost}/edit', function (Site $site, BlogPost $blogPost) {
             abort_unless($blogPost->site_id === $site->id, 404);
 
-            return view('dashboard.content.blog-edit', ['site' => $site, 'postId' => $blogPost->id]);
+            return Inertia::render('sites/blog-edit', ['site' => $site, 'postId' => $blogPost->id]);
         })->name('blog.edit');
-        Route::get('/sites/{site}/products', fn (Site $site) => view('dashboard.content.product-index', ['site' => $site]))->name('products.index');
-        Route::get('/sites/{site}/products/create', fn (Site $site) => view('dashboard.content.product-create', ['site' => $site]))->name('products.create');
-        Route::get('/sites/{site}/templates', fn (Site $site) => view('dashboard.content.templates', ['site' => $site]))->name('templates.index');
+        Route::get('/sites/{site}/products', fn (Site $site) => Inertia::render('sites/products', ['site' => $site]))->name('products.index');
+        Route::get('/sites/{site}/products/create', fn (Site $site) => Inertia::render('sites/product-create', ['site' => $site]))->name('products.create');
+        Route::get('/sites/{site}/templates', fn (Site $site) => Inertia::render('sites/templates', ['site' => $site]))->name('templates.index');
     });
 
     // Analytics
-    Route::get('/analytics', fn () => view('dashboard.analytics.index'))->name('analytics');
+    Route::get('/analytics', fn () => Inertia::render('analytics/index'))->name('analytics');
 
     // Email
-    Route::get('/inbox', fn () => view('dashboard.email.inbox'))->name('inbox');
-    Route::get('/subscribers', fn () => view('dashboard.email.subscribers'))->name('subscribers');
-    Route::get('/newsletters', fn () => view('dashboard.email.campaigns'))->name('newsletters');
+    Route::get('/inbox', fn () => Inertia::render('email/inbox'))->name('inbox');
+    Route::get('/subscribers', fn () => Inertia::render('email/subscribers'))->name('subscribers');
+    Route::get('/newsletters', fn () => Inertia::render('email/campaigns'))->name('newsletters');
 
     // Settings
-    Route::get('/settings', fn () => view('dashboard.settings.index'))->name('settings');
-    Route::get('/system', fn () => view('dashboard.settings.system'))->name('system.diagnostics')->middleware('can:viewHorizon');
+    Route::get('/settings', fn () => Inertia::render('settings/index'))->name('settings');
+    Route::get('/system', fn () => Inertia::render('settings/system'))->name('system.diagnostics')->middleware('can:viewHorizon');
 });

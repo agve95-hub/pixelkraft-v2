@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureSanctumApiTokenCan;
 use App\Http\Middleware\EnsureSiteAccess;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RememberExpandedSite;
 use App\Http\Middleware\SetSecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SetSecurityHeaders::class);
+        $middleware->web(append: [HandleInertiaRequests::class]);
 
         // Prepend CORS handling to the API group so preflight OPTIONS requests
         // to the public tracking / form / inbox endpoints are answered before
