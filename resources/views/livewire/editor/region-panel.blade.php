@@ -1,15 +1,16 @@
-<div class="flex h-full flex-col">
-    <div class="border-b border-zinc-800 px-3 py-3">
-        <p class="text-xs font-semibold uppercase tracking-wider text-zinc-300">Elements</p>
-        @if ($variant !== 'compact')
-            <p class="mt-1 text-[11px] text-zinc-500">
-                @if ($editorProfile['visual_editing_supported'])
-                    {{ $visualEditableCount }} editable layer{{ $visualEditableCount === 1 ? '' : 's' }}. Click a row to focus it in canvas.
-                @else
-                    Code-first page. Layers help you locate elements before editing source.
-                @endif
-            </p>
-        @endif
+<div class="flex h-full flex-col" x-data="{ layerSearch: '' }">
+    <div class="border-b border-zinc-800 px-3 py-2.5">
+        <div class="flex items-center justify-between gap-2">
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Layers</p>
+            @if ($variant !== 'compact')
+                <span class="text-[10px] text-zinc-600">{{ $visualEditableCount }} editable</span>
+            @endif
+        </div>
+        <div class="mt-2 relative">
+            <svg class="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" x-model="layerSearch" placeholder="Filter layers…"
+                   class="h-7 w-full rounded-md border border-zinc-700 bg-zinc-950 pl-6 pr-2 text-[11px] text-zinc-200 placeholder-zinc-600 focus:border-zinc-500 focus:outline-none" />
+        </div>
     </div>
 
     <div class="border-b border-zinc-800 px-3 py-2">
@@ -71,6 +72,7 @@
                         data-layer-row
                         data-layer-region-id="{{ $region->id }}"
                         data-layer-selector="{{ $region->selector }}"
+                        x-show="!layerSearch || '{{ strtolower($label . ' ' . $tagName . ' ' . $region->selector) }}'.includes(layerSearch.toLowerCase())"
                         @class([
                             'group relative block w-full border-b border-zinc-800/50 py-2 pr-2 text-left transition last:border-b-0',
                             'bg-violet-500/15 ring-1 ring-inset ring-violet-500/55' => $selectedRegionId === $region->id,

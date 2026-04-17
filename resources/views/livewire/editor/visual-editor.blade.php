@@ -34,73 +34,123 @@
         </span>
     </div>
 
-    {{-- Row 2: primary toolbar (breadcrumbs, status, actions) --}}
-    <header class="flex flex-wrap items-center gap-3 border-b border-zinc-800 bg-zinc-900/95 px-3 py-2.5 backdrop-blur-sm">
-        <a href="{{ route('sites.show', $site) }}" class="inline-flex size-8 items-center justify-center rounded-lg border border-zinc-700 text-zinc-300 transition hover:border-zinc-500 hover:text-white" title="Back to site">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-        </a>
+    {{-- Row 2: primary toolbar — LEFT: back+breadcrumb  CENTER: mode+viewport  RIGHT: undo/redo+actions --}}
+    <header class="flex items-center gap-2 border-b border-zinc-800 bg-zinc-900/95 px-3 py-2 backdrop-blur-sm">
 
-        <div class="min-w-0 flex-1">
-            <nav class="truncate text-[11px] text-zinc-500">
-                <span>Sites</span>
-                <span class="mx-1 text-zinc-600">/</span>
-                <a href="{{ route('sites.show', $site) }}" class="text-zinc-400 hover:text-zinc-200">{{ $site->name }}</a>
-                <span class="mx-1 text-zinc-600">/</span>
-                <span class="text-zinc-300">{{ $page->title ?? Str::afterLast($page->file_path, '/') }}</span>
-            </nav>
-            <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                <h1 class="truncate text-sm font-semibold text-white">{{ $page->title ?? Str::afterLast($page->file_path, '/') }}</h1>
-                <span @class([
-                    'rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                    'border-emerald-500/35 bg-emerald-500/10 text-emerald-200' => $page->is_published,
-                    'border-zinc-600 bg-zinc-800 text-zinc-300' => ! $page->is_published,
-                ])>
-                    {{ $page->is_published ? 'Published' : 'Draft' }}
+        {{-- LEFT: back arrow + breadcrumb with page switcher --}}
+        <div class="flex min-w-0 flex-1 items-center gap-2">
+            <a href="{{ route('sites.show', $site) }}"
+               class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-zinc-700 text-zinc-300 transition hover:border-zinc-500 hover:text-white"
+               title="Back to {{ $site->name }}">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+            </a>
+            <div class="min-w-0 flex-1 text-[11px] leading-tight">
+                <a href="{{ route('sites.show', $site) }}" class="text-zinc-500 hover:text-zinc-200 transition">{{ $site->name }}</a>
+                <span class="mx-1 text-zinc-700">/</span>
+                <span x-data="{ pageDropOpen: false }" class="relative inline-block">
+                    <button type="button" @click="pageDropOpen = !pageDropOpen"
+                            class="inline-flex items-center gap-0.5 font-medium text-zinc-200 hover:text-white transition"
+                            title="Switch page">
+                        {{ Str::limit($page->title ?? Str::afterLast($page->file_path, '/'), 32) }}
+                        <svg class="h-3 w-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="pageDropOpen" x-cloak @click.outside="pageDropOpen = false"
+                         class="absolute left-0 top-full z-50 mt-1.5 max-h-64 w-60 overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-900 shadow-2xl">
+                        @foreach ($sitePages as $sitePage)
+                            <a href="{{ route('editor', ['site' => $site, 'page' => $sitePage]) }}"
+                               @class([
+                                   'flex items-center gap-2 px-3 py-2 text-[12px] transition',
+                                   'bg-violet-500/15 text-white' => $sitePage->id === $page->id,
+                                   'text-zinc-300 hover:bg-zinc-800 hover:text-white' => $sitePage->id !== $page->id,
+                               ])>
+                                <svg class="h-3 w-3 shrink-0 text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                <span class="truncate">{{ $sitePage->title ?: ($sitePage->url_path ?: '/') }}</span>
+                                @if (! $sitePage->is_published)
+                                    <span class="ml-auto shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide border border-amber-500/35 bg-amber-500/10 text-amber-300">Draft</span>
+                                @endif
+                            </a>
+                        @endforeach
+                    </div>
                 </span>
+                <span @class([
+                    'ml-1.5 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
+                    'border-emerald-500/35 bg-emerald-500/10 text-emerald-300' => $page->is_published,
+                    'border-zinc-600 bg-zinc-800/60 text-zinc-400' => ! $page->is_published,
+                ])>{{ $page->is_published ? 'Live' : 'Draft' }}</span>
             </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-1.5">
-            <button type="button" wire:click="undo" class="rounded-md border border-zinc-700 bg-zinc-950 p-1.5 text-zinc-400 hover:text-zinc-100 disabled:opacity-40" title="Undo (coming soon)" @disabled(! $canUndo)>
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 6 6v0"/></svg>
-            </button>
-            <button type="button" wire:click="redo" class="rounded-md border border-zinc-700 bg-zinc-950 p-1.5 text-zinc-400 hover:text-zinc-100 disabled:opacity-40" title="Redo (coming soon)" @disabled(! $canRedo)>
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 9 6 6m0 0-6 6m6-6H9a6 6 0 0 0-6 6v0"/></svg>
-            </button>
+        {{-- CENTER: [Edit | Preview | Code] ToggleGroup + viewport icon buttons --}}
+        <div class="flex shrink-0 items-center gap-2">
+            <div class="flex items-center rounded-lg border border-zinc-700 bg-zinc-950 p-0.5" role="group" aria-label="Editor mode">
+                <button type="button" wire:click="setMode('visual')"
+                        @class(['rounded-md px-2.5 py-1 text-[11px] font-medium transition', 'bg-zinc-800 text-white shadow-sm' => $mode === 'visual', 'text-zinc-500 hover:text-zinc-200' => $mode !== 'visual'])
+                        title="Visual editing mode">Edit</button>
+                <a href="{{ route('sites.show', $site) }}" target="_blank" rel="noopener"
+                   class="rounded-md px-2.5 py-1 text-[11px] font-medium text-zinc-500 hover:text-zinc-200 transition"
+                   title="Open live preview in new tab">Preview</a>
+                <button type="button" wire:click="setMode('code')"
+                        @class(['rounded-md px-2.5 py-1 text-[11px] font-medium transition', 'bg-zinc-800 text-white shadow-sm' => $mode === 'code', 'text-zinc-500 hover:text-zinc-200' => $mode !== 'code'])
+                        title="Source code editing mode">Code</button>
+            </div>
+
+            @if ($mode === 'visual')
+                <div class="flex items-center gap-0.5" role="group" aria-label="Viewport size">
+                    <button type="button" x-on:click="setViewport('desktop')"
+                            :class="viewport === 'desktop' ? 'border-zinc-600 bg-zinc-800 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-200'"
+                            class="rounded-md border p-1.5 transition" title="Desktop">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                    </button>
+                    <button type="button" x-on:click="setViewport('tablet')"
+                            :class="viewport === 'tablet' ? 'border-zinc-600 bg-zinc-800 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-200'"
+                            class="rounded-md border p-1.5 transition" title="Tablet">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    </button>
+                    <button type="button" x-on:click="setViewport('mobile')"
+                            :class="viewport === 'mobile' ? 'border-zinc-600 bg-zinc-800 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-200'"
+                            class="rounded-md border p-1.5 transition" title="Mobile">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    </button>
+                </div>
+            @endif
         </div>
 
-        @if ($mode === 'visual')
-            <div class="flex items-center rounded-lg border border-zinc-700 bg-zinc-950 p-0.5" role="group" aria-label="Viewport">
-                <button type="button" x-on:click="setViewport('desktop')" :class="viewport === 'desktop' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'" class="rounded-md px-2.5 py-1 text-[11px] font-medium">Desktop</button>
-                <button type="button" x-on:click="setViewport('tablet')" :class="viewport === 'tablet' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'" class="rounded-md px-2.5 py-1 text-[11px] font-medium">Tablet</button>
-                <button type="button" x-on:click="setViewport('mobile')" :class="viewport === 'mobile' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-200'" class="rounded-md px-2.5 py-1 text-[11px] font-medium">Mobile</button>
-            </div>
-        @endif
+        {{-- RIGHT: undo/redo + schedule + save draft + publish + avatar --}}
+        <div class="flex shrink-0 items-center gap-1">
+            <button type="button" wire:click="undo"
+                    class="rounded-md border border-transparent p-1.5 text-zinc-400 transition hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    title="Undo (⌘Z)" @disabled(! $canUndo)>
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 6 6v0"/></svg>
+            </button>
+            <button type="button" wire:click="redo"
+                    class="rounded-md border border-transparent p-1.5 text-zinc-400 transition hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    title="Redo (⌘⇧Z)" @disabled(! $canRedo)>
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 9 6 6m0 0-6 6m6-6H9a6 6 0 0 0-6 6v0"/></svg>
+            </button>
 
-        <div class="hidden h-6 w-px bg-zinc-800 sm:block"></div>
+            <div class="mx-1 h-5 w-px bg-zinc-800 hidden sm:block"></div>
 
-        <div class="flex flex-wrap items-center gap-2">
-            <button type="button" wire:click="setMode('code')" @class([
-                'rounded-lg border px-3 py-1.5 text-[12px] font-medium transition',
-                'border-violet-500/50 bg-violet-500/15 text-violet-100' => $mode === 'code',
-                'border-zinc-700 bg-zinc-950 text-zinc-300 hover:border-zinc-500' => $mode !== 'code',
-            ])>Code</button>
-            <button type="button" disabled title="Scheduled publishing coming soon" style="opacity: 0.4; cursor: not-allowed; pointer-events: none;" class="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-[12px] font-medium text-zinc-200">Schedule</button>
-            <button
-                type="button"
-                wire:click="saveDraft"
-                class="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-[12px] font-medium text-zinc-200 hover:border-zinc-500"
-                wire:loading.attr="disabled"
-                wire:target="saveDraft"
-            >Save draft</button>
-            <a href="{{ route('sites.show', $site) }}" target="_blank" rel="noopener" class="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-[12px] font-medium text-zinc-200 hover:border-zinc-500">Preview</a>
-            <button
-                type="button"
-                wire:click="publishPage"
-                class="rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 px-3 py-1.5 text-[12px] font-semibold text-black shadow-sm hover:opacity-95"
-                wire:loading.attr="disabled"
-                wire:target="publishPage"
-            >Publish</button>
+            <button type="button" disabled
+                    class="rounded-md border border-transparent p-1.5 text-zinc-600 cursor-not-allowed"
+                    title="Schedule publishing (coming soon)">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </button>
+
+            <button type="button" wire:click="saveDraft"
+                    class="hidden sm:inline-flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-zinc-500"
+                    wire:loading.attr="disabled" wire:target="saveDraft"
+                    title="Save draft without publishing">
+                <svg wire:loading wire:target="saveDraft" class="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                Save draft
+            </button>
+
+            <button type="button" wire:click="publishPage"
+                    class="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-2.5 py-1 text-[11px] font-semibold text-black shadow-sm transition hover:bg-emerald-400"
+                    wire:loading.attr="disabled" wire:target="publishPage"
+                    title="Publish page and deploy">
+                <svg wire:loading wire:target="publishPage" class="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                Publish
+            </button>
         </div>
     </header>
 
@@ -145,8 +195,26 @@
                 </div>
 
                 <div class="min-h-0 flex-1 overflow-hidden">
-                    <div x-show="leftTab === 'layers'" x-cloak class="h-full min-h-0">
-                        @livewire('editor.region-panel', ['pageId' => $pageId, 'variant' => 'compact'], key('region-panel-'.$pageId))
+                    <div x-show="leftTab === 'layers'" x-cloak class="flex h-full min-h-0 flex-col">
+                        <div class="min-h-0 flex-1 overflow-hidden">
+                            @livewire('editor.region-panel', ['pageId' => $pageId, 'variant' => 'compact'], key('region-panel-'.$pageId))
+                        </div>
+                        {{-- Add Element palette pinned to bottom of layers panel --}}
+                        <div x-data="{ addOpen: false }" class="shrink-0 border-t border-zinc-800 p-2">
+                            <button type="button" @click="addOpen = !addOpen"
+                                    class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-700 py-1.5 text-[11px] font-medium text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200">
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add element
+                            </button>
+                            <div x-show="addOpen" x-cloak @click.outside="addOpen = false"
+                                 class="mt-1.5 grid grid-cols-3 gap-1">
+                                @foreach (['Text', 'Image', 'Button', 'Divider', 'Container', 'HTML'] as $elType)
+                                    <button type="button" disabled
+                                            class="rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1.5 text-[10px] font-medium text-zinc-400 cursor-not-allowed opacity-60"
+                                            title="{{ $elType }} (coming soon)">{{ $elType }}</button>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
 
                     <div x-show="leftTab === 'pages'" x-cloak class="h-full overflow-y-auto p-3 text-[12px]">
@@ -270,43 +338,138 @@
                 </div>
 
                 <div class="flex-1 overflow-y-auto px-3 py-3 text-[13px] leading-relaxed">
-                    <div x-show="rightPanelTab === 'props'" class="space-y-4">
+                    <div x-show="rightPanelTab === 'props'" x-data="{ propsOpen: { element: true, content: false, layout: false, typography: false, background: false, border: false, attributes: false } }" class="space-y-1.5">
                         @if (! $selectedRegion)
                             <div class="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-700 bg-zinc-950/50 px-4 py-10 text-center">
                                 <p class="text-sm font-medium text-zinc-200">Select an element</p>
                                 <p class="mt-1 text-[12px] text-zinc-500">Click a region in the canvas or pick a row in Layers to edit properties.</p>
                             </div>
-                        @else
-                            <div class="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
-                                <p class="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Layer</p>
-                                <p class="mt-1 text-sm font-semibold text-white">{{ $selectedRegion->region_type }}</p>
-                                <p class="mt-2 break-all font-mono text-[11px] text-zinc-400">{{ $selectedRegion->selector }}</p>
-                                <div class="mt-3 flex flex-wrap gap-2">
-                                    <span @class([
-                                        'rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase',
-                                        'border-violet-500/35 bg-violet-500/10 text-violet-200' => $selectedRegionEditable,
-                                        'border-amber-500/35 bg-amber-500/10 text-amber-200' => ! $selectedRegionEditable,
-                                    ])>{{ $selectedRegionEditable ? 'Editable' : 'Preview only' }}</span>
-                                    @if ($selectedRegionManagement['managed'])
-                                        <span class="rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-200">Managed</span>
-                                    @endif
-                                </div>
-                                <div class="mt-4 flex flex-col gap-2">
-                                    <button wire:click="promoteSelectedRegion" type="button" class="w-full rounded-lg bg-violet-600 py-2 text-xs font-semibold text-white hover:bg-violet-500" @disabled($selectedRegionManagement['locked'] ?? false)>{{ ($selectedRegionManagement['managed'] ?? false) ? 'Refresh anchor' : 'Promote to managed' }}</button>
-                                    <button wire:click="lockSelectedRegion" type="button" class="w-full rounded-lg border border-zinc-700 py-2 text-xs font-medium text-zinc-200 hover:border-zinc-500">Mark static</button>
-                                </div>
-                            </div>
                         @endif
 
-                        <div class="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
-                            <p class="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Page settings</p>
-                            <p class="mt-2 text-[12px] text-zinc-400">Publish status is stored on the page record; Publish queues a deploy.</p>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <span class="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200">Published</span>
-                                <span class="rounded-md border border-zinc-700 px-2 py-1 text-[11px] text-zinc-400">Draft</span>
-                                <span class="rounded-md border border-zinc-700 px-2 py-1 text-[11px] text-zinc-500">Scheduled (stub)</span>
+                        {{-- Accordion: Element --}}
+                        <div class="rounded-lg border border-zinc-800 overflow-hidden">
+                            <button type="button" @click="propsOpen.element = !propsOpen.element"
+                                    class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-400 hover:bg-zinc-800/40 transition">
+                                Element
+                                <svg class="h-3 w-3 transition-transform" :class="propsOpen.element ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div x-show="propsOpen.element" x-cloak class="border-t border-zinc-800 bg-zinc-950/40 px-3 py-3 space-y-2.5">
+                                @if ($selectedRegion)
+                                    <div>
+                                        <p class="font-mono text-[10px] text-zinc-500 break-all">{{ $selectedRegion->selector }}</p>
+                                        <p class="mt-1 text-[12px] text-zinc-300">Type: <span class="font-semibold text-white">{{ $selectedRegion->region_type }}</span></p>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        <span @class([
+                                            'rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase',
+                                            'border-violet-500/35 bg-violet-500/10 text-violet-200' => $selectedRegionEditable,
+                                            'border-zinc-600 bg-zinc-800 text-zinc-400' => ! $selectedRegionEditable,
+                                        ])>{{ $selectedRegionEditable ? 'Editable' : 'Locked' }}</span>
+                                        @if ($selectedRegionManagement['managed'])
+                                            <span class="rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-200">Managed</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex flex-col gap-1.5">
+                                        <button wire:click="promoteSelectedRegion" type="button" class="w-full rounded-md bg-violet-600 py-1.5 text-[11px] font-semibold text-white hover:bg-violet-500 transition" @disabled($selectedRegionManagement['locked'] ?? false)>
+                                            {{ ($selectedRegionManagement['managed'] ?? false) ? 'Refresh anchor' : 'Promote to managed' }}
+                                        </button>
+                                        <button wire:click="lockSelectedRegion" type="button" class="w-full rounded-md border border-zinc-700 py-1.5 text-[11px] font-medium text-zinc-300 hover:border-zinc-500 transition">Mark static</button>
+                                    </div>
+                                @else
+                                    <p class="text-[12px] text-zinc-600">No element selected.</p>
+                                @endif
                             </div>
-                            <p class="mt-2 text-[11px] text-zinc-500">Slug: <span class="font-mono text-zinc-400">{{ $page->url_path ?: '/' }}</span></p>
+                        </div>
+
+                        {{-- Accordion: Content --}}
+                        <div class="rounded-lg border border-zinc-800 overflow-hidden">
+                            <button type="button" @click="propsOpen.content = !propsOpen.content"
+                                    class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-400 hover:bg-zinc-800/40 transition">
+                                Content
+                                <svg class="h-3 w-3 transition-transform" :class="propsOpen.content ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div x-show="propsOpen.content" x-cloak class="border-t border-zinc-800 bg-zinc-950/40 px-3 py-3 space-y-2.5">
+                                @if ($selectedRegion && $selectedRegionEditable)
+                                    <p class="text-[11px] text-zinc-400">Click the element in the canvas to edit its content inline.</p>
+                                @else
+                                    <p class="text-[11px] text-zinc-600">Select an editable element to modify content.</p>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Accordion: Layout --}}
+                        <div class="rounded-lg border border-zinc-800 overflow-hidden">
+                            <button type="button" @click="propsOpen.layout = !propsOpen.layout"
+                                    class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-400 hover:bg-zinc-800/40 transition">
+                                Layout
+                                <svg class="h-3 w-3 transition-transform" :class="propsOpen.layout ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div x-show="propsOpen.layout" x-cloak class="border-t border-zinc-800 bg-zinc-950/40 px-3 py-3">
+                                <p class="text-[11px] text-zinc-600">Layout controls coming in a future update.</p>
+                            </div>
+                        </div>
+
+                        {{-- Accordion: Typography --}}
+                        <div class="rounded-lg border border-zinc-800 overflow-hidden">
+                            <button type="button" @click="propsOpen.typography = !propsOpen.typography"
+                                    class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-400 hover:bg-zinc-800/40 transition">
+                                Typography
+                                <svg class="h-3 w-3 transition-transform" :class="propsOpen.typography ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div x-show="propsOpen.typography" x-cloak class="border-t border-zinc-800 bg-zinc-950/40 px-3 py-3">
+                                <p class="text-[11px] text-zinc-600">Typography controls coming in a future update.</p>
+                            </div>
+                        </div>
+
+                        {{-- Accordion: Background --}}
+                        <div class="rounded-lg border border-zinc-800 overflow-hidden">
+                            <button type="button" @click="propsOpen.background = !propsOpen.background"
+                                    class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-400 hover:bg-zinc-800/40 transition">
+                                Background
+                                <svg class="h-3 w-3 transition-transform" :class="propsOpen.background ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div x-show="propsOpen.background" x-cloak class="border-t border-zinc-800 bg-zinc-950/40 px-3 py-3">
+                                <p class="text-[11px] text-zinc-600">Background controls coming in a future update.</p>
+                            </div>
+                        </div>
+
+                        {{-- Accordion: Border & Shadow --}}
+                        <div class="rounded-lg border border-zinc-800 overflow-hidden">
+                            <button type="button" @click="propsOpen.border = !propsOpen.border"
+                                    class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-400 hover:bg-zinc-800/40 transition">
+                                Border &amp; Shadow
+                                <svg class="h-3 w-3 transition-transform" :class="propsOpen.border ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div x-show="propsOpen.border" x-cloak class="border-t border-zinc-800 bg-zinc-950/40 px-3 py-3">
+                                <p class="text-[11px] text-zinc-600">Border &amp; shadow controls coming in a future update.</p>
+                            </div>
+                        </div>
+
+                        {{-- Accordion: Attributes --}}
+                        <div class="rounded-lg border border-zinc-800 overflow-hidden">
+                            <button type="button" @click="propsOpen.attributes = !propsOpen.attributes"
+                                    class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-zinc-400 hover:bg-zinc-800/40 transition">
+                                Attributes
+                                <svg class="h-3 w-3 transition-transform" :class="propsOpen.attributes ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <div x-show="propsOpen.attributes" x-cloak class="border-t border-zinc-800 bg-zinc-950/40 px-3 py-3">
+                                @if ($selectedRegion)
+                                    <div class="space-y-1.5">
+                                        <p class="font-mono text-[10px] text-zinc-500">data-pk-region-id="{{ $selectedRegion->id }}"</p>
+                                    </div>
+                                @else
+                                    <p class="text-[11px] text-zinc-600">Select an element to view its attributes.</p>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Page quick-settings --}}
+                        <div class="rounded-lg border border-zinc-800 bg-zinc-950/30 px-3 py-2.5 mt-2">
+                            <p class="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Page</p>
+                            <p class="mt-1.5 flex items-center gap-2 text-[12px] text-zinc-400">
+                                <span @class(['rounded px-1.5 py-0.5 text-[10px] font-semibold border', 'border-emerald-500/35 bg-emerald-500/10 text-emerald-300' => $page->is_published, 'border-zinc-700 text-zinc-500' => !$page->is_published])>{{ $page->is_published ? 'Published' : 'Draft' }}</span>
+                                <span class="font-mono text-zinc-500">{{ $page->url_path ?: '/' }}</span>
+                            </p>
                         </div>
                     </div>
 
@@ -674,24 +837,30 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             const style = doc.createElement('style');
             style.textContent = `
                 [data-pk-region] {
-                    transition: outline-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+                    transition: outline-color 120ms ease, background-color 120ms ease;
                 }
-                html[data-pk-borders="on"] [data-pk-region] {
-                    position: relative !important;
-                    box-sizing: border-box !important;
-                    border-radius: 4px !important;
-                }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-editable="true"] {
-                    outline: 1px solid rgba(244, 114, 182, 0.42) !important;
-                    outline-offset: 1px !important;
-                    box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.2) !important;
-                    background: rgba(244, 114, 182, 0.03) !important;
-                }
+                /* Element-type colour coding: text=green, image=amber, interactive=red, container=violet, default=indigo */
+                html[data-pk-borders="on"] [data-pk-region][data-pk-etype="text"] { outline: 1px solid rgba(34,197,94,0.5) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-etype="image"] { outline: 1px solid rgba(245,158,11,0.5) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-etype="interactive"] { outline: 1px solid rgba(239,68,68,0.5) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-etype="container"] { outline: 1px solid rgba(139,92,246,0.5) !important; }
+                html[data-pk-borders="on"] [data-pk-region] { outline: 1px solid rgba(99,102,241,0.5) !important; outline-offset: 1px !important; }
+                /* Hover: bump opacity to 100% */
+                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="text"] { outline: 1px solid rgba(34,197,94,1) !important; background: rgba(34,197,94,0.05) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="image"] { outline: 1px solid rgba(245,158,11,1) !important; background: rgba(245,158,11,0.05) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="interactive"] { outline: 1px solid rgba(239,68,68,1) !important; background: rgba(239,68,68,0.05) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="container"] { outline: 1px solid rgba(139,92,246,1) !important; background: rgba(139,92,246,0.05) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-hover] { outline: 1px solid rgba(99,102,241,1) !important; background: rgba(99,102,241,0.05) !important; }
+                /* Selected: same color at 100% opacity */
+                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="text"] { outline: 1px solid rgba(34,197,94,1) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="image"] { outline: 1px solid rgba(245,158,11,1) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="interactive"] { outline: 1px solid rgba(239,68,68,1) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="container"] { outline: 1px solid rgba(139,92,246,1) !important; }
+                html[data-pk-borders="on"] [data-pk-region][data-pk-selected] { outline: 1px solid rgba(99,102,241,1) !important; }
+                /* Locked: dashed zinc, no pointer */
                 html[data-pk-borders="on"] [data-pk-region][data-pk-editable="false"] {
-                    outline: 2px dashed rgba(245, 158, 11, 0.85) !important;
-                    outline-offset: 2px !important;
-                    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45) !important;
-                    background: rgba(245, 158, 11, 0.05) !important;
+                    outline: 1px dashed rgba(161,161,170,0.6) !important;
+                    cursor: not-allowed !important;
                 }
                 html[data-pk-borders="on"] [data-pk-region]::before {
                     content: attr(data-pk-region-tag);
@@ -763,25 +932,55 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     position: fixed;
                     pointer-events: none;
                     z-index: 99998;
-                    border-radius: 4px;
+                    border-radius: 2px;
                     display: none;
+                    border: 1px solid rgba(99,102,241,0.5);
                 }
-                .pk-overlay-box--hover[data-pk-editable="true"] {
-                    border: 2px solid rgba(244, 114, 182, 0.98);
-                    box-shadow: 0 0 0 1px rgba(244, 114, 182, 0.65), inset 0 0 0 9999px rgba(244, 114, 182, 0.05);
+                .pk-overlay-box--hover { border: 1px solid rgba(99,102,241,0.5); }
+                .pk-overlay-box--selected { border: 1px solid rgba(99,102,241,1); }
+                .pk-overlay-box[data-pk-etype="text"] { border-color: rgba(34,197,94,1); }
+                .pk-overlay-box[data-pk-etype="image"] { border-color: rgba(245,158,11,1); }
+                .pk-overlay-box[data-pk-etype="interactive"] { border-color: rgba(239,68,68,1); }
+                .pk-overlay-box[data-pk-etype="container"] { border-color: rgba(139,92,246,1); }
+                .pk-overlay-box--hover:not([data-pk-etype]) { border-color: rgba(99,102,241,0.5); }
+                /* Pill label above top-left of selected overlay */
+                .pk-overlay-pill {
+                    position: fixed;
+                    pointer-events: none;
+                    z-index: 99999;
+                    display: none;
+                    padding: 1px 6px;
+                    border-radius: 3px 3px 3px 0;
+                    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                    font-size: 10px;
+                    font-weight: 600;
+                    text-transform: lowercase;
+                    white-space: nowrap;
+                    color: #fff;
+                    background: rgba(99,102,241,1);
+                    transform: translateY(-100%);
                 }
-                .pk-overlay-box--hover[data-pk-editable="false"] {
-                    border: 2px dashed rgba(245, 158, 11, 1);
-                    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.55), inset 0 0 0 9999px rgba(245, 158, 11, 0.1);
+                .pk-overlay-pill[data-pk-etype="text"] { background: rgba(34,197,94,1); color: #000; }
+                .pk-overlay-pill[data-pk-etype="image"] { background: rgba(245,158,11,1); color: #000; }
+                .pk-overlay-pill[data-pk-etype="interactive"] { background: rgba(239,68,68,1); }
+                .pk-overlay-pill[data-pk-etype="container"] { background: rgba(139,92,246,1); }
+                /* Resize handles (8 points) */
+                .pk-handle {
+                    position: fixed;
+                    pointer-events: none;
+                    z-index: 99999;
+                    display: none;
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 1px;
+                    background: rgba(99,102,241,1);
+                    margin-left: -3px;
+                    margin-top: -3px;
                 }
-                .pk-overlay-box--selected[data-pk-editable="true"] {
-                    border: 3px solid rgba(236, 72, 153, 1);
-                    box-shadow: 0 0 0 1px rgba(244, 114, 182, 0.9), inset 0 0 0 9999px rgba(236, 72, 153, 0.08);
-                }
-                .pk-overlay-box--selected[data-pk-editable="false"] {
-                    border: 2px solid rgba(217, 119, 6, 1);
-                    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.75), inset 0 0 0 9999px rgba(245, 158, 11, 0.14);
-                }
+                .pk-handle[data-pk-etype="text"] { background: rgba(34,197,94,1); }
+                .pk-handle[data-pk-etype="image"] { background: rgba(245,158,11,1); }
+                .pk-handle[data-pk-etype="interactive"] { background: rgba(239,68,68,1); }
+                .pk-handle[data-pk-etype="container"] { background: rgba(139,92,246,1); }
                 .pk-tooltip {
                     position: fixed;
                     border: 1px solid #3f3f46;
@@ -811,6 +1010,18 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             this.selectedOverlay = doc.createElement('div');
             this.selectedOverlay.className = 'pk-overlay-box pk-overlay-box--selected';
             doc.body.appendChild(this.selectedOverlay);
+
+            this.selectionPill = doc.createElement('div');
+            this.selectionPill.className = 'pk-overlay-pill';
+            doc.body.appendChild(this.selectionPill);
+
+            // 8 resize handles: tl, tc, tr, ml, mr, bl, bc, br
+            this.selectionHandles = ['tl','tc','tr','ml','mr','bl','bc','br'].map(() => {
+                const h = doc.createElement('div');
+                h.className = 'pk-handle';
+                doc.body.appendChild(h);
+                return h;
+            });
 
             doc.addEventListener('click', (event) => {
                 const regionElement = this.findRegionElement(event.target);
@@ -1307,14 +1518,8 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             this.hoveredRegionElement.removeAttribute('data-pk-hover');
             this.hoveredRegionElement = null;
         }
-
-        if (this.hoverOverlay) {
-            this.hoverOverlay.style.display = 'none';
-        }
-
-        if (this.tooltip) {
-            this.tooltip.style.display = 'none';
-        }
+        if (this.hoverOverlay) this.hoverOverlay.style.display = 'none';
+        if (this.tooltip) this.tooltip.style.display = 'none';
     },
 
     focusLayerRow(regionId, forceScroll = false) {
@@ -1418,26 +1623,70 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
     },
 
+    getElementType(element) {
+        const tag = (element.tagName || '').toLowerCase();
+        if (/^(h[1-6]|p|span|strong|em|label|li|td|th|blockquote|caption)$/.test(tag)) return 'text';
+        if (/^(img|video|audio|picture|svg|canvas|figure)$/.test(tag)) return 'image';
+        if (/^(a|button|input|select|textarea|form|details|summary)$/.test(tag)) return 'interactive';
+        if (/^(div|section|article|aside|nav|header|footer|main|ul|ol|table|tbody|thead|tr)$/.test(tag)) return 'container';
+        return null;
+    },
+
     updateOverlayPosition(overlay, element) {
         if (!overlay || !this.isElementNode(element) || !this.bordersVisible) {
-            if (overlay) {
-                overlay.style.display = 'none';
-            }
+            if (overlay) overlay.style.display = 'none';
+            this._hideSelectionExtras();
             return;
         }
 
         const rect = element.getBoundingClientRect();
         if (rect.width < 2 || rect.height < 2) {
             overlay.style.display = 'none';
+            this._hideSelectionExtras();
             return;
         }
 
+        const etype = this.getElementType(element);
         overlay.dataset.pkEditable = this.isRegionEditable(element) ? 'true' : 'false';
-        overlay.style.left = `${Math.max(0, rect.left - 2)}px`;
-        overlay.style.top = `${Math.max(0, rect.top - 2)}px`;
-        overlay.style.width = `${Math.max(0, rect.width + 4)}px`;
-        overlay.style.height = `${Math.max(0, rect.height + 4)}px`;
+        if (etype) overlay.dataset.pkEtype = etype; else delete overlay.dataset.pkEtype;
+
+        const l = Math.max(0, rect.left - 1);
+        const t = Math.max(0, rect.top - 1);
+        const w = Math.max(0, rect.width + 2);
+        const h = Math.max(0, rect.height + 2);
+        overlay.style.left = `${l}px`;
+        overlay.style.top = `${t}px`;
+        overlay.style.width = `${w}px`;
+        overlay.style.height = `${h}px`;
         overlay.style.display = 'block';
+
+        // Pill label + handles only on selected overlay
+        if (overlay === this.selectedOverlay && this.selectionPill) {
+            const tag = (element.tagName || '').toLowerCase();
+            this.selectionPill.textContent = tag;
+            if (etype) this.selectionPill.dataset.pkEtype = etype; else delete this.selectionPill.dataset.pkEtype;
+            this.selectionPill.style.left = `${l}px`;
+            this.selectionPill.style.top = `${t}px`;
+            this.selectionPill.style.display = 'block';
+
+            const handles = this.selectionHandles || [];
+            const positions = [
+                [l, t], [l + w/2, t], [l + w, t],
+                [l, t + h/2], [l + w, t + h/2],
+                [l, t + h], [l + w/2, t + h], [l + w, t + h],
+            ];
+            handles.forEach((handle, i) => {
+                if (etype) handle.dataset.pkEtype = etype; else delete handle.dataset.pkEtype;
+                handle.style.left = `${positions[i][0]}px`;
+                handle.style.top = `${positions[i][1]}px`;
+                handle.style.display = 'block';
+            });
+        }
+    },
+
+    _hideSelectionExtras() {
+        if (this.selectionPill) this.selectionPill.style.display = 'none';
+        (this.selectionHandles || []).forEach((h) => { h.style.display = 'none'; });
     },
 
     reloadIframe() {
