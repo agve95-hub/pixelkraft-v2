@@ -124,7 +124,6 @@ export default function SiteShow({
                     <StatCard
                         label="Errors" value={errorCount} icon={XCircle}
                         color={errorCount > 0 ? 'red' : 'zinc'}
-                        href={errorCount > 0 ? undefined : undefined}
                     />
                     <StatCard
                         label="SEO issues" value={seoIssueCount}

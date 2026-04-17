@@ -1,5 +1,5 @@
-import { Head, router } from '@inertiajs/react';
-import { useState, useCallback } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 import AppLayout from '@/layouts/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,13 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import {
     Check, X, Loader2, ChevronRight, ChevronLeft, GitBranch,
-    Server, Upload, Globe, Building, ArrowLeft,
+    Server, Upload, ArrowLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Link } from '@inertiajs/react';
 
 interface CreateSiteProps {
     projectTypes: string[];
@@ -61,6 +59,10 @@ const IMPORT_STEPS: Omit<ImportStep, 'status'>[] = [
 ];
 
 const STEP_LABELS = ['Client Info', 'Project Setup', 'Source & Deploy', 'Domain & SSL'];
+
+const DEPLOY_STATUS_INDEX: Record<string, number> = {
+    queued: 0, cloning: 1, parsing: 2, deploying: 3, building: 4,
+};
 
 export default function CreateSite({ projectTypes }: CreateSiteProps) {
     const [step, setStep] = useState(0);
@@ -133,10 +135,7 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
             try {
                 const res = await fetch(`/dashboard/sites/${id}/import-status`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await res.json();
-                const progressMap: Record<string, number> = {
-                    queued: 0, cloning: 1, parsing: 2, deploying: 3, building: 4,
-                };
-                const activeIdx = progressMap[data.status] ?? 0;
+                const activeIdx = DEPLOY_STATUS_INDEX[data.status] ?? 0;
                 if (activeIdx === 0) {
                     stuckAtZeroCount++;
                     if (stuckAtZeroCount >= 10) { setImportFailed(true); return; }
@@ -160,10 +159,7 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
     }
 
     function simulateStepProgress(deployStatus: string) {
-        const progressMap: Record<string, number> = {
-            queued: 0, cloning: 1, parsing: 2, deploying: 3, building: 4,
-        };
-        const activeIdx = progressMap[deployStatus] ?? 0;
+        const activeIdx = DEPLOY_STATUS_INDEX[deployStatus] ?? 0;
         setImportSteps((prev) =>
             prev.map((s, i) => ({
                 ...s,

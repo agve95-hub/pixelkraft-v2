@@ -4,7 +4,7 @@ import {
     Home, Globe, Mail, ClipboardList, Megaphone, Banknote,
     FileText, Clock, BarChart, ShieldCheck, Image, Settings,
     ChevronDown, ChevronRight, Plus, Search, LogOut, Server,
-    User, Bell, X, Menu,
+    X, Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
