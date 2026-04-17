@@ -6,7 +6,7 @@ export interface User {
 }
 
 export interface NavSite {
-    id: number;
+    id: string;
     name: string;
     deploy_status: string;
     maintenance_settings: Record<string, unknown> | null;
@@ -20,6 +20,7 @@ export interface PageProps {
         user: User | null;
     };
     navSites: NavSite[];
+    expandedSiteId: string | null;
     flash: {
         success: string | null;
         error: string | null;

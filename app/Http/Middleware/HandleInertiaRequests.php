@@ -43,6 +43,7 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'navSites' => $navSites,
+            'expandedSiteId' => $request->session()->get('expanded_site_id'),
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),

@@ -48,11 +48,11 @@ function deployStatusColor(status: string) {
 }
 
 export default function AppLayout({ children, title }: AppLayoutProps) {
-    const { auth, navSites, flash } = usePage<PageProps>().props;
+    const { auth, navSites, flash, expandedSiteId: initialExpandedSiteId } = usePage<PageProps>().props;
     const user = auth.user;
     const url = usePage().url;
 
-    const [expandedSiteId, setExpandedSiteId] = useState<number | null>(null);
+    const [expandedSiteId, setExpandedSiteId] = useState<string | null>(initialExpandedSiteId ?? null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
 

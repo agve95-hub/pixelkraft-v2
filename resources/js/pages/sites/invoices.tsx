@@ -1,9 +1,15 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -33,8 +39,54 @@ function statusBadge(status: string) {
     return <Badge variant="secondary">{status}</Badge>;
 }
 
+function NewInvoiceDialog({ siteId, open, onClose }: { siteId: string; open: boolean; onClose: () => void }) {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data, setData, post, processing, errors, reset } = useForm({
+        invoice_date: today, due_date: '', currency_code: 'EUR', bill_to: '',
+    });
+    const handleClose = () => { reset(); onClose(); };
+    return (
+        <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+            <DialogContent className="border-zinc-800 bg-[#1e1e1e]">
+                <DialogHeader><DialogTitle className="text-zinc-100">New Invoice</DialogTitle></DialogHeader>
+                <form onSubmit={(e) => { e.preventDefault(); post(`/dashboard/sites/${siteId}/invoices`, { onSuccess: handleClose }); }} className="space-y-4 pt-2">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <Label className="text-xs text-zinc-400">Invoice date *</Label>
+                            <Input type="date" value={data.invoice_date} onChange={(e) => setData('invoice_date', e.target.value)} className="border-zinc-700 bg-zinc-900 text-zinc-100" />
+                            {errors.invoice_date && <p className="text-xs text-red-400">{errors.invoice_date}</p>}
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs text-zinc-400">Due date</Label>
+                            <Input type="date" value={data.due_date} onChange={(e) => setData('due_date', e.target.value)} className="border-zinc-700 bg-zinc-900 text-zinc-100" />
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-xs text-zinc-400">Bill to</Label>
+                        <Input value={data.bill_to} onChange={(e) => setData('bill_to', e.target.value)} placeholder="Client name / address" className="border-zinc-700 bg-zinc-900 text-zinc-100" />
+                    </div>
+                    <div className="w-24 space-y-1">
+                        <Label className="text-xs text-zinc-400">Currency</Label>
+                        <Select value={data.currency_code} onValueChange={(v) => setData('currency_code', v)}>
+                            <SelectTrigger className="border-zinc-700 bg-zinc-900 text-zinc-100"><SelectValue /></SelectTrigger>
+                            <SelectContent className="border-zinc-700 bg-zinc-900">
+                                {['EUR', 'USD', 'GBP', 'CHF'].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
+                        <Button type="submit" disabled={processing}>Create</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function Invoices({ site, invoices }: { site: Site; invoices: Invoice[] }) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [showNew, setShowNew] = useState(false);
 
     const markPaid = (id: string) => router.post(`/dashboard/sites/${site.id}/invoices/${id}/mark-paid`);
     const duplicate = (id: string) => router.post(`/dashboard/sites/${site.id}/invoices/${id}/duplicate`);
@@ -43,12 +95,14 @@ export default function Invoices({ site, invoices }: { site: Site; invoices: Inv
     return (
         <AppLayout title="Invoices">
             <Head title={`Invoices — ${site.name}`} />
+            <NewInvoiceDialog siteId={site.id} open={showNew} onClose={() => setShowNew(false)} />
             <div className="space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h1 className="text-xl font-semibold text-zinc-100">Invoices</h1>
                         <p className="text-sm text-zinc-400">{site.name}</p>
                     </div>
+                    <Button size="sm" onClick={() => setShowNew(true)}><Plus className="mr-1.5 h-3.5 w-3.5" />New Invoice</Button>
                 </div>
 
                 <Card className="border-zinc-800 bg-[#1e1e1e]">
