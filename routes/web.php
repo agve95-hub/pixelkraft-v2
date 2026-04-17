@@ -239,26 +239,93 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             'client_company' => 'nullable|string|max:255',
         ]);
 
+        if ($validated['source_type'] === 'upload') {
+            return response()->json([
+                'message' => 'Direct ZIP uploads are not available yet.',
+                'errors' => [
+                    'source_type' => ['Direct ZIP uploads are not available yet.'],
+                ],
+            ], 422);
+        }
+
+        if ($validated['source_type'] === 'server_path') {
+            $serverPath = trim((string) ($validated['server_path'] ?? ''));
+
+            if ($serverPath === '') {
+                return response()->json([
+                    'message' => 'The server path field is required.',
+                    'errors' => [
+                        'server_path' => ['The server path field is required.'],
+                    ],
+                ], 422);
+            }
+
+            if (! preg_match('/^(?:\/|[A-Za-z]:[\/\\\\])/', $serverPath)) {
+                return response()->json([
+                    'message' => 'The server path must be an absolute path.',
+                    'errors' => [
+                        'server_path' => ['The server path must be an absolute path.'],
+                    ],
+                ], 422);
+            }
+
+            if (! \Illuminate\Support\Facades\File::exists($serverPath)) {
+                return response()->json([
+                    'message' => 'The server path does not exist.',
+                    'errors' => [
+                        'server_path' => ['The server path does not exist.'],
+                    ],
+                ], 422);
+            }
+
+            if (! is_readable($serverPath)) {
+                return response()->json([
+                    'message' => 'The server path is not readable.',
+                    'errors' => [
+                        'server_path' => ['The server path is not readable.'],
+                    ],
+                ], 422);
+            }
+        }
+
         $site = Site::create([
             'user_id' => auth()->id(),
             'name' => $validated['name'],
             'slug' => \Illuminate\Support\Str::slug($validated['name']),
             'project_type' => $validated['project_type'],
-            'repo_url' => $validated['repo_url'] ?? null,
+            'repo_url' => match ($validated['source_type']) {
+                'server_path' => 'file://'.($validated['server_path'] ?? ''),
+                default => $validated['repo_url'] ?? null,
+            },
             'branch' => $validated['branch'] ?? 'main',
             'build_command' => $validated['build_command'] ?? null,
             'github_token' => $validated['github_token'] ?? null,
-            'deploy_path' => $validated['server_path'] ?? null,
+            'repo_path' => $validated['source_type'] === 'server_path' ? $validated['server_path'] : null,
+            'deploy_path' => $validated['source_type'] === 'server_path' ? $validated['server_path'] : null,
             'domain' => $validated['domain'] ?? null,
             'ssl_provider' => $validated['ssl_provider'] ?? 'letsencrypt',
             'client_first_name' => $validated['client_first_name'] ?? null,
             'client_last_name' => $validated['client_last_name'] ?? null,
             'client_email' => $validated['client_email'] ?? null,
             'client_company' => $validated['client_company'] ?? null,
+            'deploy_status' => $validated['source_type'] === 'server_path'
+                ? \App\Enums\DeployStatus::Live
+                : \App\Enums\DeployStatus::Queued,
+            'last_deployed_at' => $validated['source_type'] === 'server_path' ? now() : null,
         ]);
 
-        if ($validated['source_type'] === 'github' && !empty($validated['repo_url'])) {
-            \App\Jobs\CloneRepoJob::dispatch($site);
+        if ($validated['source_type'] === 'server_path') {
+            app(\App\Services\ProjectDetector::class)->applyToSite($site);
+            \App\Jobs\ParseSiteJob::dispatch($site);
+
+            return response()->json([
+                'siteId' => $site->id,
+                'completed' => true,
+            ]);
+        }
+
+        if ($validated['source_type'] === 'github' && ! empty($validated['repo_url'])) {
+            \App\Jobs\DeploySiteJob::dispatch($site, 'wizard');
         }
 
         return response()->json(['siteId' => $site->id]);

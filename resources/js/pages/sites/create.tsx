@@ -87,6 +87,7 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
         const e: typeof errors = {};
         if (step === 1 && !form.name.trim()) e.name = 'Site name is required.';
         if (step === 2 && form.source_type === 'github' && !form.repo_url.trim()) e.repo_url = 'Repository URL is required.';
+        if (step === 2 && form.source_type === 'server_path' && !form.server_path.trim()) e.server_path = 'Server path is required.';
         setErrors(e);
         return Object.keys(e).length === 0;
     }
@@ -94,6 +95,7 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
     async function submit() {
         if (!validate()) return;
         setImporting(true);
+        setImportFailed(false);
         setImportSteps(IMPORT_STEPS.map((s) => ({ ...s, status: 'pending' })));
 
         try {
@@ -111,6 +113,10 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
             }
             const data = await res.json();
             setSiteId(data.siteId);
+            if (data.completed) {
+                router.visit(`/dashboard/sites/${data.siteId}`);
+                return;
+            }
             pollImportStatus(data.siteId);
         } catch {
             setImporting(false);
@@ -304,6 +310,7 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
                                     <div className="space-y-1.5">
                                         <Label className="text-zinc-300">Absolute path on this server</Label>
                                         <Input value={form.server_path} onChange={(e) => update('server_path', e.target.value)} placeholder="/var/www/mysite" className="border-zinc-700 bg-zinc-900 font-mono text-zinc-100" />
+                                        {errors.server_path && <p className="text-xs text-red-400">{errors.server_path}</p>}
                                         <p className="text-xs text-zinc-500">The path will be validated before proceeding.</p>
                                     </div>
                                 )}
