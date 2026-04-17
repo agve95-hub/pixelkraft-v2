@@ -207,8 +207,70 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     })->name('dashboard');
 
     // Sites
-    Route::get('/sites', fn () => Inertia::render('sites/index'))->name('sites.index');
-    Route::get('/sites/create', fn () => Inertia::render('sites/create'))->name('sites.create');
+    Route::get('/sites', function () {
+        $sites = SiteAccess::query()
+            ->withCount('pages')
+            ->with('latestDeploy', 'latestUptimeCheck')
+            ->orderBy('name')
+            ->get();
+
+        return Inertia::render('sites/index', ['sites' => $sites]);
+    })->name('sites.index');
+    Route::get('/sites/create', function () {
+        return Inertia::render('sites/create', [
+            'projectTypes' => config('pixelkraft.project_types', ['static_html', 'react', 'vue', 'nextjs', 'nuxt', 'astro', 'hugo', 'eleventy', 'svelte', 'php_site', 'custom']),
+        ]);
+    })->name('sites.create');
+    Route::post('/sites', function (\Illuminate\Http\Request $request) {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'project_type' => 'required|string',
+            'source_type' => 'required|string|in:github,server_path,upload',
+            'repo_url' => 'nullable|string|max:500',
+            'branch' => 'nullable|string|max:100',
+            'build_command' => 'nullable|string|max:500',
+            'github_token' => 'nullable|string|max:500',
+            'server_path' => 'nullable|string|max:500',
+            'domain' => 'nullable|string|max:253',
+            'ssl_provider' => 'nullable|string',
+            'client_first_name' => 'nullable|string|max:255',
+            'client_last_name' => 'nullable|string|max:255',
+            'client_email' => 'nullable|email|max:255',
+            'client_company' => 'nullable|string|max:255',
+        ]);
+
+        $site = Site::create([
+            'user_id' => auth()->id(),
+            'name' => $validated['name'],
+            'slug' => \Illuminate\Support\Str::slug($validated['name']),
+            'project_type' => $validated['project_type'],
+            'repo_url' => $validated['repo_url'] ?? null,
+            'branch' => $validated['branch'] ?? 'main',
+            'build_command' => $validated['build_command'] ?? null,
+            'github_token' => $validated['github_token'] ?? null,
+            'deploy_path' => $validated['server_path'] ?? null,
+            'domain' => $validated['domain'] ?? null,
+            'ssl_provider' => $validated['ssl_provider'] ?? 'letsencrypt',
+            'client_first_name' => $validated['client_first_name'] ?? null,
+            'client_last_name' => $validated['client_last_name'] ?? null,
+            'client_email' => $validated['client_email'] ?? null,
+            'client_company' => $validated['client_company'] ?? null,
+        ]);
+
+        if ($validated['source_type'] === 'github' && !empty($validated['repo_url'])) {
+            \App\Jobs\CloneRepoJob::dispatch($site);
+        }
+
+        return response()->json(['siteId' => $site->id]);
+    })->name('sites.store');
+    Route::get('/sites/{siteId}/import-status', function (string $siteId) {
+        $site = SiteAccess::findOrFail($siteId);
+        return response()->json([
+            'status' => $site->deploy_status,
+            'lastDeployedAt' => $site->last_deployed_at,
+            'deployLog' => $site->latestDeploy?->only('id', 'status', 'steps'),
+        ]);
+    })->name('sites.import-status');
     Route::middleware(['site.access', 'expand.site.sidebar'])->group(function () {
         Route::get('/sites/{site}', function (Site $site) {
             $site->loadCount([
@@ -347,6 +409,12 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     Route::get('/newsletters', fn () => Inertia::render('email/campaigns'))->name('newsletters');
 
     // Settings
-    Route::get('/settings', fn () => Inertia::render('settings/index'))->name('settings');
+    Route::get('/settings', function () {
+        $user = auth()->user();
+        return Inertia::render('settings/index', [
+            'twoFactorEnabled' => (bool) $user->two_factor_secret,
+            'twoFactorConfirmed' => (bool) $user->two_factor_confirmed_at,
+        ]);
+    })->name('settings');
     Route::get('/system', fn () => Inertia::render('settings/system'))->name('system.diagnostics')->middleware('can:viewHorizon');
 });
