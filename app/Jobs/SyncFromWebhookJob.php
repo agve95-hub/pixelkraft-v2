@@ -27,7 +27,7 @@ class SyncFromWebhookJob implements ShouldQueue
         public array $payload = [],
         public ?string $deliveryId = null,
     ) {
-        $this->onQueue('git');
+        $this->onQueue('default');
     }
 
     public function handle(GitSyncService $git): void

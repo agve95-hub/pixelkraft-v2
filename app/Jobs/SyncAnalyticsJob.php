@@ -21,7 +21,7 @@ class SyncAnalyticsJob implements ShouldQueue
     public function __construct(
         public ?Site $site = null,
     ) {
-        $this->onQueue('analytics');
+        $this->onQueue('default');
     }
 
     public function handle(AnalyticsAggregator $aggregator): void

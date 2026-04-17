@@ -23,7 +23,7 @@ class ProvisionSslJob implements ShouldQueue
     public function __construct(
         public Site $site,
     ) {
-        $this->onQueue('deploy');
+        $this->onQueue('default');
     }
 
     public function handle(SslService $ssl): void

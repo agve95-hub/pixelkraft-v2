@@ -24,7 +24,7 @@ class ParseSiteJob implements ShouldQueue
     public function __construct(
         public Site $site,
     ) {
-        $this->onQueue('parsing');
+        $this->onQueue('default');
     }
 
     public function handle(ParserService $parser): void

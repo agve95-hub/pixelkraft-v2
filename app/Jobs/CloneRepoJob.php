@@ -26,7 +26,7 @@ class CloneRepoJob implements ShouldQueue
     public function __construct(
         public Site $site,
     ) {
-        $this->onQueue('git');
+        $this->onQueue('default');
     }
 
     public function handle(GitSyncService $git, ProjectDetector $detector): void

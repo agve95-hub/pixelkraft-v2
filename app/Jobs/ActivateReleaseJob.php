@@ -26,7 +26,7 @@ class ActivateReleaseJob implements ShouldQueue
         public string $deployLogId,
         public string $releaseId,
     ) {
-        $this->onQueue('deploy');
+        $this->onQueue('default');
     }
 
     public function handle(DeployService $deployer): void
