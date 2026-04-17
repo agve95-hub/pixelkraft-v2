@@ -402,10 +402,14 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
                             <button
                                 type="button"
                                 className="text-xs text-red-400 hover:text-red-300"
-                                onClick={() => {
-                                    if (siteId) router.delete(`/dashboard/sites/${siteId}`);
-                                    setImporting(false);
-                                    setSiteId(null);
+                                onClick={async () => {
+                                    if (siteId) {
+                                        await fetch(`/dashboard/sites/${siteId}`, {
+                                            method: 'DELETE',
+                                            headers: { 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '', 'X-Requested-With': 'XMLHttpRequest' },
+                                        });
+                                    }
+                                    router.visit('/dashboard/sites');
                                 }}
                             >
                                 Cancel and delete this site

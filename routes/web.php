@@ -263,6 +263,12 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
         return response()->json(['siteId' => $site->id]);
     })->name('sites.store');
+    Route::delete('/sites/{siteId}', function (string $siteId) {
+        $site = SiteAccess::findOrFail($siteId);
+        $site->delete();
+        return response()->json(['deleted' => true]);
+    })->name('sites.destroy');
+
     Route::get('/sites/{siteId}/import-status', function (string $siteId) {
         $site = SiteAccess::findOrFail($siteId);
         return response()->json([
