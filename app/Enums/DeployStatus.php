@@ -6,6 +6,8 @@ enum DeployStatus: string
 {
     case Draft = 'draft';
     case Queued = 'queued';
+    case Cloning = 'cloning';
+    case Parsing = 'parsing';
     case Building = 'building';
     case Deploying = 'deploying';
     case Live = 'live';
@@ -17,6 +19,8 @@ enum DeployStatus: string
         return match ($this) {
             self::Draft => 'Draft',
             self::Queued => 'Queued',
+            self::Cloning => 'Cloning',
+            self::Parsing => 'Parsing',
             self::Building => 'Building',
             self::Deploying => 'Deploying',
             self::Live => 'Live',
