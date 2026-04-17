@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -88,7 +89,15 @@ function CampaignFields({ data, setData, errors }: { data: FormData; setData: (k
             <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                     <Label className="text-xs text-zinc-400">Trigger</Label>
-                    <Input value={data.trigger} onChange={(e) => setData('trigger', e.target.value)} placeholder="e.g. exit_intent" className="border-zinc-700 bg-zinc-900 text-zinc-100" />
+                    <Select value={data.trigger || 'on_load'} onValueChange={(v) => setData('trigger', v)}>
+                        <SelectTrigger className="border-zinc-700 bg-zinc-900 text-zinc-100"><SelectValue /></SelectTrigger>
+                        <SelectContent className="border-zinc-700 bg-zinc-900">
+                            <SelectItem value="on_load">On page load</SelectItem>
+                            <SelectItem value="on_scroll">On scroll</SelectItem>
+                            <SelectItem value="on_exit">On exit intent</SelectItem>
+                            <SelectItem value="on_delay">After delay</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="space-y-1">
                     <Label className="text-xs text-zinc-400">Priority</Label>

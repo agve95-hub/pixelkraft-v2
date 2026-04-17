@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $invoice_date
  * @property Carbon|null $due_date
  * @property string $status
+ * @property Carbon|null $paid_at
  * @property string $currency_code
  * @property string|null $tax_rate
  * @property string|null $discount_percent
@@ -42,6 +43,7 @@ class Invoice extends Model
         'invoice_date',
         'due_date',
         'status',
+        'paid_at',
         'currency_code',
         'tax_rate',
         'discount_percent',
@@ -57,6 +59,7 @@ class Invoice extends Model
         return [
             'invoice_date' => 'date',
             'due_date' => 'date',
+            'paid_at' => 'datetime',
             'tax_rate' => 'decimal:4',
             'discount_percent' => 'decimal:4',
         ];

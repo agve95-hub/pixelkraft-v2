@@ -451,7 +451,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         })->name('sites.invoices');
         Route::post('/sites/{site}/invoices', function (\Illuminate\Http\Request $request, Site $site) {
             $d = $request->validate(['number' => 'nullable|string|max:100', 'invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000']);
-            $invoice = $site->invoices()->create(array_merge($d, ['number' => $d['number'] ?? \App\Models\Invoice::nextNumberForSite($site), 'status' => 'unpaid']));
+            $invoice = $site->invoices()->create(array_merge($d, ['number' => $d['number'] ?? \App\Models\Invoice::nextNumberForSite($site), 'status' => 'unpaid', 'tax_rate' => $d['tax_rate'] ?? 0, 'discount_percent' => $d['discount_percent'] ?? 0, 'payment_terms' => $d['payment_terms'] ?? 'net30']));
             return redirect("/dashboard/sites/{$site->id}/invoices")->with('success', 'Invoice created.');
         })->name('sites.invoices.store');
         Route::post('/sites/{site}/invoices/{invoice}/mark-paid', function (Site $site, \App\Models\Invoice $invoice) {
@@ -485,14 +485,14 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return Inertia::render('sites/campaigns', ['site' => $site, 'campaigns' => $site->campaigns()->orderByDesc('created_at')->get()]);
         })->name('sites.campaigns');
         Route::post('/sites/{site}/campaigns', function (\Illuminate\Http\Request $request, Site $site) {
-            $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|string|max:64', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
-            $site->campaigns()->create(array_merge($d, ['is_enabled' => false]));
+            $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|in:on_load,on_scroll,on_exit,on_delay', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
+            $site->campaigns()->create(array_merge($d, ['trigger' => $d['trigger'] ?? 'on_load', 'priority' => $d['priority'] ?? 0, 'locale' => $d['locale'] ?? 'en', 'is_enabled' => false]));
             return back();
         })->name('sites.campaigns.store');
         Route::put('/sites/{site}/campaigns/{campaign}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Campaign $campaign) {
             abort_unless($campaign->site_id === $site->id, 403);
-            $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|string|max:64', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
-            $campaign->update($d);
+            $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|in:on_load,on_scroll,on_exit,on_delay', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
+            $campaign->update(array_merge($d, ['trigger' => $d['trigger'] ?? $campaign->trigger ?? 'on_load']));
             return back();
         })->name('sites.campaigns.update');
         Route::post('/sites/{site}/campaigns/{campaign}/toggle', function (Site $site, \App\Models\Campaign $campaign) {

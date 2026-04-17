@@ -9,16 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Save } from 'lucide-react';
 
 interface Site { id: string; name: string; }
-interface Post { id: string; title: string; slug: string; excerpt: string | null; body: string | null; status: string; published_at: string | null; }
+interface Post { id: string; title: string; slug: string; excerpt: string | null; body: string | null; status: string; published_at: string | null; scheduled_at: string | null; }
 
 export default function BlogEdit({ site, post }: { site: Site; post: Post }) {
+    const scheduledDate = post.scheduled_at ?? post.published_at;
     const { data, setData, put, processing, errors } = useForm({
         title: post.title,
         slug: post.slug,
         excerpt: post.excerpt ?? '',
         body: post.body ?? '',
         status: post.status,
-        published_at: post.published_at ? post.published_at.slice(0, 16) : '',
+        published_at: scheduledDate ? scheduledDate.slice(0, 16) : '',
     });
 
     return (
