@@ -503,6 +503,39 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return view('dashboard.sites.maintenance-preview', ['site' => $site]);
         })->name('sites.maintenance.preview');
         Route::get('/sites/{site}/settings', fn (Site $site) => Inertia::render('sites/settings', ['site' => $site]))->name('sites.settings');
+        Route::put('/sites/{site}/settings', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate([
+                'name' => 'required|string|max:255',
+                'domain' => 'nullable|string|max:255',
+                'project_type' => 'nullable|string|max:64',
+                'client_first_name' => 'nullable|string|max:100',
+                'client_last_name' => 'nullable|string|max:100',
+                'client_email' => 'nullable|email|max:255',
+                'client_phone' => 'nullable|string|max:50',
+                'client_company' => 'nullable|string|max:255',
+                'client_address' => 'nullable|string|max:500',
+                'client_notes' => 'nullable|string|max:2000',
+                'billing_cycle' => 'nullable|string|max:32',
+                'monthly_retainer' => 'nullable|numeric|min:0',
+                'ga_property_id' => 'nullable|string|max:64',
+                'gtm_id' => 'nullable|string|max:64',
+                'google_ads_id' => 'nullable|string|max:64',
+                'cf_zone_id' => 'nullable|string|max:64',
+                'cf_api_token' => 'nullable|string|max:500',
+                'smtp_host' => 'nullable|string|max:255',
+                'smtp_port' => 'nullable|integer|min:1|max:65535',
+                'smtp_username' => 'nullable|string|max:255',
+                'smtp_password' => 'nullable|string|max:500',
+                'ssh_host' => 'nullable|string|max:255',
+                'ftp_ssh_user' => 'nullable|string|max:255',
+                'ftp_ssh_password' => 'nullable|string|max:500',
+                'hosting_provider' => 'nullable|string|max:100',
+                'ssl_provider' => 'nullable|string|max:100',
+                'dns_provider' => 'nullable|string|max:100',
+            ]);
+            $site->update($d);
+            return back()->with('success', 'Settings saved.');
+        })->name('sites.settings.update');
         Route::get('/sites/{site}/files', fn (Site $site) => Inertia::render('sites/files', ['site' => $site]))->name('sites.files');
 
         // Editor — kept as Blade (Phase 3 overhaul)
