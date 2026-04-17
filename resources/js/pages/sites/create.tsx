@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
     Check, X, Loader2, ChevronRight, ChevronLeft, GitBranch,
@@ -191,7 +191,7 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
         <AppLayout title="Add New Site">
             <Head title="Add New Site" />
 
-            <div className="max-w-2xl">
+            <form className="max-w-2xl" onSubmit={(e) => e.preventDefault()}>
                 <div className="mb-6 flex items-center gap-3">
                     <Button variant="ghost" size="icon" asChild className="text-zinc-400">
                         <Link href="/dashboard/sites"><ArrowLeft className="h-4 w-4" /></Link>
@@ -359,7 +359,7 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
                         </div>
                     </CardContent>
                 </Card>
-            </div>
+            </form>
 
             {/* Blocking Import Progress Modal */}
             <Dialog open={importing} onOpenChange={() => {}}>
@@ -371,6 +371,7 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
                 >
                     <DialogHeader>
                         <DialogTitle className="text-zinc-100">Setting up your site…</DialogTitle>
+                        <DialogDescription className="sr-only">Import progress — please wait while your site is being set up.</DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-3 py-2">
