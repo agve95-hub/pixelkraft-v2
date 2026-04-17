@@ -288,10 +288,17 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             }
         }
 
+        $baseSlug = \Illuminate\Support\Str::slug($validated['name']);
+        $slug = $baseSlug;
+        $i = 2;
+        while (Site::where('slug', $slug)->exists()) {
+            $slug = $baseSlug.'-'.$i++;
+        }
+
         $site = Site::create([
             'user_id' => auth()->id(),
             'name' => $validated['name'],
-            'slug' => \Illuminate\Support\Str::slug($validated['name']),
+            'slug' => $slug,
             'project_type' => $validated['project_type'],
             'repo_url' => match ($validated['source_type']) {
                 'server_path' => 'file://'.($validated['server_path'] ?? ''),
@@ -670,6 +677,12 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $site->update(['maintenance_settings' => ['enabled' => $request->boolean('enabled'), 'title' => $d['title'], 'message' => $d['message'], 'allowed_ips' => array_values($ips)]]);
             return back()->with('success', 'Maintenance settings saved.');
         })->name('sites.maintenance.update');
+        Route::get('/sites/{site}/maintenance/preview', function (Site $site) {
+            $s = $site->maintenance_settings ?? [];
+            $title = e($s['title'] ?? "We'll be back soon");
+            $message = e($s['message'] ?? "We're performing scheduled maintenance. Please check back later.");
+            return response("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{$title}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0a0a0a;color:#e4e4e7;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}main{max-width:480px;text-align:center}h1{font-size:1.5rem;font-weight:600;margin-bottom:1rem}p{color:#a1a1aa;line-height:1.6}.badge{display:inline-block;background:#27272a;border:1px solid #3f3f46;border-radius:9999px;font-size:0.75rem;padding:0.25rem 0.75rem;margin-bottom:1.5rem;color:#71717a}</style></head><body><main><span class=\"badge\">Maintenance preview — {$site->name}</span><h1>{$title}</h1><p>{$message}</p></main></body></html>", 200, ['Content-Type' => 'text/html']);
+        })->name('sites.maintenance.preview');
         Route::post('/sites/{site}/inbox/{message}/read', function (Site $site, \App\Models\SiteInboxMessage $message) {
             abort_unless($message->site_id === $site->id, 403);
             $message->update(['is_read' => true]);

@@ -115,7 +115,7 @@ class Invoice extends Model
 
     public function isOverdue(): bool
     {
-        if ($this->status !== self::STATUS_UNPAID) {
+        if ($this->status !== self::STATUS_UNPAID || $this->due_date === null) {
             return false;
         }
 
@@ -168,7 +168,7 @@ class Invoice extends Model
      */
     public function listSortKeyNewestFirst(): string
     {
-        return $this->invoice_date->format('Y-m-d')
+        return ($this->invoice_date?->format('Y-m-d') ?? '0000-00-00')
             .'_'
             .str_pad((string) $this->numberTrailingSequence(), 12, '0', STR_PAD_LEFT);
     }
