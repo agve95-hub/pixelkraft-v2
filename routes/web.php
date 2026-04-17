@@ -547,18 +547,85 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
         // SEO
         Route::get('/sites/{site}/pages/{page}/seo', fn (Site $site, Page $page) => Inertia::render('sites/seo-meta', ['site' => $site, 'page' => $page]))->name('seo.meta');
-        Route::get('/sites/{site}/redirects', fn (Site $site) => Inertia::render('sites/redirects', ['site' => $site]))->name('seo.redirects');
+        Route::get('/sites/{site}/redirects', function (Site $site) {
+            return Inertia::render('sites/redirects', ['site' => $site, 'redirects' => $site->redirects()->orderByDesc('created_at')->get()]);
+        })->name('seo.redirects');
+        Route::post('/sites/{site}/redirects', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate(['from_path' => 'required|string|max:500', 'to_path' => 'required|string|max:500', 'status_code' => 'nullable|integer|in:301,302,307,308']);
+            $site->redirects()->create(['from_path' => $d['from_path'], 'to_path' => $d['to_path'], 'status_code' => $d['status_code'] ?? 301]);
+            return back();
+        })->name('seo.redirects.store');
+        Route::post('/sites/{site}/redirects/{redirect}/toggle', function (Site $site, \App\Models\Redirect $redirect) {
+            abort_unless($redirect->site_id === $site->id, 403);
+            $redirect->update(['is_active' => !$redirect->is_active]);
+            return back();
+        })->name('seo.redirects.toggle');
+        Route::delete('/sites/{site}/redirects/{redirect}', function (Site $site, \App\Models\Redirect $redirect) {
+            abort_unless($redirect->site_id === $site->id, 403);
+            $redirect->delete();
+            return back();
+        })->name('seo.redirects.destroy');
+        Route::put('/sites/{site}/pages/{page}/seo', function (\Illuminate\Http\Request $request, Site $site, Page $page) {
+            abort_unless($page->site_id === $site->id, 403);
+            $page->update($request->validate(['meta_title' => 'nullable|string|max:255', 'meta_description' => 'nullable|string|max:500', 'og_title' => 'nullable|string|max:255', 'og_description' => 'nullable|string|max:500', 'og_image' => 'nullable|url|max:500', 'canonical_url' => 'nullable|url|max:500', 'robots_meta' => 'nullable|string|max:100']));
+            return back()->with('success', 'SEO meta saved.');
+        })->name('seo.meta.update');
+        Route::put('/sites/{site}/maintenance', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate(['enabled' => 'boolean', 'title' => 'nullable|string|max:255', 'message' => 'nullable|string|max:2000', 'allowed_ips' => 'nullable|string']);
+            $ips = array_filter(array_map('trim', explode("\n", $d['allowed_ips'] ?? '')));
+            $site->update(['maintenance_settings' => ['enabled' => $d['enabled'] ?? false, 'title' => $d['title'], 'message' => $d['message'], 'allowed_ips' => array_values($ips)]]);
+            return back()->with('success', 'Maintenance settings saved.');
+        })->name('sites.maintenance.update');
+        Route::post('/sites/{site}/inbox/{message}/read', function (Site $site, \App\Models\SiteInboxMessage $message) {
+            abort_unless($message->site_id === $site->id, 403);
+            $message->update(['is_read' => true]);
+            return back();
+        })->name('sites.inbox.read');
+        Route::delete('/sites/{site}/inbox/{message}', function (Site $site, \App\Models\SiteInboxMessage $message) {
+            abort_unless($message->site_id === $site->id, 403);
+            $message->delete();
+            return back();
+        })->name('sites.inbox.destroy');
 
         // Content
-        Route::get('/sites/{site}/blog', fn (Site $site) => Inertia::render('sites/blog-index', ['site' => $site]))->name('blog.index');
+        Route::get('/sites/{site}/blog', function (Site $site) {
+            return Inertia::render('sites/blog-index', ['site' => $site, 'posts' => $site->blogPosts()->orderByDesc('created_at')->get(['id', 'title', 'slug', 'status', 'published_at', 'created_at'])]);
+        })->name('blog.index');
         Route::get('/sites/{site}/blog/create', fn (Site $site) => Inertia::render('sites/blog-create', ['site' => $site]))->name('blog.create');
         Route::get('/sites/{site}/blog/{blogPost}/edit', function (Site $site, BlogPost $blogPost) {
             abort_unless($blogPost->site_id === $site->id, 404);
-
-            return Inertia::render('sites/blog-edit', ['site' => $site, 'postId' => $blogPost->id]);
+            return Inertia::render('sites/blog-edit', ['site' => $site, 'post' => $blogPost]);
         })->name('blog.edit');
-        Route::get('/sites/{site}/products', fn (Site $site) => Inertia::render('sites/products', ['site' => $site]))->name('products.index');
+        Route::post('/sites/{site}/blog', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate(['title' => 'required|string|max:255', 'slug' => 'required|string|max:255', 'excerpt' => 'nullable|string', 'body' => 'nullable|string', 'status' => 'required|in:draft,published,scheduled', 'published_at' => 'nullable|date']);
+            $site->blogPosts()->create($d);
+            return redirect("/dashboard/sites/{$site->id}/blog")->with('success', 'Post created.');
+        })->name('blog.store');
+        Route::put('/sites/{site}/blog/{blogPost}', function (\Illuminate\Http\Request $request, Site $site, BlogPost $blogPost) {
+            abort_unless($blogPost->site_id === $site->id, 403);
+            $d = $request->validate(['title' => 'required|string|max:255', 'slug' => 'required|string|max:255', 'excerpt' => 'nullable|string', 'body' => 'nullable|string', 'status' => 'required|in:draft,published,scheduled', 'published_at' => 'nullable|date']);
+            $blogPost->update($d);
+            return back()->with('success', 'Post updated.');
+        })->name('blog.update');
+        Route::delete('/sites/{site}/blog/{blogPost}', function (Site $site, BlogPost $blogPost) {
+            abort_unless($blogPost->site_id === $site->id, 403);
+            $blogPost->delete();
+            return back()->with('success', 'Post deleted.');
+        })->name('blog.destroy');
+        Route::get('/sites/{site}/products', function (Site $site) {
+            return Inertia::render('sites/products', ['site' => $site, 'products' => $site->productListings()->orderByDesc('created_at')->get()]);
+        })->name('products.index');
         Route::get('/sites/{site}/products/create', fn (Site $site) => Inertia::render('sites/product-create', ['site' => $site]))->name('products.create');
+        Route::post('/sites/{site}/products', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate(['name' => 'required|string|max:255', 'description' => 'nullable|string', 'price' => 'required|numeric|min:0', 'currency' => 'nullable|string|size:3', 'status' => 'nullable|string|max:32']);
+            $site->productListings()->create(array_merge($d, ['currency' => $d['currency'] ?? 'EUR', 'status' => $d['status'] ?? 'draft']));
+            return redirect("/dashboard/sites/{$site->id}/products")->with('success', 'Product created.');
+        })->name('products.store');
+        Route::delete('/sites/{site}/products/{product}', function (Site $site, \App\Models\ProductListing $product) {
+            abort_unless($product->site_id === $site->id, 403);
+            $product->delete();
+            return back()->with('success', 'Product deleted.');
+        })->name('products.destroy');
         Route::get('/sites/{site}/templates', fn (Site $site) => Inertia::render('sites/templates', ['site' => $site]))->name('templates.index');
     });
 
