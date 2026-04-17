@@ -1,0 +1,2 @@
+Manual deploy trigger for production rollout on 2026-04-17.
+Reason: redeploy current main to restore Blade auth assets on the VPS.
