@@ -5,11 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-    Plus, Search, Globe, ExternalLink, Settings, Rocket,
-    ChevronRight, Clock, Layers, RefreshCw,
+    Plus, Search, ExternalLink, Settings, Rocket, Layers, RefreshCw,
 } from 'lucide-react';
 
 interface UptimeCheck {
@@ -66,20 +64,36 @@ function uptimeStatusBadge(check: UptimeCheck | null) {
 
 interface SiteRowProps {
     site: Site;
-    selected: boolean;
-    onSelect: () => void;
+    deploying: boolean;
+    onDeploy: (siteId: string) => void;
 }
 
-function SiteRow({ site, selected, onSelect }: SiteRowProps) {
+function SiteRow({ site, deploying, onDeploy }: SiteRowProps) {
+    const openSite = () => router.visit(`/dashboard/sites/${site.id}`);
+
     return (
         <tr
-            onClick={onSelect}
-            className={`cursor-pointer border-b border-zinc-800 transition-colors hover:bg-zinc-800/50 ${selected ? 'bg-zinc-800/70' : ''}`}
+            onClick={openSite}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openSite();
+                }
+            }}
+            tabIndex={0}
+            role="link"
+            className="cursor-pointer border-b border-zinc-800 transition-colors hover:bg-zinc-800/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
         >
             <td className="px-4 py-3">
                 <div className="flex items-center gap-2.5">
-                    <span className={`size-2 rounded-full shrink-0 ${deployStatusDot(site.deploy_status)}`} />
-                    <span className="font-medium text-zinc-100">{site.name}</span>
+                    <span className={`size-2 shrink-0 rounded-full ${deployStatusDot(site.deploy_status)}`} />
+                    <Link
+                        href={`/dashboard/sites/${site.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="font-medium text-zinc-100 hover:text-emerald-300"
+                    >
+                        {site.name}
+                    </Link>
                 </div>
                 {site.domain && (
                     <p className="ml-4.5 mt-0.5 text-xs text-zinc-500">{site.domain}</p>
@@ -90,7 +104,7 @@ function SiteRow({ site, selected, onSelect }: SiteRowProps) {
             <td className="px-4 py-3 text-sm text-zinc-400">
                 {site.latest_uptime_check?.response_time_ms
                     ? `${site.latest_uptime_check.response_time_ms}ms`
-                    : '—'}
+                    : '-'}
             </td>
             <td className="px-4 py-3 text-sm text-zinc-400">
                 <span className="inline-flex items-center gap-1">
@@ -101,10 +115,10 @@ function SiteRow({ site, selected, onSelect }: SiteRowProps) {
             <td className="px-4 py-3 text-sm text-zinc-500">
                 {site.last_deployed_at
                     ? new Date(site.last_deployed_at).toLocaleDateString()
-                    : '—'}
+                    : '-'}
             </td>
             <td className="px-4 py-3">
-                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
@@ -121,6 +135,20 @@ function SiteRow({ site, selected, onSelect }: SiteRowProps) {
                         </TooltipTrigger>
                         <TooltipContent>Settings</TooltipContent>
                     </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                disabled={deploying || site.deploy_status === 'deploying'}
+                                onClick={() => onDeploy(site.id)}
+                            >
+                                {deploying ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Deploy now</TooltipContent>
+                    </Tooltip>
                 </div>
             </td>
         </tr>
@@ -129,21 +157,17 @@ function SiteRow({ site, selected, onSelect }: SiteRowProps) {
 
 export default function SitesIndex({ sites }: { sites: Site[] }) {
     const [search, setSearch] = useState('');
-    const [selectedSiteId, setSelectedSiteId] = useState<string | null>(sites[0]?.id ?? null);
-    const [deploying, setDeploying] = useState(false);
+    const [deployingSiteId, setDeployingSiteId] = useState<string | null>(null);
 
-    const filtered = sites.filter((s) =>
-        s.name.toLowerCase().includes(search.toLowerCase()) ||
-        (s.domain ?? '').toLowerCase().includes(search.toLowerCase()),
+    const filtered = sites.filter((site) =>
+        site.name.toLowerCase().includes(search.toLowerCase()) ||
+        (site.domain ?? '').toLowerCase().includes(search.toLowerCase()),
     );
 
-    const selectedSite = sites.find((s) => s.id === selectedSiteId) ?? null;
-
-    function handleDeploy() {
-        if (!selectedSite) return;
-        setDeploying(true);
-        router.post(`/dashboard/sites/${selectedSite.id}/deploy`, {}, {
-            onFinish: () => setDeploying(false),
+    function handleDeploy(siteId: string) {
+        setDeployingSiteId(siteId);
+        router.post(`/dashboard/sites/${siteId}/deploy`, {}, {
+            onFinish: () => setDeployingSiteId(null),
         });
     }
 
@@ -152,29 +176,27 @@ export default function SitesIndex({ sites }: { sites: Site[] }) {
             <Head title="Sites" />
 
             <div className="space-y-6">
-                {/* Header */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <h1 className="text-xl font-semibold text-zinc-100">Sites</h1>
                         <p className="text-sm text-zinc-400">Add, connect, and deploy from one workspace.</p>
                     </div>
-                    <Button asChild className="bg-emerald-500 text-zinc-950 hover:bg-emerald-400 shrink-0">
+                    <Button asChild className="shrink-0 bg-emerald-500 text-zinc-950 hover:bg-emerald-400">
                         <Link href="/dashboard/sites/create"><Plus className="mr-2 h-4 w-4" />Add new site</Link>
                     </Button>
                 </div>
 
-                {/* Sites table */}
                 <Card className="border-zinc-800 bg-[#1e1e1e]">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-base text-zinc-100">Your sites</CardTitle>
-                        <CardDescription>Click a site row to see deploy controls below.</CardDescription>
-                        <div className="mt-2 relative">
+                        <CardDescription>Click a site row to open its dashboard. Deploy and settings stay available in the actions column.</CardDescription>
+                        <div className="relative mt-2">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                             <Input
                                 value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Filter sites…"
-                                className="pl-9 border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-600"
+                                onChange={(event) => setSearch(event.target.value)}
+                                placeholder="Filter sites..."
+                                className="border-zinc-700 bg-zinc-900 pl-9 text-zinc-100 placeholder:text-zinc-600"
                             />
                         </div>
                     </CardHeader>
@@ -196,7 +218,7 @@ export default function SitesIndex({ sites }: { sites: Site[] }) {
                                     {filtered.length === 0 ? (
                                         <tr>
                                             <td colSpan={7} className="px-4 py-8 text-center text-sm text-zinc-500">
-                                                {sites.length === 0 ? 'No sites yet — create one above.' : 'No sites match your search.'}
+                                                {sites.length === 0 ? 'No sites yet - create one above.' : 'No sites match your search.'}
                                             </td>
                                         </tr>
                                     ) : (
@@ -204,8 +226,8 @@ export default function SitesIndex({ sites }: { sites: Site[] }) {
                                             <SiteRow
                                                 key={site.id}
                                                 site={site}
-                                                selected={selectedSiteId === site.id}
-                                                onSelect={() => setSelectedSiteId(site.id)}
+                                                deploying={deployingSiteId === site.id}
+                                                onDeploy={handleDeploy}
                                             />
                                         ))
                                     )}
@@ -214,87 +236,6 @@ export default function SitesIndex({ sites }: { sites: Site[] }) {
                         </div>
                     </CardContent>
                 </Card>
-
-                {/* Selected site deploy controls */}
-                {selectedSite ? (
-                    <Card className="border-zinc-800 bg-[#1e1e1e]">
-                        <CardHeader className="pb-3">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                    <CardTitle className="text-base text-zinc-100">{selectedSite.name}</CardTitle>
-                                    {selectedSite.repo_url && (
-                                        <p className="mt-1 font-mono text-xs text-zinc-500">{selectedSite.repo_url}</p>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-200" asChild>
-                                        <Link href={`/dashboard/sites/${selectedSite.id}`}>Full details</Link>
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-200" asChild>
-                                        <Link href={`/dashboard/sites/${selectedSite.id}/settings`}>
-                                            <Settings className="mr-1.5 h-3.5 w-3.5" />Settings
-                                        </Link>
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                                <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2.5">
-                                    <p className="text-xs text-zinc-500">Pages</p>
-                                    <p className="mt-1 font-mono text-lg font-semibold text-zinc-100">{selectedSite.pages_count}</p>
-                                </div>
-                                <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2.5">
-                                    <p className="text-xs text-zinc-500">Type</p>
-                                    <Badge variant="secondary" className="mt-1.5">{selectedSite.project_type ?? 'unknown'}</Badge>
-                                </div>
-                                <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2.5">
-                                    <p className="text-xs text-zinc-500">Last deploy</p>
-                                    <p className="mt-1 text-sm text-zinc-300">
-                                        {selectedSite.last_deployed_at
-                                            ? new Date(selectedSite.last_deployed_at).toLocaleString()
-                                            : 'Never'}
-                                    </p>
-                                </div>
-                                <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2.5">
-                                    <p className="text-xs text-zinc-500">Last sync</p>
-                                    <p className="mt-1 text-sm text-zinc-300">
-                                        {selectedSite.last_synced_at
-                                            ? new Date(selectedSite.last_synced_at).toLocaleString()
-                                            : 'Never'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <Separator className="my-4 bg-zinc-800" />
-
-                            <div className="flex flex-wrap gap-2">
-                                <Button
-                                    onClick={handleDeploy}
-                                    disabled={deploying || selectedSite.deploy_status === 'deploying'}
-                                    className="bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
-                                >
-                                    {deploying ? (
-                                        <><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Deploying…</>
-                                    ) : (
-                                        <><Rocket className="mr-2 h-4 w-4" />Deploy now</>
-                                    )}
-                                </Button>
-                                <Button variant="outline" className="border-zinc-700 text-zinc-200" asChild>
-                                    <Link href={`/dashboard/sites/${selectedSite.id}`}>
-                                        <ChevronRight className="mr-1.5 h-4 w-4" />View dashboard
-                                    </Link>
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <Card className="border-zinc-800 bg-[#1e1e1e]">
-                        <CardContent className="pt-6">
-                            <p className="text-sm text-zinc-500">No sites yet — use <strong className="text-zinc-300">Add new site</strong> above to create one.</p>
-                        </CardContent>
-                    </Card>
-                )}
             </div>
         </AppLayout>
     );

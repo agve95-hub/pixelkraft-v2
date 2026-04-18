@@ -40,7 +40,7 @@
                     @php
                         $siteSectionOpen = $expandedSiteId && (string) $expandedSiteId === (string) $navSite->id;
                         $maintOn = (bool) data_get($navSite->maintenance_settings, 'enabled', false);
-                        $navSiteRowCurrent = $activeSite && (int) $activeSite->id === (int) $navSite->id && request()->routeIs('sites.show');
+                        $navSiteRowCurrent = $activeSite && (int) $activeSite->id === (int) $navSite->id;
                     @endphp
                     <flux:sidebar.item
                         href="{{ route('sites.show', $navSite) }}"
@@ -63,10 +63,42 @@
                             <flux:sidebar.item
                                 icon="document-duplicate"
                                 href="{{ route('sites.pages', $navSite) }}"
-                                :current="request()->routeIs('sites.pages')"
+                                :current="request()->routeIs('sites.pages', 'editor', 'seo.meta', 'seo.redirects')"
                                 class="!py-1.5 text-zinc-400"
                             >
-                                Pages
+                                Pages &amp; SEO
+                            </flux:sidebar.item>
+                            <flux:sidebar.item
+                                icon="newspaper"
+                                href="{{ route('blog.index', $navSite) }}"
+                                :current="request()->routeIs('blog.index', 'blog.create', 'blog.edit')"
+                                class="!py-1.5 text-zinc-400"
+                            >
+                                Blog
+                            </flux:sidebar.item>
+                            <flux:sidebar.item
+                                icon="cube"
+                                href="{{ route('products.index', $navSite) }}"
+                                :current="request()->routeIs('products.index', 'products.create', 'products.edit')"
+                                class="!py-1.5 text-zinc-400"
+                            >
+                                Products
+                            </flux:sidebar.item>
+                            <flux:sidebar.item
+                                icon="rectangle-stack"
+                                href="{{ route('templates.index', $navSite) }}"
+                                :current="request()->routeIs('templates.index')"
+                                class="!py-1.5 text-zinc-400"
+                            >
+                                Templates
+                            </flux:sidebar.item>
+                            <flux:sidebar.item
+                                icon="users"
+                                href="{{ route('sites.subscribers', $navSite) }}"
+                                :current="request()->routeIs('sites.subscribers')"
+                                class="!py-1.5 text-zinc-400"
+                            >
+                                Subscribers
                             </flux:sidebar.item>
                             <flux:sidebar.item
                                 icon="envelope"
@@ -165,6 +197,14 @@
                                 class="!py-1.5 text-zinc-400"
                             >
                                 Media
+                            </flux:sidebar.item>
+                            <flux:sidebar.item
+                                icon="cog-6-tooth"
+                                href="{{ route('sites.settings', $navSite) }}"
+                                :current="request()->routeIs('sites.settings')"
+                                class="!py-1.5 text-zinc-400"
+                            >
+                                Site settings
                             </flux:sidebar.item>
                         </div>
                     @endif

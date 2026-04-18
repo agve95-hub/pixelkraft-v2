@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Provide a safe fallback so csp_nonce() never throws outside the
-        // middleware context (e.g. during queue workers or Artisan commands).
+        // middleware context (for example during queue workers or Artisan commands).
         $this->app->bindIf('csp-nonce', fn () => '');
     }
 
@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // ── Authorization policies ───────────────────────────────────────────
+        // Authorization policies
         // These provide object-level authorization as a second layer of defence
         // behind the EnsureSiteAccess middleware / SiteAccess::query() tenancy scope.
         Gate::policy(Site::class, SitePolicy::class);
@@ -43,9 +43,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Page::class, PagePolicy::class);
         Gate::policy(Invoice::class, InvoicePolicy::class);
 
-        // ── Layout view composer ─────────────────────────────────────────────
-        // Injects sidebar navigation and search index data into the app shell
-        // so the layout view itself stays free of DB queries.
+        // Layout view composer
+        // Inject sidebar navigation and search index data into the app shell so the
+        // layout view itself stays free of DB queries.
         View::composer('components.layouts.app', function ($view) {
             $navSitesQuery = SiteAccess::query()
                 ->select('id', 'name', 'slug', 'deploy_status')
@@ -58,18 +58,18 @@ class AppServiceProvider extends ServiceProvider
             $withCounts = [];
 
             if (SchemaState::hasTable('site_inbox_messages')) {
-                $withCounts['inboxMessages as unread_inbox_count'] = fn ($q) => $q
+                $withCounts['inboxMessages as unread_inbox_count'] = fn ($query) => $query
                     ->where('direction', 'inbound')
                     ->where('is_read', false);
             }
 
             if (SchemaState::hasTable('invoices')) {
-                $withCounts['invoices as unpaid_invoices_count'] = fn ($q) => $q
+                $withCounts['invoices as unpaid_invoices_count'] = fn ($query) => $query
                     ->where('status', 'unpaid');
             }
 
             if (SchemaState::hasTable('reminders')) {
-                $withCounts['reminders as overdue_reminders_count'] = fn ($q) => $q
+                $withCounts['reminders as overdue_reminders_count'] = fn ($query) => $query
                     ->where('is_done', false)
                     ->whereDate('due_date', '<', now()->toDateString());
             }
@@ -92,26 +92,32 @@ class AppServiceProvider extends ServiceProvider
             ]);
 
             /** @var Collection<int, Site> $navSites */
-            foreach ($navSites as $s) {
-                $searchIndex->push(['label' => $s->name.' — Overview', 'href' => route('sites.show', $s)]);
-                $searchIndex->push(['label' => $s->name.' — Pages', 'href' => route('sites.pages', $s)]);
-                $searchIndex->push(['label' => $s->name.' — Inbox', 'href' => route('sites.inbox', $s)]);
-                $searchIndex->push(['label' => $s->name.' — Reports', 'href' => route('sites.reports', $s)]);
-                $searchIndex->push(['label' => $s->name.' — Campaigns', 'href' => route('sites.campaigns', $s)]);
-                $searchIndex->push(['label' => $s->name.' — Expenses', 'href' => route('sites.expenses', $s)]);
-                $searchIndex->push(['label' => $s->name.' — Invoices', 'href' => route('sites.invoices', $s)]);
-                $searchIndex->push(['label' => $s->name.' — Reminders', 'href' => route('sites.reminders', $s)]);
-                $searchIndex->push(['label' => $s->name.' — Analytics', 'href' => route('sites.analytics', $s)]);
-                $searchIndex->push(['label' => $s->name.' — Maintenance', 'href' => route('sites.maintenance', $s)]);
-                $searchIndex->push(['label' => $s->name.' — Media', 'href' => route('sites.files', $s)]);
+            foreach ($navSites as $site) {
+                $searchIndex->push(['label' => $site->name.' - Overview', 'href' => route('sites.show', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Pages & SEO', 'href' => route('sites.pages', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Redirects', 'href' => route('seo.redirects', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Blog', 'href' => route('blog.index', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Products', 'href' => route('products.index', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Templates', 'href' => route('templates.index', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Subscribers', 'href' => route('sites.subscribers', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Inbox', 'href' => route('sites.inbox', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Reports', 'href' => route('sites.reports', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Campaigns', 'href' => route('sites.campaigns', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Expenses', 'href' => route('sites.expenses', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Invoices', 'href' => route('sites.invoices', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Reminders', 'href' => route('sites.reminders', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Analytics', 'href' => route('sites.analytics', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Maintenance', 'href' => route('sites.maintenance', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Media', 'href' => route('sites.files', $site)]);
+                $searchIndex->push(['label' => $site->name.' - Site settings', 'href' => route('sites.settings', $site)]);
             }
 
             $view->with(compact('navSites', 'searchIndex'));
         });
 
-        // ── Blade directives ─────────────────────────────────────────────────
-        // @cspNonce — attach a CSP nonce attribute to a <script> or <style> tag.
-        // Usage:  <script @cspNonce>…</script>
+        // Blade directives
+        // @cspNonce attaches a CSP nonce attribute to a <script> or <style> tag.
+        // Usage: <script @cspNonce></script>
         Blade::directive('cspNonce', fn () => '<?php echo \'nonce="\' . csp_nonce() . \'"\'; ?>');
     }
 }

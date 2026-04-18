@@ -129,6 +129,7 @@ export default function SiteShow({
                         label="SEO issues" value={seoIssueCount}
                         sub={seoWarningCount > 0 ? `${seoWarningCount} warning${seoWarningCount !== 1 ? 's' : ''}` : undefined}
                         icon={AlertTriangle}
+                        href={`/dashboard/sites/${site.id}/redirects`}
                         color={seoIssueCount > 0 ? 'red' : seoWarningCount > 0 ? 'amber' : 'zinc'}
                     />
                 </div>
@@ -139,9 +140,9 @@ export default function SiteShow({
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-sm font-medium text-zinc-300">Top pages (30d)</CardTitle>
-                                <Link href={`/dashboard/sites/${site.id}/pages`} className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
-                                    All pages <ArrowRight className="h-3 w-3" />
-                                </Link>
+                                <a href={`/dashboard/sites/${site.id}/pages`} className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300">
+                                    Pages & SEO <ArrowRight className="h-3 w-3" />
+                                </a>
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -152,10 +153,18 @@ export default function SiteShow({
                                     <FileText className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
                                     <span className="flex-1 truncate font-mono text-xs text-zinc-300">{p.url_path || '/'}</span>
                                     <span className="tabular-nums text-xs text-zinc-500">{p.visitors_30d.toLocaleString()}</span>
-                                    <Link href={`/dashboard/sites/${site.id}/pages/${p.id}/edit`}
-                                        className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-zinc-500 hover:bg-zinc-700 hover:text-zinc-200 transition-colors">
-                                        <Pencil className="h-3 w-3" />Edit
+                                    <Link
+                                        href={`/dashboard/sites/${site.id}/pages/${p.id}/seo`}
+                                        className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-zinc-500 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
+                                    >
+                                        SEO
                                     </Link>
+                                    <a
+                                        href={`/dashboard/sites/${site.id}/pages/${p.id}/edit`}
+                                        className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-zinc-500 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
+                                    >
+                                        <Pencil className="h-3 w-3" />Edit
+                                    </a>
                                 </div>
                             ))}
                         </CardContent>
