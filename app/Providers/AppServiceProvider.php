@@ -94,6 +94,7 @@ class AppServiceProvider extends ServiceProvider
             /** @var Collection<int, Site> $navSites */
             foreach ($navSites as $s) {
                 $searchIndex->push(['label' => $s->name.' — Overview', 'href' => route('sites.show', $s)]);
+                $searchIndex->push(['label' => $s->name.' — Pages', 'href' => route('sites.pages', $s)]);
                 $searchIndex->push(['label' => $s->name.' — Inbox', 'href' => route('sites.inbox', $s)]);
                 $searchIndex->push(['label' => $s->name.' — Reports', 'href' => route('sites.reports', $s)]);
                 $searchIndex->push(['label' => $s->name.' — Campaigns', 'href' => route('sites.campaigns', $s)]);
