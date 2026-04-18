@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Page;
 use App\Models\Site;
 use App\Models\User;
+use App\Support\SchemaState;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +15,12 @@ use Tests\TestCase;
 class DashboardSchemaCompatibilityTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        SchemaState::reset();
+        parent::tearDown();
+    }
 
     public function test_dashboard_still_renders_when_optional_dashboard_schema_is_missing(): void
     {
@@ -52,6 +59,8 @@ class DashboardSchemaCompatibilityTest extends TestCase
         Schema::table('sites', function (Blueprint $table) {
             $table->dropColumn('maintenance_settings');
         });
+
+        SchemaState::reset();
 
         $response = $this->actingAs($user)->get(route('dashboard'));
 

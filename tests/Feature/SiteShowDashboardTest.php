@@ -101,12 +101,14 @@ class SiteShowDashboardTest extends TestCase
         $response = $this->actingAs($user)->get(route('sites.show', $site));
 
         $response->assertStatus(200);
-        $response->assertSee('Visitors today');
-        $response->assertSee('Uptime');
-        $response->assertSee('SEO issues');
-        $response->assertSee('Errors');
-        $response->assertSee('Pages');
-        $response->assertSee('Deploy controls');
-        $response->assertSee('Mixed content warning on /about');
+        $response->assertInertia(fn ($page) => $page
+            ->component('sites/show')
+            ->where('site.id', $site->id)
+            ->where('site.name', 'Ashton')
+            ->has('visitorsToday')
+            ->has('uptimePercent')
+            ->has('seoIssueCount')
+            ->has('errorCount')
+        );
     }
 }

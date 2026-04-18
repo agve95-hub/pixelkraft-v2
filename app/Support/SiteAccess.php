@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SiteAccess
 {
+    /**
+     * @return Builder<Site>
+     */
     public static function query(): Builder
     {
         return Site::query()->visibleTo(auth()->user());

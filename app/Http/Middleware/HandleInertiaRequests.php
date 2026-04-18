@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\SchemaState;
 use App\Support\SiteAccess;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -21,15 +22,27 @@ class HandleInertiaRequests extends Middleware
 
         $navSites = [];
         if ($user) {
-            $navSites = SiteAccess::query()
-                ->withCount([
-                    'inboxMessages as unread_inbox_count' => fn ($q) => $q->where('direction', 'inbound')->where('is_read', false),
-                    'invoices as unpaid_invoices_count' => fn ($q) => $q->where('status', 'unpaid'),
-                    'reminders as overdue_reminders_count' => fn ($q) => $q->whereDate('due_date', '<', now())->where('is_done', false),
-                ])
-                ->orderBy('name')
-                ->get(['id', 'name', 'deploy_status', 'maintenance_settings'])
-                ->toArray();
+            $withCounts = [];
+
+            if (SchemaState::hasTable('site_inbox_messages')) {
+                $withCounts['inboxMessages as unread_inbox_count'] = fn ($q) => $q->where('direction', 'inbound')->where('is_read', false);
+            }
+
+            if (SchemaState::hasTable('invoices')) {
+                $withCounts['invoices as unpaid_invoices_count'] = fn ($q) => $q->where('status', 'unpaid');
+            }
+
+            if (SchemaState::hasTable('reminders')) {
+                $withCounts['reminders as overdue_reminders_count'] = fn ($q) => $q->whereDate('due_date', '<', now())->where('is_done', false);
+            }
+
+            $query = SiteAccess::query()->orderBy('name');
+
+            if ($withCounts !== []) {
+                $query->withCount($withCounts);
+            }
+
+            $navSites = $query->get(['id', 'name', 'deploy_status', 'maintenance_settings'])->toArray();
         }
 
         return [

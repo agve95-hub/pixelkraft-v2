@@ -16,6 +16,12 @@ class SchemaState
      */
     private static array $columnCache = [];
 
+    public static function reset(): void
+    {
+        self::$tableCache = [];
+        self::$columnCache = [];
+    }
+
     public static function hasTable(string $table): bool
     {
         return self::$tableCache[$table] ??= Schema::hasTable($table);

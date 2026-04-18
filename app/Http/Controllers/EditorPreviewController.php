@@ -453,10 +453,16 @@ HTML;
         // ── Step 2: strip JSX-specific constructs ──────────────────────────
         // JSX comments: {/* ... */}
         $source = preg_replace('/\{\/\*[\s\S]*?\*\/\}/', ' ', $source) ?? $source;
-        // JSX expressions {expr} — collapse to a space so we don't create run-on fragments
+        // JSX expressions {expr} — collapse to a space so we don't create run-on fragments.
+        // Exclude newlines from the match so multi-line function bodies are not consumed.
         // Pass twice to handle one level of nesting (e.g. {{ ... }})
-        $source = preg_replace('/\{[^{}]*\}/', ' ', $source) ?? $source;
-        $source = preg_replace('/\{[^{}]*\}/', ' ', $source) ?? $source;
+        $source = preg_replace('/\{[^{}\n]*\}/', ' ', $source) ?? $source;
+        $source = preg_replace('/\{[^{}\n]*\}/', ' ', $source) ?? $source;
+
+        // Pre-extract text nodes while tags are still present so inline content
+        // (e.g. <p>@feuerlauf</p>) is captured before the tags are stripped away.
+        preg_match_all('/>\s*([^<>]{4,300})\s*</u', $source, $tagTextMatches);
+
         // Strip JSX/HTML opening tags and their attributes entirely (e.g. <div className="...">)
         $source = preg_replace('/<[A-Za-z][A-Za-z0-9.]*(?:\s[^>]*)?\/?>/u', ' ', $source) ?? $source;
         // Strip closing tags
@@ -467,8 +473,6 @@ HTML;
         // separated by spaces.  Split on whitespace boundaries that were formerly
         // tags and collect sentence-like runs.
         preg_match_all('/(?:^|(?<=\s))(.{4,300})(?=\s|$)/u', $source, $runMatches);
-        // Also pick up short inline segments still sitting between angle brackets
-        preg_match_all('/>\s*([^<>]{4,300})\s*</u', $source, $tagTextMatches);
 
         $candidates = array_merge($runMatches[1] ?? [], $tagTextMatches[1] ?? []);
 

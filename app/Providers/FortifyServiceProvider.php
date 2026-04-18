@@ -11,8 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
-use Laravel\Fortify\Contracts\UpdateUserPasswordResponse;
-use Laravel\Fortify\Contracts\UpdateUserProfileInformationResponse;
+use Laravel\Fortify\Contracts\PasswordUpdateResponse;
+use Laravel\Fortify\Contracts\ProfileInformationUpdatedResponse;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -25,8 +25,8 @@ class FortifyServiceProvider extends ServiceProvider
         // Always redirect profile/password updates back to the settings page,
         // ignoring any stale session-stored "intended" URL that could otherwise
         // send users to an unrelated route (e.g. maintenance/preview).
-        $this->app->singleton(UpdateUserProfileInformationResponse::class, function () {
-            return new class implements UpdateUserProfileInformationResponse {
+        $this->app->singleton(ProfileInformationUpdatedResponse::class, function () {
+            return new class implements ProfileInformationUpdatedResponse {
                 public function toResponse($request)
                 {
                     return redirect()->route('settings')->with('success', 'Profile information updated.');
@@ -34,8 +34,8 @@ class FortifyServiceProvider extends ServiceProvider
             };
         });
 
-        $this->app->singleton(UpdateUserPasswordResponse::class, function () {
-            return new class implements UpdateUserPasswordResponse {
+        $this->app->singleton(PasswordUpdateResponse::class, function () {
+            return new class implements PasswordUpdateResponse {
                 public function toResponse($request)
                 {
                     return redirect()->route('settings')->with('success', 'Password updated.');

@@ -187,18 +187,6 @@ parameters:
 			path: app/Livewire/Dashboard/SiteHealthTable.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Livewire/Dashboard/SiteHealthTable.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{site\: App\\Models\\Site, is_up\: bool\|null, ssl_status\: string\|null, uptime_percent\: float\|null, response_time\: string\|null, pages_count\: int, error_count\: mixed, seo_issues\: mixed\}, Closure\(App\\Models\\Site\)\: array\{site\: App\\Models\\Site, is_up\: bool\|null, ssl_status\: string\|null, uptime_percent\: float\|null, response_time\: string\|null, pages_count\: int, error_count\: mixed, seo_issues\: mixed\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Dashboard/SiteHealthTable.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -287,60 +275,6 @@ parameters:
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Livewire/Email/SubscriberList.php
-
-		-
-			message: '#^Access to property \$repo_path on an unknown class App\\Livewire\\Files\\Site\.$#'
-			identifier: class.notFound
-			count: 2
-			path: app/Livewire/Files/FileManager.php
-
-		-
-			message: '#^Parameter \#1 \$site of method App\\Livewire\\Files\\FileManager\:\:getDirectoryEntries\(\) expects App\\Livewire\\Files\\Site, App\\Models\\Site given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Files/FileManager.php
-
-		-
-			message: '#^Parameter \#1 \$site of method App\\Livewire\\Files\\FileManager\:\:resolveExistingPath\(\) expects App\\Livewire\\Files\\Site, App\\Models\\Site given\.$#'
-			identifier: argument.type
-			count: 3
-			path: app/Livewire/Files/FileManager.php
-
-		-
-			message: '#^Parameter \#1 \$site of method App\\Livewire\\Files\\FileManager\:\:resolvePathWithinRepo\(\) expects App\\Livewire\\Files\\Site, App\\Models\\Site given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Files/FileManager.php
-
-		-
-			message: '#^Parameter \#1 \$site of method App\\Livewire\\Files\\FileManager\:\:resolveRepoBasePath\(\) expects App\\Livewire\\Files\\Site, App\\Models\\Site given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Files/FileManager.php
-
-		-
-			message: '#^Parameter \$site of method App\\Livewire\\Files\\FileManager\:\:getDirectoryEntries\(\) has invalid type App\\Livewire\\Files\\Site\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Livewire/Files/FileManager.php
-
-		-
-			message: '#^Parameter \$site of method App\\Livewire\\Files\\FileManager\:\:resolveExistingPath\(\) has invalid type App\\Livewire\\Files\\Site\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Livewire/Files/FileManager.php
-
-		-
-			message: '#^Parameter \$site of method App\\Livewire\\Files\\FileManager\:\:resolvePathWithinRepo\(\) has invalid type App\\Livewire\\Files\\Site\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Livewire/Files/FileManager.php
-
-		-
-			message: '#^Parameter \$site of method App\\Livewire\\Files\\FileManager\:\:resolveRepoBasePath\(\) has invalid type App\\Livewire\\Files\\Site\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Livewire/Files/FileManager.php
 
 		-
 			message: '#^Relation ''site'' is not found in App\\Models\\Page model\.$#'
