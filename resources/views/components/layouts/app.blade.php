@@ -61,6 +61,14 @@
                     @if ($siteSectionOpen)
                         <div class="ml-6 flex flex-col gap-0.5 border-l border-zinc-600/90 pl-2">
                             <flux:sidebar.item
+                                icon="document-duplicate"
+                                href="{{ route('sites.pages', $navSite) }}"
+                                :current="request()->routeIs('sites.pages')"
+                                class="!py-1.5 text-zinc-400"
+                            >
+                                Pages
+                            </flux:sidebar.item>
+                            <flux:sidebar.item
                                 icon="envelope"
                                 href="{{ route('sites.inbox', $navSite) }}"
                                 :current="request()->routeIs('sites.inbox')"
