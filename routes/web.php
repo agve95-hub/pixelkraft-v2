@@ -441,19 +441,55 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 'pages' => $pages,
             ]);
         })->name('sites.show');
-        Route::get('/sites/{site}/inbox', function (Site $site) {
-            $messages = $site->inboxMessages()->latest()->get();
-            return Inertia::render('sites/inbox', ['site' => $site, 'messages' => $messages]);
+        Route::get('/sites/{site}/inbox', function (\Illuminate\Http\Request $request, Site $site) {
+            $tab = $request->query('tab', 'inbox');
+            $query = $site->inboxMessages()->latest();
+            if ($tab === 'sent') {
+                $query->where('direction', 'outbound')->where('is_archived', false);
+            } elseif ($tab === 'archived') {
+                $query->where('is_archived', true);
+            } else {
+                $query->where('direction', 'inbound')->where('is_archived', false);
+            }
+            return Inertia::render('sites/inbox', ['site' => $site, 'messages' => $query->get(), 'tab' => $tab]);
         })->name('sites.inbox');
+        Route::post('/sites/{site}/inbox', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate(['to_email' => 'required|email|max:255', 'subject' => 'required|string|max:255', 'body' => 'required|string']);
+            $site->inboxMessages()->create(['direction' => 'outbound', 'user_id' => auth()->id(), 'to_email' => $d['to_email'], 'subject' => $d['subject'], 'body' => $d['body'], 'is_read' => true, 'source' => 'dashboard']);
+            return back()->with('success', 'Message sent.');
+        })->name('sites.inbox.compose');
+        Route::post('/sites/{site}/inbox/{message}/archive', function (Site $site, \App\Models\SiteInboxMessage $message) {
+            abort_unless($message->site_id === $site->id, 403);
+            $message->update(['is_archived' => !$message->is_archived]);
+            return back();
+        })->name('sites.inbox.archive');
         Route::get('/sites/{site}/invoices', function (Site $site) {
-            $invoices = $site->invoices()->orderByDesc('invoice_date')->get();
+            $invoices = $site->invoices()->with('items')->orderByDesc('invoice_date')->get()->map(function (\App\Models\Invoice $inv) {
+                $arr = $inv->toArray();
+                $arr['total'] = $inv->total();
+                $arr['is_overdue'] = $inv->isOverdue();
+                return $arr;
+            });
             return Inertia::render('sites/invoices', ['site' => $site, 'invoices' => $invoices]);
         })->name('sites.invoices');
         Route::post('/sites/{site}/invoices', function (\Illuminate\Http\Request $request, Site $site) {
-            $d = $request->validate(['number' => 'nullable|string|max:100', 'invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000']);
-            $invoice = $site->invoices()->create(array_merge($d, ['number' => $d['number'] ?? \App\Models\Invoice::nextNumberForSite($site), 'status' => 'unpaid', 'tax_rate' => $d['tax_rate'] ?? 0, 'discount_percent' => $d['discount_percent'] ?? 0, 'payment_terms' => $d['payment_terms'] ?? 'net30']));
-            return redirect("/dashboard/sites/{$site->id}/invoices")->with('success', 'Invoice created.');
+            $d = $request->validate(['number' => 'nullable|string|max:100', 'invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000', 'items' => 'nullable|array', 'items.*.description' => 'required|string|max:500', 'items.*.quantity' => 'required|numeric|min:0', 'items.*.rate' => 'required|numeric']);
+            $invoice = $site->invoices()->create(array_merge(array_except($d, ['items']), ['number' => $d['number'] ?? \App\Models\Invoice::nextNumberForSite($site), 'status' => 'unpaid', 'tax_rate' => $d['tax_rate'] ?? 0, 'discount_percent' => $d['discount_percent'] ?? 0, 'payment_terms' => $d['payment_terms'] ?? 'net30']));
+            foreach ($d['items'] ?? [] as $i => $item) {
+                $invoice->items()->create(['description' => $item['description'], 'quantity' => $item['quantity'], 'rate' => $item['rate'], 'sort_order' => $i]);
+            }
+            return back()->with('success', 'Invoice created.');
         })->name('sites.invoices.store');
+        Route::put('/sites/{site}/invoices/{invoice}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Invoice $invoice) {
+            abort_unless($invoice->site_id === $site->id, 403);
+            $d = $request->validate(['invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000', 'items' => 'nullable|array', 'items.*.description' => 'required|string|max:500', 'items.*.quantity' => 'required|numeric|min:0', 'items.*.rate' => 'required|numeric']);
+            $invoice->update(array_except($d, ['items']));
+            $invoice->items()->delete();
+            foreach ($d['items'] ?? [] as $i => $item) {
+                $invoice->items()->create(['description' => $item['description'], 'quantity' => $item['quantity'], 'rate' => $item['rate'], 'sort_order' => $i]);
+            }
+            return back()->with('success', 'Invoice updated.');
+        })->name('sites.invoices.update');
         Route::post('/sites/{site}/invoices/{invoice}/mark-paid', function (Site $site, \App\Models\Invoice $invoice) {
             abort_unless($invoice->site_id === $site->id, 403);
             $invoice->update(['status' => 'paid', 'paid_at' => now()]);
@@ -569,14 +605,14 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return Inertia::render('sites/reports', ['site' => $site, 'reports' => $query->get()]);
         })->name('sites.reports');
         Route::post('/sites/{site}/reports', function (\Illuminate\Http\Request $request, Site $site) {
-            $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string']);
-            $site->reports()->create($d);
+            $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string', 'meta.visitors' => 'nullable|integer|min:0', 'meta.pageviews' => 'nullable|integer|min:0', 'meta.uptime_percent' => 'nullable|numeric|min:0|max:100', 'meta.work_done' => 'nullable|string', 'meta.issues' => 'nullable|string', 'meta.next_steps' => 'nullable|string']);
+            $site->reports()->create(['title' => $d['title'], 'report_date' => $d['report_date'], 'summary' => $d['summary'] ?? null, 'meta' => $d['meta'] ?? null]);
             return back();
         })->name('sites.reports.store');
         Route::put('/sites/{site}/reports/{report}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Report $report) {
             abort_unless($report->site_id === $site->id, 403);
-            $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string']);
-            $report->update($d);
+            $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string', 'meta.visitors' => 'nullable|integer|min:0', 'meta.pageviews' => 'nullable|integer|min:0', 'meta.uptime_percent' => 'nullable|numeric|min:0|max:100', 'meta.work_done' => 'nullable|string', 'meta.issues' => 'nullable|string', 'meta.next_steps' => 'nullable|string']);
+            $report->update(['title' => $d['title'], 'report_date' => $d['report_date'], 'summary' => $d['summary'] ?? null, 'meta' => $d['meta'] ?? null]);
             return back();
         })->name('sites.reports.update');
         Route::post('/sites/{site}/reports/{report}/duplicate', function (Site $site, \App\Models\Report $report) {
@@ -592,7 +628,13 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return back();
         })->name('sites.reports.destroy');
         Route::get('/sites/{site}/analytics', SiteAnalyticsController::class)->name('sites.analytics');
-        Route::get('/sites/{site}/maintenance', fn (Site $site) => Inertia::render('sites/maintenance', ['site' => $site]))->name('sites.maintenance');
+        Route::get('/sites/{site}/maintenance', function (Site $site) {
+            $latestCheck = $site->uptimeChecks()->latest('checked_at')->first(['is_up', 'checked_at']);
+            return Inertia::render('sites/maintenance', [
+                'site' => $site,
+                'siteIsDown' => $latestCheck && !$latestCheck->is_up,
+            ]);
+        })->name('sites.maintenance');
         Route::get('/sites/{site}/settings', fn (Site $site) => Inertia::render('sites/settings', ['site' => $site]))->name('sites.settings');
         Route::put('/sites/{site}/settings', function (\Illuminate\Http\Request $request, Site $site) {
             $d = $request->validate([
@@ -634,7 +676,35 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             \App\Jobs\DeploySiteJob::dispatch($site, 'manual');
             return back()->with('success', 'Deployment started.');
         })->name('sites.deploy');
-        Route::get('/sites/{site}/files', fn (Site $site) => Inertia::render('sites/files', ['site' => $site]))->name('sites.files');
+        Route::get('/sites/{site}/files', function (Site $site) {
+            $dir = 'sites/'.$site->id;
+            $disk = \Illuminate\Support\Facades\Storage::disk('public');
+            $files = [];
+            if ($disk->exists($dir)) {
+                foreach ($disk->files($dir) as $path) {
+                    $files[] = ['name' => basename($path), 'url' => $disk->url($path), 'size' => $disk->size($path), 'mime' => $disk->mimeType($path) ?: 'application/octet-stream', 'modified' => $disk->lastModified($path)];
+                }
+                usort($files, fn ($a, $b) => $b['modified'] - $a['modified']);
+            }
+            return Inertia::render('sites/files', ['site' => $site, 'files' => $files]);
+        })->name('sites.files');
+        Route::post('/sites/{site}/files', function (\Illuminate\Http\Request $request, Site $site) {
+            $request->validate(['file' => 'required|file|max:20480']);
+            $file = $request->file('file');
+            $original = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $ext = $file->getClientOriginalExtension();
+            $safe = \Illuminate\Support\Str::slug($original) ?: 'file';
+            $filename = $safe.'-'.substr(uniqid('', true), -6).($ext ? '.'.$ext : '');
+            $file->storeAs('sites/'.$site->id, $filename, 'public');
+            return back()->with('success', 'File uploaded.');
+        })->name('sites.files.upload');
+        Route::delete('/sites/{site}/files/{filename}', function (Site $site, string $filename) {
+            if (str_contains($filename, '/') || str_contains($filename, '..')) {
+                abort(422);
+            }
+            \Illuminate\Support\Facades\Storage::disk('public')->delete('sites/'.$site->id.'/'.$filename);
+            return back()->with('success', 'File deleted.');
+        })->name('sites.files.destroy');
         Route::get('/sites/{site}/pages', fn (Site $site) => view('dashboard.sites.pages', ['site' => $site]))->name('sites.pages');
 
         // Editor — kept as Blade (Phase 3 overhaul)

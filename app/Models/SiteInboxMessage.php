@@ -38,6 +38,7 @@ class SiteInboxMessage extends Model
         'subject',
         'body',
         'is_read',
+        'is_archived',
         'source',
     ];
 
@@ -45,6 +46,7 @@ class SiteInboxMessage extends Model
     {
         return [
             'is_read' => 'boolean',
+            'is_archived' => 'boolean',
         ];
     }
 
