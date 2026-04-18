@@ -7,11 +7,13 @@
 *Push to Git. Pixelkraft handles everything else.*
 
 [![PHP](https://img.shields.io/badge/PHP-8.3+-8892BF?style=flat-square&logo=php&logoColor=white)](https://php.net)
-[![Laravel](https://img.shields.io/badge/Laravel-12%2F13-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
-[![Livewire](https://img.shields.io/badge/Livewire-v4-FB70A9?style=flat-square)](https://livewire.laravel.com)
-[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io)
+[![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Livewire](https://img.shields.io/badge/Livewire-4-FB70A9?style=flat-square)](https://livewire.laravel.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![MariaDB](https://img.shields.io/badge/MariaDB-11-003545?style=flat-square&logo=mariadb&logoColor=white)](https://mariadb.org)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io)
 
 </div>
 
@@ -34,22 +36,43 @@ Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and so
 
 ---
 
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Laravel 13, PHP 8.3+ |
+| Frontend routing | Inertia.js 3 + React 19 + TypeScript 6 |
+| Live widgets | Livewire 4 + Flux 2 |
+| UI components | shadcn/ui (Radix primitives + Tailwind v4) |
+| Build tool | Vite 8 |
+| Icons | Lucide React |
+| Forms | React Hook Form + Zod |
+| Queue / cache | Laravel Horizon + Redis 7 |
+| Database | MariaDB 11 (MySQL 8+ compatible) |
+| Auth | Laravel Fortify (TOTP 2FA) + Sanctum (API tokens) |
+| PDF | DomPDF |
+| Analytics | Google Analytics Data API v4 |
+| Backup | Spatie Laravel Backup |
+| Error tracking | Sentry |
+
+---
+
 ## Feature Set
 
 ### 🚀 Git-to-Render Pipeline
-- GitHub webhook receiver with signature verification
+- GitHub webhook receiver with HMAC-SHA256 signature verification
 - Support for **static HTML, PHP, React, Vue, Svelte, Astro, Next.js, Nuxt, Hugo, Eleventy**
 - Automatic package manager detection (npm / pnpm / yarn / bun)
-- Build pipeline with timeout protection and output capture
+- Build pipeline with timeout protection and full output capture
 - Git conflict detection and smart rebase recovery
-- One-click rollback to any previous deploy (snapshot tags)
+- One-click rollback to any previous deploy via snapshot tags
 
 ### 🎨 Visual Content Editor
 - WYSIWYG editing directly on rendered pages in an iframe
-- CSS-selector-based and marker-based region detection
-- Patch-to-source: edits flow back to the actual HTML/JSX/Markdown files
+- CSS-selector-based and marker-based editable region detection
+- Patch-to-source: edits write back to the actual HTML / JSX / Markdown files
 - Commit-on-save with full audit trail (GitOperation log)
-- Live source fallback preview for non-built framework files
+- Source fallback preview for unbuilt framework pages (TSX/JSX/Vue/Svelte/Astro/MDX)
 
 ### 📊 Observability & Monitoring
 - Built-in uptime checks with P95 response times
@@ -60,17 +83,19 @@ Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and so
 
 ### 💼 Agency Management Layer
 - Per-site client profiles (contact, company, billing)
-- Invoice management with PDF generation
+- Invoice management with PDF export
 - Expense tracker per site
-- Newsletter subscriber management
-- Contact form submission inbox
-- Site-scoped notifications
+- Newsletter subscriber management & campaign editor
+- Contact form submission inbox with spam filtering
+- Site-scoped notification centre
+- Maintenance mode management
 
-### 🔒 Security Architecture
+### 🔒 Security
 - All credentials encrypted at rest (`github_token`, `webhook_secret`, `inbox_inbound_secret`, `cf_api_token`, `smtp_password`, `ftp_ssh_password`)
 - HMAC-SHA256 webhook signature verification (constant-time `hash_equals`)
-- Role-based access control (admin / user)
-- Laravel Sanctum API tokens (scoped personal access tokens for `/api/v1` machine clients) + Fortify 2FA
+- Role-based access control (admin / editor)
+- Laravel Fortify TOTP 2FA
+- Sanctum personal access tokens with scoped abilities for `/api/v1`
 - Redis-backed distributed locking on all Git operations (prevents race conditions)
 - Path traversal protection on asset serving
 
@@ -94,13 +119,12 @@ Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and so
 ```bash
 git clone https://github.com/your-org/pixelkraft.git
 cd pixelkraft
-composer run setup   # Installs deps, sets up .env, migrates DB, builds assets
+composer run setup   # installs deps, copies .env, migrates DB, builds assets
 ```
 
-The `setup` script handles:
+The `setup` script runs:
 - `composer install`
-- `.env` creation from `.env.example`
-- App key generation
+- `.env` creation from `.env.example` + app key generation
 - Database migration
 - `npm install && npm run build`
 
@@ -126,15 +150,15 @@ DB_DATABASE=pixelkraft
 DB_USERNAME=pixelkraft
 DB_PASSWORD=<strong-password>
 
-# Redis (REQUIRED for production — do not use file/database drivers in prod)
+# Redis (required in production)
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 CACHE_STORE=redis
 SESSION_DRIVER=redis
 QUEUE_CONNECTION=redis
 
-# GitHub Webhook (REQUIRED — never leave blank in production)
-GITHUB_WEBHOOK_SECRET=<cryptographically-random-secret>
+# GitHub Webhook
+GITHUB_WEBHOOK_SECRET=<openssl rand -hex 32>
 GITHUB_WEBHOOK_REQUIRE_SIGNATURE=true
 
 # File paths
@@ -149,13 +173,13 @@ NGINX_SITES_PATH=/etc/nginx/sites-available
 composer run dev
 ```
 
-This starts concurrently:
+Starts concurrently:
 - `php artisan serve` — Laravel HTTP
-- `php artisan queue:listen --tries=1 --timeout=0` — Queue worker
-- `php artisan pail --timeout=0` — Real-time logs
+- `php artisan queue:listen --tries=1 --timeout=0` — queue worker
+- `php artisan pail --timeout=0` — real-time logs
 - `npm run dev` — Vite HMR
 
-### 4. Register the First User
+### 4. Create the First Admin
 
 ```bash
 php artisan tinker
@@ -166,7 +190,7 @@ php artisan tinker
 
 ## Production Deployment
 
-### Supervisor Configuration (Horizon)
+### Supervisor (Horizon)
 
 ```ini
 ; /etc/supervisor/conf.d/pixelkraft-horizon.conf
@@ -182,9 +206,7 @@ stopwaitsecs=3600
 ```
 
 ```bash
-sudo supervisorctl reread
-sudo supervisorctl update
-sudo supervisorctl start pixelkraft-horizon
+sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl start pixelkraft-horizon
 ```
 
 ### Nginx — Dashboard Vhost
@@ -192,17 +214,16 @@ sudo supervisorctl start pixelkraft-horizon
 ```nginx
 server {
     listen 443 ssl http2;
-    server_name dashboard.pixelkraft.io;
+    server_name dashboard.example.com;
     root /var/www/pixelkraft/public;
     index index.php;
 
-    ssl_certificate /etc/letsencrypt/live/dashboard.pixelkraft.io/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/dashboard.pixelkraft.io/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/dashboard.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dashboard.example.com/privkey.pem;
 
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; font-src 'self' https://fonts.bunny.net;" always;
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;
@@ -214,9 +235,7 @@ server {
         include fastcgi_params;
     }
 
-    location ~ /\.(?!well-known) {
-        deny all;
-    }
+    location ~ /\.(?!well-known) { deny all; }
 }
 ```
 
@@ -226,34 +245,22 @@ server {
 * * * * * www-data php /var/www/pixelkraft/artisan schedule:run >> /dev/null 2>&1
 ```
 
-### Zero-Downtime Deploy Script
+### Zero-Downtime Deploy
 
 ```bash
 #!/bin/bash
 set -e
-
 APP_DIR=/var/www/pixelkraft
 
 cd $APP_DIR
 git pull origin main
-
 composer install --no-dev --no-interaction --optimize-autoloader
-
-npm ci
-npm run build
-
+npm ci && npm run build
 php artisan migrate --force --graceful
-
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan event:cache
-
+php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache
 php artisan horizon:terminate
-
 sudo systemctl reload php8.3-fpm
 sudo supervisorctl restart pixelkraft-horizon
-
 echo "✅ Deployment complete"
 ```
 
@@ -269,117 +276,77 @@ echo "✅ Deployment complete"
                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │              WebhookController  (/api/webhooks/github)           │
-│  - Signature verification       - Duplicate check               │
-│  - Branch filtering             - Delivery recording            │
+│  Signature verification · Branch filtering · Delivery recording  │
 └─────────────────────────┬───────────────────────────────────────┘
                           │ dispatch
                           ▼
-┌──────────────────── git QUEUE ──────────────────────────────────┐
-│  SyncFromWebhookJob                                             │
-│  - GitSyncService::pull()   (with Redis distributed lock)       │
-│  - Conflict detection       - Rebase recovery                   │
-└──────┬──────────────────────────────────────────────────────────┘
+┌─────────────── git QUEUE (Redis / Horizon) ─────────────────────┐
+│  SyncFromWebhookJob                                              │
+│  GitSyncService::pull()  ·  Redis distributed lock              │
+│  Conflict detection  ·  Rebase recovery                         │
+└──────┬───────────────────────────────────────────────────────────┘
        │ dispatch
-       ├─────────────────────────────────────────────┐
-       ▼                                             ▼
-┌── parsing QUEUE ──┐                    ┌── deploy QUEUE ──────────┐
-│  ParseSiteJob     │                    │  DeploySiteJob + chain:  │
-│  - Page discovery │                    │  ProvisionEnvironmentJob  │
-│  - Metadata index │                    │  BuildSiteJob            │
-│  - SEO analysis   │                    │  InjectTrackingJob       │
-│  - Region detect  │                    │  ActivateReleaseJob      │
-└───────────────────┘                    └──────────────────────────┘
+       ├────────────────────────────────┐
+       ▼                                ▼
+┌── parsing QUEUE ──┐       ┌── deploy QUEUE ──────────────────────┐
+│  ParseSiteJob     │       │  DeploySiteJob chain:                │
+│  Page discovery   │       │    ProvisionEnvironmentJob           │
+│  Metadata index   │       │    BuildSiteJob                      │
+│  SEO analysis     │       │    InjectTrackingJob                 │
+│  Region detect    │       │    ActivateReleaseJob                │
+└───────────────────┘       └──────────────────────────────────────┘
 ```
 
 ### Queue Architecture
 
-| Queue | Supervisor | Workers | Timeout | Purpose |
-|---|---|---|---|---|
-| `default` | supervisor-default | 3 | 120s | Emails, notifications |
-| `git` | supervisor-git | 2 | 300s | Clone, pull, push, tag |
-| `parsing` | supervisor-parsing | 2 | 600s | Page discovery, SEO, regions |
-| `deploy` | supervisor-deploy | 2 | 600s | Full build + activation |
-| `monitoring` | supervisor-monitoring | 3 | 300s | Uptime, crawl, analytics |
+| Queue | Workers | Timeout | Purpose |
+|---|---|---|---|
+| `default` | 3 | 120s | Emails, notifications |
+| `git` | 2 | 300s | Clone, pull, push, tag |
+| `parsing` | 2 | 600s | Page discovery, SEO, regions |
+| `deploy` | 2 | 600s | Full build + activation |
+| `monitoring` | 3 | 300s | Uptime, crawl, analytics |
 
 ### Supported Project Types
 
-| Type | Build | Parser | Runtime |
-|---|---|---|---|
-| `static_html` | None | StaticHtmlParser | Nginx file serve |
-| `php_site` | None | RenderedPhpParser | PHP-FPM |
-| `react` | npm run build | SpaComponentParser | Static or runtime |
-| `vue` | npm run build | SpaComponentParser | Static or runtime |
-| `svelte` | npm run build | SpaComponentParser | Static |
-| `astro` | npm run build | SsgOutputParser | Static |
-| `nextjs` | npm run build | SpaComponentParser | Node.js runtime |
-| `nuxt` | npm run build | SpaComponentParser | Node.js runtime |
-| `hugo` | hugo | SsgOutputParser | Static |
-| `eleventy` | npx @11ty/eleventy | SsgOutputParser | Static |
-| `custom` | Configurable | StaticHtmlParser | Configurable |
+| Type | Build Command | Runtime |
+|---|---|---|
+| `static_html` | — | Nginx file serve |
+| `php_site` | — | PHP-FPM |
+| `react` | `npm run build` | Static or Node.js |
+| `vue` | `npm run build` | Static or Node.js |
+| `svelte` | `npm run build` | Static |
+| `astro` | `npm run build` | Static |
+| `nextjs` | `npm run build` | Node.js runtime |
+| `nuxt` | `npm run build` | Node.js runtime |
+| `hugo` | `hugo` | Static |
+| `eleventy` | `npx @11ty/eleventy` | Static |
+| `custom` | Configurable | Configurable |
 
 ---
 
-## Authenticated JSON API (`/api/v1`)
+## API Reference
 
-Machine clients use **`Authorization: Bearer {token}`** with a Sanctum **personal access token**. The same routes accept **first-party cookie session** auth (SPA on a stateful domain); session requests are not subject to token ability checks.
+### `/api/v1` — Machine Clients
 
-Issue tokens with only the abilities you need (wildcard **`['*']`** is supported but discouraged for automation):
+Authenticate with **`Authorization: Bearer {token}`** (Sanctum personal access token). First-party Inertia sessions also authenticate on stateful domains.
 
 | Ability | Routes |
 |---|---|
-| `pixelkraft:sites:read` | `GET /api/v1/sites`, `GET /api/v1/sites/{site}`, pages, deploys, analytics, releases, git-operations |
+| `pixelkraft:sites:read` | `GET /api/v1/sites`, `/sites/{site}`, pages, deploys, analytics, releases, git-operations |
 | `pixelkraft:sites:sync` | `POST /api/v1/sites/{site}/sync` |
 | `pixelkraft:sites:deploy` | `POST /api/v1/sites/{site}/deploy` |
 | `pixelkraft:sites:rollback` | `POST /api/v1/sites/{site}/rollback/{logId}` |
 | `pixelkraft:notifications:read` | `GET /api/v1/notifications` |
-| `pixelkraft:notifications:write` | `POST /api/v1/notifications/{id}/read`, `POST /api/v1/notifications/read-all` |
+| `pixelkraft:notifications:write` | `POST /api/v1/notifications/{id}/read` |
 
-Example (Artisan tinker or your own admin UI): create a token with `['pixelkraft:sites:read', 'pixelkraft:sites:deploy']` for a read-only dashboard plus deploy from CI.
+### `/api/inbox/{slug}` — Inbound Relay
 
----
+POST JSON with `subject` and `body` (plus optional `from_email`, `from_name`, `to_email`). When `INBOX_INBOUND_REQUIRE_SECRET=true`, authenticate with the site's encrypted per-site secret or the global `INBOX_INBOUND_SECRET`.
 
-## Project inbox inbound webhook (`/api/inbox/{slug}`)
+### `/api/forms/{slug}` — Public Contact Forms
 
-Relay tools (email forwarding, Zapier, custom scripts) can create inbox rows with **`POST /api/inbox/{slug}`** (active sites only).
-
-| Item | Detail |
-|---|---|
-| **Auth** | Optional **`Authorization: Bearer {token}`** — when `INBOX_INBOUND_REQUIRE_SECRET` is true, the bearer must match either the site’s **per-site inbox secret** (set in site settings; stored encrypted) or, if unset, the global **`INBOX_INBOUND_SECRET`** from `.env` |
-| **Minimum length** | 32 characters for any configured secret (global or per-site) |
-| **Body** | JSON: required `subject`, `body`; optional `from_email`, `from_name`, `to_email` |
-
----
-
-## Public contact forms API
-
-Sites can accept **anonymous** form posts from the marketing site or static pages.
-
-| Item | Detail |
-|---|---|
-| **Endpoint** | `POST /api/forms/{slug}` where `{slug}` is the site’s `slug` (active sites only) |
-| **Rate limit** | 10 requests per minute per client IP and slug (returns `429` when exceeded) |
-| **Anti-spam** | Optional honeypot field **`_hp`** — if it has any value, the submission is stored as spam and skipped for inbox/notifications (checked on the raw request even when **`_hp`** is omitted from the per-form stored-field subset) |
-| **Form name** | Optional **`_form_name`** (default `contact`) — stored on the submission record |
-
-### Allowed fields (allowlisted)
-
-Only these JSON keys are validated. Stored keys on `form_submissions.data` are the intersection of (a) this list and (b) `config('pixelkraft.form_submission_allowed_fields')`: the `*` entry is the maximum set; optional entries keyed by the same string as **`_form_name`** further restrict which of those keys are persisted for that form. Unknown form names use `*` only. Any other request keys are ignored.
-
-| Field | Notes |
-|---|---|
-| `email` | Valid email, optional |
-| `name` | Display name; optional if `first_name` / `last_name` used |
-| `first_name`, `last_name` | Combined for inbox **From** name when `name` is empty |
-| `phone` | Short string |
-| `company`, `department` | Short strings |
-| `website`, `url` | Optional URLs or site strings (max 500 chars) |
-| `to_email` | Optional routed destination; stored on inbox row only |
-| `subject`, `title`, `topic` | First non-empty is used as the inbox **subject** |
-| `message`, `body`, `content`, `inquiry`, `comments`, `details` | First non-empty is used as the inbox **body**; all are scanned for basic spam patterns |
-
-### Spam handling
-
-Submissions matching simple patterns (e.g. obvious spam phrases or many URLs in the combined text) are marked **`is_spam`** and do not create inbox messages or notifications.
+Anonymous form submissions from marketing pages. Rate-limited to 10 requests/min per IP. Honeypot field `_hp` silently discards spam. Allowed fields: `email`, `name`, `first_name`, `last_name`, `phone`, `company`, `subject`, `message`, and more (see `config/pixelkraft.php`).
 
 ---
 
@@ -389,70 +356,50 @@ Submissions matching simple patterns (e.g. obvious spam phrases or many URLs in 
 
 | Key | Default | Description |
 |---|---|---|
-| `repos_path` | `storage/repos` | Where cloned repositories are stored |
-| `sites_deploy_path` | `/var/www/sites` | Where built sites are deployed |
-| `nginx_sites_path` | `/etc/nginx/sites-available` | Nginx vhost config directory |
+| `repos_path` | `storage/repos` | Cloned repository root |
+| `sites_deploy_path` | `/var/www/sites` | Built site output root |
+| `nginx_sites_path` | `/etc/nginx/sites-available` | Nginx vhost directory |
 | `github_webhook_secret` | — | HMAC secret for webhook verification |
 | `github_webhook_require_signature` | `true` | Enforce signature verification |
-| `deploy.build_timeout_seconds` | `300` | Max build command duration |
-| `deploy.rollback_snapshots` | `10` | How many rollback points to keep |
+| `deploy.build_timeout_seconds` | `300` | Max build duration |
+| `deploy.rollback_snapshots` | `10` | Rollback points to retain |
 | `monitoring.uptime_interval_minutes` | `5` | Uptime check frequency |
-| `monitoring.webhook_deliveries_retention_days` | `30` | `WEBHOOK_DELIVERIES_RETENTION_DAYS` — age of `webhook_deliveries` rows kept before prune |
-| `runtime.port_start` | `4100` | First port for runtime Node.js sites |
-| `runtime.startup_timeout_seconds` | `30` | Wait time for Node.js server to start |
-| `form_submission_allowed_fields` | Built-in list under `*` | Per-form subsets of allowed `/api/forms` payload keys (see **Public contact forms API**) |
-
-### `config/horizon.php`
-
-| Key | Default | Description |
-|---|---|---|
-| `allow_local_bypass` | `false` | `HORIZON_ALLOW_LOCAL_BYPASS` — when `true` and `APP_ENV=local`, any logged-in user may open Horizon (Laravel default); keep `false` for admin-only everywhere |
+| `monitoring.webhook_deliveries_retention_days` | `30` | Webhook delivery log retention |
+| `runtime.port_start` | `4100` | First port for Node.js runtime sites |
+| `runtime.startup_timeout_seconds` | `30` | Node.js server startup wait |
+| `form_submission_allowed_fields` | Built-in | Per-form field allowlist for `/api/forms` |
 
 ---
 
-## Security Checklist for Production
+## Security Checklist
 
-Before going live, verify:
+Before going live:
 
-- [ ] `APP_DEBUG=false` in production `.env`
-- [ ] `APP_ENV=production` in production `.env`
-- [ ] `GITHUB_WEBHOOK_SECRET` is set and cryptographically random (`openssl rand -hex 32`)
-- [ ] `GITHUB_WEBHOOK_REQUIRE_SIGNATURE=true`
-- [ ] `CACHE_STORE=redis` (never `file` or `database` in production)
-- [ ] `SESSION_DRIVER=redis`
-- [ ] `QUEUE_CONNECTION=redis`
-- [ ] All encrypted fields use a strong `APP_KEY` (`php artisan key:generate`)
-- [ ] Sanctum **personal access tokens** for `/api/v1` use **narrow abilities** (avoid `*` in production except break-glass tokens)
-- [ ] `/horizon` dashboard is protected (`web` + `auth` middleware; **admin-only** by default — `HorizonServiceProvider` gate; optional `HORIZON_ALLOW_LOCAL_BYPASS=true` restores Laravel’s “any authenticated user in `local`” behavior)
-- [ ] Nginx TLS configured with certificate via Let's Encrypt / Certbot
-- [ ] `storage/` and `bootstrap/cache/` are writable by `www-data` only
-- [ ] PHP `expose_php = Off` in `php.ini`
-- [ ] MariaDB user has no `SUPER` privileges; only `SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER` on the pixelkraft DB
-- [ ] Redis is not publicly accessible (bind `127.0.0.1` only)
-- [ ] SSH access uses key-based authentication only; no password auth
-- [ ] Firewall: only ports 80, 443, and your SSH port are open
+- [ ] `APP_DEBUG=false` and `APP_ENV=production`
+- [ ] `GITHUB_WEBHOOK_SECRET` set (`openssl rand -hex 32`) and `GITHUB_WEBHOOK_REQUIRE_SIGNATURE=true`
+- [ ] `CACHE_STORE=redis`, `SESSION_DRIVER=redis`, `QUEUE_CONNECTION=redis`
+- [ ] Strong `APP_KEY` (`php artisan key:generate`)
+- [ ] Sanctum tokens use **narrow abilities** (avoid `*` in production)
+- [ ] `/horizon` protected — admin-only by default via `HorizonServiceProvider` gate
+- [ ] Nginx TLS via Let's Encrypt / Certbot
+- [ ] `storage/` and `bootstrap/cache/` writable by `www-data` only
+- [ ] PHP `expose_php = Off`
+- [ ] MariaDB user: no `SUPER`; only `SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER`
+- [ ] Redis bound to `127.0.0.1` only
+- [ ] SSH key-based auth only; firewall allows only 80, 443, SSH
 
 ---
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Run the full test suite: `composer test`
-4. Run static analysis: `vendor/bin/phpstan analyse`
-5. Run code style: `vendor/bin/pint`
-6. Open a pull request
-
-### Development Utilities
+## Development
 
 ```bash
 # Run all tests
-php artisan test --parallel
+php artisan test
 
-# Static analysis (requires phpstan/phpstan)
-vendor/bin/phpstan analyse
+# Static analysis
+composer phpstan
 
-# Code style (Pint)
+# Code style
 vendor/bin/pint
 
 # Inspect failed jobs
@@ -461,24 +408,33 @@ php artisan horizon:list-failed
 # Re-queue stalled webhook deliveries
 php artisan pixelkraft:replay-webhooks --since="2 hours ago"
 
-# Prune old webhook deliveries
+# Prune old webhook delivery logs
 php artisan pixelkraft:prune-webhooks --days=30
 
-# Clear all application caches
+# Clear all caches
 php artisan cache:clear && php artisan config:clear && php artisan route:clear && php artisan view:clear
 ```
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Run the test suite: `php artisan test` (184 tests, 0 failures)
+4. Run static analysis: `composer phpstan`
+5. Run code style: `vendor/bin/pint`
+6. Open a pull request
 
 ---
 
 ## License
 
-This project is proprietary software. All rights reserved.
+Proprietary software. All rights reserved.
 
 ---
 
 <div align="center">
 
-**Built with ❤️ using [Laravel](https://laravel.com) · [Livewire](https://livewire.laravel.com) · [Tailwind CSS](https://tailwindcss.com)**
+**Built with [Laravel](https://laravel.com) · [React](https://react.dev) · [Inertia.js](https://inertiajs.com) · [Livewire](https://livewire.laravel.com) · [Tailwind CSS](https://tailwindcss.com)**
 
 *pixelkraft — Artisanal Git-to-Render, at scale.*
 
