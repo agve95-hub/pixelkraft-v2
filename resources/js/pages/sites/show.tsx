@@ -177,8 +177,8 @@ export default function SiteShow({
                                     <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                                     <p className="text-sm text-zinc-500">No open issues.</p>
                                 </div>
-                            ) : seoIssues.slice(0, 8).map((issue) => (
-                                <div key={issue.id} className="flex items-start gap-3 border-b border-zinc-800/60 px-4 py-2.5 last:border-0">
+                            ) : seoIssues.slice(0, 8).map((issue, i) => (
+                                <div key={issue.id ?? i} className="flex items-start gap-3 border-b border-zinc-800/60 px-4 py-2.5 last:border-0">
                                     <AlertTriangle className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', issue.severity === 'error' ? 'text-red-400' : 'text-amber-400')} />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs text-zinc-200">{issue.message}</p>

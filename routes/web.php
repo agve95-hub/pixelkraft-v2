@@ -593,9 +593,6 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         })->name('sites.reports.destroy');
         Route::get('/sites/{site}/analytics', SiteAnalyticsController::class)->name('sites.analytics');
         Route::get('/sites/{site}/maintenance', fn (Site $site) => Inertia::render('sites/maintenance', ['site' => $site]))->name('sites.maintenance');
-        Route::get('/sites/{site}/maintenance/preview', function (Site $site) {
-            return view('dashboard.sites.maintenance-preview', ['site' => $site]);
-        })->name('sites.maintenance.preview');
         Route::get('/sites/{site}/settings', fn (Site $site) => Inertia::render('sites/settings', ['site' => $site]))->name('sites.settings');
         Route::put('/sites/{site}/settings', function (\Illuminate\Http\Request $request, Site $site) {
             $d = $request->validate([
@@ -711,6 +708,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             } elseif ($d['status'] === 'published' && empty($d['published_at'])) {
                 $d['published_at'] = now();
             }
+            $d['body'] = $d['body'] ?? '';
             $site->blogPosts()->create($d);
             return redirect("/dashboard/sites/{$site->id}/blog")->with('success', 'Post created.');
         })->name('blog.store');
@@ -723,6 +721,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             } elseif ($d['status'] === 'published' && empty($d['published_at'])) {
                 $d['published_at'] = now();
             }
+            $d['body'] = $d['body'] ?? '';
             $blogPost->update($d);
             return back()->with('success', 'Post updated.');
         })->name('blog.update');

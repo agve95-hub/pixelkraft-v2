@@ -97,12 +97,17 @@ class SiteAnalyticsController
             $deploys = collect();
         }
 
-        $currentRelease = Schema::hasTable('deployment_releases')
-            ? $site->currentDeploymentRelease()->first()
-            : null;
-        $releaseCount = Schema::hasTable('deployment_releases')
-            ? DeploymentRelease::query()->where('site_id', $site->id)->count()
-            : 0;
+        try {
+            $currentRelease = Schema::hasTable('deployment_releases')
+                ? $site->currentDeploymentRelease()->first()
+                : null;
+            $releaseCount = Schema::hasTable('deployment_releases')
+                ? DeploymentRelease::query()->where('site_id', $site->id)->count()
+                : 0;
+        } catch (\Throwable) {
+            $currentRelease = null;
+            $releaseCount = 0;
+        }
 
         try {
             $eventSummary = Schema::hasTable('analytics_events')
