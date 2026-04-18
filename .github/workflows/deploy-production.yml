@@ -114,12 +114,10 @@ jobs:
             git clean -fd
 
             composer install --no-dev --optimize-autoloader
-            php artisan migrate --force
             npm ci
             npm run build
 
-            php artisan optimize:clear
-            php artisan horizon:terminate
+            php artisan app:deploy
 
             if command -v systemctl >/dev/null 2>&1; then
               systemctl reload nginx || true

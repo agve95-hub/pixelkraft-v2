@@ -565,10 +565,34 @@ class Site extends Model
             ->findOrFail($id);
     }
 
+    private function isPlatformOwnedPath(?string $path): bool
+    {
+        if ($path === null || $path === '') {
+            return false;
+        }
+
+        $normalize = fn (string $p): string => rtrim(str_replace('\\', '/', $p), '/');
+
+        $normalized = $normalize($path);
+        $storageRoot = $normalize(storage_path(''));
+
+        return str_starts_with($normalized, $storageRoot.'/') || $normalized === $storageRoot;
+    }
+
     private function cleanupFilesystemArtifacts(): void
     {
-        $this->deleteDirectory($this->repo_path, $this->slug);
-        $this->deleteDirectory($this->deploy_path, $this->slug);
+        if ($this->isPlatformOwnedPath($this->repo_path)) {
+            $this->deleteDirectory($this->repo_path, $this->slug);
+        } else {
+            Log::info("Skipped cleanup of non-platform repo_path [{$this->repo_path}] for site [{$this->slug}]");
+        }
+
+        if ($this->isPlatformOwnedPath($this->deploy_path)) {
+            $this->deleteDirectory($this->deploy_path, $this->slug);
+        } else {
+            Log::info("Skipped cleanup of non-platform deploy_path [{$this->deploy_path}] for site [{$this->slug}]");
+        }
+
         $this->deleteDirectory($this->runtimeRootPath(), $this->slug);
         $this->deleteFile($this->runtimePidPath(), $this->slug.'.pid');
         $this->deleteFile($this->runtimeLogPath(), $this->slug.'.log');

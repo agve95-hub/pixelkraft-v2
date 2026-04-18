@@ -26,7 +26,7 @@ class ProvisionEnvironmentJob implements ShouldQueue
         public string $deployLogId,
         public string $releaseId,
     ) {
-        $this->onQueue('default');
+        $this->onQueue('deploy');
     }
 
     public function handle(DeployService $deployer): void

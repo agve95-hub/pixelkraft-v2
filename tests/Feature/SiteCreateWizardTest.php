@@ -16,7 +16,7 @@ class SiteCreateWizardTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_server_path_site_creation_completes_immediately(): void
+    public function test_server_path_source_type_is_rejected(): void
     {
         Queue::fake();
 
@@ -29,50 +29,14 @@ class SiteCreateWizardTest extends TestCase
 
         $this->actingAs($user);
 
-        $serverPath = public_path();
-
-        $response = $this->postJson('/dashboard/sites', [
+        $this->postJson('/dashboard/sites', [
             'name' => 'Mounted Site',
             'project_type' => 'static_html',
             'source_type' => 'server_path',
-            'server_path' => $serverPath,
+            'server_path' => public_path(),
             'branch' => 'main',
-        ]);
-
-        $response->assertOk()
-            ->assertJsonPath('completed', true)
-            ->assertJsonStructure(['siteId']);
-
-        $site = Site::query()->findOrFail($response->json('siteId'));
-
-        $this->assertSame($serverPath, $site->repo_path);
-        $this->assertSame($serverPath, $site->deploy_path);
-        $this->assertSame(DeployStatus::Live, $site->deploy_status);
-
-        Queue::assertPushed(ParseSiteJob::class, fn (ParseSiteJob $job) => $job->site->is($site));
-        Queue::assertNotPushed(DeploySiteJob::class);
-    }
-
-    public function test_server_path_site_creation_requires_existing_absolute_path(): void
-    {
-        Queue::fake();
-
-        $user = User::create([
-            'name' => 'Wizard User',
-            'email' => 'wizard-2@example.com',
-            'password' => Hash::make('password'),
-            'role' => 'editor',
-        ]);
-
-        $this->actingAs($user);
-
-        $this->postJson('/dashboard/sites', [
-            'name' => 'Broken Mount',
-            'project_type' => 'static_html',
-            'source_type' => 'server_path',
-            'server_path' => 'relative/path',
         ])->assertStatus(422)
-            ->assertJsonValidationErrors(['server_path']);
+          ->assertJsonValidationErrors(['source_type']);
 
         Queue::assertNothingPushed();
     }

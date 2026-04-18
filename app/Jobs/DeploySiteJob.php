@@ -23,7 +23,7 @@ class DeploySiteJob implements ShouldQueue
         public Site $site,
         public string $triggeredBy = 'manual',
     ) {
-        $this->onQueue('default');
+        $this->onQueue('deploy');
     }
 
     public function handle(DeployService $deployer): void
@@ -37,7 +37,7 @@ class DeploySiteJob implements ShouldQueue
             new BuildSiteJob($this->site->id, $log->id, $release->id),
             new InjectTrackingJob($this->site->id, $log->id, $release->id),
             new ActivateReleaseJob($this->site->id, $log->id, $release->id),
-        ])->onQueue('default')->dispatch();
+        ])->onQueue('deploy')->dispatch();
     }
 
     public function tags(): array

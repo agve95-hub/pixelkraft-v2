@@ -225,12 +225,11 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'project_type' => 'required|string',
-            'source_type' => 'required|string|in:github,server_path,upload',
-            'repo_url' => 'nullable|string|max:500',
+            'source_type' => 'required|string|in:github,upload',
+            'repo_url' => ['nullable', 'string', 'max:500', new \App\Rules\GitRemoteUrl()],
             'branch' => 'nullable|string|max:100',
             'build_command' => 'nullable|string|max:500',
             'github_token' => 'nullable|string|max:500',
-            'server_path' => 'nullable|string|max:500',
             'domain' => 'nullable|string|max:253',
             'ssl_provider' => 'nullable|string',
             'client_first_name' => 'nullable|string|max:255',
@@ -248,46 +247,6 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             ], 422);
         }
 
-        if ($validated['source_type'] === 'server_path') {
-            $serverPath = trim((string) ($validated['server_path'] ?? ''));
-
-            if ($serverPath === '') {
-                return response()->json([
-                    'message' => 'The server path field is required.',
-                    'errors' => [
-                        'server_path' => ['The server path field is required.'],
-                    ],
-                ], 422);
-            }
-
-            if (! preg_match('/^(?:\/|[A-Za-z]:[\/\\\\])/', $serverPath)) {
-                return response()->json([
-                    'message' => 'The server path must be an absolute path.',
-                    'errors' => [
-                        'server_path' => ['The server path must be an absolute path.'],
-                    ],
-                ], 422);
-            }
-
-            if (! \Illuminate\Support\Facades\File::exists($serverPath)) {
-                return response()->json([
-                    'message' => 'The server path does not exist.',
-                    'errors' => [
-                        'server_path' => ['The server path does not exist.'],
-                    ],
-                ], 422);
-            }
-
-            if (! is_readable($serverPath)) {
-                return response()->json([
-                    'message' => 'The server path is not readable.',
-                    'errors' => [
-                        'server_path' => ['The server path is not readable.'],
-                    ],
-                ], 422);
-            }
-        }
-
         $baseSlug = \Illuminate\Support\Str::slug($validated['name']);
         $slug = $baseSlug;
         $i = 2;
@@ -300,36 +259,18 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             'name' => $validated['name'],
             'slug' => $slug,
             'project_type' => $validated['project_type'],
-            'repo_url' => match ($validated['source_type']) {
-                'server_path' => 'file://'.($validated['server_path'] ?? ''),
-                default => $validated['repo_url'] ?? null,
-            },
+            'repo_url' => $validated['repo_url'] ?? null,
             'branch' => $validated['branch'] ?? 'main',
             'build_command' => $validated['build_command'] ?? null,
             'github_token' => $validated['github_token'] ?? null,
-            'repo_path' => $validated['source_type'] === 'server_path' ? $validated['server_path'] : null,
-            'deploy_path' => $validated['source_type'] === 'server_path' ? $validated['server_path'] : null,
             'domain' => $validated['domain'] ?? null,
             'ssl_provider' => $validated['ssl_provider'] ?? 'letsencrypt',
             'client_first_name' => $validated['client_first_name'] ?? null,
             'client_last_name' => $validated['client_last_name'] ?? null,
             'client_email' => $validated['client_email'] ?? null,
             'client_company' => $validated['client_company'] ?? null,
-            'deploy_status' => $validated['source_type'] === 'server_path'
-                ? \App\Enums\DeployStatus::Live
-                : \App\Enums\DeployStatus::Queued,
-            'last_deployed_at' => $validated['source_type'] === 'server_path' ? now() : null,
+            'deploy_status' => \App\Enums\DeployStatus::Queued,
         ]);
-
-        if ($validated['source_type'] === 'server_path') {
-            app(\App\Services\ProjectDetector::class)->applyToSite($site);
-            \App\Jobs\ParseSiteJob::dispatch($site);
-
-            return response()->json([
-                'siteId' => $site->id,
-                'completed' => true,
-            ]);
-        }
 
         if ($validated['source_type'] === 'github' && ! empty($validated['repo_url'])) {
             \App\Jobs\DeploySiteJob::dispatch($site, 'wizard');
@@ -640,7 +581,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $d = $request->validate([
                 'name' => 'required|string|max:255',
                 'domain' => 'nullable|string|max:255',
-                'repo_url' => 'nullable|string|max:500',
+                'repo_url' => ['nullable', 'string', 'max:500', new \App\Rules\GitRemoteUrl()],
                 'branch' => 'nullable|string|max:100',
                 'project_type' => 'nullable|string|max:64',
                 'client_first_name' => 'nullable|string|max:100',
@@ -689,7 +630,12 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return Inertia::render('sites/files', ['site' => $site, 'files' => $files]);
         })->name('sites.files');
         Route::post('/sites/{site}/files', function (\Illuminate\Http\Request $request, Site $site) {
-            $request->validate(['file' => 'required|file|max:20480']);
+            $request->validate([
+                'file' => [
+                    'required', 'file', 'max:20480',
+                    'mimes:jpg,jpeg,png,gif,webp,avif,svg,pdf,txt,csv,json,xml,zip,woff,woff2,ttf,otf,ico',
+                ],
+            ]);
             $file = $request->file('file');
             $original = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $ext = $file->getClientOriginalExtension();
