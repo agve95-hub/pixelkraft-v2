@@ -635,6 +635,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return back()->with('success', 'Deployment started.');
         })->name('sites.deploy');
         Route::get('/sites/{site}/files', fn (Site $site) => Inertia::render('sites/files', ['site' => $site]))->name('sites.files');
+        Route::get('/sites/{site}/pages', fn (Site $site) => view('dashboard.sites.pages', ['site' => $site]))->name('sites.pages');
 
         // Editor — kept as Blade (Phase 3 overhaul)
         Route::get('/sites/{site}/pages/{page}/edit', fn (Site $site, Page $page) => view('dashboard.editor.index', ['site' => $site, 'page' => $page]))->name('editor');

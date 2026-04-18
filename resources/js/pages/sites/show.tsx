@@ -139,7 +139,7 @@ export default function SiteShow({
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-sm font-medium text-zinc-300">Top pages (30d)</CardTitle>
-                                <Link href={`/dashboard/sites/${site.id}`} className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
+                                <Link href={`/dashboard/sites/${site.id}/pages`} className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
                                     All pages <ArrowRight className="h-3 w-3" />
                                 </Link>
                             </div>
