@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string $id
@@ -65,17 +67,17 @@ class Page extends Model
 
     // ── Relationships ───────────────────────────
 
-    public function site()
+    public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }
 
-    public function editableRegions()
+    public function editableRegions(): HasMany
     {
         return $this->hasMany(EditableRegion::class);
     }
 
-    public function dynamicRegions()
+    public function dynamicRegions(): HasMany
     {
         return $this->hasMany(EditableRegion::class)->where('is_static', false);
     }

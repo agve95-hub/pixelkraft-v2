@@ -266,7 +266,7 @@ class NextMetadataPatcher
         return null;
     }
 
-    private function findValueEnd(string $body, int $start): ?int
+    private function findValueEnd(string $body, int $start): int
     {
         $length = strlen($body);
         $depth = 0;

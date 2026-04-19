@@ -32,7 +32,7 @@ class SeoIssuesPanel extends Component
             ->map(fn (SeoIssue $issue) => [
                 'severity' => (string) $issue->severity,
                 'message' => (string) $issue->message,
-                'site' => (string) ($issue->site?->name ?? 'Unknown'),
+                'site' => (string) ($issue->site->name ?? 'Unknown'),
                 'page' => $issue->page,
             ]);
 

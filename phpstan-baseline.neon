@@ -1,28 +1,10 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Console/Commands/AnalyzeSeo.php
-
-		-
-			message: '#^Parameter \#1 \$page of method App\\Services\\SeoAnalyzer\:\:analyze\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Console/Commands/AnalyzeSeo.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_up\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Console/Commands/CheckUptime.php
-
-		-
-			message: '#^Relation ''site'' is not found in App\\Models\\BlogPost model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Console/Commands/PublishScheduled.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$url_path\.$#'
@@ -35,36 +17,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: app/Console/Commands/RunLighthouse.php
-
-		-
-			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
-			identifier: larastan.noEnvCallsOutsideOfConfig
-			count: 1
-			path: app/Console/Commands/SendCampaigns.php
-
-		-
-			message: '#^Relation ''site'' is not found in App\\Models\\NewsletterCampaign model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Console/Commands/SendCampaigns.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>domain" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Console/Commands/SendCampaigns.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Console/Commands/SendCampaigns.php
-
-		-
-			message: '#^Relation ''site'' is not found in App\\Models\\Notification model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/Api/NotificationController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$content_hash\.$#'
@@ -133,18 +85,6 @@ parameters:
 			path: app/Http/Controllers/EditorPreviewController.php
 
 		-
-			message: '#^Call to function is_array\(\) with list\<string\|null\> will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Http/Controllers/WebhookController.php
-
-		-
-			message: '#^Parameter \#1 \$page of method App\\Services\\SeoAnalyzer\:\:analyze\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Jobs/ParseSiteJob.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\AnalyticsSnapshot\:\:\$site_id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -163,27 +103,9 @@ parameters:
 			path: app/Livewire/Analytics/UnifiedDashboard.php
 
 		-
-			message: '#^Relation ''site'' is not found in App\\Models\\Page model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Relation ''site'' is not found in App\\Models\\DeployLog model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Livewire/Dashboard/ActivityFeed.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:visibleTo\(\)\.$#'
 			identifier: method.notFound
 			count: 2
-			path: app/Livewire/Dashboard/AlertsPanel.php
-
-		-
-			message: '#^Relation ''site'' is not found in App\\Models\\Notification model\.$#'
-			identifier: larastan.relationExistence
-			count: 3
 			path: app/Livewire/Dashboard/AlertsPanel.php
 
 		-
@@ -191,12 +113,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Livewire/Dashboard/ExpensesPanel.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Livewire/Dashboard/SeoIssuesPanel.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:visibleTo\(\)\.$#'
@@ -211,9 +127,33 @@ parameters:
 			path: app/Livewire/Editor/RegionPanel.php
 
 		-
-			message: '#^Relation ''site'' is not found in App\\Models\\Page model\.$#'
-			identifier: larastan.relationExistence
-			count: 2
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:mapWithKeys\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\<string, bool\>, Closure\(App\\Models\\EditableRegion\)\: non\-empty\-array\<string, bool\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Editor/RegionPanel.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:mapWithKeys\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\<string, string\>, Closure\(App\\Models\\EditableRegion\)\: non\-empty\-array\<string, string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Editor/RegionPanel.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|null, Closure\(App\\Models\\EditableRegion\)\: bool given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Editor/RegionPanel.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sortBy\(\) expects array\<array\{string, string\}\|\(callable\(Illuminate\\Database\\Eloquent\\Model, Illuminate\\Database\\Eloquent\\Model\)\: mixed\)\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|string\>\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|string, Closure\(App\\Models\\EditableRegion\)\: int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Editor/RegionPanel.php
+
+		-
+			message: '#^Parameter \#1 \$groupBy of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:groupBy\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: string\)\|list\<Closure\|string\>\|string, Closure\(App\\Models\\EditableRegion\)\: string given\.$#'
+			identifier: argument.type
+			count: 1
 			path: app/Livewire/Editor/RegionPanel.php
 
 		-
@@ -223,21 +163,9 @@ parameters:
 			path: app/Livewire/Editor/RegionPanel.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$editableRegions\.$#'
-			identifier: property.notFound
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: string, selector\: string\|null, type\: string\|null, editable\: bool, content\: string, raw_content\: string\}, Closure\(App\\Models\\EditableRegion\)\: array\{id\: string, selector\: string\|null, type\: string\|null, editable\: bool, content\: string, raw_content\: string\} given\.$#'
+			identifier: argument.type
 			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Relation ''editableRegions'' is not found in App\\Models\\Page model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Relation ''page'' is not found in App\\Models\\EditableRegion model\.$#'
-			identifier: larastan.relationExistence
-			count: 2
 			path: app/Livewire/Editor/VisualEditor.php
 
 		-
@@ -259,38 +187,8 @@ parameters:
 			path: app/Livewire/Editor/VisualEditor.php
 
 		-
-			message: '#^Relation ''site'' is not found in App\\Models\\NewsletterCampaign model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Livewire/Email/CampaignEditor.php
-
-		-
-			message: '#^Relation ''site'' is not found in App\\Models\\FormSubmission model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Livewire/Email/FormInbox.php
-
-		-
-			message: '#^Relation ''site'' is not found in App\\Models\\NewsletterSubscriber model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Livewire/Email/SubscriberList.php
-
-		-
-			message: '#^Relation ''site'' is not found in App\\Models\\Page model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Livewire/Seo/MetaEditor.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:visibleTo\(\)\.$#'
 			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Seo/SchemaEditor.php
-
-		-
-			message: '#^Relation ''site'' is not found in App\\Models\\Page model\.$#'
-			identifier: larastan.relationExistence
 			count: 1
 			path: app/Livewire/Seo/SchemaEditor.php
 
@@ -433,12 +331,6 @@ parameters:
 			path: app/Services/AnalyticsAggregator.php
 
 		-
-			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
-			identifier: larastan.noEnvCallsOutsideOfConfig
-			count: 1
-			path: app/Services/AnalyticsAggregator.php
-
-		-
 			message: '#^Iterating over an object of an unknown class Google\\Protobuf\\Internal\\RepeatedField\.$#'
 			identifier: class.notFound
 			count: 1
@@ -475,22 +367,40 @@ parameters:
 			path: app/Services/ContentPatcher.php
 
 		-
-			message: '#^Match arm comparison between ''js'' and ''js'' is always true\.$#'
-			identifier: match.alwaysTrue
-			count: 1
-			path: app/Services/HtmlMinifier.php
-
-		-
-			message: '#^Match arm comparison between ''gif'' and ''gif'' is always true\.$#'
-			identifier: match.alwaysTrue
-			count: 1
-			path: app/Services/ImageOptimizer.php
-
-		-
-			message: '#^Method App\\Services\\NextMetadataPatcher\:\:findValueEnd\(\) never returns null so it can be removed from the return type\.$#'
-			identifier: return.unusedType
+			message: '#^Strict comparison using \=\=\= between int and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
 			count: 1
 			path: app/Services/NextMetadataPatcher.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$confidence_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ParserService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$detection_method\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/ParserService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_static\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ParserService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$marker_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/ParserService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$region_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ParserService.php
 
 		-
 			message: '#^Method App\\Services\\ParserService\:\:storeParsedPage\(\) should return App\\Models\\Page but returns Illuminate\\Database\\Eloquent\\Model\.$#'
@@ -509,12 +419,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/ParserService.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between non\-falsy\-string and '''' will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Services/Parsers/RenderedPhpParser.php
 
 		-
 			message: '#^Offset 1 on array\{list\<string\>, list\<non\-empty\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
@@ -541,13 +445,13 @@ parameters:
 			path: app/Services/Parsers/StaticHtmlParser.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$editableRegions\.$#'
-			identifier: property.notFound
+			message: '#^Parameter \#2 \$region of method App\\Services\\PreviewOverlayService\:\:decorateRegionNodes\(\) expects App\\Models\\EditableRegion, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Services/PreviewOverlayService.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Page\:\:\$editableRegions\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$confidence_score\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/RegionDetector.php
@@ -559,16 +463,10 @@ parameters:
 			path: app/Services/RegionDetector.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SeoAnalyzer.php
-
-		-
-			message: '#^Parameter \#1 \$page of method App\\Services\\SeoAnalyzer\:\:analyze\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			message: '#^Parameter \#1 \$region of method App\\Services\\RegionDetector\:\:refineScore\(\) expects App\\Models\\EditableRegion, Illuminate\\Database\\Eloquent\\Model given\.$#'
 			identifier: argument.type
 			count: 1
-			path: app/Services/SeoAnalyzer.php
+			path: app/Services/RegionDetector.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'

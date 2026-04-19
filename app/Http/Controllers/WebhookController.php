@@ -193,7 +193,7 @@ class WebhookController extends Controller
     private function sanitizedWebhookHeaders(Request $request): array
     {
         $all = collect($request->headers->all())
-            ->map(fn ($value) => is_array($value) ? implode(', ', $value) : (string) $value);
+            ->map(fn ($value) => implode(', ', $value));
 
         $keep = ['x-github-event', 'x-github-delivery', 'user-agent', 'content-type', 'accept'];
 

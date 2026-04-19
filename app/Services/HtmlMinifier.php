@@ -53,8 +53,7 @@ class HtmlMinifier
                 $minified = match ($ext) {
                     'html', 'htm' => $this->minifyHtml($original),
                     'css' => $this->minifyCss($original),
-                    'js' => $this->minifyJs($original),
-                    default => $original,
+                    default => $this->minifyJs($original),
                 };
 
                 // Only write if we actually reduced size

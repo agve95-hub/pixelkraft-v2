@@ -357,7 +357,7 @@ class AnalyticsAggregator
 
     private function syncCloudflare(Site $site): int
     {
-        $token = config('pixelkraft.cloudflare_api_token', env('CLOUDFLARE_API_TOKEN'));
+        $token = config('pixelkraft.cloudflare_api_token');
 
         if (! $token || ! $site->cf_zone_id) {
             return 0;

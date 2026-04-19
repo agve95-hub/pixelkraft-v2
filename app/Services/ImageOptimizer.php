@@ -56,7 +56,6 @@ class ImageOptimizer
                     'jpg', 'jpeg' => $this->optimizeJpeg($path),
                     'png' => $this->optimizePng($path),
                     'svg' => $this->optimizeSvg($path),
-                    'gif' => false,
                     default => false,
                 };
 

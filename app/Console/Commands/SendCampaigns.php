@@ -45,7 +45,7 @@ class SendCampaigns extends Command
 
     private function sendCampaign(NewsletterCampaign $campaign): void
     {
-        $apiKey = config('services.resend.key', env('RESEND_API_KEY'));
+        $apiKey = config('services.resend.key');
 
         if (! $apiKey) {
             Log::warning("Cannot send campaign [{$campaign->id}]: RESEND_API_KEY not configured");
@@ -67,8 +67,8 @@ class SendCampaigns extends Command
             return;
         }
 
-        $fromEmail = config('mail.from.address', 'noreply@'.($campaign->site?->domain ?? 'localhost'));
-        $fromName = $campaign->site?->name ?? config('mail.from.name', 'pixelkraft');
+        $fromEmail = config('mail.from.address', 'noreply@'.($campaign->site->domain ?? 'localhost'));
+        $fromName = $campaign->site->name ?? config('mail.from.name', 'pixelkraft');
         $sent = 0;
         $failed = 0;
 

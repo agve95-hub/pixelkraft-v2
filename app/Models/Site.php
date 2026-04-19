@@ -79,6 +79,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read int $pages_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Page> $pages
  * @property-read DeployLog|null $latestDeploy
  * @property-read UptimeCheck|null $latestUptimeCheck
  */

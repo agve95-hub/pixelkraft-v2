@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property string $id
@@ -45,7 +46,7 @@ class Notification extends Model
         ];
     }
 
-    public function site()
+    public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }

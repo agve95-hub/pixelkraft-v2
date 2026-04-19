@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 /**
@@ -67,7 +68,7 @@ class DeployLog extends Model
         return Attribute::get(fn () => $this->created_at);
     }
 
-    public function site()
+    public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }

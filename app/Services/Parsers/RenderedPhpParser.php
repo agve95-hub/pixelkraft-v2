@@ -104,7 +104,7 @@ class RenderedPhpParser implements ParserInterface
         $path = preg_replace('#/?index$#', '', $path) ?? $path;
         $path = '/'.ltrim($path, '/');
 
-        return $path === '' ? '/' : $path;
+        return $path;
     }
 
     private function shouldSkip(string $path): bool
