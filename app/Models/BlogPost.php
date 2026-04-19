@@ -65,12 +65,14 @@ class BlogPost extends Model
         ];
     }
 
+    /** @return BelongsTo<Site, $this> */
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }
 
-    public function template()
+    /** @return BelongsTo<ContentTemplate, $this> */
+    public function template(): BelongsTo
     {
         return $this->belongsTo(ContentTemplate::class, 'template_id');
     }

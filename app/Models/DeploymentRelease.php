@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property string $id
@@ -52,22 +53,26 @@ class DeploymentRelease extends Model
         ];
     }
 
-    public function site()
+    /** @return BelongsTo<Site, $this> */
+    public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }
 
-    public function deploymentTarget()
+    /** @return BelongsTo<DeploymentTarget, $this> */
+    public function deploymentTarget(): BelongsTo
     {
         return $this->belongsTo(DeploymentTarget::class);
     }
 
-    public function deployLog()
+    /** @return BelongsTo<DeployLog, $this> */
+    public function deployLog(): BelongsTo
     {
         return $this->belongsTo(DeployLog::class);
     }
 
-    public function rollbackOfRelease()
+    /** @return BelongsTo<DeploymentRelease, $this> */
+    public function rollbackOfRelease(): BelongsTo
     {
         return $this->belongsTo(self::class, 'rollback_of_release_id');
     }

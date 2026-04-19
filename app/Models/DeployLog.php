@@ -68,6 +68,7 @@ class DeployLog extends Model
         return Attribute::get(fn () => $this->created_at);
     }
 
+    /** @return BelongsTo<Site, $this> */
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
