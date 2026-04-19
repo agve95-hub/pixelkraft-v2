@@ -6,6 +6,8 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string $id
@@ -37,12 +39,14 @@ class ContentTemplate extends Model
         ];
     }
 
-    public function site()
+    /** @return BelongsTo<Site, $this> */
+    public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }
 
-    public function blogPosts()
+    /** @return HasMany<BlogPost, $this> */
+    public function blogPosts(): HasMany
     {
         return $this->hasMany(BlogPost::class, 'template_id');
     }

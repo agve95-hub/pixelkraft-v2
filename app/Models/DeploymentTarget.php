@@ -5,6 +5,8 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string $id
@@ -45,12 +47,14 @@ class DeploymentTarget extends Model
         ];
     }
 
-    public function site()
+    /** @return BelongsTo<Site, $this> */
+    public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }
 
-    public function releases()
+    /** @return HasMany<DeploymentRelease, $this> */
+    public function releases(): HasMany
     {
         return $this->hasMany(DeploymentRelease::class);
     }

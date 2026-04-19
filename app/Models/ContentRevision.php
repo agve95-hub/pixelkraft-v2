@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property string $id
@@ -39,12 +40,14 @@ class ContentRevision extends Model
         ];
     }
 
-    public function region()
+    /** @return BelongsTo<EditableRegion, $this> */
+    public function region(): BelongsTo
     {
         return $this->belongsTo(EditableRegion::class, 'region_id');
     }
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

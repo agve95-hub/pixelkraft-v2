@@ -6,6 +6,7 @@ use App\Enums\Role;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -57,12 +58,14 @@ class User extends Authenticatable
         return $this->role === Role::Admin;
     }
 
-    public function contentRevisions()
+    /** @return HasMany<ContentRevision, $this> */
+    public function contentRevisions(): HasMany
     {
         return $this->hasMany(ContentRevision::class);
     }
 
-    public function editSessions()
+    /** @return HasMany<EditSession, $this> */
+    public function editSessions(): HasMany
     {
         return $this->hasMany(EditSession::class, 'started_by');
     }

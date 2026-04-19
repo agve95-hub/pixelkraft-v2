@@ -5,6 +5,8 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string $id
@@ -48,22 +50,26 @@ class EditSession extends Model
         ];
     }
 
-    public function site()
+    /** @return BelongsTo<Site, $this> */
+    public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
     }
 
-    public function page()
+    /** @return BelongsTo<Page, $this> */
+    public function page(): BelongsTo
     {
         return $this->belongsTo(Page::class);
     }
 
-    public function startedBy()
+    /** @return BelongsTo<User, $this> */
+    public function startedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'started_by');
     }
 
-    public function gitOperations()
+    /** @return HasMany<GitOperation, $this> */
+    public function gitOperations(): HasMany
     {
         return $this->hasMany(GitOperation::class);
     }
