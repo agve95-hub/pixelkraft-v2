@@ -7,6 +7,7 @@ use App\Models\Page;
 use App\Services\ContentPatcher;
 use App\Services\RegionDetector;
 use App\Services\SiteSupportService;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\On;
@@ -70,7 +71,7 @@ class RegionPanel extends Component
         $page = Page::query()
             ->with('site')
             ->whereKey($this->pageId)
-            ->whereHas('site', fn ($query) => $query->visibleTo(auth()->user()))
+            ->whereIn('site_id', SiteAccess::query()->select('id'))
             ->firstOrFail();
         $patcher = app(ContentPatcher::class);
         $support = app(SiteSupportService::class);

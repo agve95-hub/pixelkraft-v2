@@ -363,17 +363,20 @@ class Site extends Model
         return $this->hasMany(GitOperation::class);
     }
 
-    public function deploymentTargets()
+    /** @return HasMany<DeploymentTarget, $this> */
+    public function deploymentTargets(): HasMany
     {
         return $this->hasMany(DeploymentTarget::class);
     }
 
-    public function deploymentReleases()
+    /** @return HasMany<DeploymentRelease, $this> */
+    public function deploymentReleases(): HasMany
     {
         return $this->hasMany(DeploymentRelease::class);
     }
 
-    public function trackingInstallations()
+    /** @return HasMany<TrackingInstallation, $this> */
+    public function trackingInstallations(): HasMany
     {
         return $this->hasMany(TrackingInstallation::class);
     }

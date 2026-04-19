@@ -13,7 +13,7 @@ class AlertsPanel extends Component
     {
         Notification::query()
             ->whereKey($id)
-            ->whereHas('site', fn ($query) => $query->visibleTo(auth()->user()))
+            ->whereIn('site_id', SiteAccess::query()->select('id'))
             ->update(['is_read' => true]);
     }
 
@@ -21,7 +21,7 @@ class AlertsPanel extends Component
     {
         $alerts = Notification::query()
             ->unread()
-            ->whereHas('site', fn ($query) => $query->visibleTo(auth()->user()))
+            ->whereIn('site_id', SiteAccess::query()->select('id'))
             ->with('site')
             ->latest('created_at')
             ->limit(10)

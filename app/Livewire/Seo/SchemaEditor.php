@@ -5,6 +5,7 @@ namespace App\Livewire\Seo;
 use App\Models\Page;
 use App\Services\GitSyncService;
 use App\Services\SiteSupportService;
+use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +25,7 @@ class SchemaEditor extends Component
     {
         return Page::query()
             ->whereKey($this->pageId)
-            ->whereHas('site', fn ($query) => $query->visibleTo(auth()->user()))
+            ->whereIn('site_id', SiteAccess::query()->select('id'))
             ->firstOrFail();
     }
 
