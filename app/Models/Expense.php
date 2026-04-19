@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array|null $meta
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read string|null $total
  * @property-read Site|null $site
  */
 class Expense extends Model

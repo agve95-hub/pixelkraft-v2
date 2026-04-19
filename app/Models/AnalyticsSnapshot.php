@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $avg_session_sec
  * @property array|null $custom_events
  * @property Carbon|null $created_at
+ * @property-read string|null $site_id
  * @property-read Page|null $page
  */
 class AnalyticsSnapshot extends Model

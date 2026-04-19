@@ -13,8 +13,8 @@ use Illuminate\Support\Str;
  * @property string $id
  * @property string $site_id
  * @property string $number
- * @property Carbon|null $invoice_date
- * @property Carbon|null $due_date
+ * @property Carbon|string|null $invoice_date
+ * @property Carbon|string|null $due_date
  * @property string $status
  * @property Carbon|null $paid_at
  * @property string $currency_code
@@ -70,6 +70,7 @@ class Invoice extends Model
         return $this->belongsTo(Site::class);
     }
 
+    /** @return HasMany<InvoiceItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class)->orderBy('sort_order');

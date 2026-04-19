@@ -485,7 +485,7 @@ class ContentPatcher
             $tokens = preg_split('/\\s+/', $normalized, -1, PREG_SPLIT_NO_EMPTY);
         }
 
-        return array_values(array_filter($tokens ?: [], fn (string $token) => $token !== ''));
+        return $tokens ?: [];
     }
 
     /**

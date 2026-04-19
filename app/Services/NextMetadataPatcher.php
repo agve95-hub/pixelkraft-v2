@@ -229,10 +229,6 @@ class NextMetadataPatcher
 
             $valueEnd = $this->findValueEnd($body, $valueStart);
 
-            if ($valueEnd === null) {
-                return null;
-            }
-
             $propertyStart = $i;
             while ($propertyStart > 0 && $body[$propertyStart - 1] !== "\n") {
                 $propertyStart--;

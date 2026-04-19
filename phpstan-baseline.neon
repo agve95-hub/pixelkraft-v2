@@ -1,158 +1,14 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_up\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Console/Commands/CheckUptime.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$url_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Console/Commands/RunLighthouse.php
-
-		-
-			message: '#^Parameter \#2 \$page of method App\\Console\\Commands\\RunLighthouse\:\:auditPage\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Console/Commands/RunLighthouse.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$content_hash\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$file_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_published\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$lighthouse_score\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$seo_score\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$updated_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$url_path\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Api/SiteController.php
-
-		-
 			message: '#^Offset 1 on array\{list\<string\>, list\<non\-falsy\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
 			count: 2
 			path: app/Http/Controllers/EditorPreviewController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\AnalyticsSnapshot\:\:\$site_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Method App\\Livewire\\Analytics\\UnifiedDashboard\:\:rawAnalyticsRows\(\) should return Illuminate\\Support\\Collection\<int, array\{site_id\: string, page_id\: string, date\: string, visitors\: int, pageviews\: int\}\> but returns Illuminate\\Support\\Collection\<int, array\{site_id\: mixed, page_id\: mixed, date\: mixed, visitors\: int, pageviews\: int\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\AnalyticsSnapshot\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:visibleTo\(\)\.$#'
-			identifier: method.notFound
-			count: 2
-			path: app/Livewire/Dashboard/AlertsPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Expense\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/ExpensesPanel.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:visibleTo\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
 			message: '#^Offset 1 on array\{list\<string\>, list\<numeric\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:mapWithKeys\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\<string, bool\>, Closure\(App\\Models\\EditableRegion\)\: non\-empty\-array\<string, bool\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:mapWithKeys\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\<string, string\>, Closure\(App\\Models\\EditableRegion\)\: non\-empty\-array\<string, string\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|null, Closure\(App\\Models\\EditableRegion\)\: bool given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sortBy\(\) expects array\<array\{string, string\}\|\(callable\(Illuminate\\Database\\Eloquent\\Model, Illuminate\\Database\\Eloquent\\Model\)\: mixed\)\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|string\>\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|string, Closure\(App\\Models\\EditableRegion\)\: int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Editor/RegionPanel.php
-
-		-
-			message: '#^Parameter \#1 \$groupBy of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:groupBy\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: string\)\|list\<Closure\|string\>\|string, Closure\(App\\Models\\EditableRegion\)\: string given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Livewire/Editor/RegionPanel.php
 
@@ -163,52 +19,10 @@ parameters:
 			path: app/Livewire/Editor/RegionPanel.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: string, selector\: string\|null, type\: string\|null, editable\: bool, content\: string, raw_content\: string\}, Closure\(App\\Models\\EditableRegion\)\: array\{id\: string, selector\: string\|null, type\: string\|null, editable\: bool, content\: string, raw_content\: string\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>region_type" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>title" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>url_path" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Livewire/Editor/VisualEditor.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:visibleTo\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Livewire/Seo/SchemaEditor.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$rate\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Sites/InvoiceManager.php
 
 		-
 			message: '#^Offset ''description'' on array\{description\: string, quantity\: string, rate\: string\} on left side of \?\? always exists and is not nullable\.$#'
@@ -220,18 +34,6 @@ parameters:
 			message: '#^Offset ''rate'' on array\{description\: string, quantity\: string, rate\: string\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
 			count: 2
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Property App\\Models\\Invoice\:\:\$due_date \(Carbon\\Carbon\|null\) does not accept string\.$#'
-			identifier: assign.propertyType
-			count: 2
-			path: app/Livewire/Sites/InvoiceManager.php
-
-		-
-			message: '#^Property App\\Models\\Invoice\:\:\$invoice_date \(Carbon\\Carbon\|null\) does not accept string\.$#'
-			identifier: assign.propertyType
-			count: 1
 			path: app/Livewire/Sites/InvoiceManager.php
 
 		-
@@ -283,63 +85,15 @@ parameters:
 			path: app/Livewire/Sites/SiteSettings.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sum\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model\)\: float\)\|string\|null, Closure\(App\\Models\\InvoiceItem\)\: float given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Models/Invoice.php
-
-		-
 			message: '#^Method App\\Models\\Notification\:\:createAlert\(\) should return static\(App\\Models\\Notification\) but returns App\\Models\\Notification\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Models/Notification.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$cnt\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$event_date\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$page_views\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\AnalyticsEvent\:\:\$unique_visitors\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/AnalyticsAggregator.php
-
-		-
 			message: '#^Iterating over an object of an unknown class Google\\Protobuf\\Internal\\RepeatedField\.$#'
 			identifier: class.notFound
 			count: 1
-			path: app/Services/AnalyticsAggregator.php
-
-		-
-			message: '#^Parameter \#1 \$keyBy of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:keyBy\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: string\)\|list\<Closure\|string\>\|string, Closure\(App\\Models\\Page\)\: string given\.$#'
-			identifier: argument.type
-			count: 2
 			path: app/Services/AnalyticsAggregator.php
 
 		-
@@ -349,70 +103,10 @@ parameters:
 			path: app/Services/AnalyticsAggregator.php
 
 		-
-			message: '#^Parameter \#2 \$page of method App\\Services\\BrokenLinkCrawler\:\:crawlPage\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/BrokenLinkCrawler.php
-
-		-
 			message: '#^Offset 1 on array\{string, int\} on left side of \?\? always exists and is not nullable\.$#'
 			identifier: nullCoalesce.offset
 			count: 1
 			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between non\-empty\-string and '''' will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: app/Services/ContentPatcher.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between int and null will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Services/NextMetadataPatcher.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$confidence_score\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/ParserService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$detection_method\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/ParserService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_static\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/ParserService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$marker_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/ParserService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$region_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/ParserService.php
-
-		-
-			message: '#^Method App\\Services\\ParserService\:\:storeParsedPage\(\) should return App\\Models\\Page but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/ParserService.php
-
-		-
-			message: '#^Parameter \#1 \$page of method App\\Services\\ParserService\:\:syncEditableRegions\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/ParserService.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>region_type" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -443,39 +137,3 @@ parameters:
 			identifier: ternary.alwaysTrue
 			count: 1
 			path: app/Services/Parsers/StaticHtmlParser.php
-
-		-
-			message: '#^Parameter \#2 \$region of method App\\Services\\PreviewOverlayService\:\:decorateRegionNodes\(\) expects App\\Models\\EditableRegion, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/PreviewOverlayService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$confidence_score\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Parameter \#1 \$otherPages of method App\\Services\\RegionDetector\:\:buildRepeatMap\(\) expects Illuminate\\Support\\Collection\<int, App\\Models\\Page\>, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Parameter \#1 \$region of method App\\Services\\RegionDetector\:\:refineScore\(\) expects App\\Models\\EditableRegion, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/RegionDetector.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/TrackingScriptService.php
-
-		-
-			message: '#^Method App\\Support\\SeoIssueSummary\:\:openAggregatesForSite\(\) should return Illuminate\\Support\\Collection\<int, array\{severity\: string, message\: string, count\: int\}\> but returns Illuminate\\Support\\Collection\<int, array\{severity\: mixed, message\: mixed, count\: int\<0, max\>\}\>\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Support/SeoIssueSummary.php

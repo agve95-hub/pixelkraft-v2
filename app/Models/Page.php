@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Site|null $site
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, EditableRegion> $editableRegions
  */
 class Page extends Model
 {
@@ -72,11 +73,13 @@ class Page extends Model
         return $this->belongsTo(Site::class);
     }
 
+    /** @return HasMany<EditableRegion, $this> */
     public function editableRegions(): HasMany
     {
         return $this->hasMany(EditableRegion::class);
     }
 
+    /** @return HasMany<EditableRegion, $this> */
     public function dynamicRegions(): HasMany
     {
         return $this->hasMany(EditableRegion::class)->where('is_static', false);

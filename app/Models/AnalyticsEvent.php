@@ -21,6 +21,11 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $occurred_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read string|null $event_date
+ * @property-read int|null $cnt
+ * @property-read int|null $count
+ * @property-read int|null $page_views
+ * @property-read int|null $unique_visitors
  * @property-read Site|null $site
  * @property-read Page|null $page
  */

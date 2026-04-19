@@ -107,6 +107,7 @@ class ParserService
      */
     private function storeParsedPage(Site $site, ParsedPage $parsed): Page
     {
+        /** @var Page $page */
         $page = $site->pages()->updateOrCreate(
             ['file_path' => $parsed->filePath],
             [

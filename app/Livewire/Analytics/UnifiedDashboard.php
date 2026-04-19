@@ -203,9 +203,9 @@ class UnifiedDashboard extends Component
             ->orderBy('analytics_snapshots.date')
             ->get()
             ->map(fn ($row) => [
-                'site_id' => $row->site_id,
-                'page_id' => $row->page_id,
-                'date' => $row->date,
+                'site_id' => (string) $row->site_id,
+                'page_id' => (string) $row->page_id,
+                'date' => (string) $row->date,
                 'visitors' => (int) $row->visitors,
                 'pageviews' => (int) $row->pageviews,
             ]);

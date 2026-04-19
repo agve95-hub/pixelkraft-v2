@@ -347,6 +347,7 @@ class Site extends Model
 
     // ── Relationships ───────────────────────────
 
+    /** @return HasMany<Page, $this> */
     public function pages(): HasMany
     {
         return $this->hasMany(Page::class);
@@ -473,6 +474,7 @@ class Site extends Model
         return $this->hasMany(DeployLog::class)->latest('created_at');
     }
 
+    /** @return HasMany<UptimeCheck, $this> */
     public function uptimeChecks(): HasMany
     {
         return $this->hasMany(UptimeCheck::class);
@@ -522,6 +524,7 @@ class Site extends Model
 
     // ── Computed ─────────────────────────────────
 
+    /** @return HasOne<DeployLog, $this> */
     public function latestDeploy(): HasOne
     {
         return $this->hasOne(DeployLog::class)->latestOfMany();
@@ -541,6 +544,7 @@ class Site extends Model
             ->latestOfMany('activated_at');
     }
 
+    /** @return HasOne<UptimeCheck, $this> */
     public function latestUptimeCheck(): HasOne
     {
         return $this->hasOne(UptimeCheck::class)->latestOfMany('checked_at');

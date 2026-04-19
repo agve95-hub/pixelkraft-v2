@@ -740,7 +740,7 @@ class VisualEditor extends Component
     private function generateCommitMessage(): string
     {
         $page = $this->resolvePage();
-        $pageName = $page?->title ?? $page?->url_path ?? 'page';
+        $pageName = $page->title ?? $page->url_path ?? 'page';
 
         if ($this->selectedRegionId) {
             $region = $this->findRegion($this->selectedRegionId);

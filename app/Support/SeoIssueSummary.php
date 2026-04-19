@@ -50,7 +50,7 @@ class SeoIssueSummary
     /**
      * Aggregated rows for the site SEO issues panel: grouped by stable key (code or message).
      *
-     * @return Collection<int, array{severity: string, message: string, count: int}>
+     * @return Collection<int, array{severity: string, message: string, count: int<0, max>}>
      */
     public static function openAggregatesForSite(Site $site): Collection
     {
@@ -68,8 +68,8 @@ class SeoIssueSummary
         return $issues
             ->groupBy(fn (SeoIssue $i) => (string) ($i->code ?: $i->message))
             ->map(function (Collection $group) use ($rank) {
-                $severity = $group->sortByDesc(fn (SeoIssue $i) => $rank[$i->severity] ?? 0)->first()->severity;
-                $message = $group->first()->message;
+                $severity = (string) ($group->sortByDesc(fn (SeoIssue $i) => $rank[$i->severity] ?? 0)->first()->severity ?? '');
+                $message = (string) ($group->first()->message ?? '');
 
                 return [
                     'severity' => $severity,
