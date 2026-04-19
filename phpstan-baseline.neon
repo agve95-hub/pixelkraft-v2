@@ -1,16 +1,40 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$pages\.$#'
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Console/Commands/AnalyzeSeo.php
+
+		-
+			message: '#^Parameter \#1 \$page of method App\\Services\\SeoAnalyzer\:\:analyze\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/AnalyzeSeo.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_up\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/CheckUptime.php
 
 		-
 			message: '#^Relation ''site'' is not found in App\\Models\\BlogPost model\.$#'
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Console/Commands/PublishScheduled.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$url_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/RunLighthouse.php
+
+		-
+			message: '#^Parameter \#2 \$page of method App\\Console\\Commands\\RunLighthouse\:\:auditPage\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/RunLighthouse.php
 
 		-
 			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
@@ -43,8 +67,62 @@ parameters:
 			path: app/Http/Controllers/Api/NotificationController.php
 
 		-
-			message: '#^Relation ''latestDeploy'' is not found in App\\Models\\Site model\.$#'
-			identifier: larastan.relationExistence
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$content_hash\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/SiteController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$file_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/SiteController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/SiteController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/SiteController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$lighthouse_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/SiteController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$seo_score\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/SiteController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/SiteController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/SiteController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$url_path\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/SiteController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:through\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
 			count: 1
 			path: app/Http/Controllers/Api/SiteController.php
 
@@ -61,43 +139,13 @@ parameters:
 			path: app/Http/Controllers/WebhookController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$pages\.$#'
-			identifier: property.notFound
+			message: '#^Parameter \#1 \$page of method App\\Services\\SeoAnalyzer\:\:analyze\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Jobs/ParseSiteJob.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\AnalyticsSnapshot\:\:\$site_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$latestUptimeCheck\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$pages\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$slug\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Livewire/Analytics/UnifiedDashboard.php
@@ -111,18 +159,6 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\AnalyticsSnapshot\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
-			count: 1
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Parameter \#1 \$site of method App\\Livewire\\Analytics\\UnifiedDashboard\:\:getUptimeStats\(\) expects App\\Models\\Site, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Analytics/UnifiedDashboard.php
-
-		-
-			message: '#^Parameter \#1 \$site of method App\\Services\\AnalyticsAggregator\:\:getSiteStats\(\) expects App\\Models\\Site, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Livewire/Analytics/UnifiedDashboard.php
 
@@ -157,46 +193,10 @@ parameters:
 			path: app/Livewire/Dashboard/ExpensesPanel.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/ExpensesPanel.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Livewire/Dashboard/SeoIssuesPanel.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$notifications_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/SiteHealthTable.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$seo_issues_count\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/SiteHealthTable.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$uptimeChecks\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/SiteHealthTable.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Livewire/Dashboard/UpcomingPanel.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Livewire/Dashboard/UpcomingPanel.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:visibleTo\(\)\.$#'
@@ -293,60 +293,6 @@ parameters:
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Livewire/Seo/SchemaEditor.php
-
-		-
-			message: '#^Access to property \$created_at on an unknown class App\\Livewire\\Settings\\Site\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Livewire/Settings/SystemDiagnostics.php
-
-		-
-			message: '#^Access to property \$id on an unknown class App\\Livewire\\Settings\\Site\.$#'
-			identifier: class.notFound
-			count: 2
-			path: app/Livewire/Settings/SystemDiagnostics.php
-
-		-
-			message: '#^Access to property \$name on an unknown class App\\Livewire\\Settings\\Site\.$#'
-			identifier: class.notFound
-			count: 2
-			path: app/Livewire/Settings/SystemDiagnostics.php
-
-		-
-			message: '#^Access to property \$project_type on an unknown class App\\Livewire\\Settings\\Site\.$#'
-			identifier: class.notFound
-			count: 2
-			path: app/Livewire/Settings/SystemDiagnostics.php
-
-		-
-			message: '#^Access to property \$updated_at on an unknown class App\\Livewire\\Settings\\Site\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Livewire/Settings/SystemDiagnostics.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 2
-			path: app/Livewire/Settings/SystemDiagnostics.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Created but never finished the initial clone/parse step\.''\}, Closure\(App\\Livewire\\Settings\\Site\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Created but never finished the initial clone/parse step\.''\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Settings/SystemDiagnostics.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Status has not changed for more than 10 minutes\.''\}, Closure\(App\\Livewire\\Settings\\Site\)\: array\{id\: mixed, name\: mixed, project_type\: mixed, age\: mixed, reason\: ''Status has not changed for more than 10 minutes\.''\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Livewire/Settings/SystemDiagnostics.php
-
-		-
-			message: '#^Parameter \$site of anonymous function has invalid type App\\Livewire\\Settings\\Site\.$#'
-			identifier: class.notFound
-			count: 2
-			path: app/Livewire/Settings/SystemDiagnostics.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
@@ -481,6 +427,12 @@ parameters:
 			path: app/Services/AnalyticsAggregator.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/AnalyticsAggregator.php
+
+		-
 			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
 			identifier: larastan.noEnvCallsOutsideOfConfig
 			count: 1
@@ -493,10 +445,22 @@ parameters:
 			path: app/Services/AnalyticsAggregator.php
 
 		-
+			message: '#^Parameter \#1 \$keyBy of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:keyBy\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: string\)\|list\<Closure\|string\>\|string, Closure\(App\\Models\\Page\)\: string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/AnalyticsAggregator.php
+
+		-
 			message: '#^Parameter \#1 \$value of function count expects array\|Countable, Google\\Protobuf\\Internal\\RepeatedField given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Services/AnalyticsAggregator.php
+
+		-
+			message: '#^Parameter \#2 \$page of method App\\Services\\BrokenLinkCrawler\:\:crawlPage\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/BrokenLinkCrawler.php
 
 		-
 			message: '#^Offset 1 on array\{string, int\} on left side of \?\? always exists and is not nullable\.$#'
@@ -527,6 +491,18 @@ parameters:
 			identifier: return.unusedType
 			count: 1
 			path: app/Services/NextMetadataPatcher.php
+
+		-
+			message: '#^Method App\\Services\\ParserService\:\:storeParsedPage\(\) should return App\\Models\\Page but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/ParserService.php
+
+		-
+			message: '#^Parameter \#1 \$page of method App\\Services\\ParserService\:\:syncEditableRegions\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/ParserService.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>region_type" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
@@ -577,10 +553,28 @@ parameters:
 			path: app/Services/RegionDetector.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Site\:\:\$pages\.$#'
+			message: '#^Parameter \#1 \$otherPages of method App\\Services\\RegionDetector\:\:buildRepeatMap\(\) expects Illuminate\\Support\\Collection\<int, App\\Models\\Page\>, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/RegionDetector.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Services/SeoAnalyzer.php
+
+		-
+			message: '#^Parameter \#1 \$page of method App\\Services\\SeoAnalyzer\:\:analyze\(\) expects App\\Models\\Page, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/SeoAnalyzer.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/TrackingScriptService.php
 
 		-
 			message: '#^Method App\\Support\\SeoIssueSummary\:\:openAggregatesForSite\(\) should return Illuminate\\Support\\Collection\<int, array\{severity\: string, message\: string, count\: int\}\> but returns Illuminate\\Support\\Collection\<int, array\{severity\: mixed, message\: mixed, count\: int\<0, max\>\}\>\.$#'

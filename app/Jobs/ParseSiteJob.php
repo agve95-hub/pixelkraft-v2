@@ -40,7 +40,7 @@ class ParseSiteJob implements ShouldQueue
 
             $analyzer = app(SeoAnalyzer::class);
             foreach ($this->site->pages as $page) {
-                $analyzer->analyze($page->fresh());
+                $analyzer->analyze($page);
             }
 
         } catch (\Throwable $e) {

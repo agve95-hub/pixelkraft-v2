@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Settings;
 
+use App\Models\Site;
 use App\Support\SiteAccess;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;

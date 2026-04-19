@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -344,7 +346,7 @@ class Site extends Model
 
     // ── Relationships ───────────────────────────
 
-    public function pages()
+    public function pages(): HasMany
     {
         return $this->hasMany(Page::class);
     }
@@ -470,7 +472,7 @@ class Site extends Model
         return $this->hasMany(DeployLog::class)->latest('created_at');
     }
 
-    public function uptimeChecks()
+    public function uptimeChecks(): HasMany
     {
         return $this->hasMany(UptimeCheck::class);
     }
@@ -519,7 +521,7 @@ class Site extends Model
 
     // ── Computed ─────────────────────────────────
 
-    public function latestDeploy()
+    public function latestDeploy(): HasOne
     {
         return $this->hasOne(DeployLog::class)->latestOfMany();
     }
@@ -538,7 +540,7 @@ class Site extends Model
             ->latestOfMany('activated_at');
     }
 
-    public function latestUptimeCheck()
+    public function latestUptimeCheck(): HasOne
     {
         return $this->hasOne(UptimeCheck::class)->latestOfMany('checked_at');
     }

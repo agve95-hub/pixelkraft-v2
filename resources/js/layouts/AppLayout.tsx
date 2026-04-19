@@ -29,6 +29,7 @@ interface SiteMenuItem {
     badge?: number;
     badgeVariant?: 'warning';
     native?: boolean;
+    comingSoon?: boolean;
 }
 
 function siteMenuItems(site: NavSite): SiteMenuItem[] {
@@ -44,7 +45,7 @@ function siteMenuItems(site: NavSite): SiteMenuItem[] {
         { icon: Clock, label: 'Reminders', href: `${baseHref}/reminders`, badge: site.overdue_reminders_count, badgeVariant: 'warning' },
         { icon: BarChart, label: 'Analytics', href: `${baseHref}/analytics` },
         { icon: ShieldCheck, label: 'Maintenance', href: `${baseHref}/maintenance` },
-        { icon: Image, label: 'Media', href: `${baseHref}/files` },
+        { icon: Image, label: 'Media', href: `${baseHref}/files`, comingSoon: true },
         { icon: Settings, label: 'Site settings', href: `${baseHref}/settings` },
     ];
 }
@@ -182,6 +183,11 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
                                                 <>
                                                     <item.icon className="h-3.5 w-3.5 shrink-0" />
                                                     <span className="flex-1">{item.label}</span>
+                                                    {item.comingSoon && (
+                                                        <span className="inline-flex items-center rounded px-1 py-0.5 font-mono text-[9px] font-medium bg-zinc-700/60 text-zinc-500 uppercase tracking-wide">
+                                                            Soon
+                                                        </span>
+                                                    )}
                                                     {item.badge && item.badge > 0 && (
                                                         <span className={cn(
                                                             'inline-flex min-w-[1.25rem] items-center justify-center rounded-md px-1.5 py-0.5 font-mono text-[10px] font-medium',
