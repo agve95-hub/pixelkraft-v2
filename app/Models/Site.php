@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\File;
@@ -353,12 +354,14 @@ class Site extends Model
         return $this->hasMany(Page::class);
     }
 
-    public function editSessions()
+    /** @return HasMany<EditSession, $this> */
+    public function editSessions(): HasMany
     {
         return $this->hasMany(EditSession::class);
     }
 
-    public function gitOperations()
+    /** @return HasMany<GitOperation, $this> */
+    public function gitOperations(): HasMany
     {
         return $this->hasMany(GitOperation::class);
     }
@@ -381,52 +384,62 @@ class Site extends Model
         return $this->hasMany(TrackingInstallation::class);
     }
 
-    public function analyticsEvents()
+    /** @return HasMany<AnalyticsEvent, $this> */
+    public function analyticsEvents(): HasMany
     {
         return $this->hasMany(AnalyticsEvent::class);
     }
 
-    public function webhookDeliveries()
+    /** @return HasMany<WebhookDelivery, $this> */
+    public function webhookDeliveries(): HasMany
     {
         return $this->hasMany(WebhookDelivery::class);
     }
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function blogPosts()
+    /** @return HasMany<BlogPost, $this> */
+    public function blogPosts(): HasMany
     {
         return $this->hasMany(BlogPost::class);
     }
 
-    public function productListings()
+    /** @return HasMany<ProductListing, $this> */
+    public function productListings(): HasMany
     {
         return $this->hasMany(ProductListing::class);
     }
 
-    public function contentTemplates()
+    /** @return HasMany<ContentTemplate, $this> */
+    public function contentTemplates(): HasMany
     {
         return $this->hasMany(ContentTemplate::class);
     }
 
-    public function redirects()
+    /** @return HasMany<Redirect, $this> */
+    public function redirects(): HasMany
     {
         return $this->hasMany(Redirect::class);
     }
 
-    public function formSubmissions()
+    /** @return HasMany<FormSubmission, $this> */
+    public function formSubmissions(): HasMany
     {
         return $this->hasMany(FormSubmission::class);
     }
 
-    public function inboxMessages()
+    /** @return HasMany<SiteInboxMessage, $this> */
+    public function inboxMessages(): HasMany
     {
         return $this->hasMany(SiteInboxMessage::class);
     }
 
-    public function messages()
+    /** @return HasMany<SiteInboxMessage, $this> */
+    public function messages(): HasMany
     {
         return $this->hasMany(SiteInboxMessage::class)
             ->orderByDesc('message_at')
@@ -457,22 +470,26 @@ class Site extends Model
         return 'Client';
     }
 
-    public function newsletterSubscribers()
+    /** @return HasMany<NewsletterSubscriber, $this> */
+    public function newsletterSubscribers(): HasMany
     {
         return $this->hasMany(NewsletterSubscriber::class);
     }
 
-    public function newsletterCampaigns()
+    /** @return HasMany<NewsletterCampaign, $this> */
+    public function newsletterCampaigns(): HasMany
     {
         return $this->hasMany(NewsletterCampaign::class);
     }
 
-    public function deployLogs()
+    /** @return HasMany<DeployLog, $this> */
+    public function deployLogs(): HasMany
     {
         return $this->hasMany(DeployLog::class);
     }
 
-    public function deploys()
+    /** @return HasMany<DeployLog, $this> */
+    public function deploys(): HasMany
     {
         return $this->hasMany(DeployLog::class)->latest('created_at');
     }
@@ -483,44 +500,52 @@ class Site extends Model
         return $this->hasMany(UptimeCheck::class);
     }
 
-    public function notifications()
+    /** @return HasMany<Notification, $this> */
+    public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
     }
 
-    public function invoices()
+    /** @return HasMany<Invoice, $this> */
+    public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
     }
 
-    public function seoIssues()
+    /** @return HasMany<SeoIssue, $this> */
+    public function seoIssues(): HasMany
     {
         return $this->hasMany(SeoIssue::class);
     }
 
-    public function reminders()
+    /** @return HasMany<Reminder, $this> */
+    public function reminders(): HasMany
     {
         return $this->hasMany(Reminder::class)
             ->orderBy('is_done')
             ->orderBy('due_date');
     }
 
-    public function expenses()
+    /** @return HasMany<Expense, $this> */
+    public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class)->orderByDesc('expense_date');
     }
 
-    public function reports()
+    /** @return HasMany<Report, $this> */
+    public function reports(): HasMany
     {
         return $this->hasMany(Report::class)->orderByDesc('report_date');
     }
 
-    public function campaigns()
+    /** @return HasMany<Campaign, $this> */
+    public function campaigns(): HasMany
     {
         return $this->hasMany(Campaign::class);
     }
 
-    public function announcements()
+    /** @return HasMany<Announcement, $this> */
+    public function announcements(): HasMany
     {
         return $this->hasMany(Announcement::class);
     }
@@ -533,14 +558,16 @@ class Site extends Model
         return $this->hasOne(DeployLog::class)->latestOfMany();
     }
 
-    public function activeTrackingInstallation()
+    /** @return HasOne<TrackingInstallation, $this> */
+    public function activeTrackingInstallation(): HasOne
     {
         return $this->hasOne(TrackingInstallation::class)
             ->where('provider', 'pixelkraft')
             ->where('is_active', true);
     }
 
-    public function currentDeploymentRelease()
+    /** @return HasOne<DeploymentRelease, $this> */
+    public function currentDeploymentRelease(): HasOne
     {
         return $this->hasOne(DeploymentRelease::class)
             ->where('is_current', true)
