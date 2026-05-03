@@ -85,7 +85,7 @@ Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and so
 - Per-site client profiles (contact, company, billing)
 - Invoice management with PDF export
 - Expense tracker per site
-- Newsletter subscriber management & campaign editor
+- Newsletter subscriber management & campaign editor *(coming soon)*
 - Contact form submission inbox with spam filtering
 - Site-scoped notification centre
 - Maintenance mode management
