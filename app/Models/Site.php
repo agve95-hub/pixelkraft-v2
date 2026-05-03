@@ -107,6 +107,7 @@ class Site extends Model
         'webhook_secret',
         'inbox_inbound_secret',
         'project_type',
+        'source_type',
         'billing_cycle',
         'monthly_retainer',
         'deployment_mode',

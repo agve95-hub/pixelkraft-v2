@@ -3,6 +3,7 @@
 use App\Http\Controllers\Dashboard\SiteAnalyticsController;
 use App\Http\Controllers\EditorPreviewController;
 use App\Http\Controllers\InvoicePdfController;
+use App\Jobs\ImportSiteFromZipJob;
 use App\Models\AnalyticsSnapshot;
 use App\Models\BlogPost;
 use App\Models\FormSubmission;
@@ -238,14 +239,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             'client_company' => 'nullable|string|max:255',
         ]);
 
-        if ($validated['source_type'] === 'upload') {
-            return response()->json([
-                'message' => 'Direct ZIP uploads are not available yet.',
-                'errors' => [
-                    'source_type' => ['Direct ZIP uploads are not available yet.'],
-                ],
-            ], 422);
-        }
+        // Upload source: site record is created here, ZIP is uploaded in a separate request
 
         $baseSlug = \Illuminate\Support\Str::slug($validated['name']);
         $slug = $baseSlug;
@@ -292,6 +286,34 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             'deployLog' => $site->latestDeploy?->only('id', 'status', 'steps'),
         ]);
     })->name('sites.import-status');
+
+    // ZIP upload — called after site creation when source_type=upload
+    Route::post('/sites/{siteId}/import/zip', function (\Illuminate\Http\Request $request, string $siteId) {
+        $site = SiteAccess::findOrFail($siteId);
+
+        $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'mimes:zip',
+                'max:204800', // 200 MB in kilobytes
+            ],
+        ]);
+
+        $zipPath = $request->file('file')->store('imports/zips');
+
+        if (! $zipPath) {
+            return response()->json(['message' => 'Failed to store uploaded file.'], 500);
+        }
+
+        ImportSiteFromZipJob::dispatch($site, $zipPath);
+
+        return response()->json([
+            'status'  => 'queued',
+            'siteId'  => $site->id,
+            'message' => 'ZIP queued for import. Poll /import-status for progress.',
+        ]);
+    })->name('sites.import.zip');
     Route::middleware(['site.access', 'expand.site.sidebar'])->group(function () {
         Route::get('/sites/{site}', function (Site $site) {
             $site->loadCount([

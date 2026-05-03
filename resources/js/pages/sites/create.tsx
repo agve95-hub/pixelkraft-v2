@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import AppLayout from '@/layouts/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,6 +73,10 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
         domain: '', ssl_provider: 'letsencrypt',
     });
     const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+    const [zipFile, setZipFile] = useState<File | null>(null);
+    const [zipDragOver, setZipDragOver] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [importing, setImporting] = useState(false);
     const [siteId, setSiteId] = useState<string | null>(null);
     const [importSteps, setImportSteps] = useState<ImportStep[]>(
@@ -90,6 +94,7 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
         if (step === 1 && !form.name.trim()) e.name = 'Site name is required.';
         if (step === 2 && form.source_type === 'github' && !form.repo_url.trim()) e.repo_url = 'Repository URL is required.';
         if (step === 2 && form.source_type === 'server_path' && !form.server_path.trim()) e.server_path = 'Server path is required.';
+        if (step === 2 && form.source_type === 'upload' && !zipFile) e.repo_url = 'Please select a .zip file to upload.';
         setErrors(e);
         return Object.keys(e).length === 0;
     }
@@ -100,28 +105,52 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
         setImportFailed(false);
         setImportSteps(IMPORT_STEPS.map((s) => ({ ...s, status: 'pending' })));
 
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+        const baseHeaders = { 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' };
+
         try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
-            const res = await fetch('/dashboard/sites', {
+            // Phase 1: create the site record
+            const createRes = await fetch('/dashboard/sites', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+                headers: { ...baseHeaders, 'Content-Type': 'application/json' },
                 body: JSON.stringify(form),
             });
-            if (!res.ok) {
-                const data = await res.json();
+            if (!createRes.ok) {
+                const data = await createRes.json();
                 setErrors(data.errors ?? {});
                 setImporting(false);
                 return;
             }
-            const data = await res.json();
-            setSiteId(data.siteId);
-            if (data.completed) {
-                router.visit(`/dashboard/sites/${data.siteId}`);
-                return;
+            const { siteId: id } = await createRes.json();
+            setSiteId(id);
+
+            // Phase 2 (upload only): POST the ZIP to the import endpoint
+            if (form.source_type === 'upload' && zipFile) {
+                setUploading(true);
+                setImportSteps((prev) => prev.map((s, i) => ({ ...s, status: i === 0 ? 'active' : 'pending' })));
+
+                const fd = new FormData();
+                fd.append('file', zipFile);
+
+                const uploadRes = await fetch(`/dashboard/sites/${id}/import/zip`, {
+                    method: 'POST',
+                    headers: baseHeaders, // no Content-Type — let browser set multipart boundary
+                    body: fd,
+                });
+                setUploading(false);
+
+                if (!uploadRes.ok) {
+                    const data = await uploadRes.json();
+                    setErrors({ repo_url: data.message ?? 'ZIP upload failed.' });
+                    setImporting(false);
+                    return;
+                }
             }
-            pollImportStatus(data.siteId);
+
+            pollImportStatus(id);
         } catch {
             setImporting(false);
+            setUploading(false);
         }
     }
 
@@ -312,10 +341,53 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
                                 )}
 
                                 {form.source_type === 'upload' && (
-                                    <div className="rounded-lg border-2 border-dashed border-zinc-700 p-8 text-center">
-                                        <Upload className="mx-auto h-8 w-8 text-zinc-500 mb-3" />
-                                        <p className="text-sm text-zinc-400">Drag & drop a <code className="text-xs bg-zinc-800 px-1 py-0.5 rounded">.zip</code> file here, or click to browse.</p>
-                                        <p className="mt-1 text-xs text-zinc-600">Upload feature available in next release.</p>
+                                    <div>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept=".zip"
+                                            className="sr-only"
+                                            onChange={(e) => {
+                                                const f = e.target.files?.[0] ?? null;
+                                                if (f && !f.name.endsWith('.zip')) return;
+                                                setZipFile(f);
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            onDragOver={(e) => { e.preventDefault(); setZipDragOver(true); }}
+                                            onDragLeave={() => setZipDragOver(false)}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                setZipDragOver(false);
+                                                const f = e.dataTransfer.files[0];
+                                                if (f?.name.endsWith('.zip')) setZipFile(f);
+                                            }}
+                                            className={cn(
+                                                'w-full rounded-lg border-2 border-dashed p-8 text-center transition-colors',
+                                                zipDragOver ? 'border-emerald-500 bg-emerald-500/5' :
+                                                zipFile ? 'border-emerald-600 bg-emerald-900/10' :
+                                                'border-zinc-700 hover:border-zinc-500',
+                                            )}
+                                        >
+                                            {zipFile ? (
+                                                <>
+                                                    <Check className="mx-auto h-7 w-7 text-emerald-400 mb-2" />
+                                                    <p className="text-sm font-medium text-emerald-400">{zipFile.name}</p>
+                                                    <p className="mt-1 text-xs text-zinc-500">{(zipFile.size / 1024 / 1024).toFixed(1)} MB — click to change</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Upload className="mx-auto h-7 w-7 text-zinc-500 mb-2" />
+                                                    <p className="text-sm text-zinc-400">
+                                                        Drop your <code className="text-xs bg-zinc-800 px-1 py-0.5 rounded">.zip</code> here, or click to browse
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-zinc-600">Max 200 MB. Static HTML, React, Next.js, Vue, Astro — all supported.</p>
+                                                </>
+                                            )}
+                                        </button>
+                                        {errors.repo_url && <p className="mt-1.5 text-xs text-red-400">{errors.repo_url}</p>}
                                     </div>
                                 )}
                             </>
@@ -373,7 +445,9 @@ export default function CreateSite({ projectTypes }: CreateSiteProps) {
                     onEscapeKeyDown={(e) => e.preventDefault()}
                 >
                     <DialogHeader>
-                        <DialogTitle className="text-zinc-100">Setting up your site…</DialogTitle>
+                        <DialogTitle className="text-zinc-100">
+                            {uploading ? 'Uploading ZIP…' : 'Setting up your site…'}
+                        </DialogTitle>
                         <DialogDescription className="sr-only">Import progress — please wait while your site is being set up.</DialogDescription>
                     </DialogHeader>
 
