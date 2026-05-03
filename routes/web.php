@@ -794,7 +794,100 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return back()->with('success', 'Product deleted.');
         })->name('products.destroy');
         Route::get('/sites/{site}/templates', fn (Site $site) => Inertia::render('sites/templates', ['site' => $site]))->name('templates.index');
-        Route::get('/sites/{site}/subscribers', fn (Site $site) => Inertia::render('email/subscribers', ['site' => $site]))->name('sites.subscribers');
+
+        // Subscribers
+        Route::get('/sites/{site}/subscribers', function (Site $site) {
+            $subscribers = $site->newsletterSubscribers()
+                ->orderByDesc('created_at')
+                ->get(['id', 'email', 'name', 'status', 'segments', 'created_at']);
+            return Inertia::render('email/subscribers', [
+                'site' => $site,
+                'subscribers' => $subscribers,
+            ]);
+        })->name('sites.subscribers');
+        Route::post('/sites/{site}/subscribers', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate([
+                'email' => 'required|email|max:255',
+                'name' => 'nullable|string|max:255',
+            ]);
+            $site->newsletterSubscribers()->updateOrCreate(
+                ['email' => $d['email']],
+                ['name' => $d['name'] ?? null, 'status' => 'active'],
+            );
+            return back()->with('success', 'Subscriber added.');
+        })->name('sites.subscribers.store');
+        Route::delete('/sites/{site}/subscribers/{subscriber}', function (Site $site, \App\Models\NewsletterSubscriber $subscriber) {
+            abort_unless($subscriber->site_id === $site->id, 403);
+            $subscriber->delete();
+            return back()->with('success', 'Subscriber removed.');
+        })->name('sites.subscribers.destroy');
+        Route::post('/sites/{site}/subscribers/import', function (\Illuminate\Http\Request $request, Site $site) {
+            $request->validate(['csv' => 'required|file|mimes:csv,txt|max:2048']);
+            $handle = fopen($request->file('csv')->getRealPath(), 'r');
+            $header = fgetcsv($handle);
+            $emailIdx = array_search('email', array_map('strtolower', $header ?: []));
+            $nameIdx = array_search('name', array_map('strtolower', $header ?: []));
+            if ($emailIdx === false) { fclose($handle); return back()->withErrors(['csv' => 'CSV must have an "email" column.']); }
+            $count = 0;
+            while (($row = fgetcsv($handle)) !== false) {
+                $email = trim($row[$emailIdx] ?? '');
+                if (! filter_var($email, FILTER_VALIDATE_EMAIL)) { continue; }
+                $site->newsletterSubscribers()->updateOrCreate(
+                    ['email' => $email],
+                    ['name' => ($nameIdx !== false ? trim($row[$nameIdx] ?? '') : null) ?: null, 'status' => 'active'],
+                );
+                $count++;
+            }
+            fclose($handle);
+            return back()->with('success', "Imported {$count} subscriber(s).");
+        })->name('sites.subscribers.import');
+
+        // Newsletter campaigns
+        Route::get('/sites/{site}/newsletters', function (Site $site) {
+            $subscriberCount = $site->newsletterSubscribers()->where('status', 'active')->count();
+            $campaigns = $site->newsletterCampaigns()
+                ->orderByDesc('created_at')
+                ->get(['id', 'subject', 'status', 'scheduled_at', 'sent_at', 'stats', 'created_at']);
+            return Inertia::render('email/campaigns', [
+                'site' => $site,
+                'campaigns' => $campaigns,
+                'subscriberCount' => $subscriberCount,
+            ]);
+        })->name('sites.newsletters');
+        Route::post('/sites/{site}/newsletters', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate([
+                'subject' => 'required|string|max:255',
+                'body_html' => 'nullable|string',
+                'scheduled_at' => 'nullable|date',
+            ]);
+            $status = $d['scheduled_at'] ? 'scheduled' : 'draft';
+            $site->newsletterCampaigns()->create(array_merge($d, ['status' => $status]));
+            return back()->with('success', 'Campaign created.');
+        })->name('sites.newsletters.store');
+        Route::put('/sites/{site}/newsletters/{campaign}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\NewsletterCampaign $campaign) {
+            abort_unless($campaign->site_id === $site->id, 403);
+            abort_if($campaign->isSent(), 403);
+            $d = $request->validate([
+                'subject' => 'required|string|max:255',
+                'body_html' => 'nullable|string',
+                'scheduled_at' => 'nullable|date',
+            ]);
+            $status = $d['scheduled_at'] ? 'scheduled' : 'draft';
+            $campaign->update(array_merge($d, ['status' => $status]));
+            return back()->with('success', 'Campaign updated.');
+        })->name('sites.newsletters.update');
+        Route::post('/sites/{site}/newsletters/{campaign}/send', function (Site $site, \App\Models\NewsletterCampaign $campaign) {
+            abort_unless($campaign->site_id === $site->id, 403);
+            abort_if($campaign->isSent(), 403);
+            $campaign->update(['status' => 'sending', 'scheduled_at' => null]);
+            return back()->with('success', 'Campaign queued for sending.');
+        })->name('sites.newsletters.send');
+        Route::delete('/sites/{site}/newsletters/{campaign}', function (Site $site, \App\Models\NewsletterCampaign $campaign) {
+            abort_unless($campaign->site_id === $site->id, 403);
+            abort_if($campaign->isSent(), 403);
+            $campaign->delete();
+            return back()->with('success', 'Campaign deleted.');
+        })->name('sites.newsletters.destroy');
     });
 
     // Analytics

@@ -4,7 +4,7 @@ import {
     Home, Globe, Mail, ClipboardList, Megaphone, Banknote,
     FileText, Clock, BarChart, ShieldCheck, Image, Settings,
     ChevronDown, ChevronRight, Plus, Search, LogOut, Server,
-    X, Menu,
+    X, Menu, Users, Newspaper,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -40,12 +40,14 @@ function siteMenuItems(site: NavSite): SiteMenuItem[] {
         { icon: ClipboardList, label: 'Blog', href: `${baseHref}/blog` },
         { icon: Globe, label: 'Products', href: `${baseHref}/products` },
         { icon: Megaphone, label: 'Campaigns', href: `${baseHref}/campaigns` },
+        { icon: Users, label: 'Subscribers', href: `${baseHref}/subscribers` },
+        { icon: Newspaper, label: 'Newsletters', href: `${baseHref}/newsletters` },
         { icon: Banknote, label: 'Expenses', href: `${baseHref}/expenses` },
         { icon: FileText, label: 'Invoices', href: `${baseHref}/invoices`, badge: site.unpaid_invoices_count },
         { icon: Clock, label: 'Reminders', href: `${baseHref}/reminders`, badge: site.overdue_reminders_count, badgeVariant: 'warning' },
         { icon: BarChart, label: 'Analytics', href: `${baseHref}/analytics` },
         { icon: ShieldCheck, label: 'Maintenance', href: `${baseHref}/maintenance` },
-        { icon: Image, label: 'Media', href: `${baseHref}/files`, comingSoon: true },
+        { icon: Image, label: 'Media', href: `${baseHref}/files` },
         { icon: Settings, label: 'Site settings', href: `${baseHref}/settings` },
     ];
 }
