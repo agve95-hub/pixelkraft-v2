@@ -36,7 +36,7 @@ class SiteCreateWizardTest extends TestCase
             'server_path' => public_path(),
             'branch' => 'main',
         ])->assertStatus(422)
-          ->assertJsonValidationErrors(['source_type']);
+            ->assertJsonValidationErrors(['source_type']);
 
         Queue::assertNothingPushed();
     }

@@ -8,6 +8,7 @@ use App\Http\Middleware\SetSecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Http\Middleware\HandleCors;
 use Sentry\Laravel\Integration;
 
@@ -21,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SetSecurityHeaders::class);
         $middleware->web(append: [
-            \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+            ConvertEmptyStringsToNull::class,
             HandleInertiaRequests::class,
         ]);
 

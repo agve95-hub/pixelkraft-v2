@@ -26,7 +26,8 @@ class FortifyServiceProvider extends ServiceProvider
         // ignoring any stale session-stored "intended" URL that could otherwise
         // send users to an unrelated route (e.g. maintenance/preview).
         $this->app->singleton(ProfileInformationUpdatedResponse::class, function () {
-            return new class implements ProfileInformationUpdatedResponse {
+            return new class implements ProfileInformationUpdatedResponse
+            {
                 public function toResponse($request)
                 {
                     return redirect()->route('settings')->with('success', 'Profile information updated.');
@@ -35,7 +36,8 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(PasswordUpdateResponse::class, function () {
-            return new class implements PasswordUpdateResponse {
+            return new class implements PasswordUpdateResponse
+            {
                 public function toResponse($request)
                 {
                     return redirect()->route('settings')->with('success', 'Password updated.');

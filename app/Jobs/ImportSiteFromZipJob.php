@@ -54,7 +54,7 @@ class ImportSiteFromZipJob implements ShouldQueue
 
             Log::info("ImportSiteFromZipJob completed for [{$this->site->slug}]", [
                 'files_imported' => $result->fileCount,
-                'project_type'   => $result->projectType,
+                'project_type' => $result->projectType,
             ]);
 
         } catch (ImportException $e) {

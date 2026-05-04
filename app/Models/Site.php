@@ -6,6 +6,7 @@ use App\Enums\DeployStatus;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -80,7 +81,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read int $pages_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Page> $pages
+ * @property-read Collection<int, Page> $pages
  * @property-read DeployLog|null $latestDeploy
  * @property-read UptimeCheck|null $latestUptimeCheck
  */
@@ -287,6 +288,22 @@ class Site extends Model
     public function isLive(): bool
     {
         return $this->deploy_status === DeployStatus::Live;
+    }
+
+    /**
+     * Transition deploy_status with guard — throws if the transition is not allowed.
+     */
+    public function transitionDeployStatus(DeployStatus $next): void
+    {
+        $current = $this->deploy_status ?? DeployStatus::Draft;
+
+        if (! $current->canTransitionTo($next)) {
+            throw new \LogicException(
+                "Cannot transition deploy_status from [{$current->value}] to [{$next->value}] on site [{$this->slug}]."
+            );
+        }
+
+        $this->update(['deploy_status' => $next]);
     }
 
     public function needsBuild(): bool

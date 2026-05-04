@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\BlogPostStatus;
 use App\Jobs\DeploySiteJob;
 use App\Models\BlogPost;
 use App\Services\BlogPostPublisher;
@@ -38,10 +39,8 @@ class PublishScheduled extends Command
 
             try {
                 DB::transaction(function () use ($post, $site, $publisher): void {
-                    $post->update([
-                        'status' => 'published',
-                        'published_at' => now(),
-                    ]);
+                    $post->transitionStatus(BlogPostStatus::Published);
+                    $post->update(['published_at' => now()]);
 
                     $publisher->writeToRepository(
                         $site,

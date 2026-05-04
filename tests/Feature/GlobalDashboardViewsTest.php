@@ -8,6 +8,7 @@ use App\Models\Site;
 use App\Models\SiteInboxMessage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -63,10 +64,9 @@ class GlobalDashboardViewsTest extends TestCase
         $response->assertOk();
 
         // Inertia passes data as a JSON prop
-        $response->assertInertia(fn ($page) =>
-            $page->has('messages', 1)
-                 ->where('messages.0.subject', 'Question')
-                 ->where('unreadCount', 1)
+        $response->assertInertia(fn ($page) => $page->has('messages', 1)
+            ->where('messages.0.subject', 'Question')
+            ->where('unreadCount', 1)
         );
     }
 
@@ -106,9 +106,8 @@ class GlobalDashboardViewsTest extends TestCase
 
         $this->actingAs($user)
             ->get('/dashboard/inbox?tab=sent')
-            ->assertInertia(fn ($page) =>
-                $page->has('messages', 1)
-                     ->where('tab', 'sent')
+            ->assertInertia(fn ($page) => $page->has('messages', 1)
+                ->where('tab', 'sent')
             );
     }
 
@@ -131,14 +130,13 @@ class GlobalDashboardViewsTest extends TestCase
         $this->actingAs($user)
             ->get('/dashboard/analytics')
             ->assertOk()
-            ->assertInertia(fn ($p) =>
-                $p->has('series')
-                  ->has('totals30d')
-                  ->has('totals7d')
-                  ->has('bySite')
-                  ->has('topPages')
-                  ->has('totals30d.visitors')
-                  ->has('totals30d.pageviews')
+            ->assertInertia(fn ($p) => $p->has('series')
+                ->has('totals30d')
+                ->has('totals7d')
+                ->has('bySite')
+                ->has('topPages')
+                ->has('totals30d.visitors')
+                ->has('totals30d.pageviews')
             );
     }
 
@@ -173,7 +171,7 @@ class GlobalDashboardViewsTest extends TestCase
         ]);
 
         // Verify the underlying query logic directly (same query as the route)
-        $siteIds = \Illuminate\Support\Facades\DB::table('sites')
+        $siteIds = DB::table('sites')
             ->where('user_id', $user->id)
             ->pluck('id');
 
@@ -198,7 +196,7 @@ class GlobalDashboardViewsTest extends TestCase
         AnalyticsSnapshot::create(['page_id' => $pg->id, 'date' => now()->subDay()->toDateString(), 'visitors' => 999, 'pageviews' => 999, 'source' => 'google_analytics', 'created_at' => now()]);
 
         // Other user should have no access to owner's site data
-        $siteIds = \Illuminate\Support\Facades\DB::table('sites')
+        $siteIds = DB::table('sites')
             ->where('user_id', $other->id)
             ->pluck('id');
         $this->assertCount(0, $siteIds, 'Other user should see 0 sites');

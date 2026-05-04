@@ -66,7 +66,7 @@ class DeployService
 
         $release = $this->startRelease($site, $log, $target);
 
-        $site->update(['deploy_status' => DeployStatus::Queued]);
+        $site->transitionDeployStatus(DeployStatus::Queued);
         $log->appendLog('Deploy pipeline queued.');
 
         return [
@@ -78,7 +78,7 @@ class DeployService
 
     public function provisionEnvironment(Site $site, DeployLog $log, DeploymentRelease $release): void
     {
-        $site->update(['deploy_status' => DeployStatus::Building]);
+        $site->transitionDeployStatus(DeployStatus::Building);
 
         $target = $release->deploymentTarget()->first() ?: $this->resolveTarget($site, 'production');
 
@@ -142,7 +142,7 @@ class DeployService
 
     public function activateRelease(Site $site, DeployLog $log, DeploymentRelease $release): void
     {
-        $site->update(['deploy_status' => DeployStatus::Deploying]);
+        $site->transitionDeployStatus(DeployStatus::Deploying);
 
         $target = $release->deploymentTarget()->first() ?: $this->resolveTarget($site, 'production');
         $adapter = $this->adapterFor($site);
@@ -169,7 +169,7 @@ class DeployService
         ]);
 
         $site->update([
-            'deploy_status' => DeployStatus::Live,
+            'deploy_status' => DeployStatus::Live, // direct update: carries last_deployed_at in same query
             'last_deployed_at' => now(),
         ]);
 
@@ -217,7 +217,7 @@ class DeployService
             ]);
         }
 
-        $site->update(['deploy_status' => DeployStatus::Failed]);
+        $site->update(['deploy_status' => DeployStatus::Failed]); // direct: any state → failed is always valid
 
         Log::error("Deploy failed for [{$site->slug}]", [
             'error' => $message,
@@ -240,7 +240,7 @@ class DeployService
         ]);
 
         try {
-            $site->update(['deploy_status' => DeployStatus::Deploying]);
+            $site->transitionDeployStatus(DeployStatus::Deploying);
             $target = $this->resolveTarget($site, 'production');
             $rollbackSourceReleaseId = $site->deploymentReleases()
                 ->where('source_commit_sha', $targetDeploy->commit_sha)

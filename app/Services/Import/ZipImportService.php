@@ -2,6 +2,7 @@
 
 namespace App\Services\Import;
 
+use App\Enums\DeployStatus;
 use App\Models\Site;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -28,7 +29,7 @@ class ZipImportService
      */
     public function import(Site $site, string $zipDiskPath): ImportResult
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $zipRealPath = Storage::disk('local')->path($zipDiskPath);
 
         if (! file_exists($zipRealPath)) {
@@ -60,18 +61,18 @@ class ZipImportService
         $projectType = $this->detectProjectType($repoPath, $extracted);
 
         $site->update([
-            'project_type'  => $projectType,
-            'source_type'   => 'upload',
-            'deploy_status' => \App\Enums\DeployStatus::Idle,
+            'project_type' => $projectType,
+            'source_type' => 'upload',
+            'deploy_status' => DeployStatus::Idle,
         ]);
 
         // Clean up the uploaded ZIP from temporary storage
         Storage::disk('local')->delete($zipDiskPath);
 
         Log::info("ZIP import complete for [{$site->slug}]", [
-            'file_count'   => count($extracted),
+            'file_count' => count($extracted),
             'project_type' => $projectType,
-            'repo_path'    => $repoPath,
+            'repo_path' => $repoPath,
         ]);
 
         return new ImportResult(
@@ -98,7 +99,7 @@ class ZipImportService
 
             // Reject entries with null bytes
             if (str_contains($name, "\0")) {
-                throw new ImportException("ZIP contains a file with a null byte in its name.");
+                throw new ImportException('ZIP contains a file with a null byte in its name.');
             }
 
             // Reject absolute paths and path traversal sequences
@@ -124,7 +125,7 @@ class ZipImportService
     // ── Extraction ────────────────────────────────
 
     /**
-     * @return list<string>  Relative paths of extracted files
+     * @return list<string> Relative paths of extracted files
      */
     private function extractSafely(ZipArchive $zip, string $destDir): array
     {
@@ -148,6 +149,7 @@ class ZipImportService
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
             if ($ext !== '' && ! in_array($ext, self::ALLOWED_EXTENSIONS, true)) {
                 Log::debug("ZIP import: skipping disallowed extension [{$ext}] for [{$name}]");
+
                 continue;
             }
 
@@ -160,12 +162,14 @@ class ZipImportService
 
             if ($realParent === false || ! str_starts_with($realParent, $destDir.DIRECTORY_SEPARATOR)) {
                 Log::warning("ZIP import: skipping path-escape entry [{$name}]");
+
                 continue;
             }
 
             $contents = $zip->getFromIndex($i);
             if ($contents === false) {
                 Log::warning("ZIP import: could not read entry [{$name}]");
+
                 continue;
             }
 
@@ -183,7 +187,7 @@ class ZipImportService
      * as "dist/" → "dist/index.html"), move them up one level so repo_path is the web root.
      *
      * @param  list<string>  $files
-     * @return list<string>  Updated relative paths after potential flatten
+     * @return list<string> Updated relative paths after potential flatten
      */
     private function flattenIfWrapped(string $repoPath, array $files): array
     {
@@ -278,8 +282,12 @@ class ZipImportService
                     $pkg['dependencies'] ?? [],
                     $pkg['devDependencies'] ?? [],
                 ));
-                if (in_array('vue', $deps, true)) return 'vue';
-                if (in_array('react', $deps, true) || in_array('react-dom', $deps, true)) return 'react';
+                if (in_array('vue', $deps, true)) {
+                    return 'vue';
+                }
+                if (in_array('react', $deps, true) || in_array('react-dom', $deps, true)) {
+                    return 'react';
+                }
             }
         }
 

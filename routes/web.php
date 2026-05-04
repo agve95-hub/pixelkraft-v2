@@ -1,22 +1,39 @@
 <?php
 
+use App\Enums\DeployStatus;
 use App\Http\Controllers\Dashboard\SiteAnalyticsController;
 use App\Http\Controllers\EditorPreviewController;
 use App\Http\Controllers\InvoicePdfController;
+use App\Jobs\DeploySiteJob;
 use App\Jobs\ImportSiteFromZipJob;
 use App\Models\AnalyticsSnapshot;
 use App\Models\BlogPost;
+use App\Models\Campaign;
+use App\Models\ContentTemplate;
+use App\Models\Expense;
 use App\Models\FormSubmission;
+use App\Models\Invoice;
+use App\Models\NewsletterCampaign;
+use App\Models\NewsletterSubscriber;
 use App\Models\Notification;
 use App\Models\Page;
+use App\Models\ProductListing;
+use App\Models\Redirect;
+use App\Models\Reminder;
+use App\Models\Report;
 use App\Models\Site;
+use App\Models\SiteInboxMessage;
 use App\Models\UptimeCheck;
+use App\Rules\GitRemoteUrl;
 use App\Support\SchemaState;
 use App\Support\SeoIssueSummary;
 use App\Support\SiteAccess;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 // ── Health check (no auth) ───────────────────────
@@ -222,12 +239,12 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             'projectTypes' => config('pixelkraft.project_types', ['static_html', 'react', 'vue', 'nextjs', 'nuxt', 'astro', 'hugo', 'eleventy', 'svelte', 'php_site', 'custom']),
         ]);
     })->name('sites.create');
-    Route::post('/sites', function (\Illuminate\Http\Request $request) {
+    Route::post('/sites', function (Request $request) {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'project_type' => 'required|string',
             'source_type' => 'required|string|in:github,upload',
-            'repo_url' => ['nullable', 'string', 'max:500', new \App\Rules\GitRemoteUrl()],
+            'repo_url' => ['nullable', 'string', 'max:500', new GitRemoteUrl],
             'branch' => 'nullable|string|max:100',
             'build_command' => 'nullable|string|max:500',
             'github_token' => 'nullable|string|max:500',
@@ -241,7 +258,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
         // Upload source: site record is created here, ZIP is uploaded in a separate request
 
-        $baseSlug = \Illuminate\Support\Str::slug($validated['name']);
+        $baseSlug = Str::slug($validated['name']);
         $slug = $baseSlug;
         $i = 2;
         while (Site::where('slug', $slug)->exists()) {
@@ -263,11 +280,11 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             'client_last_name' => $validated['client_last_name'] ?? null,
             'client_email' => $validated['client_email'] ?? null,
             'client_company' => $validated['client_company'] ?? null,
-            'deploy_status' => \App\Enums\DeployStatus::Queued,
+            'deploy_status' => DeployStatus::Queued,
         ]);
 
         if ($validated['source_type'] === 'github' && ! empty($validated['repo_url'])) {
-            \App\Jobs\DeploySiteJob::dispatch($site, 'wizard');
+            DeploySiteJob::dispatch($site, 'wizard');
         }
 
         return response()->json(['siteId' => $site->id]);
@@ -275,11 +292,13 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     Route::delete('/sites/{siteId}', function (string $siteId) {
         $site = SiteAccess::findOrFail($siteId);
         $site->delete();
+
         return response()->json(['deleted' => true]);
     })->name('sites.destroy');
 
     Route::get('/sites/{siteId}/import-status', function (string $siteId) {
         $site = SiteAccess::findOrFail($siteId);
+
         return response()->json([
             'status' => $site->deploy_status,
             'lastDeployedAt' => $site->last_deployed_at,
@@ -288,7 +307,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     })->name('sites.import-status');
 
     // ZIP upload — called after site creation when source_type=upload
-    Route::post('/sites/{siteId}/import/zip', function (\Illuminate\Http\Request $request, string $siteId) {
+    Route::post('/sites/{siteId}/import/zip', function (Request $request, string $siteId) {
         $site = SiteAccess::findOrFail($siteId);
 
         $request->validate([
@@ -309,8 +328,8 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         ImportSiteFromZipJob::dispatch($site, $zipPath);
 
         return response()->json([
-            'status'  => 'queued',
-            'siteId'  => $site->id,
+            'status' => 'queued',
+            'siteId' => $site->id,
             'message' => 'ZIP queued for import. Poll /import-status for progress.',
         ]);
     })->name('sites.import.zip');
@@ -404,7 +423,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 'pages' => $pages,
             ]);
         })->name('sites.show');
-        Route::get('/sites/{site}/inbox', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::get('/sites/{site}/inbox', function (Request $request, Site $site) {
             $tab = $request->query('tab', 'inbox');
             $query = $site->inboxMessages()->latest();
             if ($tab === 'sent') {
@@ -414,36 +433,42 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             } else {
                 $query->where('direction', 'inbound')->where('is_archived', false);
             }
+
             return Inertia::render('sites/inbox', ['site' => $site, 'messages' => $query->get(), 'tab' => $tab]);
         })->name('sites.inbox');
-        Route::post('/sites/{site}/inbox', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/inbox', function (Request $request, Site $site) {
             $d = $request->validate(['to_email' => 'required|email|max:255', 'subject' => 'required|string|max:255', 'body' => 'required|string']);
             $site->inboxMessages()->create(['direction' => 'outbound', 'user_id' => auth()->id(), 'to_email' => $d['to_email'], 'subject' => $d['subject'], 'body' => $d['body'], 'is_read' => true, 'source' => 'dashboard']);
+
             return back()->with('success', 'Message sent.');
         })->name('sites.inbox.compose');
-        Route::post('/sites/{site}/inbox/{message}/archive', function (Site $site, \App\Models\SiteInboxMessage $message) {
+        Route::post('/sites/{site}/inbox/{message}/archive', function (Site $site, SiteInboxMessage $message) {
             abort_unless($message->site_id === $site->id, 403);
-            $message->update(['is_archived' => !$message->is_archived]);
+            $message->update(['is_archived' => ! $message->is_archived]);
+
             return back();
         })->name('sites.inbox.archive');
         Route::get('/sites/{site}/invoices', function (Site $site) {
-            $invoices = $site->invoices()->with('items')->orderByDesc('invoice_date')->get()->map(function (\App\Models\Invoice $inv) {
+            $invoices = $site->invoices()->with('items')->orderByDesc('invoice_date')->get()->map(function (Invoice $inv) {
                 $arr = $inv->toArray();
                 $arr['total'] = $inv->total();
                 $arr['is_overdue'] = $inv->isOverdue();
+
                 return $arr;
             });
+
             return Inertia::render('sites/invoices', ['site' => $site, 'invoices' => $invoices]);
         })->name('sites.invoices');
-        Route::post('/sites/{site}/invoices', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/invoices', function (Request $request, Site $site) {
             $d = $request->validate(['number' => 'nullable|string|max:100', 'invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000', 'items' => 'nullable|array', 'items.*.description' => 'required|string|max:500', 'items.*.quantity' => 'required|numeric|min:0', 'items.*.rate' => 'required|numeric']);
-            $invoice = $site->invoices()->create(array_merge(array_except($d, ['items']), ['number' => $d['number'] ?? \App\Models\Invoice::nextNumberForSite($site), 'status' => 'unpaid', 'tax_rate' => $d['tax_rate'] ?? 0, 'discount_percent' => $d['discount_percent'] ?? 0, 'payment_terms' => $d['payment_terms'] ?? 'net30']));
+            $invoice = $site->invoices()->create(array_merge(array_except($d, ['items']), ['number' => $d['number'] ?? Invoice::nextNumberForSite($site), 'status' => 'unpaid', 'tax_rate' => $d['tax_rate'] ?? 0, 'discount_percent' => $d['discount_percent'] ?? 0, 'payment_terms' => $d['payment_terms'] ?? 'net30']));
             foreach ($d['items'] ?? [] as $i => $item) {
                 $invoice->items()->create(['description' => $item['description'], 'quantity' => $item['quantity'], 'rate' => $item['rate'], 'sort_order' => $i]);
             }
+
             return back()->with('success', 'Invoice created.');
         })->name('sites.invoices.store');
-        Route::put('/sites/{site}/invoices/{invoice}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Invoice $invoice) {
+        Route::put('/sites/{site}/invoices/{invoice}', function (Request $request, Site $site, Invoice $invoice) {
             abort_unless($invoice->site_id === $site->id, 403);
             $d = $request->validate(['invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000', 'items' => 'nullable|array', 'items.*.description' => 'required|string|max:500', 'items.*.quantity' => 'required|numeric|min:0', 'items.*.rate' => 'required|numeric']);
             $invoice->update(array_except($d, ['items']));
@@ -451,17 +476,19 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             foreach ($d['items'] ?? [] as $i => $item) {
                 $invoice->items()->create(['description' => $item['description'], 'quantity' => $item['quantity'], 'rate' => $item['rate'], 'sort_order' => $i]);
             }
+
             return back()->with('success', 'Invoice updated.');
         })->name('sites.invoices.update');
-        Route::post('/sites/{site}/invoices/{invoice}/mark-paid', function (Site $site, \App\Models\Invoice $invoice) {
+        Route::post('/sites/{site}/invoices/{invoice}/mark-paid', function (Site $site, Invoice $invoice) {
             abort_unless($invoice->site_id === $site->id, 403);
             $invoice->update(['status' => 'paid', 'paid_at' => now()]);
+
             return back();
         })->name('sites.invoices.mark-paid');
-        Route::post('/sites/{site}/invoices/{invoice}/duplicate', function (Site $site, \App\Models\Invoice $invoice) {
+        Route::post('/sites/{site}/invoices/{invoice}/duplicate', function (Site $site, Invoice $invoice) {
             abort_unless($invoice->site_id === $site->id, 403);
             $copy = $invoice->replicate();
-            $copy->number = \App\Models\Invoice::nextNumberForSite($site);
+            $copy->number = Invoice::nextNumberForSite($site);
             $copy->status = 'unpaid';
             $copy->paid_at = null;
             $copy->invoice_date = now()->toDateString();
@@ -472,138 +499,161 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 $newItem->invoice_id = $copy->id;
                 $newItem->save();
             }
+
             return back();
         })->name('sites.invoices.duplicate');
-        Route::delete('/sites/{site}/invoices/{invoice}', function (Site $site, \App\Models\Invoice $invoice) {
+        Route::delete('/sites/{site}/invoices/{invoice}', function (Site $site, Invoice $invoice) {
             abort_unless($invoice->site_id === $site->id, 403);
             $invoice->delete();
+
             return back();
         })->name('sites.invoices.destroy');
         Route::get('/sites/{site}/invoices/{invoice}/pdf', InvoicePdfController::class)->name('sites.invoices.pdf');
         Route::get('/sites/{site}/campaigns', function (Site $site) {
             return Inertia::render('sites/campaigns', ['site' => $site, 'campaigns' => $site->campaigns()->orderByDesc('created_at')->get()]);
         })->name('sites.campaigns');
-        Route::post('/sites/{site}/campaigns', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/campaigns', function (Request $request, Site $site) {
             $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|in:on_load,on_scroll,on_exit,on_delay', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
             $site->campaigns()->create(array_merge($d, ['trigger' => $d['trigger'] ?? 'on_load', 'priority' => $d['priority'] ?? 0, 'locale' => $d['locale'] ?? 'en', 'is_enabled' => false]));
+
             return back();
         })->name('sites.campaigns.store');
-        Route::put('/sites/{site}/campaigns/{campaign}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Campaign $campaign) {
+        Route::put('/sites/{site}/campaigns/{campaign}', function (Request $request, Site $site, Campaign $campaign) {
             abort_unless($campaign->site_id === $site->id, 403);
             $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|in:on_load,on_scroll,on_exit,on_delay', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
             $campaign->update(array_merge($d, ['trigger' => $d['trigger'] ?? $campaign->trigger ?? 'on_load']));
+
             return back();
         })->name('sites.campaigns.update');
-        Route::post('/sites/{site}/campaigns/{campaign}/toggle', function (Site $site, \App\Models\Campaign $campaign) {
+        Route::post('/sites/{site}/campaigns/{campaign}/toggle', function (Site $site, Campaign $campaign) {
             abort_unless($campaign->site_id === $site->id, 403);
-            $campaign->update(['is_enabled' => !$campaign->is_enabled]);
+            $campaign->update(['is_enabled' => ! $campaign->is_enabled]);
+
             return back();
         })->name('sites.campaigns.toggle');
-        Route::post('/sites/{site}/campaigns/{campaign}/duplicate', function (Site $site, \App\Models\Campaign $campaign) {
+        Route::post('/sites/{site}/campaigns/{campaign}/duplicate', function (Site $site, Campaign $campaign) {
             abort_unless($campaign->site_id === $site->id, 403);
             $new = $campaign->replicate();
-            $new->name = $campaign->name . ' (copy)';
+            $new->name = $campaign->name.' (copy)';
             $new->is_enabled = false;
             $new->save();
+
             return back();
         })->name('sites.campaigns.duplicate');
-        Route::delete('/sites/{site}/campaigns/{campaign}', function (Site $site, \App\Models\Campaign $campaign) {
+        Route::delete('/sites/{site}/campaigns/{campaign}', function (Site $site, Campaign $campaign) {
             abort_unless($campaign->site_id === $site->id, 403);
             $campaign->delete();
+
             return back();
         })->name('sites.campaigns.destroy');
         Route::get('/sites/{site}/expenses', function (Site $site) {
             $expenses = $site->expenses()->orderByDesc('expense_date')->orderByDesc('created_at')->get();
             $totals = $site->expenses()->selectRaw('currency, SUM(amount) as total')->groupBy('currency')->get();
+
             return Inertia::render('sites/expenses', ['site' => $site, 'expenses' => $expenses, 'totals' => $totals]);
         })->name('sites.expenses');
-        Route::post('/sites/{site}/expenses', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/expenses', function (Request $request, Site $site) {
             $d = $request->validate(['label' => 'required|string|max:255', 'amount' => 'required|numeric|min:0.01', 'currency' => 'required|string|size:3', 'expense_date' => 'required|date']);
             $site->expenses()->create($d);
+
             return back();
         })->name('sites.expenses.store');
-        Route::put('/sites/{site}/expenses/{expense}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Expense $expense) {
+        Route::put('/sites/{site}/expenses/{expense}', function (Request $request, Site $site, Expense $expense) {
             abort_unless($expense->site_id === $site->id, 403);
             $d = $request->validate(['label' => 'required|string|max:255', 'amount' => 'required|numeric|min:0.01', 'currency' => 'required|string|size:3', 'expense_date' => 'required|date']);
             $expense->update($d);
+
             return back();
         })->name('sites.expenses.update');
-        Route::delete('/sites/{site}/expenses/{expense}', function (Site $site, \App\Models\Expense $expense) {
+        Route::delete('/sites/{site}/expenses/{expense}', function (Site $site, Expense $expense) {
             abort_unless($expense->site_id === $site->id, 403);
             $expense->delete();
+
             return back();
         })->name('sites.expenses.destroy');
-        Route::delete('/sites/{site}/expenses', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::delete('/sites/{site}/expenses', function (Request $request, Site $site) {
             $ids = $request->validate(['ids' => 'required|array', 'ids.*' => 'string'])['ids'];
             $site->expenses()->whereIn('id', $ids)->delete();
+
             return back();
         })->name('sites.expenses.bulk-destroy');
         Route::get('/sites/{site}/reminders', function (Site $site) {
             $reminders = $site->reminders()->orderBy('due_date')->get();
+
             return Inertia::render('sites/reminders', ['site' => $site, 'reminders' => $reminders]);
         })->name('sites.reminders');
-        Route::post('/sites/{site}/reminders', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/reminders', function (Request $request, Site $site) {
             $d = $request->validate(['title' => 'required|string|max:255', 'due_date' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
             $site->reminders()->create($d);
+
             return back();
         })->name('sites.reminders.store');
-        Route::put('/sites/{site}/reminders/{reminder}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Reminder $reminder) {
+        Route::put('/sites/{site}/reminders/{reminder}', function (Request $request, Site $site, Reminder $reminder) {
             abort_unless($reminder->site_id === $site->id, 403);
             $d = $request->validate(['title' => 'required|string|max:255', 'due_date' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
             $reminder->update($d);
+
             return back();
         })->name('sites.reminders.update');
-        Route::post('/sites/{site}/reminders/{reminder}/complete', function (Site $site, \App\Models\Reminder $reminder) {
+        Route::post('/sites/{site}/reminders/{reminder}/complete', function (Site $site, Reminder $reminder) {
             abort_unless($reminder->site_id === $site->id, 403);
-            $reminder->update(['is_done' => !$reminder->is_done]);
+            $reminder->update(['is_done' => ! $reminder->is_done]);
+
             return back();
         })->name('sites.reminders.complete');
-        Route::delete('/sites/{site}/reminders/{reminder}', function (Site $site, \App\Models\Reminder $reminder) {
+        Route::delete('/sites/{site}/reminders/{reminder}', function (Site $site, Reminder $reminder) {
             abort_unless($reminder->site_id === $site->id, 403);
             $reminder->delete();
+
             return back();
         })->name('sites.reminders.destroy');
-        Route::get('/sites/{site}/reports', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::get('/sites/{site}/reports', function (Request $request, Site $site) {
             $query = $site->reports()->orderByDesc('report_date');
+
             return Inertia::render('sites/reports', ['site' => $site, 'reports' => $query->get()]);
         })->name('sites.reports');
-        Route::post('/sites/{site}/reports', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/reports', function (Request $request, Site $site) {
             $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string', 'meta.visitors' => 'nullable|integer|min:0', 'meta.pageviews' => 'nullable|integer|min:0', 'meta.uptime_percent' => 'nullable|numeric|min:0|max:100', 'meta.work_done' => 'nullable|string', 'meta.issues' => 'nullable|string', 'meta.next_steps' => 'nullable|string']);
             $site->reports()->create(['title' => $d['title'], 'report_date' => $d['report_date'], 'summary' => $d['summary'] ?? null, 'meta' => $d['meta'] ?? null]);
+
             return back();
         })->name('sites.reports.store');
-        Route::put('/sites/{site}/reports/{report}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\Report $report) {
+        Route::put('/sites/{site}/reports/{report}', function (Request $request, Site $site, Report $report) {
             abort_unless($report->site_id === $site->id, 403);
             $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string', 'meta.visitors' => 'nullable|integer|min:0', 'meta.pageviews' => 'nullable|integer|min:0', 'meta.uptime_percent' => 'nullable|numeric|min:0|max:100', 'meta.work_done' => 'nullable|string', 'meta.issues' => 'nullable|string', 'meta.next_steps' => 'nullable|string']);
             $report->update(['title' => $d['title'], 'report_date' => $d['report_date'], 'summary' => $d['summary'] ?? null, 'meta' => $d['meta'] ?? null]);
+
             return back();
         })->name('sites.reports.update');
-        Route::post('/sites/{site}/reports/{report}/duplicate', function (Site $site, \App\Models\Report $report) {
+        Route::post('/sites/{site}/reports/{report}/duplicate', function (Site $site, Report $report) {
             abort_unless($report->site_id === $site->id, 403);
             $new = $report->replicate();
-            $new->title = $report->title . ' (copy)';
+            $new->title = $report->title.' (copy)';
             $new->save();
+
             return back();
         })->name('sites.reports.duplicate');
-        Route::delete('/sites/{site}/reports/{report}', function (Site $site, \App\Models\Report $report) {
+        Route::delete('/sites/{site}/reports/{report}', function (Site $site, Report $report) {
             abort_unless($report->site_id === $site->id, 403);
             $report->delete();
+
             return back();
         })->name('sites.reports.destroy');
         Route::get('/sites/{site}/analytics', SiteAnalyticsController::class)->name('sites.analytics');
         Route::get('/sites/{site}/maintenance', function (Site $site) {
             $latestCheck = $site->uptimeChecks()->latest('checked_at')->first(['is_up', 'checked_at']);
+
             return Inertia::render('sites/maintenance', [
                 'site' => $site,
-                'siteIsDown' => $latestCheck && !$latestCheck->is_up,
+                'siteIsDown' => $latestCheck && ! $latestCheck->is_up,
             ]);
         })->name('sites.maintenance');
         Route::get('/sites/{site}/settings', fn (Site $site) => Inertia::render('sites/settings', ['site' => $site]))->name('sites.settings');
-        Route::put('/sites/{site}/settings', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::put('/sites/{site}/settings', function (Request $request, Site $site) {
             $d = $request->validate([
                 'name' => 'required|string|max:255',
                 'domain' => 'nullable|string|max:255',
-                'repo_url' => ['nullable', 'string', 'max:500', new \App\Rules\GitRemoteUrl()],
+                'repo_url' => ['nullable', 'string', 'max:500', new GitRemoteUrl],
                 'branch' => 'nullable|string|max:100',
                 'project_type' => 'nullable|string|max:64',
                 'client_first_name' => 'nullable|string|max:100',
@@ -632,16 +682,18 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 'dns_provider' => 'nullable|string|max:100',
             ]);
             $site->update($d);
+
             return back()->with('success', 'Settings saved.');
         })->name('sites.settings.update');
         Route::post('/sites/{site}/deploy', function (Site $site) {
-            $site->update(['deploy_status' => \App\Enums\DeployStatus::Deploying]);
-            \App\Jobs\DeploySiteJob::dispatch($site, 'manual');
+            $site->update(['deploy_status' => DeployStatus::Deploying]);
+            DeploySiteJob::dispatch($site, 'manual');
+
             return back()->with('success', 'Deployment started.');
         })->name('sites.deploy');
         Route::get('/sites/{site}/files', function (Site $site) {
             $dir = 'sites/'.$site->id;
-            $disk = \Illuminate\Support\Facades\Storage::disk('public');
+            $disk = Storage::disk('public');
             $files = [];
             if ($disk->exists($dir)) {
                 foreach ($disk->files($dir) as $path) {
@@ -649,9 +701,10 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 }
                 usort($files, fn ($a, $b) => $b['modified'] - $a['modified']);
             }
+
             return Inertia::render('sites/files', ['site' => $site, 'files' => $files]);
         })->name('sites.files');
-        Route::post('/sites/{site}/files', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/files', function (Request $request, Site $site) {
             $request->validate([
                 'file' => [
                     'required', 'file', 'max:20480',
@@ -661,16 +714,18 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $file = $request->file('file');
             $original = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $ext = $file->getClientOriginalExtension();
-            $safe = \Illuminate\Support\Str::slug($original) ?: 'file';
+            $safe = Str::slug($original) ?: 'file';
             $filename = $safe.'-'.substr(uniqid('', true), -6).($ext ? '.'.$ext : '');
             $file->storeAs('sites/'.$site->id, $filename, 'public');
+
             return back()->with('success', 'File uploaded.');
         })->name('sites.files.upload');
         Route::delete('/sites/{site}/files/{filename}', function (Site $site, string $filename) {
             if (str_contains($filename, '/') || str_contains($filename, '..')) {
                 abort(422);
             }
-            \Illuminate\Support\Facades\Storage::disk('public')->delete('sites/'.$site->id.'/'.$filename);
+            Storage::disk('public')->delete('sites/'.$site->id.'/'.$filename);
+
             return back()->with('success', 'File deleted.');
         })->name('sites.files.destroy');
         Route::get('/sites/{site}/pages', fn (Site $site) => view('dashboard.sites.pages', ['site' => $site]))->name('sites.pages');
@@ -687,46 +742,54 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         Route::get('/sites/{site}/redirects', function (Site $site) {
             return Inertia::render('sites/redirects', ['site' => $site, 'redirects' => $site->redirects()->orderByDesc('created_at')->get()]);
         })->name('seo.redirects');
-        Route::post('/sites/{site}/redirects', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/redirects', function (Request $request, Site $site) {
             $d = $request->validate(['from_path' => 'required|string|max:500', 'to_path' => 'required|string|max:500', 'status_code' => 'nullable|integer|in:301,302,307,308']);
             $site->redirects()->create(['from_path' => $d['from_path'], 'to_path' => $d['to_path'], 'status_code' => $d['status_code'] ?? 301]);
+
             return back();
         })->name('seo.redirects.store');
-        Route::post('/sites/{site}/redirects/{redirect}/toggle', function (Site $site, \App\Models\Redirect $redirect) {
+        Route::post('/sites/{site}/redirects/{redirect}/toggle', function (Site $site, Redirect $redirect) {
             abort_unless($redirect->site_id === $site->id, 403);
-            $redirect->update(['is_active' => !$redirect->is_active]);
+            $redirect->update(['is_active' => ! $redirect->is_active]);
+
             return back();
         })->name('seo.redirects.toggle');
-        Route::delete('/sites/{site}/redirects/{redirect}', function (Site $site, \App\Models\Redirect $redirect) {
+        Route::delete('/sites/{site}/redirects/{redirect}', function (Site $site, Redirect $redirect) {
             abort_unless($redirect->site_id === $site->id, 403);
             $redirect->delete();
+
             return back();
         })->name('seo.redirects.destroy');
-        Route::put('/sites/{site}/pages/{page}/seo', function (\Illuminate\Http\Request $request, Site $site, Page $page) {
+        Route::put('/sites/{site}/pages/{page}/seo', function (Request $request, Site $site, Page $page) {
             abort_unless($page->site_id === $site->id, 403);
             $page->update($request->validate(['title' => 'nullable|string|max:255', 'meta_description' => 'nullable|string|max:500', 'og_title' => 'nullable|string|max:255', 'og_description' => 'nullable|string|max:500', 'og_image' => 'nullable|url|max:500', 'canonical_url' => 'nullable|url|max:500']));
+
             return back()->with('success', 'SEO meta saved.');
         })->name('seo.meta.update');
-        Route::put('/sites/{site}/maintenance', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::put('/sites/{site}/maintenance', function (Request $request, Site $site) {
             $d = $request->validate(['enabled' => 'boolean', 'title' => 'nullable|string|max:255', 'message' => 'nullable|string|max:2000', 'allowed_ips' => 'nullable|string']);
             $ips = array_filter(array_map('trim', explode("\n", $d['allowed_ips'] ?? '')));
             $site->update(['maintenance_settings' => ['enabled' => $request->boolean('enabled'), 'title' => $d['title'], 'message' => $d['message'], 'allowed_ips' => array_values($ips)]]);
+
             return back()->with('success', 'Maintenance settings saved.');
         })->name('sites.maintenance.update');
         Route::get('/sites/{site}/maintenance/preview', function (Site $site) {
             $s = $site->maintenance_settings ?? [];
             $title = e($s['title'] ?? "We'll be back soon");
             $message = e($s['message'] ?? "We're performing scheduled maintenance. Please check back later.");
+
             return response("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{$title}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0a0a0a;color:#e4e4e7;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}main{max-width:480px;text-align:center}h1{font-size:1.5rem;font-weight:600;margin-bottom:1rem}p{color:#a1a1aa;line-height:1.6}.badge{display:inline-block;background:#27272a;border:1px solid #3f3f46;border-radius:9999px;font-size:0.75rem;padding:0.25rem 0.75rem;margin-bottom:1.5rem;color:#71717a}</style></head><body><main><span class=\"badge\">Maintenance preview — {$site->name}</span><h1>{$title}</h1><p>{$message}</p></main></body></html>", 200, ['Content-Type' => 'text/html']);
         })->name('sites.maintenance.preview');
-        Route::post('/sites/{site}/inbox/{message}/read', function (Site $site, \App\Models\SiteInboxMessage $message) {
+        Route::post('/sites/{site}/inbox/{message}/read', function (Site $site, SiteInboxMessage $message) {
             abort_unless($message->site_id === $site->id, 403);
             $message->update(['is_read' => true]);
+
             return back();
         })->name('sites.inbox.read');
-        Route::delete('/sites/{site}/inbox/{message}', function (Site $site, \App\Models\SiteInboxMessage $message) {
+        Route::delete('/sites/{site}/inbox/{message}', function (Site $site, SiteInboxMessage $message) {
             abort_unless($message->site_id === $site->id, 403);
             $message->delete();
+
             return back();
         })->name('sites.inbox.destroy');
 
@@ -737,9 +800,10 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         Route::get('/sites/{site}/blog/create', fn (Site $site) => Inertia::render('sites/blog-create', ['site' => $site]))->name('blog.create');
         Route::get('/sites/{site}/blog/{blogPost}/edit', function (Site $site, BlogPost $blogPost) {
             abort_unless($blogPost->site_id === $site->id, 404);
+
             return Inertia::render('sites/blog-edit', ['site' => $site, 'post' => $blogPost]);
         })->name('blog.edit');
-        Route::post('/sites/{site}/blog', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/blog', function (Request $request, Site $site) {
             $d = $request->validate(['title' => 'required|string|max:255', 'slug' => 'required|string|max:255', 'excerpt' => 'nullable|string', 'body' => 'nullable|string', 'status' => 'required|in:draft,published,scheduled', 'published_at' => 'nullable|date']);
             if ($d['status'] === 'scheduled') {
                 $d['scheduled_at'] = $d['published_at'];
@@ -749,9 +813,10 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             }
             $d['body'] = $d['body'] ?? '';
             $site->blogPosts()->create($d);
+
             return redirect("/dashboard/sites/{$site->id}/blog")->with('success', 'Post created.');
         })->name('blog.store');
-        Route::put('/sites/{site}/blog/{blogPost}', function (\Illuminate\Http\Request $request, Site $site, BlogPost $blogPost) {
+        Route::put('/sites/{site}/blog/{blogPost}', function (Request $request, Site $site, BlogPost $blogPost) {
             abort_unless($blogPost->site_id === $site->id, 403);
             $d = $request->validate(['title' => 'required|string|max:255', 'slug' => 'required|string|max:255', 'excerpt' => 'nullable|string', 'body' => 'nullable|string', 'status' => 'required|in:draft,published,scheduled', 'published_at' => 'nullable|date']);
             if ($d['status'] === 'scheduled') {
@@ -762,43 +827,50 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             }
             $d['body'] = $d['body'] ?? '';
             $blogPost->update($d);
+
             return back()->with('success', 'Post updated.');
         })->name('blog.update');
         Route::delete('/sites/{site}/blog/{blogPost}', function (Site $site, BlogPost $blogPost) {
             abort_unless($blogPost->site_id === $site->id, 403);
             $blogPost->delete();
+
             return back()->with('success', 'Post deleted.');
         })->name('blog.destroy');
         Route::get('/sites/{site}/products', function (Site $site) {
             return Inertia::render('sites/products', ['site' => $site, 'products' => $site->productListings()->orderByDesc('created_at')->get()]);
         })->name('products.index');
         Route::get('/sites/{site}/products/create', fn (Site $site) => Inertia::render('sites/product-create', ['site' => $site]))->name('products.create');
-        Route::post('/sites/{site}/products', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/products', function (Request $request, Site $site) {
             $d = $request->validate(['name' => 'required|string|max:255', 'description' => 'nullable|string', 'price' => 'required|numeric|min:0', 'currency' => 'nullable|string|size:3', 'status' => 'nullable|string|max:32']);
             $site->productListings()->create(array_merge($d, ['currency' => $d['currency'] ?? 'EUR', 'status' => $d['status'] ?? 'draft']));
+
             return redirect("/dashboard/sites/{$site->id}/products")->with('success', 'Product created.');
         })->name('products.store');
-        Route::get('/sites/{site}/products/{product}/edit', function (Site $site, \App\Models\ProductListing $product) {
+        Route::get('/sites/{site}/products/{product}/edit', function (Site $site, ProductListing $product) {
             abort_unless($product->site_id === $site->id, 403);
+
             return Inertia::render('sites/product-edit', ['site' => $site, 'product' => $product]);
         })->name('products.edit');
-        Route::put('/sites/{site}/products/{product}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\ProductListing $product) {
+        Route::put('/sites/{site}/products/{product}', function (Request $request, Site $site, ProductListing $product) {
             abort_unless($product->site_id === $site->id, 403);
             $d = $request->validate(['name' => 'required|string|max:255', 'description' => 'nullable|string', 'price' => 'required|numeric|min:0', 'currency' => 'nullable|string|size:3', 'status' => 'nullable|string|max:32']);
             $product->update($d);
+
             return redirect("/dashboard/sites/{$site->id}/products")->with('success', 'Product updated.');
         })->name('products.update');
-        Route::delete('/sites/{site}/products/{product}', function (Site $site, \App\Models\ProductListing $product) {
+        Route::delete('/sites/{site}/products/{product}', function (Site $site, ProductListing $product) {
             abort_unless($product->site_id === $site->id, 403);
             $product->delete();
+
             return back()->with('success', 'Product deleted.');
         })->name('products.destroy');
         // Templates
         Route::get('/sites/{site}/templates', function (Site $site) {
             $templates = $site->contentTemplates()->orderBy('name')->get(['id', 'name', 'type', 'created_at']);
+
             return Inertia::render('sites/templates', ['site' => $site, 'templates' => $templates]);
         })->name('templates.index');
-        Route::post('/sites/{site}/templates', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/templates', function (Request $request, Site $site) {
             $d = $request->validate([
                 'name' => 'required|string|max:255',
                 'type' => 'nullable|string|max:64',
@@ -806,9 +878,10 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 'fields_schema' => 'nullable|array',
             ]);
             $site->contentTemplates()->create($d);
+
             return back()->with('success', 'Template created.');
         })->name('templates.store');
-        Route::put('/sites/{site}/templates/{template}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\ContentTemplate $template) {
+        Route::put('/sites/{site}/templates/{template}', function (Request $request, Site $site, ContentTemplate $template) {
             abort_unless($template->site_id === $site->id, 403);
             $d = $request->validate([
                 'name' => 'required|string|max:255',
@@ -816,11 +889,13 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 'html_template' => 'nullable|string',
             ]);
             $template->update($d);
+
             return back()->with('success', 'Template saved.');
         })->withoutScopedBindings()->name('templates.update');
-        Route::delete('/sites/{site}/templates/{template}', function (Site $site, \App\Models\ContentTemplate $template) {
+        Route::delete('/sites/{site}/templates/{template}', function (Site $site, ContentTemplate $template) {
             abort_unless($template->site_id === $site->id, 403);
             $template->delete();
+
             return back()->with('success', 'Template deleted.');
         })->withoutScopedBindings()->name('templates.destroy');
 
@@ -829,12 +904,13 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $subscribers = $site->newsletterSubscribers()
                 ->orderByDesc('created_at')
                 ->get(['id', 'email', 'name', 'status', 'segments', 'created_at']);
+
             return Inertia::render('email/subscribers', [
                 'site' => $site,
                 'subscribers' => $subscribers,
             ]);
         })->name('sites.subscribers');
-        Route::post('/sites/{site}/subscribers', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/subscribers', function (Request $request, Site $site) {
             $d = $request->validate([
                 'email' => 'required|email|max:255',
                 'name' => 'nullable|string|max:255',
@@ -843,24 +919,32 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 ['email' => $d['email']],
                 ['name' => $d['name'] ?? null, 'status' => 'active'],
             );
+
             return back()->with('success', 'Subscriber added.');
         })->name('sites.subscribers.store');
-        Route::delete('/sites/{site}/subscribers/{subscriber}', function (Site $site, \App\Models\NewsletterSubscriber $subscriber) {
+        Route::delete('/sites/{site}/subscribers/{subscriber}', function (Site $site, NewsletterSubscriber $subscriber) {
             abort_unless($subscriber->site_id === $site->id, 403);
             $subscriber->delete();
+
             return back()->with('success', 'Subscriber removed.');
         })->withoutScopedBindings()->name('sites.subscribers.destroy');
-        Route::post('/sites/{site}/subscribers/import', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/subscribers/import', function (Request $request, Site $site) {
             $request->validate(['csv' => 'required|file|mimes:csv,txt|max:2048']);
             $handle = fopen($request->file('csv')->getRealPath(), 'r');
             $header = fgetcsv($handle);
             $emailIdx = array_search('email', array_map('strtolower', $header ?: []));
             $nameIdx = array_search('name', array_map('strtolower', $header ?: []));
-            if ($emailIdx === false) { fclose($handle); return back()->withErrors(['csv' => 'CSV must have an "email" column.']); }
+            if ($emailIdx === false) {
+                fclose($handle);
+
+                return back()->withErrors(['csv' => 'CSV must have an "email" column.']);
+            }
             $count = 0;
             while (($row = fgetcsv($handle)) !== false) {
                 $email = trim($row[$emailIdx] ?? '');
-                if (! filter_var($email, FILTER_VALIDATE_EMAIL)) { continue; }
+                if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    continue;
+                }
                 $site->newsletterSubscribers()->updateOrCreate(
                     ['email' => $email],
                     ['name' => ($nameIdx !== false ? trim($row[$nameIdx] ?? '') : null) ?: null, 'status' => 'active'],
@@ -868,6 +952,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 $count++;
             }
             fclose($handle);
+
             return back()->with('success', "Imported {$count} subscriber(s).");
         })->name('sites.subscribers.import');
 
@@ -877,13 +962,14 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $campaigns = $site->newsletterCampaigns()
                 ->orderByDesc('created_at')
                 ->get(['id', 'subject', 'status', 'scheduled_at', 'sent_at', 'stats', 'created_at']);
+
             return Inertia::render('email/campaigns', [
                 'site' => $site,
                 'campaigns' => $campaigns,
                 'subscriberCount' => $subscriberCount,
             ]);
         })->name('sites.newsletters');
-        Route::post('/sites/{site}/newsletters', function (\Illuminate\Http\Request $request, Site $site) {
+        Route::post('/sites/{site}/newsletters', function (Request $request, Site $site) {
             $d = $request->validate([
                 'subject' => 'required|string|max:255',
                 'body_html' => 'nullable|string',
@@ -891,9 +977,10 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             ]);
             $status = ($d['scheduled_at'] ?? null) ? 'scheduled' : 'draft';
             $site->newsletterCampaigns()->create(array_merge($d, ['status' => $status]));
+
             return back()->with('success', 'Campaign created.');
         })->name('sites.newsletters.store');
-        Route::put('/sites/{site}/newsletters/{campaign}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\NewsletterCampaign $campaign) {
+        Route::put('/sites/{site}/newsletters/{campaign}', function (Request $request, Site $site, NewsletterCampaign $campaign) {
             abort_unless($campaign->site_id === $site->id, 403);
             abort_if($campaign->isSent(), 403);
             $d = $request->validate([
@@ -903,28 +990,31 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             ]);
             $status = ($d['scheduled_at'] ?? null) ? 'scheduled' : 'draft';
             $campaign->update(array_merge($d, ['status' => $status]));
+
             return back()->with('success', 'Campaign updated.');
         })->withoutScopedBindings()->name('sites.newsletters.update');
-        Route::post('/sites/{site}/newsletters/{campaign}/send', function (Site $site, \App\Models\NewsletterCampaign $campaign) {
+        Route::post('/sites/{site}/newsletters/{campaign}/send', function (Site $site, NewsletterCampaign $campaign) {
             abort_unless($campaign->site_id === $site->id, 403);
             abort_if($campaign->isSent(), 403);
             $campaign->update(['status' => 'sending', 'scheduled_at' => null]);
+
             return back()->with('success', 'Campaign queued for sending.');
         })->withoutScopedBindings()->name('sites.newsletters.send');
-        Route::delete('/sites/{site}/newsletters/{campaign}', function (Site $site, \App\Models\NewsletterCampaign $campaign) {
+        Route::delete('/sites/{site}/newsletters/{campaign}', function (Site $site, NewsletterCampaign $campaign) {
             abort_unless($campaign->site_id === $site->id, 403);
             abort_if($campaign->isSent(), 403);
             $campaign->delete();
+
             return back()->with('success', 'Campaign deleted.');
         })->withoutScopedBindings()->name('sites.newsletters.destroy');
     });
 
     // Analytics
     Route::get('/analytics', function () {
-        $visibleSiteIds = \App\Support\SiteAccess::query()->pluck('id');
+        $visibleSiteIds = SiteAccess::query()->pluck('id');
 
         // 30-day daily totals across all sites
-        $trafficRows = \App\Models\AnalyticsSnapshot::query()
+        $trafficRows = AnalyticsSnapshot::query()
             ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
             ->whereIn('pages.site_id', $visibleSiteIds)
             ->where('analytics_snapshots.date', '>=', now()->subDays(29)->toDateString())
@@ -936,6 +1026,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
         $series = collect(range(29, 0))->map(function (int $ago) use ($trafficRows) {
             $day = now()->subDays($ago)->toDateString();
+
             return [
                 'day' => $day,
                 'label' => now()->subDays($ago)->format('M j'),
@@ -948,7 +1039,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         $totals7d = $series->slice(-7)->pipe(fn ($s) => ['visitors' => $s->sum('visitors'), 'pageviews' => $s->sum('pageviews')]);
 
         // Per-site breakdown (last 30 days)
-        $bySite = \App\Models\AnalyticsSnapshot::query()
+        $bySite = AnalyticsSnapshot::query()
             ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
             ->join('sites', 'sites.id', '=', 'pages.site_id')
             ->whereIn('pages.site_id', $visibleSiteIds)
@@ -959,7 +1050,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             ->get();
 
         // Top pages (last 30 days)
-        $topPages = \App\Models\AnalyticsSnapshot::query()
+        $topPages = AnalyticsSnapshot::query()
             ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
             ->join('sites', 'sites.id', '=', 'pages.site_id')
             ->whereIn('pages.site_id', $visibleSiteIds)
@@ -974,10 +1065,10 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     })->name('analytics');
 
     // Email
-    Route::get('/inbox', function (\Illuminate\Http\Request $request) {
-        $visibleSiteIds = \App\Support\SiteAccess::query()->pluck('id');
+    Route::get('/inbox', function (Request $request) {
+        $visibleSiteIds = SiteAccess::query()->pluck('id');
         $tab = $request->query('tab', 'inbox');
-        $query = \App\Models\SiteInboxMessage::query()
+        $query = SiteInboxMessage::query()
             ->whereIn('site_id', $visibleSiteIds)
             ->with('site:id,name')
             ->latest();
@@ -988,10 +1079,11 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         } else {
             $query->where('direction', 'inbound')->where('is_archived', false);
         }
+
         return Inertia::render('email/inbox', [
             'messages' => $query->limit(100)->get(),
             'tab' => $tab,
-            'unreadCount' => \App\Models\SiteInboxMessage::query()
+            'unreadCount' => SiteInboxMessage::query()
                 ->whereIn('site_id', $visibleSiteIds)
                 ->where('direction', 'inbound')
                 ->where('is_read', false)
@@ -1005,6 +1097,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     // Settings
     Route::get('/settings', function () {
         $user = auth()->user();
+
         return Inertia::render('settings/index', [
             'twoFactorEnabled' => (bool) $user->two_factor_secret,
             'twoFactorConfirmed' => (bool) $user->two_factor_confirmed_at,
@@ -1019,6 +1112,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             ['label' => 'Cache driver', 'value' => config('cache.default'), 'status' => 'ok'],
             ['label' => 'DB connection', 'value' => config('database.default'), 'status' => 'ok'],
         ];
+
         return Inertia::render('settings/system', ['diagnostics' => $diagnostics]);
     })->name('system.diagnostics')->middleware('can:viewHorizon');
 });

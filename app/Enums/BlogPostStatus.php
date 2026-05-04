@@ -16,4 +16,19 @@ enum BlogPostStatus: string
             self::Published => 'Published',
         };
     }
+
+    /** @return list<self> */
+    public function allowedTransitions(): array
+    {
+        return match ($this) {
+            self::Draft => [self::Scheduled, self::Published],
+            self::Scheduled => [self::Draft, self::Published],
+            self::Published => [self::Draft],
+        };
+    }
+
+    public function canTransitionTo(self $next): bool
+    {
+        return in_array($next, $this->allowedTransitions(), true);
+    }
 }

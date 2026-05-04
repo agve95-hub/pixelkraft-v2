@@ -82,6 +82,22 @@ class BlogPost extends Model
         return $this->status === BlogPostStatus::Published;
     }
 
+    /**
+     * Transition status with guard — throws if the transition is not allowed.
+     */
+    public function transitionStatus(BlogPostStatus $next): void
+    {
+        $current = $this->status ?? BlogPostStatus::Draft;
+
+        if (! $current->canTransitionTo($next)) {
+            throw new \LogicException(
+                "Cannot transition blog post status from [{$current->value}] to [{$next->value}]."
+            );
+        }
+
+        $this->update(['status' => $next]);
+    }
+
     public function isScheduled(): bool
     {
         return $this->status === BlogPostStatus::Scheduled && $this->scheduled_at?->isFuture();
