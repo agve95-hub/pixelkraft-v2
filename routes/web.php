@@ -425,19 +425,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 'pages' => $pages,
             ]);
         })->name('sites.show');
-        Route::get('/sites/{site}/inbox', function (Request $request, Site $site) {
-            $tab = $request->query('tab', 'inbox');
-            $query = $site->inboxMessages()->latest();
-            if ($tab === 'sent') {
-                $query->where('direction', 'outbound')->where('is_archived', false);
-            } elseif ($tab === 'archived') {
-                $query->where('is_archived', true);
-            } else {
-                $query->where('direction', 'inbound')->where('is_archived', false);
-            }
-
-            return view('dashboard.sites.inbox', ['site' => $site, 'messages' => $query->get(), 'tab' => $tab]);
-        })->name('sites.inbox');
+        Route::get('/sites/{site}/inbox', fn (Site $site) => view('dashboard.sites.inbox', ['site' => $site]))->name('sites.inbox');
         Route::post('/sites/{site}/inbox', function (Request $request, Site $site) {
             $d = $request->validate(['to_email' => 'required|email|max:255', 'subject' => 'required|string|max:255', 'body' => 'required|string']);
             $site->inboxMessages()->create(['direction' => 'outbound', 'user_id' => auth()->id(), 'to_email' => $d['to_email'], 'subject' => $d['subject'], 'body' => $d['body'], 'is_read' => true, 'source' => 'dashboard']);
@@ -450,17 +438,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
             return back();
         })->name('sites.inbox.archive');
-        Route::get('/sites/{site}/invoices', function (Site $site) {
-            $invoices = $site->invoices()->with('items')->orderByDesc('invoice_date')->get()->map(function (Invoice $inv) {
-                $arr = $inv->toArray();
-                $arr['total'] = $inv->total();
-                $arr['is_overdue'] = $inv->isOverdue();
-
-                return $arr;
-            });
-
-            return view('dashboard.sites.invoices', ['site' => $site, 'invoices' => $invoices]);
-        })->name('sites.invoices');
+        Route::get('/sites/{site}/invoices', fn (Site $site) => view('dashboard.sites.invoices', ['site' => $site]))->name('sites.invoices');
         Route::post('/sites/{site}/invoices', function (Request $request, Site $site) {
             $d = $request->validate(['number' => 'nullable|string|max:100', 'invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000', 'items' => 'nullable|array', 'items.*.description' => 'required|string|max:500', 'items.*.quantity' => 'required|numeric|min:0', 'items.*.rate' => 'required|numeric']);
             $invoice = $site->invoices()->create(array_merge(array_except($d, ['items']), ['number' => $d['number'] ?? Invoice::nextNumberForSite($site), 'status' => 'unpaid', 'tax_rate' => $d['tax_rate'] ?? 0, 'discount_percent' => $d['discount_percent'] ?? 0, 'payment_terms' => $d['payment_terms'] ?? 'net30']));
@@ -511,9 +489,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return back();
         })->name('sites.invoices.destroy');
         Route::get('/sites/{site}/invoices/{invoice}/pdf', InvoicePdfController::class)->name('sites.invoices.pdf');
-        Route::get('/sites/{site}/campaigns', function (Site $site) {
-            return view('dashboard.sites.campaigns', ['site' => $site, 'campaigns' => $site->campaigns()->orderByDesc('created_at')->get()]);
-        })->name('sites.campaigns');
+        Route::get('/sites/{site}/campaigns', fn (Site $site) => view('dashboard.sites.campaigns', ['site' => $site]))->name('sites.campaigns');
         Route::post('/sites/{site}/campaigns', function (Request $request, Site $site) {
             $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|in:on_load,on_scroll,on_exit,on_delay', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
             $site->campaigns()->create(array_merge($d, ['trigger' => $d['trigger'] ?? 'on_load', 'priority' => $d['priority'] ?? 0, 'locale' => $d['locale'] ?? 'en', 'is_enabled' => false]));
@@ -548,12 +524,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
             return back();
         })->name('sites.campaigns.destroy');
-        Route::get('/sites/{site}/expenses', function (Site $site) {
-            $expenses = $site->expenses()->orderByDesc('expense_date')->orderByDesc('created_at')->get();
-            $totals = $site->expenses()->selectRaw('currency, SUM(amount) as total')->groupBy('currency')->get();
-
-            return view('dashboard.sites.expenses', ['site' => $site, 'expenses' => $expenses, 'totals' => $totals]);
-        })->name('sites.expenses');
+        Route::get('/sites/{site}/expenses', fn (Site $site) => view('dashboard.sites.expenses', ['site' => $site]))->name('sites.expenses');
         Route::post('/sites/{site}/expenses', function (Request $request, Site $site) {
             $d = $request->validate(['label' => 'required|string|max:255', 'amount' => 'required|numeric|min:0.01', 'currency' => 'required|string|size:3', 'expense_date' => 'required|date']);
             $site->expenses()->create($d);
@@ -579,11 +550,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
             return back();
         })->name('sites.expenses.bulk-destroy');
-        Route::get('/sites/{site}/reminders', function (Site $site) {
-            $reminders = $site->reminders()->orderBy('due_date')->get();
-
-            return view('dashboard.sites.reminders', ['site' => $site, 'reminders' => $reminders]);
-        })->name('sites.reminders');
+        Route::get('/sites/{site}/reminders', fn (Site $site) => view('dashboard.sites.reminders', ['site' => $site]))->name('sites.reminders');
         Route::post('/sites/{site}/reminders', function (Request $request, Site $site) {
             $d = $request->validate(['title' => 'required|string|max:255', 'due_date' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
             $site->reminders()->create($d);
@@ -609,11 +576,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
             return back();
         })->name('sites.reminders.destroy');
-        Route::get('/sites/{site}/reports', function (Request $request, Site $site) {
-            $query = $site->reports()->orderByDesc('report_date');
-
-            return view('dashboard.sites.reports', ['site' => $site, 'reports' => $query->get()]);
-        })->name('sites.reports');
+        Route::get('/sites/{site}/reports', fn (Site $site) => view('dashboard.sites.reports', ['site' => $site]))->name('sites.reports');
         Route::post('/sites/{site}/reports', function (Request $request, Site $site) {
             $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string', 'meta.visitors' => 'nullable|integer|min:0', 'meta.pageviews' => 'nullable|integer|min:0', 'meta.uptime_percent' => 'nullable|numeric|min:0|max:100', 'meta.work_done' => 'nullable|string', 'meta.issues' => 'nullable|string', 'meta.next_steps' => 'nullable|string']);
             $site->reports()->create(['title' => $d['title'], 'report_date' => $d['report_date'], 'summary' => $d['summary'] ?? null, 'meta' => $d['meta'] ?? null]);
@@ -902,16 +865,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         })->withoutScopedBindings()->name('templates.destroy');
 
         // Subscribers
-        Route::get('/sites/{site}/subscribers', function (Site $site) {
-            $subscribers = $site->newsletterSubscribers()
-                ->orderByDesc('created_at')
-                ->get(['id', 'email', 'name', 'status', 'segments', 'created_at']);
-
-            return view('dashboard.email.subscribers', [
-                'site' => $site,
-                'subscribers' => $subscribers,
-            ]);
-        })->name('sites.subscribers');
+        Route::get('/sites/{site}/subscribers', fn (Site $site) => view('dashboard.email.subscribers', ['site' => $site]))->name('sites.subscribers');
         Route::post('/sites/{site}/subscribers', function (Request $request, Site $site) {
             $d = $request->validate([
                 'email' => 'required|email|max:255',
@@ -959,18 +913,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         })->name('sites.subscribers.import');
 
         // Newsletter campaigns
-        Route::get('/sites/{site}/newsletters', function (Site $site) {
-            $subscriberCount = $site->newsletterSubscribers()->where('status', 'active')->count();
-            $campaigns = $site->newsletterCampaigns()
-                ->orderByDesc('created_at')
-                ->get(['id', 'subject', 'status', 'scheduled_at', 'sent_at', 'stats', 'created_at']);
-
-            return view('dashboard.email.campaigns', [
-                'site' => $site,
-                'campaigns' => $campaigns,
-                'subscriberCount' => $subscriberCount,
-            ]);
-        })->name('sites.newsletters');
+        Route::get('/sites/{site}/newsletters', fn (Site $site) => view('dashboard.email.campaigns', ['site' => $site]))->name('sites.newsletters');
         Route::post('/sites/{site}/newsletters', function (Request $request, Site $site) {
             $d = $request->validate([
                 'subject' => 'required|string|max:255',
@@ -1011,88 +954,11 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         })->withoutScopedBindings()->name('sites.newsletters.destroy');
     });
 
-    // Analytics
-    Route::get('/analytics', function () {
-        $visibleSiteIds = SiteAccess::query()->pluck('id');
+    // Analytics (data fetched by UnifiedDashboard Livewire component)
+    Route::get('/analytics', fn () => view('dashboard.analytics.index'))->name('analytics');
 
-        // 30-day daily totals across all sites
-        $trafficRows = AnalyticsSnapshot::query()
-            ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
-            ->whereIn('pages.site_id', $visibleSiteIds)
-            ->where('analytics_snapshots.date', '>=', now()->subDays(29)->toDateString())
-            ->selectRaw('analytics_snapshots.date as day, SUM(analytics_snapshots.visitors) as visitors, SUM(analytics_snapshots.pageviews) as pageviews')
-            ->groupBy('analytics_snapshots.date')
-            ->orderBy('analytics_snapshots.date')
-            ->get()
-            ->keyBy('day');
-
-        $series = collect(range(29, 0))->map(function (int $ago) use ($trafficRows) {
-            $day = now()->subDays($ago)->toDateString();
-
-            return [
-                'day' => $day,
-                'label' => now()->subDays($ago)->format('M j'),
-                'visitors' => (int) ($trafficRows[$day]->visitors ?? 0),
-                'pageviews' => (int) ($trafficRows[$day]->pageviews ?? 0),
-            ];
-        })->values();
-
-        $totals30d = ['visitors' => $series->sum('visitors'), 'pageviews' => $series->sum('pageviews')];
-        $totals7d = $series->slice(-7)->pipe(fn ($s) => ['visitors' => $s->sum('visitors'), 'pageviews' => $s->sum('pageviews')]);
-
-        // Per-site breakdown (last 30 days)
-        $bySite = AnalyticsSnapshot::query()
-            ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
-            ->join('sites', 'sites.id', '=', 'pages.site_id')
-            ->whereIn('pages.site_id', $visibleSiteIds)
-            ->where('analytics_snapshots.date', '>=', now()->subDays(29)->toDateString())
-            ->selectRaw('sites.id as site_id, sites.name as site_name, SUM(analytics_snapshots.visitors) as visitors, SUM(analytics_snapshots.pageviews) as pageviews')
-            ->groupBy('sites.id', 'sites.name')
-            ->orderByDesc('visitors')
-            ->get();
-
-        // Top pages (last 30 days)
-        $topPages = AnalyticsSnapshot::query()
-            ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
-            ->join('sites', 'sites.id', '=', 'pages.site_id')
-            ->whereIn('pages.site_id', $visibleSiteIds)
-            ->where('analytics_snapshots.date', '>=', now()->subDays(29)->toDateString())
-            ->selectRaw('pages.url_path, pages.title, sites.name as site_name, SUM(analytics_snapshots.visitors) as visitors')
-            ->groupBy('pages.url_path', 'pages.title', 'sites.name')
-            ->orderByDesc('visitors')
-            ->limit(20)
-            ->get();
-
-        return view('dashboard.analytics.index', compact('series', 'totals30d', 'totals7d', 'bySite', 'topPages'));
-    })->name('analytics');
-
-    // Email
-    Route::get('/inbox', function (Request $request) {
-        $visibleSiteIds = SiteAccess::query()->pluck('id');
-        $tab = $request->query('tab', 'inbox');
-        $query = SiteInboxMessage::query()
-            ->whereIn('site_id', $visibleSiteIds)
-            ->with('site:id,name')
-            ->latest();
-        if ($tab === 'sent') {
-            $query->where('direction', 'outbound')->where('is_archived', false);
-        } elseif ($tab === 'archived') {
-            $query->where('is_archived', true);
-        } else {
-            $query->where('direction', 'inbound')->where('is_archived', false);
-        }
-
-        return view('dashboard.email.inbox', [
-            'messages' => $query->limit(100)->get(),
-            'tab' => $tab,
-            'unreadCount' => SiteInboxMessage::query()
-                ->whereIn('site_id', $visibleSiteIds)
-                ->where('direction', 'inbound')
-                ->where('is_read', false)
-                ->where('is_archived', false)
-                ->count(),
-        ]);
-    })->name('inbox');
+    // Email (data fetched by Livewire components)
+    Route::get('/inbox', fn () => view('dashboard.email.inbox'))->name('inbox');
     Route::get('/subscribers', fn () => view('dashboard.email.subscribers'))->name('subscribers');
     Route::get('/newsletters', fn () => view('dashboard.email.campaigns'))->name('newsletters');
 
