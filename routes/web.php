@@ -793,7 +793,36 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $product->delete();
             return back()->with('success', 'Product deleted.');
         })->name('products.destroy');
-        Route::get('/sites/{site}/templates', fn (Site $site) => Inertia::render('sites/templates', ['site' => $site]))->name('templates.index');
+        // Templates
+        Route::get('/sites/{site}/templates', function (Site $site) {
+            $templates = $site->contentTemplates()->orderBy('name')->get(['id', 'name', 'type', 'created_at']);
+            return Inertia::render('sites/templates', ['site' => $site, 'templates' => $templates]);
+        })->name('templates.index');
+        Route::post('/sites/{site}/templates', function (\Illuminate\Http\Request $request, Site $site) {
+            $d = $request->validate([
+                'name' => 'required|string|max:255',
+                'type' => 'nullable|string|max:64',
+                'html_template' => 'nullable|string',
+                'fields_schema' => 'nullable|array',
+            ]);
+            $site->contentTemplates()->create($d);
+            return back()->with('success', 'Template created.');
+        })->name('templates.store');
+        Route::put('/sites/{site}/templates/{template}', function (\Illuminate\Http\Request $request, Site $site, \App\Models\ContentTemplate $template) {
+            abort_unless($template->site_id === $site->id, 403);
+            $d = $request->validate([
+                'name' => 'required|string|max:255',
+                'type' => 'nullable|string|max:64',
+                'html_template' => 'nullable|string',
+            ]);
+            $template->update($d);
+            return back()->with('success', 'Template saved.');
+        })->name('templates.update');
+        Route::delete('/sites/{site}/templates/{template}', function (Site $site, \App\Models\ContentTemplate $template) {
+            abort_unless($template->site_id === $site->id, 403);
+            $template->delete();
+            return back()->with('success', 'Template deleted.');
+        })->name('templates.destroy');
 
         // Subscribers
         Route::get('/sites/{site}/subscribers', function (Site $site) {
@@ -894,7 +923,31 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     Route::get('/analytics', fn () => Inertia::render('analytics/index'))->name('analytics');
 
     // Email
-    Route::get('/inbox', fn () => Inertia::render('email/inbox'))->name('inbox');
+    Route::get('/inbox', function (\Illuminate\Http\Request $request) {
+        $visibleSiteIds = \App\Support\SiteAccess::query()->pluck('id');
+        $tab = $request->query('tab', 'inbox');
+        $query = \App\Models\SiteInboxMessage::query()
+            ->whereIn('site_id', $visibleSiteIds)
+            ->with('site:id,name')
+            ->latest();
+        if ($tab === 'sent') {
+            $query->where('direction', 'outbound')->where('is_archived', false);
+        } elseif ($tab === 'archived') {
+            $query->where('is_archived', true);
+        } else {
+            $query->where('direction', 'inbound')->where('is_archived', false);
+        }
+        return Inertia::render('email/inbox', [
+            'messages' => $query->limit(100)->get(),
+            'tab' => $tab,
+            'unreadCount' => \App\Models\SiteInboxMessage::query()
+                ->whereIn('site_id', $visibleSiteIds)
+                ->where('direction', 'inbound')
+                ->where('is_read', false)
+                ->where('is_archived', false)
+                ->count(),
+        ]);
+    })->name('inbox');
     Route::get('/subscribers', fn () => Inertia::render('email/subscribers'))->name('subscribers');
     Route::get('/newsletters', fn () => Inertia::render('email/campaigns'))->name('newsletters');
 
