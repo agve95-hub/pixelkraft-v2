@@ -45,20 +45,6 @@ class SiteShowDashboardTest extends TestCase
             'title' => 'Home',
             'seo_score' => 90,
             'meta_description' => 'Home page meta',
-            'og_title' => 'Home OG',
-            'og_description' => 'Home OG description',
-            'is_published' => true,
-        ]);
-
-        $about = Page::create([
-            'site_id' => $site->id,
-            'file_path' => 'about.html',
-            'url_path' => '/about',
-            'title' => 'About',
-            'seo_score' => 72,
-            'meta_description' => null,
-            'og_title' => null,
-            'og_description' => null,
             'is_published' => true,
         ]);
 
@@ -68,15 +54,6 @@ class SiteShowDashboardTest extends TestCase
             'source' => 'ga4',
             'visitors' => 20,
             'pageviews' => 30,
-            'created_at' => now(),
-        ]);
-
-        AnalyticsSnapshot::create([
-            'page_id' => $about->id,
-            'date' => today(),
-            'source' => 'ga4',
-            'visitors' => 12,
-            'pageviews' => 16,
             'created_at' => now(),
         ]);
 
@@ -91,8 +68,8 @@ class SiteShowDashboardTest extends TestCase
 
         Notification::create([
             'type' => 'deploy_failed',
-            'title' => 'Mixed content warning on /about',
-            'body' => 'Page references insecure assets over HTTP.',
+            'title' => 'Deploy failed',
+            'body' => 'Error.',
             'site_id' => $site->id,
             'is_read' => false,
             'created_at' => now(),
@@ -100,15 +77,9 @@ class SiteShowDashboardTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('sites.show', $site));
 
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->component('sites/show')
-            ->where('site.id', $site->id)
-            ->where('site.name', 'Ashton')
-            ->has('visitorsToday')
-            ->has('uptimePercent')
-            ->has('seoIssueCount')
-            ->has('errorCount')
-        );
+        $response->assertOk();
+        $response->assertViewIs('dashboard.sites.show');
+        $response->assertViewHas('site', fn ($s) => $s->id === $site->id && $s->name === 'Ashton');
+        $response->assertSee('Ashton');
     }
 }

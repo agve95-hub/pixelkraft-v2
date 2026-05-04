@@ -7,6 +7,6 @@
             <p class="text-sm text-zinc-500">Compose, schedule, and send newsletters via Resend.</p>
         </div>
 
-        @livewire('email.campaign-editor')
+        @livewire('email.campaign-editor', ['siteId' => $site->id ?? null])
     </div>
 </x-layouts.app>

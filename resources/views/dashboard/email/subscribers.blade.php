@@ -7,6 +7,6 @@
             <p class="text-sm text-zinc-500">Manage your subscriber lists across all sites.</p>
         </div>
 
-        @livewire('email.subscriber-list')
+        @livewire('email.subscriber-list', ['siteId' => $site->id ?? null])
     </div>
 </x-layouts.app>
