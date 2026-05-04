@@ -817,12 +817,12 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             ]);
             $template->update($d);
             return back()->with('success', 'Template saved.');
-        })->name('templates.update');
+        })->withoutScopedBindings()->name('templates.update');
         Route::delete('/sites/{site}/templates/{template}', function (Site $site, \App\Models\ContentTemplate $template) {
             abort_unless($template->site_id === $site->id, 403);
             $template->delete();
             return back()->with('success', 'Template deleted.');
-        })->name('templates.destroy');
+        })->withoutScopedBindings()->name('templates.destroy');
 
         // Subscribers
         Route::get('/sites/{site}/subscribers', function (Site $site) {
@@ -849,7 +849,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             abort_unless($subscriber->site_id === $site->id, 403);
             $subscriber->delete();
             return back()->with('success', 'Subscriber removed.');
-        })->name('sites.subscribers.destroy');
+        })->withoutScopedBindings()->name('sites.subscribers.destroy');
         Route::post('/sites/{site}/subscribers/import', function (\Illuminate\Http\Request $request, Site $site) {
             $request->validate(['csv' => 'required|file|mimes:csv,txt|max:2048']);
             $handle = fopen($request->file('csv')->getRealPath(), 'r');
@@ -889,7 +889,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 'body_html' => 'nullable|string',
                 'scheduled_at' => 'nullable|date',
             ]);
-            $status = $d['scheduled_at'] ? 'scheduled' : 'draft';
+            $status = ($d['scheduled_at'] ?? null) ? 'scheduled' : 'draft';
             $site->newsletterCampaigns()->create(array_merge($d, ['status' => $status]));
             return back()->with('success', 'Campaign created.');
         })->name('sites.newsletters.store');
@@ -901,22 +901,22 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
                 'body_html' => 'nullable|string',
                 'scheduled_at' => 'nullable|date',
             ]);
-            $status = $d['scheduled_at'] ? 'scheduled' : 'draft';
+            $status = ($d['scheduled_at'] ?? null) ? 'scheduled' : 'draft';
             $campaign->update(array_merge($d, ['status' => $status]));
             return back()->with('success', 'Campaign updated.');
-        })->name('sites.newsletters.update');
+        })->withoutScopedBindings()->name('sites.newsletters.update');
         Route::post('/sites/{site}/newsletters/{campaign}/send', function (Site $site, \App\Models\NewsletterCampaign $campaign) {
             abort_unless($campaign->site_id === $site->id, 403);
             abort_if($campaign->isSent(), 403);
             $campaign->update(['status' => 'sending', 'scheduled_at' => null]);
             return back()->with('success', 'Campaign queued for sending.');
-        })->name('sites.newsletters.send');
+        })->withoutScopedBindings()->name('sites.newsletters.send');
         Route::delete('/sites/{site}/newsletters/{campaign}', function (Site $site, \App\Models\NewsletterCampaign $campaign) {
             abort_unless($campaign->site_id === $site->id, 403);
             abort_if($campaign->isSent(), 403);
             $campaign->delete();
             return back()->with('success', 'Campaign deleted.');
-        })->name('sites.newsletters.destroy');
+        })->withoutScopedBindings()->name('sites.newsletters.destroy');
     });
 
     // Analytics
