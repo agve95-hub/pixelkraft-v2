@@ -920,7 +920,58 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     });
 
     // Analytics
-    Route::get('/analytics', fn () => Inertia::render('analytics/index'))->name('analytics');
+    Route::get('/analytics', function () {
+        $visibleSiteIds = \App\Support\SiteAccess::query()->pluck('id');
+
+        // 30-day daily totals across all sites
+        $trafficRows = \App\Models\AnalyticsSnapshot::query()
+            ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
+            ->whereIn('pages.site_id', $visibleSiteIds)
+            ->where('analytics_snapshots.date', '>=', now()->subDays(29)->toDateString())
+            ->selectRaw('analytics_snapshots.date as day, SUM(analytics_snapshots.visitors) as visitors, SUM(analytics_snapshots.pageviews) as pageviews')
+            ->groupBy('analytics_snapshots.date')
+            ->orderBy('analytics_snapshots.date')
+            ->get()
+            ->keyBy('day');
+
+        $series = collect(range(29, 0))->map(function (int $ago) use ($trafficRows) {
+            $day = now()->subDays($ago)->toDateString();
+            return [
+                'day' => $day,
+                'label' => now()->subDays($ago)->format('M j'),
+                'visitors' => (int) ($trafficRows[$day]->visitors ?? 0),
+                'pageviews' => (int) ($trafficRows[$day]->pageviews ?? 0),
+            ];
+        })->values();
+
+        $totals30d = ['visitors' => $series->sum('visitors'), 'pageviews' => $series->sum('pageviews')];
+        $totals7d = $series->slice(-7)->pipe(fn ($s) => ['visitors' => $s->sum('visitors'), 'pageviews' => $s->sum('pageviews')]);
+
+        // Per-site breakdown (last 30 days)
+        $bySite = \App\Models\AnalyticsSnapshot::query()
+            ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
+            ->join('sites', 'sites.id', '=', 'pages.site_id')
+            ->whereIn('pages.site_id', $visibleSiteIds)
+            ->where('analytics_snapshots.date', '>=', now()->subDays(29)->toDateString())
+            ->selectRaw('sites.id as site_id, sites.name as site_name, SUM(analytics_snapshots.visitors) as visitors, SUM(analytics_snapshots.pageviews) as pageviews')
+            ->groupBy('sites.id', 'sites.name')
+            ->orderByDesc('visitors')
+            ->get();
+
+        // Top pages (last 30 days)
+        $topPages = \App\Models\AnalyticsSnapshot::query()
+            ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
+            ->join('sites', 'sites.id', '=', 'pages.site_id')
+            ->whereIn('pages.site_id', $visibleSiteIds)
+            ->where('analytics_snapshots.date', '>=', now()->subDays(29)->toDateString())
+            ->selectRaw('pages.url_path, pages.title, sites.name as site_name, SUM(analytics_snapshots.visitors) as visitors')
+            ->groupBy('pages.url_path', 'pages.title', 'sites.name')
+            ->orderByDesc('visitors')
+            ->limit(20)
+            ->get();
+
+        return Inertia::render('analytics/index', compact('series', 'totals30d', 'totals7d', 'bySite', 'topPages'));
+    })->name('analytics');
 
     // Email
     Route::get('/inbox', function (\Illuminate\Http\Request $request) {
