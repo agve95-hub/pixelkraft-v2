@@ -227,20 +227,8 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
     })->name('dashboard');
 
     // Sites
-    Route::get('/sites', function () {
-        $sites = SiteAccess::query()
-            ->withCount('pages')
-            ->with('latestDeploy', 'latestUptimeCheck')
-            ->orderBy('name')
-            ->get();
-
-        return view('dashboard.sites.index', ['sites' => $sites]);
-    })->name('sites.index');
-    Route::get('/sites/create', function () {
-        return view('dashboard.sites.create', [
-            'projectTypes' => config('pixelkraft.project_types', ['static_html', 'react', 'vue', 'nextjs', 'nuxt', 'astro', 'hugo', 'eleventy', 'svelte', 'php_site', 'custom']),
-        ]);
-    })->name('sites.create');
+    Route::get('/sites', fn () => view('dashboard.sites.index'))->name('sites.index');
+    Route::get('/sites/create', fn () => view('dashboard.sites.create'))->name('sites.create');
     Route::post('/sites', function (Request $request) {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -738,7 +726,11 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         })->name('sites.inbox.destroy');
 
         // Content
-        Route::get('/sites/{site}/blog', fn (Site $site) => view('dashboard.content.blog-index', ['site' => $site]))->name('blog.index');
+        Route::get('/sites/{site}/blog', function (Site $site) {
+            $posts = $site->blogPosts()->latest()->get(['id', 'title', 'slug', 'status', 'published_at', 'created_at']);
+
+            return view('dashboard.content.blog-index', ['site' => $site, 'posts' => $posts]);
+        })->name('blog.index');
         Route::get('/sites/{site}/blog/create', fn (Site $site) => view('dashboard.content.blog-create', ['site' => $site]))->name('blog.create');
         Route::get('/sites/{site}/blog/{blogPost}/edit', function (Site $site, BlogPost $blogPost) {
             abort_unless($blogPost->site_id === $site->id, 404);
@@ -778,7 +770,12 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
             return back()->with('success', 'Post deleted.');
         })->name('blog.destroy');
-        Route::get('/sites/{site}/products', fn (Site $site) => view('dashboard.content.product-index', ['site' => $site]))->name('products.index');
+        Route::get('/sites/{site}/products', function (Site $site) {
+            return view('dashboard.content.product-index', [
+                'site' => $site,
+                'products' => $site->productListings()->latest()->get(),
+            ]);
+        })->name('products.index');
         Route::get('/sites/{site}/products/create', fn (Site $site) => view('dashboard.content.product-create', ['site' => $site]))->name('products.create');
         Route::post('/sites/{site}/products', function (Request $request, Site $site) {
             $d = $request->validate(['name' => 'required|string|max:255', 'description' => 'nullable|string', 'price' => 'required|numeric|min:0', 'currency' => 'nullable|string|size:3', 'status' => 'nullable|string|max:32']);

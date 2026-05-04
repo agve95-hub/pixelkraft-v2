@@ -11,7 +11,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            @forelse ($site->productListings()->latest()->get() as $product)
+            @forelse ($products as $product)
                 <flux:card>
                     @if (!empty($product->images))
                         <div class="rounded-lg overflow-hidden mb-3">

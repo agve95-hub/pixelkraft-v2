@@ -20,7 +20,7 @@
             </flux:table.columns>
 
             <flux:table.rows>
-                @forelse ($site->blogPosts()->latest()->get() as $post)
+                @forelse ($posts as $post)
                     <flux:table.row>
                         <flux:table.cell class="font-medium">{{ $post->title }}</flux:table.cell>
                         <flux:table.cell class="hidden md:table-cell font-mono text-xs">/{{ $post->slug }}</flux:table.cell>
