@@ -425,7 +425,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $message->update(['is_archived' => ! $message->is_archived]);
 
             return back();
-        })->name('sites.inbox.archive');
+        })->withoutScopedBindings()->name('sites.inbox.archive');
         Route::get('/sites/{site}/invoices', fn (Site $site) => view('dashboard.sites.invoices', ['site' => $site]))->name('sites.invoices');
         Route::post('/sites/{site}/invoices', function (Request $request, Site $site) {
             $d = $request->validate(['number' => 'nullable|string|max:100', 'invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000', 'items' => 'nullable|array', 'items.*.description' => 'required|string|max:500', 'items.*.quantity' => 'required|numeric|min:0', 'items.*.rate' => 'required|numeric']);
@@ -717,13 +717,13 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             $message->update(['is_read' => true]);
 
             return back();
-        })->name('sites.inbox.read');
+        })->withoutScopedBindings()->name('sites.inbox.read');
         Route::delete('/sites/{site}/inbox/{message}', function (Site $site, SiteInboxMessage $message) {
             abort_unless($message->site_id === $site->id, 403);
             $message->delete();
 
             return back();
-        })->name('sites.inbox.destroy');
+        })->withoutScopedBindings()->name('sites.inbox.destroy');
 
         // Content
         Route::get('/sites/{site}/blog', function (Site $site) {
@@ -787,20 +787,20 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             abort_unless($product->site_id === $site->id, 403);
 
             return view('dashboard.content.product-edit', ['site' => $site, 'product' => $product]);
-        })->name('products.edit');
+        })->withoutScopedBindings()->name('products.edit');
         Route::put('/sites/{site}/products/{product}', function (Request $request, Site $site, ProductListing $product) {
             abort_unless($product->site_id === $site->id, 403);
             $d = $request->validate(['name' => 'required|string|max:255', 'description' => 'nullable|string', 'price' => 'required|numeric|min:0', 'currency' => 'nullable|string|size:3', 'status' => 'nullable|string|max:32']);
             $product->update($d);
 
             return redirect("/dashboard/sites/{$site->id}/products")->with('success', 'Product updated.');
-        })->name('products.update');
+        })->withoutScopedBindings()->name('products.update');
         Route::delete('/sites/{site}/products/{product}', function (Site $site, ProductListing $product) {
             abort_unless($product->site_id === $site->id, 403);
             $product->delete();
 
             return back()->with('success', 'Product deleted.');
-        })->name('products.destroy');
+        })->withoutScopedBindings()->name('products.destroy');
         // Templates
         Route::get('/sites/{site}/templates', fn (Site $site) => view('dashboard.content.templates', ['site' => $site]))->name('templates.index');
         Route::post('/sites/{site}/templates', function (Request $request, Site $site) {
