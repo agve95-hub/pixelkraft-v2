@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Enums\DeployStatus;
 use App\Http\Controllers\Dashboard\SiteAnalyticsController;
@@ -1118,5 +1118,3 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         return view('dashboard.settings.system', ['diagnostics' => $diagnostics]);
     })->name('system.diagnostics')->middleware('can:viewHorizon');
 });
-
-

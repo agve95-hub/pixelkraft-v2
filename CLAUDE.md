@@ -37,7 +37,7 @@ php artisan pixelkraft:prune-webhooks --days=30
 php artisan horizon:list-failed
 ```
 
-CI runs `vendor/bin/pint --test` and `php artisan test` (no parallelism). Tests use in-memory SQLite and `QUEUE_CONNECTION=sync` (jobs run inline, no Redis required).
+CI runs `vendor/bin/pint --test` and `php artisan test` (no parallelism). Tests use in-memory SQLite and `QUEUE_CONNECTION=sync` (jobs run inline, no Redis required). A separate `assets` CI job runs `npm ci && npm audit && npm run build` (Tailwind + JS only — no TypeScript compile step).
 
 ### Docker dev environment
 
@@ -52,7 +52,9 @@ Services: `app` (php-fpm:9000), `nginx` (:8080), `vite` (:5173 HMR), `horizon`, 
 
 ## Architecture overview
 
-Pixelkraft is a **self-hosted Git-to-Render site operations platform** built on Laravel 13 + Livewire v4 + Tailwind v4. Its central model is `Site` (UUID primary key). Everything revolves around automating the lifecycle: push → sync → parse → deploy.
+Pixelkraft is a **self-hosted Git-to-Render site operations platform** built on Laravel 13 + Livewire v4 + Flux v2 + Tailwind v4. Its central model is `Site` (UUID primary key). Everything revolves around automating the lifecycle: push → sync → parse → deploy.
+
+The dashboard UI is **PHP-only**: Blade templates (`resources/views/dashboard/`) + Livewire 4 components (`app/Livewire/`) + Flux 2 UI kit. There is no React, TypeScript, or Inertia.js. The only JavaScript is `resources/js/app.js` (vanilla JS search palette) and the Livewire/Flux runtime bundles loaded via `@livewireScripts` / `@fluxScripts`.
 
 ### The pipeline: webhook → queue chain
 

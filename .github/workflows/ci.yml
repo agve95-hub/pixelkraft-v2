@@ -38,15 +38,6 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-
-      - name: Build frontend assets
-        run: npm ci && npm run build
-
       - name: Check for vulnerable PHP dependencies
         run: composer audit
 
@@ -102,15 +93,6 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-
-      - name: Build frontend assets
-        run: npm ci && npm run build
-
       - name: Run PHPUnit against MariaDB
         env:
           DB_CONNECTION: mariadb
@@ -126,32 +108,11 @@ jobs:
           QUEUE_CONNECTION: sync
         run: php artisan test --env=testing
 
-  frontend:
+  assets:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          extensions: mbstring, xml, ctype, json, bcmath, curl
-          coverage: none
-
-      - name: Get Composer cache directory
-        id: composer-cache-frontend
-        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache-frontend.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
-
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -165,5 +126,5 @@ jobs:
       - name: Check for vulnerable JS dependencies
         run: npm audit --audit-level=high
 
-      - name: Build assets
+      - name: Build Tailwind + JS assets
         run: npm run build

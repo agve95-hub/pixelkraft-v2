@@ -8,8 +8,6 @@
 
 [![PHP](https://img.shields.io/badge/PHP-8.3+-8892BF?style=flat-square&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Livewire](https://img.shields.io/badge/Livewire-4-FB70A9?style=flat-square)](https://livewire.laravel.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![MariaDB](https://img.shields.io/badge/MariaDB-11-003545?style=flat-square&logo=mariadb&logoColor=white)](https://mariadb.org)
@@ -41,12 +39,9 @@ Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and so
 | Layer | Technology |
 |---|---|
 | Backend | Laravel 13, PHP 8.3+ |
-| Frontend routing | Inertia.js 3 + React 19 + TypeScript 6 |
-| Live widgets | Livewire 4 + Flux 2 |
-| UI components | shadcn/ui (Radix primitives + Tailwind v4) |
-| Build tool | Vite 8 |
-| Icons | Lucide React |
-| Forms | React Hook Form + Zod |
+| Dashboard UI | Blade templates + Livewire 4 + Flux 2 |
+| Styling | Tailwind CSS v4 |
+| Build tool | Vite (CSS + minimal JS only) |
 | Queue / cache | Laravel Horizon + Redis 7 |
 | Database | MariaDB 11 (MySQL 8+ compatible) |
 | Auth | Laravel Fortify (TOTP 2FA) + Sanctum (API tokens) |
