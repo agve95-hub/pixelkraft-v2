@@ -605,14 +605,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return back();
         })->name('sites.reports.destroy');
         Route::get('/sites/{site}/analytics', SiteAnalyticsController::class)->name('sites.analytics');
-        Route::get('/sites/{site}/maintenance', function (Site $site) {
-            $latestCheck = $site->uptimeChecks()->latest('checked_at')->first(['is_up', 'checked_at']);
-
-            return view('dashboard.sites.maintenance', [
-                'site' => $site,
-                'siteIsDown' => $latestCheck && ! $latestCheck->is_up,
-            ]);
-        })->name('sites.maintenance');
+        Route::get('/sites/{site}/maintenance', fn (Site $site) => view('dashboard.sites.maintenance', ['site' => $site]))->name('sites.maintenance');
         Route::get('/sites/{site}/settings', fn (Site $site) => view('dashboard.sites.settings', ['site' => $site]))->name('sites.settings');
         Route::put('/sites/{site}/settings', function (Request $request, Site $site) {
             $d = $request->validate([
@@ -656,19 +649,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
             return back()->with('success', 'Deployment started.');
         })->name('sites.deploy');
-        Route::get('/sites/{site}/files', function (Site $site) {
-            $dir = 'sites/'.$site->id;
-            $disk = Storage::disk('public');
-            $files = [];
-            if ($disk->exists($dir)) {
-                foreach ($disk->files($dir) as $path) {
-                    $files[] = ['name' => basename($path), 'url' => $disk->url($path), 'size' => $disk->size($path), 'mime' => $disk->mimeType($path) ?: 'application/octet-stream', 'modified' => $disk->lastModified($path)];
-                }
-                usort($files, fn ($a, $b) => $b['modified'] - $a['modified']);
-            }
-
-            return view('dashboard.sites.files', ['site' => $site, 'files' => $files]);
-        })->name('sites.files');
+        Route::get('/sites/{site}/files', fn (Site $site) => view('dashboard.sites.files', ['site' => $site]))->name('sites.files');
         Route::post('/sites/{site}/files', function (Request $request, Site $site) {
             $request->validate([
                 'file' => [
@@ -704,9 +685,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
         // SEO
         Route::get('/sites/{site}/pages/{page}/seo', fn (Site $site, Page $page) => view('dashboard.seo.meta', ['site' => $site, 'page' => $page]))->name('seo.meta');
-        Route::get('/sites/{site}/redirects', function (Site $site) {
-            return view('dashboard.seo.redirects', ['site' => $site, 'redirects' => $site->redirects()->orderByDesc('created_at')->get()]);
-        })->name('seo.redirects');
+        Route::get('/sites/{site}/redirects', fn (Site $site) => view('dashboard.seo.redirects', ['site' => $site]))->name('seo.redirects');
         Route::post('/sites/{site}/redirects', function (Request $request, Site $site) {
             $d = $request->validate(['from_path' => 'required|string|max:500', 'to_path' => 'required|string|max:500', 'status_code' => 'nullable|integer|in:301,302,307,308']);
             $site->redirects()->create(['from_path' => $d['from_path'], 'to_path' => $d['to_path'], 'status_code' => $d['status_code'] ?? 301]);
@@ -759,9 +738,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         })->name('sites.inbox.destroy');
 
         // Content
-        Route::get('/sites/{site}/blog', function (Site $site) {
-            return view('dashboard.content.blog-index', ['site' => $site, 'posts' => $site->blogPosts()->orderByDesc('created_at')->get(['id', 'title', 'slug', 'status', 'published_at', 'created_at'])]);
-        })->name('blog.index');
+        Route::get('/sites/{site}/blog', fn (Site $site) => view('dashboard.content.blog-index', ['site' => $site]))->name('blog.index');
         Route::get('/sites/{site}/blog/create', fn (Site $site) => view('dashboard.content.blog-create', ['site' => $site]))->name('blog.create');
         Route::get('/sites/{site}/blog/{blogPost}/edit', function (Site $site, BlogPost $blogPost) {
             abort_unless($blogPost->site_id === $site->id, 404);
@@ -801,9 +778,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
 
             return back()->with('success', 'Post deleted.');
         })->name('blog.destroy');
-        Route::get('/sites/{site}/products', function (Site $site) {
-            return view('dashboard.content.product-index', ['site' => $site, 'products' => $site->productListings()->orderByDesc('created_at')->get()]);
-        })->name('products.index');
+        Route::get('/sites/{site}/products', fn (Site $site) => view('dashboard.content.product-index', ['site' => $site]))->name('products.index');
         Route::get('/sites/{site}/products/create', fn (Site $site) => view('dashboard.content.product-create', ['site' => $site]))->name('products.create');
         Route::post('/sites/{site}/products', function (Request $request, Site $site) {
             $d = $request->validate(['name' => 'required|string|max:255', 'description' => 'nullable|string', 'price' => 'required|numeric|min:0', 'currency' => 'nullable|string|size:3', 'status' => 'nullable|string|max:32']);
@@ -830,11 +805,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
             return back()->with('success', 'Product deleted.');
         })->name('products.destroy');
         // Templates
-        Route::get('/sites/{site}/templates', function (Site $site) {
-            $templates = $site->contentTemplates()->orderBy('name')->get(['id', 'name', 'type', 'created_at']);
-
-            return view('dashboard.content.templates', ['site' => $site, 'templates' => $templates]);
-        })->name('templates.index');
+        Route::get('/sites/{site}/templates', fn (Site $site) => view('dashboard.content.templates', ['site' => $site]))->name('templates.index');
         Route::post('/sites/{site}/templates', function (Request $request, Site $site) {
             $d = $request->validate([
                 'name' => 'required|string|max:255',
