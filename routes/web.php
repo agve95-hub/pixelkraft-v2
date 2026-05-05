@@ -29,6 +29,7 @@ use App\Support\SchemaState;
 use App\Support\SeoIssueSummary;
 use App\Support\SiteAccess;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -429,7 +430,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         Route::get('/sites/{site}/invoices', fn (Site $site) => view('dashboard.sites.invoices', ['site' => $site]))->name('sites.invoices');
         Route::post('/sites/{site}/invoices', function (Request $request, Site $site) {
             $d = $request->validate(['number' => 'nullable|string|max:100', 'invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000', 'items' => 'nullable|array', 'items.*.description' => 'required|string|max:500', 'items.*.quantity' => 'required|numeric|min:0', 'items.*.rate' => 'required|numeric']);
-            $invoice = $site->invoices()->create(array_merge(array_except($d, ['items']), ['number' => $d['number'] ?? Invoice::nextNumberForSite($site), 'status' => 'unpaid', 'tax_rate' => $d['tax_rate'] ?? 0, 'discount_percent' => $d['discount_percent'] ?? 0, 'payment_terms' => $d['payment_terms'] ?? 'net30']));
+            $invoice = $site->invoices()->create(array_merge(Arr::except($d, ['items']), ['number' => $d['number'] ?? Invoice::nextNumberForSite($site), 'status' => 'unpaid', 'tax_rate' => $d['tax_rate'] ?? 0, 'discount_percent' => $d['discount_percent'] ?? 0, 'payment_terms' => $d['payment_terms'] ?? 'net30']));
             foreach ($d['items'] ?? [] as $i => $item) {
                 $invoice->items()->create(['description' => $item['description'], 'quantity' => $item['quantity'], 'rate' => $item['rate'], 'sort_order' => $i]);
             }
@@ -439,7 +440,7 @@ Route::middleware(['auth'])->scopeBindings()->prefix('dashboard')->group(functio
         Route::put('/sites/{site}/invoices/{invoice}', function (Request $request, Site $site, Invoice $invoice) {
             abort_unless($invoice->site_id === $site->id, 403);
             $d = $request->validate(['invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000', 'items' => 'nullable|array', 'items.*.description' => 'required|string|max:500', 'items.*.quantity' => 'required|numeric|min:0', 'items.*.rate' => 'required|numeric']);
-            $invoice->update(array_except($d, ['items']));
+            $invoice->update(Arr::except($d, ['items']));
             $invoice->items()->delete();
             foreach ($d['items'] ?? [] as $i => $item) {
                 $invoice->items()->create(['description' => $item['description'], 'quantity' => $item['quantity'], 'rate' => $item['rate'], 'sort_order' => $i]);

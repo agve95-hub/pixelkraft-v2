@@ -51,17 +51,14 @@ class ContentTemplate extends Model
         return $this->hasMany(BlogPost::class, 'template_id');
     }
 
-    public function isGlobal(): bool
-    {
-        return is_null($this->site_id);
-    }
-
     /**
-     * Render template by replacing {{placeholders}} with data.
+     * Render the template by replacing {{placeholder}} tokens with values from $data.
+     *
+     * @param  array<string, string>  $data
      */
     public function render(array $data): string
     {
-        $html = $this->html_template;
+        $html = (string) $this->html_template;
 
         foreach ($data as $key => $value) {
             $html = str_replace('{{'.$key.'}}', (string) $value, $html);

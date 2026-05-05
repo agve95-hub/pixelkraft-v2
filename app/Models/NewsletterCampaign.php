@@ -64,16 +64,4 @@ class NewsletterCampaign extends Model
     {
         return $this->status === 'sent';
     }
-
-    public function shouldSend(): bool
-    {
-        return $this->status === 'scheduled'
-            && $this->scheduled_at
-            && $this->scheduled_at->isPast();
-    }
-
-    public function recipientCount(): int
-    {
-        return $this->stats['sent'] ?? 0;
-    }
 }

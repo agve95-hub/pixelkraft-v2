@@ -42,9 +42,4 @@ class NewsletterSubscriber extends Model
     {
         return $this->belongsTo(Site::class);
     }
-
-    public function isActive(): bool
-    {
-        return $this->status === 'active';
-    }
 }

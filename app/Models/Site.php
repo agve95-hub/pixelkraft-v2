@@ -285,11 +285,6 @@ class Site extends Model
 
     // ── Helpers ──────────────────────────────────
 
-    public function isLive(): bool
-    {
-        return $this->deploy_status === DeployStatus::Live;
-    }
-
     /**
      * Transition deploy_status with guard — throws if the transition is not allowed.
      */
@@ -304,22 +299,6 @@ class Site extends Model
         }
 
         $this->update(['deploy_status' => $next]);
-    }
-
-    public function needsBuild(): bool
-    {
-        return ! empty($this->build_command);
-    }
-
-    public function repoOwnerAndName(): array
-    {
-        // Extract "owner/repo" from GitHub URL
-        $path = parse_url($this->repo_url, PHP_URL_PATH);
-
-        return [
-            'owner' => trim(dirname($path), '/'),
-            'repo' => basename($path, '.git'),
-        ];
     }
 
     public function normalizedGithubRepository(): ?string

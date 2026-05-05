@@ -77,11 +77,6 @@ class BlogPost extends Model
         return $this->belongsTo(ContentTemplate::class, 'template_id');
     }
 
-    public function isPublished(): bool
-    {
-        return $this->status === BlogPostStatus::Published;
-    }
-
     /**
      * Transition status with guard — throws if the transition is not allowed.
      */
@@ -96,17 +91,5 @@ class BlogPost extends Model
         }
 
         $this->update(['status' => $next]);
-    }
-
-    public function isScheduled(): bool
-    {
-        return $this->status === BlogPostStatus::Scheduled && $this->scheduled_at?->isFuture();
-    }
-
-    public function shouldPublish(): bool
-    {
-        return $this->status === BlogPostStatus::Scheduled
-            && $this->scheduled_at
-            && $this->scheduled_at->isPast();
     }
 }
