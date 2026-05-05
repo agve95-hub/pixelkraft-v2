@@ -80,7 +80,7 @@ class BlogEditor extends Component
                 ->firstOrFail();
             $this->title = $post->title;
             $this->slug = $post->slug;
-            $this->body = $post->body;
+            $this->body = $post->body ?? '';
             $this->excerpt = $post->excerpt ?? '';
             $this->featuredImage = $post->featured_image ?? '';
             $this->tags = $post->tags ?? [];

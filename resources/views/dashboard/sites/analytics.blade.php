@@ -35,7 +35,9 @@
                 <p class="text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500">Uptime</p>
                 <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ rtrim(rtrim(number_format($uptimePercent, 1, '.', ''), '0'), '.') }}<span class="text-sm text-zinc-500">%</span></p>
                 <p class="mt-0.5 text-xs text-zinc-500">
-                    {{ $upDays }}d up@if ($degradedDays), {{ $degradedDays }}d degraded@endif@if ($downDays), <span class="text-red-400">{{ $downDays }}d down</span>@endif
+                    {{ $upDays }}d up
+                    @if ($degradedDays), {{ $degradedDays }}d degraded @endif
+                    @if ($downDays), <span class="text-red-400">{{ $downDays }}d down</span> @endif
                 </p>
             </div>
             <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 px-4 py-3">
@@ -143,12 +145,8 @@
                 </div>
                 <div class="flex gap-0.5">
                     @foreach ($dailyBars as $bar)
-                        <span class="flex-1 rounded-sm h-6 @switch($bar)
-                            @case('up') bg-emerald-400 @break
-                            @case('degraded') bg-amber-400 @break
-                            @case('down') bg-red-400 @break
-                            @default bg-zinc-700/50
-                        @endswitch"></span>
+                        @php $barColor = ['up' => 'bg-emerald-400', 'degraded' => 'bg-amber-400', 'down' => 'bg-red-400'][$bar] ?? 'bg-zinc-700/50'; @endphp
+                        <span class="flex-1 rounded-sm h-6 {{ $barColor }}"></span>
                     @endforeach
                 </div>
                 <div class="mt-3 flex gap-4 text-[11px] text-zinc-500">
