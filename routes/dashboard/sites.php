@@ -1,0 +1,629 @@
+<?php
+
+use App\Enums\DeployStatus;
+use App\Http\Controllers\Dashboard\SiteAnalyticsController;
+use App\Http\Controllers\EditorPreviewController;
+use App\Http\Controllers\InvoicePdfController;
+use App\Jobs\DeploySiteJob;
+use App\Models\AnalyticsSnapshot;
+use App\Models\BlogPost;
+use App\Models\Campaign;
+use App\Models\ContentTemplate;
+use App\Models\Expense;
+use App\Models\Invoice;
+use App\Models\NewsletterCampaign;
+use App\Models\NewsletterSubscriber;
+use App\Models\Notification;
+use App\Models\Page;
+use App\Models\ProductListing;
+use App\Models\Redirect;
+use App\Models\Reminder;
+use App\Models\Report;
+use App\Models\Site;
+use App\Models\SiteInboxMessage;
+use App\Rules\GitRemoteUrl;
+use App\Support\SeoIssueSummary;
+use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+Route::middleware(['site.access', 'expand.site.sidebar'])->group(function () {
+    Route::get('/sites/{site}', function (Site $site) {
+        $site->loadCount([
+            'inboxMessages as inbox_unread_count' => fn ($q) => $q->where('direction', 'inbound')->where('is_read', false),
+            'invoices as invoices_unpaid_count' => fn ($q) => $q->where('status', 'unpaid'),
+            'pages',
+            'blogPosts',
+            'contentTemplates',
+            'deployLogs',
+        ]);
+
+        $visitorsToday = AnalyticsSnapshot::query()
+            ->whereHas('page', fn ($q) => $q->where('site_id', $site->id))
+            ->whereDate('date', today())
+            ->sum('visitors');
+
+        $visitorsLastWeek = AnalyticsSnapshot::query()
+            ->whereHas('page', fn ($q) => $q->where('site_id', $site->id))
+            ->whereDate('date', today()->subWeek())
+            ->sum('visitors');
+
+        $uptimeChecks = $site->uptimeChecks()
+            ->latest('checked_at')
+            ->limit(50)
+            ->get(['is_up', 'response_time_ms']);
+
+        $uptimePercent = $uptimeChecks->isEmpty()
+            ? null
+            : round($uptimeChecks->avg(fn ($check) => $check->is_up ? 1 : 0) * 100, 1);
+
+        $responseSamples = $uptimeChecks
+            ->pluck('response_time_ms')
+            ->filter(fn ($value) => is_numeric($value) && (int) $value > 0)
+            ->map(fn ($value) => (int) $value)
+            ->sort()
+            ->values();
+
+        $p95ResponseMs = null;
+        if ($responseSamples->isNotEmpty()) {
+            $index = (int) floor(($responseSamples->count() - 1) * 0.95);
+            $p95ResponseMs = $responseSamples->get($index);
+        }
+
+        $latestUptime = $site->uptimeChecks()
+            ->latest('checked_at')
+            ->first();
+
+        $errorTypes = ['deploy_failed', 'uptime_down', 'broken_links', 'lighthouse_drop'];
+
+        $errorCount = Notification::query()
+            ->where('site_id', $site->id)
+            ->whereIn('type', $errorTypes)
+            ->where('is_read', false)
+            ->count();
+
+        $errorItems = Notification::query()
+            ->where('site_id', $site->id)
+            ->whereIn('type', $errorTypes)
+            ->latest('created_at')
+            ->limit(5)
+            ->get();
+
+        $seoIssues = SeoIssueSummary::openAggregatesForSite($site);
+
+        $pages = $site->pages()
+            ->withSum([
+                'analyticsSnapshots as visitors_30d' => fn ($q) => $q->where('date', '>=', now()->subDays(30)->toDateString()),
+            ], 'visitors')
+            ->orderByRaw('CASE WHEN url_path IS NULL OR url_path = "" THEN 1 ELSE 0 END')
+            ->orderBy('url_path')
+            ->limit(25)
+            ->get();
+
+        return view('dashboard.sites.show', [
+            'site' => $site,
+            'seoIssueCount' => SeoIssueSummary::openCountForSite($site),
+            'seoWarningCount' => SeoIssueSummary::openWarningCountForSite($site),
+            'visitorsToday' => (int) $visitorsToday,
+            'visitorsTrendPercent' => $visitorsLastWeek > 0
+                ? (int) round((($visitorsToday - $visitorsLastWeek) / $visitorsLastWeek) * 100)
+                : null,
+            'uptimePercent' => $uptimePercent,
+            'latestResponseMs' => $latestUptime?->response_time_ms,
+            'p95ResponseMs' => $p95ResponseMs,
+            'errorCount' => $errorCount,
+            'errorItems' => $errorItems,
+            'seoIssues' => $seoIssues,
+            'pages' => $pages,
+        ]);
+    })->name('sites.show');
+    Route::get('/sites/{site}/inbox', fn (Site $site) => view('dashboard.sites.inbox', ['site' => $site]))->name('sites.inbox');
+    Route::post('/sites/{site}/inbox', function (Request $request, Site $site) {
+        $d = $request->validate(['to_email' => 'required|email|max:255', 'subject' => 'required|string|max:255', 'body' => 'required|string']);
+        $site->inboxMessages()->create(['direction' => 'outbound', 'user_id' => auth()->id(), 'to_email' => $d['to_email'], 'subject' => $d['subject'], 'body' => $d['body'], 'is_read' => true, 'source' => 'dashboard']);
+
+        return back()->with('success', 'Message sent.');
+    })->name('sites.inbox.compose');
+    Route::post('/sites/{site}/inbox/{message}/archive', function (Site $site, SiteInboxMessage $message) {
+        abort_unless($message->site_id === $site->id, 403);
+        $message->update(['is_archived' => ! $message->is_archived]);
+
+        return back();
+    })->withoutScopedBindings()->name('sites.inbox.archive');
+    Route::get('/sites/{site}/invoices', fn (Site $site) => view('dashboard.sites.invoices', ['site' => $site]))->name('sites.invoices');
+    Route::post('/sites/{site}/invoices', function (Request $request, Site $site) {
+        $d = $request->validate(['number' => 'nullable|string|max:100', 'invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000', 'items' => 'nullable|array', 'items.*.description' => 'required|string|max:500', 'items.*.quantity' => 'required|numeric|min:0', 'items.*.rate' => 'required|numeric']);
+        $invoice = $site->invoices()->create(array_merge(Arr::except($d, ['items']), ['number' => $d['number'] ?? Invoice::nextNumberForSite($site), 'status' => 'unpaid', 'tax_rate' => $d['tax_rate'] ?? 0, 'discount_percent' => $d['discount_percent'] ?? 0, 'payment_terms' => $d['payment_terms'] ?? 'net30']));
+        foreach ($d['items'] ?? [] as $i => $item) {
+            $invoice->items()->create(['description' => $item['description'], 'quantity' => $item['quantity'], 'rate' => $item['rate'], 'sort_order' => $i]);
+        }
+
+        return back()->with('success', 'Invoice created.');
+    })->name('sites.invoices.store');
+    Route::put('/sites/{site}/invoices/{invoice}', function (Request $request, Site $site, Invoice $invoice) {
+        abort_unless($invoice->site_id === $site->id, 403);
+        $d = $request->validate(['invoice_date' => 'required|date', 'due_date' => 'nullable|date', 'currency_code' => 'required|string|size:3', 'bill_to' => 'nullable|string|max:1000', 'from_address' => 'nullable|string|max:1000', 'tax_rate' => 'nullable|numeric|min:0|max:100', 'discount_percent' => 'nullable|numeric|min:0|max:100', 'notes' => 'nullable|string', 'payment_terms' => 'nullable|string|max:500', 'payment_details' => 'nullable|string|max:2000', 'items' => 'nullable|array', 'items.*.description' => 'required|string|max:500', 'items.*.quantity' => 'required|numeric|min:0', 'items.*.rate' => 'required|numeric']);
+        $invoice->update(Arr::except($d, ['items']));
+        $invoice->items()->delete();
+        foreach ($d['items'] ?? [] as $i => $item) {
+            $invoice->items()->create(['description' => $item['description'], 'quantity' => $item['quantity'], 'rate' => $item['rate'], 'sort_order' => $i]);
+        }
+
+        return back()->with('success', 'Invoice updated.');
+    })->name('sites.invoices.update');
+    Route::post('/sites/{site}/invoices/{invoice}/mark-paid', function (Site $site, Invoice $invoice) {
+        abort_unless($invoice->site_id === $site->id, 403);
+        $invoice->update(['status' => 'paid', 'paid_at' => now()]);
+
+        return back();
+    })->name('sites.invoices.mark-paid');
+    Route::post('/sites/{site}/invoices/{invoice}/duplicate', function (Site $site, Invoice $invoice) {
+        abort_unless($invoice->site_id === $site->id, 403);
+        $copy = $invoice->replicate();
+        $copy->number = Invoice::nextNumberForSite($site);
+        $copy->status = 'unpaid';
+        $copy->paid_at = null;
+        $copy->invoice_date = now()->toDateString();
+        $copy->due_date = now()->addDays(30)->toDateString();
+        $copy->save();
+        foreach ($invoice->items as $item) {
+            $newItem = $item->replicate();
+            $newItem->invoice_id = $copy->id;
+            $newItem->save();
+        }
+
+        return back();
+    })->name('sites.invoices.duplicate');
+    Route::delete('/sites/{site}/invoices/{invoice}', function (Site $site, Invoice $invoice) {
+        abort_unless($invoice->site_id === $site->id, 403);
+        $invoice->delete();
+
+        return back();
+    })->name('sites.invoices.destroy');
+    Route::get('/sites/{site}/invoices/{invoice}/pdf', InvoicePdfController::class)->name('sites.invoices.pdf');
+    Route::get('/sites/{site}/campaigns', fn (Site $site) => view('dashboard.sites.campaigns', ['site' => $site]))->name('sites.campaigns');
+    Route::post('/sites/{site}/campaigns', function (Request $request, Site $site) {
+        $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|in:on_load,on_scroll,on_exit,on_delay', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
+        $site->campaigns()->create(array_merge($d, ['trigger' => $d['trigger'] ?? 'on_load', 'priority' => $d['priority'] ?? 0, 'locale' => $d['locale'] ?? 'en', 'is_enabled' => false]));
+
+        return back();
+    })->name('sites.campaigns.store');
+    Route::put('/sites/{site}/campaigns/{campaign}', function (Request $request, Site $site, Campaign $campaign) {
+        abort_unless($campaign->site_id === $site->id, 403);
+        $d = $request->validate(['name' => 'required|string|max:255', 'headline' => 'nullable|string|max:255', 'body' => 'nullable|string', 'cta_text' => 'nullable|string|max:100', 'cta_url' => 'nullable|url|max:500', 'trigger' => 'nullable|in:on_load,on_scroll,on_exit,on_delay', 'starts_at' => 'nullable|date', 'ends_at' => 'nullable|date|after_or_equal:starts_at', 'priority' => 'nullable|integer', 'is_dismissible' => 'boolean', 'locale' => 'nullable|string|max:10']);
+        $campaign->update(array_merge($d, ['trigger' => $d['trigger'] ?? $campaign->trigger ?? 'on_load']));
+
+        return back();
+    })->name('sites.campaigns.update');
+    Route::post('/sites/{site}/campaigns/{campaign}/toggle', function (Site $site, Campaign $campaign) {
+        abort_unless($campaign->site_id === $site->id, 403);
+        $campaign->update(['is_enabled' => ! $campaign->is_enabled]);
+
+        return back();
+    })->name('sites.campaigns.toggle');
+    Route::post('/sites/{site}/campaigns/{campaign}/duplicate', function (Site $site, Campaign $campaign) {
+        abort_unless($campaign->site_id === $site->id, 403);
+        $new = $campaign->replicate();
+        $new->name = $campaign->name.' (copy)';
+        $new->is_enabled = false;
+        $new->save();
+
+        return back();
+    })->name('sites.campaigns.duplicate');
+    Route::delete('/sites/{site}/campaigns/{campaign}', function (Site $site, Campaign $campaign) {
+        abort_unless($campaign->site_id === $site->id, 403);
+        $campaign->delete();
+
+        return back();
+    })->name('sites.campaigns.destroy');
+    Route::get('/sites/{site}/expenses', fn (Site $site) => view('dashboard.sites.expenses', ['site' => $site]))->name('sites.expenses');
+    Route::post('/sites/{site}/expenses', function (Request $request, Site $site) {
+        $d = $request->validate(['label' => 'required|string|max:255', 'amount' => 'required|numeric|min:0.01', 'currency' => 'required|string|size:3', 'expense_date' => 'required|date']);
+        $site->expenses()->create($d);
+
+        return back();
+    })->name('sites.expenses.store');
+    Route::put('/sites/{site}/expenses/{expense}', function (Request $request, Site $site, Expense $expense) {
+        abort_unless($expense->site_id === $site->id, 403);
+        $d = $request->validate(['label' => 'required|string|max:255', 'amount' => 'required|numeric|min:0.01', 'currency' => 'required|string|size:3', 'expense_date' => 'required|date']);
+        $expense->update($d);
+
+        return back();
+    })->name('sites.expenses.update');
+    Route::delete('/sites/{site}/expenses/{expense}', function (Site $site, Expense $expense) {
+        abort_unless($expense->site_id === $site->id, 403);
+        $expense->delete();
+
+        return back();
+    })->name('sites.expenses.destroy');
+    Route::delete('/sites/{site}/expenses', function (Request $request, Site $site) {
+        $ids = $request->validate(['ids' => 'required|array', 'ids.*' => 'string'])['ids'];
+        $site->expenses()->whereIn('id', $ids)->delete();
+
+        return back();
+    })->name('sites.expenses.bulk-destroy');
+    Route::get('/sites/{site}/reminders', fn (Site $site) => view('dashboard.sites.reminders', ['site' => $site]))->name('sites.reminders');
+    Route::post('/sites/{site}/reminders', function (Request $request, Site $site) {
+        $d = $request->validate(['title' => 'required|string|max:255', 'due_date' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
+        $site->reminders()->create($d);
+
+        return back();
+    })->name('sites.reminders.store');
+    Route::put('/sites/{site}/reminders/{reminder}', function (Request $request, Site $site, Reminder $reminder) {
+        abort_unless($reminder->site_id === $site->id, 403);
+        $d = $request->validate(['title' => 'required|string|max:255', 'due_date' => 'nullable|date', 'notes' => 'nullable|string|max:2000']);
+        $reminder->update($d);
+
+        return back();
+    })->name('sites.reminders.update');
+    Route::post('/sites/{site}/reminders/{reminder}/complete', function (Site $site, Reminder $reminder) {
+        abort_unless($reminder->site_id === $site->id, 403);
+        $reminder->update(['is_done' => ! $reminder->is_done]);
+
+        return back();
+    })->name('sites.reminders.complete');
+    Route::delete('/sites/{site}/reminders/{reminder}', function (Site $site, Reminder $reminder) {
+        abort_unless($reminder->site_id === $site->id, 403);
+        $reminder->delete();
+
+        return back();
+    })->name('sites.reminders.destroy');
+    Route::get('/sites/{site}/reports', fn (Site $site) => view('dashboard.sites.reports', ['site' => $site]))->name('sites.reports');
+    Route::post('/sites/{site}/reports', function (Request $request, Site $site) {
+        $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string', 'meta.visitors' => 'nullable|integer|min:0', 'meta.pageviews' => 'nullable|integer|min:0', 'meta.uptime_percent' => 'nullable|numeric|min:0|max:100', 'meta.work_done' => 'nullable|string', 'meta.issues' => 'nullable|string', 'meta.next_steps' => 'nullable|string']);
+        $site->reports()->create(['title' => $d['title'], 'report_date' => $d['report_date'], 'summary' => $d['summary'] ?? null, 'meta' => $d['meta'] ?? null]);
+
+        return back();
+    })->name('sites.reports.store');
+    Route::put('/sites/{site}/reports/{report}', function (Request $request, Site $site, Report $report) {
+        abort_unless($report->site_id === $site->id, 403);
+        $d = $request->validate(['title' => 'required|string|max:255', 'report_date' => 'required|date', 'summary' => 'nullable|string', 'meta.visitors' => 'nullable|integer|min:0', 'meta.pageviews' => 'nullable|integer|min:0', 'meta.uptime_percent' => 'nullable|numeric|min:0|max:100', 'meta.work_done' => 'nullable|string', 'meta.issues' => 'nullable|string', 'meta.next_steps' => 'nullable|string']);
+        $report->update(['title' => $d['title'], 'report_date' => $d['report_date'], 'summary' => $d['summary'] ?? null, 'meta' => $d['meta'] ?? null]);
+
+        return back();
+    })->name('sites.reports.update');
+    Route::post('/sites/{site}/reports/{report}/duplicate', function (Site $site, Report $report) {
+        abort_unless($report->site_id === $site->id, 403);
+        $new = $report->replicate();
+        $new->title = $report->title.' (copy)';
+        $new->save();
+
+        return back();
+    })->name('sites.reports.duplicate');
+    Route::delete('/sites/{site}/reports/{report}', function (Site $site, Report $report) {
+        abort_unless($report->site_id === $site->id, 403);
+        $report->delete();
+
+        return back();
+    })->name('sites.reports.destroy');
+    Route::get('/sites/{site}/analytics', SiteAnalyticsController::class)->name('sites.analytics');
+    Route::get('/sites/{site}/maintenance', fn (Site $site) => view('dashboard.sites.maintenance', ['site' => $site]))->name('sites.maintenance');
+    Route::get('/sites/{site}/settings', fn (Site $site) => view('dashboard.sites.settings', ['site' => $site]))->name('sites.settings');
+    Route::put('/sites/{site}/settings', function (Request $request, Site $site) {
+        $d = $request->validate([
+            'name' => 'required|string|max:255',
+            'domain' => 'nullable|string|max:255',
+            'repo_url' => ['nullable', 'string', 'max:500', new GitRemoteUrl],
+            'branch' => 'nullable|string|max:100',
+            'project_type' => 'nullable|string|max:64',
+            'client_first_name' => 'nullable|string|max:100',
+            'client_last_name' => 'nullable|string|max:100',
+            'client_email' => 'nullable|email|max:255',
+            'client_phone' => 'nullable|string|max:50',
+            'client_company' => 'nullable|string|max:255',
+            'client_address' => 'nullable|string|max:500',
+            'client_notes' => 'nullable|string|max:2000',
+            'billing_cycle' => 'nullable|string|max:32',
+            'monthly_retainer' => 'nullable|numeric|min:0',
+            'ga_property_id' => 'nullable|string|max:64',
+            'gtm_id' => 'nullable|string|max:64',
+            'google_ads_id' => 'nullable|string|max:64',
+            'cf_zone_id' => 'nullable|string|max:64',
+            'cf_api_token' => 'nullable|string|max:500',
+            'smtp_host' => 'nullable|string|max:255',
+            'smtp_port' => 'nullable|integer|min:1|max:65535',
+            'smtp_username' => 'nullable|string|max:255',
+            'smtp_password' => 'nullable|string|max:500',
+            'ssh_host' => 'nullable|string|max:255',
+            'ftp_ssh_user' => 'nullable|string|max:255',
+            'ftp_ssh_password' => 'nullable|string|max:500',
+            'hosting_provider' => 'nullable|string|max:100',
+            'ssl_provider' => 'nullable|string|max:100',
+            'dns_provider' => 'nullable|string|max:100',
+        ]);
+        $site->update($d);
+
+        return back()->with('success', 'Settings saved.');
+    })->name('sites.settings.update');
+    Route::post('/sites/{site}/deploy', function (Site $site) {
+        $site->update(['deploy_status' => DeployStatus::Deploying]);
+        DeploySiteJob::dispatch($site, 'manual');
+
+        return back()->with('success', 'Deployment started.');
+    })->name('sites.deploy');
+    Route::get('/sites/{site}/files', fn (Site $site) => view('dashboard.sites.files', ['site' => $site]))->name('sites.files');
+    Route::post('/sites/{site}/files', function (Request $request, Site $site) {
+        $request->validate([
+            'file' => [
+                'required', 'file', 'max:20480',
+                'mimes:jpg,jpeg,png,gif,webp,avif,svg,pdf,txt,csv,json,xml,zip,woff,woff2,ttf,otf,ico',
+            ],
+        ]);
+        $file = $request->file('file');
+        $original = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $ext = $file->getClientOriginalExtension();
+        $safe = Str::slug($original) ?: 'file';
+        $filename = $safe.'-'.substr(uniqid('', true), -6).($ext ? '.'.$ext : '');
+        $file->storeAs('sites/'.$site->id, $filename, 'public');
+
+        return back()->with('success', 'File uploaded.');
+    })->name('sites.files.upload');
+    Route::delete('/sites/{site}/files/{filename}', function (Site $site, string $filename) {
+        if (str_contains($filename, '/') || str_contains($filename, '..')) {
+            abort(422);
+        }
+        Storage::disk('public')->delete('sites/'.$site->id.'/'.$filename);
+
+        return back()->with('success', 'File deleted.');
+    })->name('sites.files.destroy');
+    Route::get('/sites/{site}/pages', fn (Site $site) => view('dashboard.sites.pages', ['site' => $site]))->name('sites.pages');
+
+    // Editor Ã¢â‚¬â€ kept as Blade (Phase 3 overhaul)
+    Route::get('/sites/{site}/pages/{page}/edit', fn (Site $site, Page $page) => view('dashboard.editor.index', ['site' => $site, 'page' => $page]))->name('editor');
+
+    // Editor preview
+    Route::get('/preview/{site}/{page}', [EditorPreviewController::class, 'show'])->name('editor.preview');
+    Route::get('/preview/{site}/asset/{path}', [EditorPreviewController::class, 'asset'])->where('path', '.*')->name('editor.asset');
+
+    // SEO
+    Route::get('/sites/{site}/pages/{page}/seo', fn (Site $site, Page $page) => view('dashboard.seo.meta', ['site' => $site, 'page' => $page]))->name('seo.meta');
+    Route::get('/sites/{site}/redirects', fn (Site $site) => view('dashboard.seo.redirects', ['site' => $site]))->name('seo.redirects');
+    Route::post('/sites/{site}/redirects', function (Request $request, Site $site) {
+        $d = $request->validate(['from_path' => 'required|string|max:500', 'to_path' => 'required|string|max:500', 'status_code' => 'nullable|integer|in:301,302,307,308']);
+        $site->redirects()->create(['from_path' => $d['from_path'], 'to_path' => $d['to_path'], 'status_code' => $d['status_code'] ?? 301]);
+
+        return back();
+    })->name('seo.redirects.store');
+    Route::post('/sites/{site}/redirects/{redirect}/toggle', function (Site $site, Redirect $redirect) {
+        abort_unless($redirect->site_id === $site->id, 403);
+        $redirect->update(['is_active' => ! $redirect->is_active]);
+
+        return back();
+    })->name('seo.redirects.toggle');
+    Route::delete('/sites/{site}/redirects/{redirect}', function (Site $site, Redirect $redirect) {
+        abort_unless($redirect->site_id === $site->id, 403);
+        $redirect->delete();
+
+        return back();
+    })->name('seo.redirects.destroy');
+    Route::put('/sites/{site}/pages/{page}/seo', function (Request $request, Site $site, Page $page) {
+        abort_unless($page->site_id === $site->id, 403);
+        $page->update($request->validate(['title' => 'nullable|string|max:255', 'meta_description' => 'nullable|string|max:500', 'og_title' => 'nullable|string|max:255', 'og_description' => 'nullable|string|max:500', 'og_image' => 'nullable|url|max:500', 'canonical_url' => 'nullable|url|max:500']));
+
+        return back()->with('success', 'SEO meta saved.');
+    })->name('seo.meta.update');
+    Route::put('/sites/{site}/maintenance', function (Request $request, Site $site) {
+        $d = $request->validate(['enabled' => 'boolean', 'title' => 'nullable|string|max:255', 'message' => 'nullable|string|max:2000', 'allowed_ips' => 'nullable|string']);
+        $ips = array_filter(array_map('trim', explode("\n", $d['allowed_ips'] ?? '')));
+        $site->update(['maintenance_settings' => ['enabled' => $request->boolean('enabled'), 'title' => $d['title'], 'message' => $d['message'], 'allowed_ips' => array_values($ips)]]);
+
+        return back()->with('success', 'Maintenance settings saved.');
+    })->name('sites.maintenance.update');
+    Route::get('/sites/{site}/maintenance/preview', function (Site $site) {
+        $s = $site->maintenance_settings ?? [];
+        $title = e($s['title'] ?? "We'll be back soon");
+        $message = e($s['message'] ?? "We're performing scheduled maintenance. Please check back later.");
+
+        return response("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{$title}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0a0a0a;color:#e4e4e7;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}main{max-width:480px;text-align:center}h1{font-size:1.5rem;font-weight:600;margin-bottom:1rem}p{color:#a1a1aa;line-height:1.6}.badge{display:inline-block;background:#27272a;border:1px solid #3f3f46;border-radius:9999px;font-size:0.75rem;padding:0.25rem 0.75rem;margin-bottom:1.5rem;color:#71717a}</style></head><body><main><span class=\"badge\">Maintenance preview Ã¢â‚¬â€ {$site->name}</span><h1>{$title}</h1><p>{$message}</p></main></body></html>", 200, ['Content-Type' => 'text/html']);
+    })->name('sites.maintenance.preview');
+    Route::post('/sites/{site}/inbox/{message}/read', function (Site $site, SiteInboxMessage $message) {
+        abort_unless($message->site_id === $site->id, 403);
+        $message->update(['is_read' => true]);
+
+        return back();
+    })->withoutScopedBindings()->name('sites.inbox.read');
+    Route::delete('/sites/{site}/inbox/{message}', function (Site $site, SiteInboxMessage $message) {
+        abort_unless($message->site_id === $site->id, 403);
+        $message->delete();
+
+        return back();
+    })->withoutScopedBindings()->name('sites.inbox.destroy');
+
+    // Content
+    Route::get('/sites/{site}/blog', function (Site $site) {
+        $posts = $site->blogPosts()->latest()->get(['id', 'title', 'slug', 'status', 'published_at', 'created_at']);
+
+        return view('dashboard.content.blog-index', ['site' => $site, 'posts' => $posts]);
+    })->name('blog.index');
+    Route::get('/sites/{site}/blog/create', fn (Site $site) => view('dashboard.content.blog-create', ['site' => $site]))->name('blog.create');
+    Route::get('/sites/{site}/blog/{blogPost}/edit', function (Site $site, BlogPost $blogPost) {
+        abort_unless($blogPost->site_id === $site->id, 404);
+
+        return view('dashboard.content.blog-edit', ['site' => $site, 'post' => $blogPost]);
+    })->name('blog.edit');
+    Route::post('/sites/{site}/blog', function (Request $request, Site $site) {
+        $d = $request->validate(['title' => 'required|string|max:255', 'slug' => 'required|string|max:255', 'excerpt' => 'nullable|string', 'body' => 'nullable|string', 'status' => 'required|in:draft,published,scheduled', 'published_at' => 'nullable|date']);
+        if ($d['status'] === 'scheduled') {
+            $d['scheduled_at'] = $d['published_at'];
+            $d['published_at'] = null;
+        } elseif ($d['status'] === 'published' && empty($d['published_at'])) {
+            $d['published_at'] = now();
+        }
+        $d['body'] = $d['body'] ?? '';
+        $site->blogPosts()->create($d);
+
+        return redirect("/dashboard/sites/{$site->id}/blog")->with('success', 'Post created.');
+    })->name('blog.store');
+    Route::put('/sites/{site}/blog/{blogPost}', function (Request $request, Site $site, BlogPost $blogPost) {
+        abort_unless($blogPost->site_id === $site->id, 403);
+        $d = $request->validate(['title' => 'required|string|max:255', 'slug' => 'required|string|max:255', 'excerpt' => 'nullable|string', 'body' => 'nullable|string', 'status' => 'required|in:draft,published,scheduled', 'published_at' => 'nullable|date']);
+        if ($d['status'] === 'scheduled') {
+            $d['scheduled_at'] = $d['published_at'];
+            $d['published_at'] = null;
+        } elseif ($d['status'] === 'published' && empty($d['published_at'])) {
+            $d['published_at'] = now();
+        }
+        $d['body'] = $d['body'] ?? '';
+        $blogPost->update($d);
+
+        return back()->with('success', 'Post updated.');
+    })->name('blog.update');
+    Route::delete('/sites/{site}/blog/{blogPost}', function (Site $site, BlogPost $blogPost) {
+        abort_unless($blogPost->site_id === $site->id, 403);
+        $blogPost->delete();
+
+        return back()->with('success', 'Post deleted.');
+    })->name('blog.destroy');
+    Route::get('/sites/{site}/products', function (Site $site) {
+        return view('dashboard.content.product-index', [
+            'site' => $site,
+            'products' => $site->productListings()->latest()->get(),
+        ]);
+    })->name('products.index');
+    Route::get('/sites/{site}/products/create', fn (Site $site) => view('dashboard.content.product-create', ['site' => $site]))->name('products.create');
+    Route::post('/sites/{site}/products', function (Request $request, Site $site) {
+        $d = $request->validate(['name' => 'required|string|max:255', 'description' => 'nullable|string', 'price' => 'required|numeric|min:0', 'currency' => 'nullable|string|size:3', 'status' => 'nullable|string|max:32']);
+        $site->productListings()->create(array_merge($d, ['currency' => $d['currency'] ?? 'EUR', 'status' => $d['status'] ?? 'draft']));
+
+        return redirect("/dashboard/sites/{$site->id}/products")->with('success', 'Product created.');
+    })->name('products.store');
+    Route::get('/sites/{site}/products/{product}/edit', function (Site $site, ProductListing $product) {
+        abort_unless($product->site_id === $site->id, 403);
+
+        return view('dashboard.content.product-edit', ['site' => $site, 'product' => $product]);
+    })->withoutScopedBindings()->name('products.edit');
+    Route::put('/sites/{site}/products/{product}', function (Request $request, Site $site, ProductListing $product) {
+        abort_unless($product->site_id === $site->id, 403);
+        $d = $request->validate(['name' => 'required|string|max:255', 'description' => 'nullable|string', 'price' => 'required|numeric|min:0', 'currency' => 'nullable|string|size:3', 'status' => 'nullable|string|max:32']);
+        $product->update($d);
+
+        return redirect("/dashboard/sites/{$site->id}/products")->with('success', 'Product updated.');
+    })->withoutScopedBindings()->name('products.update');
+    Route::delete('/sites/{site}/products/{product}', function (Site $site, ProductListing $product) {
+        abort_unless($product->site_id === $site->id, 403);
+        $product->delete();
+
+        return back()->with('success', 'Product deleted.');
+    })->withoutScopedBindings()->name('products.destroy');
+    // Templates
+    Route::get('/sites/{site}/templates', fn (Site $site) => view('dashboard.content.templates', ['site' => $site]))->name('templates.index');
+    Route::post('/sites/{site}/templates', function (Request $request, Site $site) {
+        $d = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'nullable|string|max:64',
+            'html_template' => 'nullable|string',
+            'fields_schema' => 'nullable|array',
+        ]);
+        $site->contentTemplates()->create($d);
+
+        return back()->with('success', 'Template created.');
+    })->name('templates.store');
+    Route::put('/sites/{site}/templates/{template}', function (Request $request, Site $site, ContentTemplate $template) {
+        abort_unless($template->site_id === $site->id, 403);
+        $d = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'nullable|string|max:64',
+            'html_template' => 'nullable|string',
+        ]);
+        $template->update($d);
+
+        return back()->with('success', 'Template saved.');
+    })->withoutScopedBindings()->name('templates.update');
+    Route::delete('/sites/{site}/templates/{template}', function (Site $site, ContentTemplate $template) {
+        abort_unless($template->site_id === $site->id, 403);
+        $template->delete();
+
+        return back()->with('success', 'Template deleted.');
+    })->withoutScopedBindings()->name('templates.destroy');
+
+    // Subscribers
+    Route::get('/sites/{site}/subscribers', fn (Site $site) => view('dashboard.email.subscribers', ['site' => $site]))->name('sites.subscribers');
+    Route::post('/sites/{site}/subscribers', function (Request $request, Site $site) {
+        $d = $request->validate([
+            'email' => 'required|email|max:255',
+            'name' => 'nullable|string|max:255',
+        ]);
+        $site->newsletterSubscribers()->updateOrCreate(
+            ['email' => $d['email']],
+            ['name' => $d['name'] ?? null, 'status' => 'active'],
+        );
+
+        return back()->with('success', 'Subscriber added.');
+    })->name('sites.subscribers.store');
+    Route::delete('/sites/{site}/subscribers/{subscriber}', function (Site $site, NewsletterSubscriber $subscriber) {
+        abort_unless($subscriber->site_id === $site->id, 403);
+        $subscriber->delete();
+
+        return back()->with('success', 'Subscriber removed.');
+    })->withoutScopedBindings()->name('sites.subscribers.destroy');
+    Route::post('/sites/{site}/subscribers/import', function (Request $request, Site $site) {
+        $request->validate(['csv' => 'required|file|mimes:csv,txt|max:2048']);
+        $handle = fopen($request->file('csv')->getRealPath(), 'r');
+        $header = fgetcsv($handle);
+        $emailIdx = array_search('email', array_map('strtolower', $header ?: []));
+        $nameIdx = array_search('name', array_map('strtolower', $header ?: []));
+        if ($emailIdx === false) {
+            fclose($handle);
+
+            return back()->withErrors(['csv' => 'CSV must have an "email" column.']);
+        }
+        $count = 0;
+        while (($row = fgetcsv($handle)) !== false) {
+            $email = trim($row[$emailIdx] ?? '');
+            if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            $site->newsletterSubscribers()->updateOrCreate(
+                ['email' => $email],
+                ['name' => ($nameIdx !== false ? trim($row[$nameIdx] ?? '') : null) ?: null, 'status' => 'active'],
+            );
+            $count++;
+        }
+        fclose($handle);
+
+        return back()->with('success', "Imported {$count} subscriber(s).");
+    })->name('sites.subscribers.import');
+
+    // Newsletter campaigns
+    Route::get('/sites/{site}/newsletters', fn (Site $site) => view('dashboard.email.campaigns', ['site' => $site]))->name('sites.newsletters');
+    Route::post('/sites/{site}/newsletters', function (Request $request, Site $site) {
+        $d = $request->validate([
+            'subject' => 'required|string|max:255',
+            'body_html' => 'nullable|string',
+            'scheduled_at' => 'nullable|date',
+        ]);
+        $status = ($d['scheduled_at'] ?? null) ? 'scheduled' : 'draft';
+        $site->newsletterCampaigns()->create(array_merge($d, ['status' => $status]));
+
+        return back()->with('success', 'Campaign created.');
+    })->name('sites.newsletters.store');
+    Route::put('/sites/{site}/newsletters/{campaign}', function (Request $request, Site $site, NewsletterCampaign $campaign) {
+        abort_unless($campaign->site_id === $site->id, 403);
+        abort_if($campaign->isSent(), 403);
+        $d = $request->validate([
+            'subject' => 'required|string|max:255',
+            'body_html' => 'nullable|string',
+            'scheduled_at' => 'nullable|date',
+        ]);
+        $status = ($d['scheduled_at'] ?? null) ? 'scheduled' : 'draft';
+        $campaign->update(array_merge($d, ['status' => $status]));
+
+        return back()->with('success', 'Campaign updated.');
+    })->withoutScopedBindings()->name('sites.newsletters.update');
+    Route::post('/sites/{site}/newsletters/{campaign}/send', function (Site $site, NewsletterCampaign $campaign) {
+        abort_unless($campaign->site_id === $site->id, 403);
+        abort_if($campaign->isSent(), 403);
+        $campaign->update(['status' => 'sending', 'scheduled_at' => null]);
+
+        return back()->with('success', 'Campaign queued for sending.');
+    })->withoutScopedBindings()->name('sites.newsletters.send');
+    Route::delete('/sites/{site}/newsletters/{campaign}', function (Site $site, NewsletterCampaign $campaign) {
+        abort_unless($campaign->site_id === $site->id, 403);
+        abort_if($campaign->isSent(), 403);
+        $campaign->delete();
+
+        return back()->with('success', 'Campaign deleted.');
+    })->withoutScopedBindings()->name('sites.newsletters.destroy');
+});
