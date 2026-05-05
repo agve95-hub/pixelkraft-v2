@@ -84,7 +84,9 @@ class HtmlMinifier
             $html = preg_replace_callback(
                 "/<{$tag}\b[^>]*>.*?<\/{$tag}>/si",
                 function ($match) use (&$preserved, &$index) {
-                    $placeholder = "<!--PRESERVE_{$index}-->";
+                    // Use a non-HTML-comment placeholder so the comment-removal
+                    // step below cannot accidentally strip preserved content.
+                    $placeholder = "\x00PKPRESERVE_{$index}\x00";
                     $preserved[$placeholder] = $match[0];
                     $index++;
 
