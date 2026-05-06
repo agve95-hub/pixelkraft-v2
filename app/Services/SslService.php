@@ -116,8 +116,10 @@ class SslService
 
             $site->update(['ssl_expires_at' => $expiresAt]);
 
-            // Alert if expiring within 14 days
-            if ($expiresAt->diffInDays(now()) <= 14) {
+            // Alert if expiring within 14 days, including certificates already past expiry.
+            $daysUntilExpiry = now()->diffInDays($expiresAt, false);
+
+            if ($daysUntilExpiry <= 14) {
                 $alertCount++;
 
                 Notification::createAlert(
