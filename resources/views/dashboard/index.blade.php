@@ -17,7 +17,7 @@
                 <h1 class="pk-page-title">{{ $greeting }}, {{ $user->name }}</h1>
                 <p class="pk-page-sub">{{ now()->format('l, F j, Y') }}</p>
             </div>
-            <flux:button href="{{ route('sites.index') }}" variant="subtle" size="sm">View all sites</flux:button>
+            <x-ui.button href="{{ route('sites.index') }}" variant="outline" size="sm">View all sites</x-ui.button>
         </div>
 
         <div class="pk-stat-grid">

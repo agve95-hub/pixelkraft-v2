@@ -12,12 +12,12 @@
     @fluxAppearance(['nonce' => csp_nonce()])
     @livewireStyles
 </head>
-<body class="min-h-screen bg-[#27272a] antialiased text-white dark:bg-[#27272a]">
+<body class="pk-app-shell min-h-screen antialiased text-white">
     <div class="flex min-h-screen flex-col items-center justify-center px-4 py-12">
         <div class="w-full max-w-md">
             <div class="mb-8 text-center">
                 <a href="{{ route('login') }}" class="inline-flex items-center gap-2.5 text-[15px] font-semibold tracking-tight text-white no-underline">
-                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 text-xs font-bold text-black">P</span>
+                    <span class="pk-logo-mark flex size-8 shrink-0 items-center justify-center text-xs font-bold text-black">P</span>
                     pixelkraft
                 </a>
                 @isset($subtitle)
@@ -25,7 +25,7 @@
                 @endisset
             </div>
 
-            <div class="rounded-xl border border-white/10 bg-zinc-900/80 p-8 shadow-xl backdrop-blur-sm">
+            <div class="pk-ui-card p-8">
                 {{ $slot }}
             </div>
 

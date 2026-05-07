@@ -247,6 +247,7 @@
             />
             <flux:menu>
                 <flux:menu.item href="{{ route('system.diagnostics') }}" icon="server-stack">System</flux:menu.item>
+                <flux:menu.item href="{{ route('system.ui') }}" icon="swatch">UI system</flux:menu.item>
                 <flux:menu.separator />
                 <flux:menu.item href="{{ route('settings') }}" icon="cog-6-tooth">Settings</flux:menu.item>
                 <flux:menu.item icon="arrow-right-start-on-rectangle" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Sign out</flux:menu.item>
@@ -275,6 +276,7 @@
             />
             <flux:menu>
                 <flux:menu.item href="{{ route('system.diagnostics') }}" icon="server-stack">System</flux:menu.item>
+                <flux:menu.item href="{{ route('system.ui') }}" icon="swatch">UI system</flux:menu.item>
                 <flux:menu.separator />
                 <flux:menu.item href="{{ route('settings') }}" icon="cog-6-tooth">Settings</flux:menu.item>
                 <flux:menu.item icon="arrow-right-start-on-rectangle" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Sign out</flux:menu.item>

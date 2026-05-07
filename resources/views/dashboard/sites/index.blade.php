@@ -18,9 +18,9 @@
                 <h1 class="pk-page-title">All sites</h1>
                 <p class="pk-page-sub">{{ $sites->count() }} projects</p>
             </div>
-            <flux:button href="{{ route('sites.create') }}" variant="primary" icon="plus" class="!bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950">
+            <x-ui.button href="{{ route('sites.create') }}" icon="plus">
                 New project
-            </flux:button>
+            </x-ui.button>
         </div>
 
         <div class="stats stats-4">

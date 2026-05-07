@@ -19,6 +19,7 @@ Route::get('/settings', function () {
         'twoFactorConfirmed' => (bool) $user->two_factor_confirmed_at,
     ]);
 })->name('settings');
+Route::get('/system/ui', fn () => view('dashboard.settings.ui'))->name('system.ui');
 Route::get('/system', function () {
     $diagnostics = [
         ['label' => 'PHP version', 'value' => PHP_VERSION, 'status' => version_compare(PHP_VERSION, '8.2', '>=') ? 'ok' : 'warn'],

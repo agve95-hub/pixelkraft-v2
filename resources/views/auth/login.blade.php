@@ -25,7 +25,7 @@
             @endif
         </div>
 
-        <flux:button type="submit" variant="primary" class="w-full">Sign in</flux:button>
+        <x-ui.button type="submit" class="w-full">Sign in</x-ui.button>
     </form>
 
     @if (Route::has('register'))
