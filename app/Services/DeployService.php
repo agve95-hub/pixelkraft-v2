@@ -453,6 +453,7 @@ class DeployService
                 'PATH' => $nodeBinPath.PATH_SEPARATOR.$systemPath,
             ],
             $siteEnv,
+            $this->buildToolCacheEnv($site),
             $envOverrides,
         );
 
@@ -474,6 +475,34 @@ class DeployService
             'command' => $command,
             'output' => $output,
             'summary' => $result->successful() ? 'OK' : 'FAILED (exit '.$result->exitCode().')',
+        ];
+    }
+
+    /**
+     * Keep package-manager caches inside Pixelkraft-owned storage. Production
+     * workers often inherit HOME=/var/www, and a root-owned /var/www/.npm makes
+     * otherwise valid deploys fail before the build even starts.
+     *
+     * @return array<string, string>
+     */
+    private function buildToolCacheEnv(Site $site): array
+    {
+        $slug = $site->slug !== '' ? $site->slug : 'site';
+        $cacheBase = storage_path('app/build-cache/'.$slug);
+
+        File::ensureDirectoryExists($cacheBase.'/npm', 0775, true);
+        File::ensureDirectoryExists($cacheBase.'/yarn', 0775, true);
+        File::ensureDirectoryExists($cacheBase.'/corepack', 0775, true);
+        File::ensureDirectoryExists($cacheBase.'/xdg', 0775, true);
+
+        return [
+            'NPM_CONFIG_CACHE' => $cacheBase.'/npm',
+            'npm_config_cache' => $cacheBase.'/npm',
+            'YARN_CACHE_FOLDER' => $cacheBase.'/yarn',
+            'COREPACK_HOME' => $cacheBase.'/corepack',
+            'XDG_CACHE_HOME' => $cacheBase.'/xdg',
+            'NPM_CONFIG_UPDATE_NOTIFIER' => 'false',
+            'npm_config_update_notifier' => 'false',
         ];
     }
 

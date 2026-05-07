@@ -97,7 +97,11 @@ Route::get('/preview/{site}/asset/{path}', [EditorPreviewController::class, 'ass
 Route::get('/sites/{site}/pages/{page}/seo', fn (Site $site, Page $page) => view('dashboard.seo.meta', ['site' => $site, 'page' => $page]))->name('seo.meta');
 Route::get('/sites/{site}/redirects', fn (Site $site) => view('dashboard.seo.redirects', ['site' => $site]))->name('seo.redirects');
 Route::post('/sites/{site}/redirects', function (Request $request, Site $site) {
-    $d = $request->validate(['from_path' => 'required|string|max:500', 'to_path' => 'required|string|max:500', 'status_code' => 'nullable|integer|in:301,302,307,308']);
+    $d = $request->validate([
+        'from_path' => ['required', 'string', 'max:500', 'starts_with:/', 'not_regex:/[\r\n\t;{}]/'],
+        'to_path' => ['required', 'string', 'max:500', 'not_regex:/[\r\n\t;{}]/'],
+        'status_code' => ['nullable', 'integer', 'in:301,302'],
+    ]);
     $site->redirects()->create(['from_path' => $d['from_path'], 'to_path' => $d['to_path'], 'status_code' => $d['status_code'] ?? 301]);
 
     return back();

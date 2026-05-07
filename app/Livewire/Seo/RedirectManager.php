@@ -29,8 +29,8 @@ class RedirectManager extends Component
     public function save(): void
     {
         $this->validate([
-            'fromPath' => 'required|string|max:500|starts_with:/',
-            'toPath' => 'required|string|max:500',
+            'fromPath' => ['required', 'string', 'max:500', 'starts_with:/', 'not_regex:/[\r\n\t;{}]/'],
+            'toPath' => ['required', 'string', 'max:500', 'not_regex:/[\r\n\t;{}]/'],
             'statusCode' => 'required|in:301,302',
         ]);
         $siteId = $this->siteIdOrFail();

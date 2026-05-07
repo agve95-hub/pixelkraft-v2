@@ -79,6 +79,59 @@ class SeoRedirectTest extends TestCase
             ->assertJsonValidationErrors(['from_path']);
     }
 
+    public function test_redirect_paths_reject_nginx_control_characters(): void
+    {
+        $user = $this->makeUser();
+        $site = $this->makeSite($user);
+
+        $this->actingAs($user)
+            ->postJson(route('seo.redirects.store', $site), [
+                'from_path' => "/old\nreturn 200 hacked",
+                'to_path' => '/new',
+                'status_code' => 301,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['from_path']);
+
+        $this->actingAs($user)
+            ->postJson(route('seo.redirects.store', $site), [
+                'from_path' => '/old',
+                'to_path' => "/new\nreturn 200 hacked",
+                'status_code' => 301,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['to_path']);
+    }
+
+    public function test_only_supported_nginx_redirect_status_codes_are_accepted(): void
+    {
+        $user = $this->makeUser();
+        $site = $this->makeSite($user);
+
+        $this->actingAs($user)
+            ->postJson(route('seo.redirects.store', $site), [
+                'from_path' => '/temporary',
+                'to_path' => '/target',
+                'status_code' => 302,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('redirects', [
+            'site_id' => $site->id,
+            'from_path' => '/temporary',
+            'status_code' => 302,
+        ]);
+
+        $this->actingAs($user)
+            ->postJson(route('seo.redirects.store', $site), [
+                'from_path' => '/unsupported',
+                'to_path' => '/target',
+                'status_code' => 307,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['status_code']);
+    }
+
     public function test_owner_can_toggle_redirect(): void
     {
         $user = $this->makeUser();

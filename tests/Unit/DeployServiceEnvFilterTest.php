@@ -4,6 +4,8 @@ namespace Tests\Unit;
 
 use App\Models\Site;
 use App\Services\DeployService;
+use Illuminate\Support\Facades\File;
+use ReflectionClass;
 use Tests\TestCase;
 
 /**
@@ -87,5 +89,29 @@ class DeployServiceEnvFilterTest extends TestCase
         $this->assertArrayNotHasKey('Node_Options', $filtered);
         $this->assertArrayNotHasKey('ld_preload', $filtered);
         $this->assertArrayHasKey('SAFE_VAR', $filtered);
+    }
+
+    public function test_build_tool_cache_env_uses_pixelkraft_owned_storage(): void
+    {
+        $site = new Site(['slug' => 'cache-demo']);
+        $service = app(DeployService::class);
+        $method = (new ReflectionClass($service))->getMethod('buildToolCacheEnv');
+        $method->setAccessible(true);
+
+        /** @var array<string, string> $env */
+        $env = $method->invoke($service, $site);
+
+        $expectedBase = str_replace('\\', '/', storage_path('app/build-cache/cache-demo'));
+
+        $this->assertSame($expectedBase.'/npm', str_replace('\\', '/', $env['NPM_CONFIG_CACHE']));
+        $this->assertSame($expectedBase.'/npm', str_replace('\\', '/', $env['npm_config_cache']));
+        $this->assertSame($expectedBase.'/yarn', str_replace('\\', '/', $env['YARN_CACHE_FOLDER']));
+        $this->assertSame($expectedBase.'/corepack', str_replace('\\', '/', $env['COREPACK_HOME']));
+        $this->assertSame($expectedBase.'/xdg', str_replace('\\', '/', $env['XDG_CACHE_HOME']));
+        $this->assertSame('false', $env['NPM_CONFIG_UPDATE_NOTIFIER']);
+        $this->assertDirectoryExists($env['NPM_CONFIG_CACHE']);
+        $this->assertDirectoryExists($env['COREPACK_HOME']);
+
+        File::deleteDirectory(storage_path('app/build-cache/cache-demo'));
     }
 }

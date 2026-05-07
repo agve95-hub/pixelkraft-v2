@@ -148,9 +148,10 @@ class NginxConfigService
         $redirectBlock = '';
 
         foreach ($redirects as $redirect) {
-            $from = preg_quote($redirect->from_path, '~');
+            $from = preg_quote($this->assertValidRedirectFromPath((string) $redirect->from_path), '~');
             $to = $this->sanitizeRedirectToPath($redirect->to_path);
-            $redirectBlock .= "    rewrite ^{$from}$ {$to} permanent;\n";
+            $flag = $this->redirectFlag((int) ($redirect->status_code ?? 301));
+            $redirectBlock .= "    rewrite ^{$from}$ {$to} {$flag};\n";
         }
 
         if ($this->runtime->usesRuntimeServer($site)) {
@@ -376,6 +377,26 @@ NGINX;
      */
     private function sanitizeRedirectToPath(string $path): string
     {
-        return preg_replace('/[\r\n\t;{}]/', '', $path) ?? $path;
+        $sanitized = preg_replace('/[\r\n\t;{}]/', '', $path) ?? $path;
+
+        return trim($sanitized) !== '' ? $sanitized : '/';
+    }
+
+    private function assertValidRedirectFromPath(string $path): string
+    {
+        if ($path === '' || ! str_starts_with($path, '/')) {
+            throw new \InvalidArgumentException('Redirect source path must start with /.');
+        }
+
+        if (preg_match('/[\r\n\t;{}]/', $path)) {
+            throw new \InvalidArgumentException('Redirect source path contains characters not allowed in an Nginx config.');
+        }
+
+        return $path;
+    }
+
+    private function redirectFlag(int $statusCode): string
+    {
+        return $statusCode === 302 ? 'redirect' : 'permanent';
     }
 }

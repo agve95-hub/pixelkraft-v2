@@ -182,4 +182,39 @@ class NginxConfigInjectionTest extends TestCase
         $result = $this->invoke('sanitizeRedirectToPath', '/new/path');
         $this->assertSame('/new/path', $result);
     }
+
+    /** @test */
+    public function test_sanitize_empty_redirect_target_falls_back_to_root(): void
+    {
+        $result = $this->invoke('sanitizeRedirectToPath', "\n;{}");
+        $this->assertSame('/', $result);
+    }
+
+    /** @test */
+    public function test_redirect_source_path_newline_injection_is_rejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->invoke('assertValidRedirectFromPath', "/old\nreturn 200 hacked");
+    }
+
+    /** @test */
+    public function test_redirect_source_path_must_start_with_slash(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->invoke('assertValidRedirectFromPath', 'old-path');
+    }
+
+    /** @test */
+    public function test_valid_redirect_source_path_is_accepted(): void
+    {
+        $this->assertSame('/old-path', $this->invoke('assertValidRedirectFromPath', '/old-path'));
+    }
+
+    /** @test */
+    public function test_redirect_flag_honors_temporary_redirects(): void
+    {
+        $this->assertSame('permanent', $this->invoke('redirectFlag', 301));
+        $this->assertSame('redirect', $this->invoke('redirectFlag', 302));
+        $this->assertSame('permanent', $this->invoke('redirectFlag', 307));
+    }
 }
