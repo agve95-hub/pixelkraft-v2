@@ -11,58 +11,58 @@
         };
     @endphp
 
-    <div class="space-y-5 text-zinc-100">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+    <div class="space-y-5">
+        <div class="pk-page-head">
             <div>
-                <flux:heading size="xl" level="1" class="!text-zinc-100">{{ $greeting }}, {{ $user->name }}</flux:heading>
-                <flux:text class="mt-1 !text-zinc-400">{{ now()->format('l, F j, Y') }}</flux:text>
+                <h1 class="pk-page-title">{{ $greeting }}, {{ $user->name }}</h1>
+                <p class="pk-page-sub">{{ now()->format('l, F j, Y') }}</p>
             </div>
-            <flux:button href="{{ route('sites.index') }}" variant="subtle" size="sm" class="!border-zinc-700 !bg-zinc-900/70 !text-zinc-200">View all sites</flux:button>
+            <flux:button href="{{ route('sites.index') }}" variant="subtle" size="sm">View all sites</flux:button>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
-                <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Sites</p>
-                <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ $totalSites }}</p>
+        <div class="pk-stat-grid">
+            <div class="stat">
+                <p class="stat-label">Sites</p>
+                <p class="stat-val tabular-nums">{{ $totalSites }}</p>
                 @if ($sitesDown > 0)
-                    <p class="mt-0.5 text-xs text-red-400">{{ $sitesDown }} down</p>
+                    <p class="stat-note text-red-400">{{ $sitesDown }} down</p>
                 @elseif ($activeSites->whereNotNull('latestUptimeCheck')->isNotEmpty())
-                    <p class="mt-0.5 text-xs text-emerald-400">All online</p>
+                    <p class="stat-note text-emerald-400">All online</p>
                 @endif
             </div>
-            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
-                <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Uptime</p>
-                <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ number_format($uptimePercent, 1) }}<span class="text-sm text-zinc-500">%</span></p>
+            <div class="stat">
+                <p class="stat-label">Uptime</p>
+                <p class="stat-val tabular-nums">{{ number_format($uptimePercent, 1) }}<span class="text-sm text-zinc-500">%</span></p>
             </div>
-            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
-                <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Pages</p>
-                <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ $totalPages }}</p>
+            <div class="stat">
+                <p class="stat-label">Pages</p>
+                <p class="stat-val tabular-nums">{{ $totalPages }}</p>
             </div>
-            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
-                <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Messages</p>
-                <p class="mt-1 text-2xl font-semibold tabular-nums text-zinc-100">{{ $unreadMessages }}</p>
+            <div class="stat">
+                <p class="stat-label">Messages</p>
+                <p class="stat-val tabular-nums">{{ $unreadMessages }}</p>
                 @if ($unreadMessages > 0)
-                    <p class="mt-0.5 text-xs text-sky-400">Unread</p>
+                    <p class="stat-note text-sky-400">Unread</p>
                 @endif
             </div>
-            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
-                <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">Errors</p>
-                <p class="mt-1 text-2xl font-semibold tabular-nums {{ $errorCount > 0 ? 'text-red-400' : 'text-zinc-100' }}">{{ $errorCount }}</p>
+            <div class="stat">
+                <p class="stat-label">Errors</p>
+                <p class="stat-val tabular-nums {{ $errorCount > 0 ? 'text-red-400' : '' }}">{{ $errorCount }}</p>
                 @if ($errorCount > 0)
-                    <p class="mt-0.5 text-xs text-red-400">Needs attention</p>
+                    <p class="stat-note text-red-400">Needs attention</p>
                 @endif
             </div>
-            <div class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] px-4 py-3">
-                <p class="text-[11px] font-medium text-zinc-500 uppercase tracking-[0.14em]">SEO Issues</p>
-                <p class="mt-1 text-2xl font-semibold tabular-nums {{ $seoIssueCount > 0 ? 'text-amber-400' : 'text-zinc-100' }}">{{ $seoIssueCount }}</p>
+            <div class="stat">
+                <p class="stat-label">SEO Issues</p>
+                <p class="stat-val tabular-nums {{ $seoIssueCount > 0 ? 'text-amber-400' : '' }}">{{ $seoIssueCount }}</p>
                 @if ($seoIssueCount > 0)
-                    <p class="mt-0.5 text-xs text-amber-400">Needs attention</p>
+                    <p class="stat-note text-amber-400">Needs attention</p>
                 @endif
             </div>
         </div>
 
-        <section class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-4 md:p-5">
-            <div class="mb-3 flex items-start justify-between gap-4">
+        <section class="dash-card">
+            <div class="dash-card-head">
                 <div>
                     <p class="text-sm text-zinc-400">Traffic — All sites</p>
                     <p class="text-[11px] text-zinc-500">Last 30 days</p>
@@ -73,7 +73,7 @@
                 </div>
             </div>
 
-            <div class="rounded-lg border border-zinc-800/90 bg-[#141414] p-3">
+            <div class="chart-shell rounded-lg border border-zinc-800/90 bg-[#141414] p-3">
                 <svg class="h-52 w-full" viewBox="0 0 {{ $vbW }} {{ $vbH }}" preserveAspectRatio="none" role="img" aria-label="Traffic trend for all sites">
                     @foreach ([0, 1, 2, 3] as $line)
                         <line x1="{{ $pad }}" y1="{{ $pad + (($line / 3) * $plotH) }}" x2="{{ $vbW - $pad }}" y2="{{ $pad + (($line / 3) * $plotH) }}" stroke="rgb(39 39 42)" stroke-width="1" vector-effect="non-scaling-stroke" />
@@ -105,8 +105,8 @@
             <div class="space-y-5">
                 @foreach ($siteInsights as $insight)
                     <div class="space-y-4">
-                        <section class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-4">
-                            <div class="mb-3 flex items-start justify-between gap-3">
+                        <section class="dash-card">
+                            <div class="dash-card-head">
                                 <p class="text-sm text-zinc-300">{{ $insight['site']->name }} — Uptime</p>
                                 <p class="text-sm font-semibold tabular-nums {{ $insight['uptime_percent'] >= 99.8 ? 'text-emerald-400' : ($insight['uptime_percent'] >= 99 ? 'text-amber-400' : 'text-red-400') }}">
                                     {{ number_format($insight['uptime_percent'], 1) }}%
@@ -130,8 +130,8 @@
                             </div>
                         </section>
 
-                        <section class="rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-4">
-                            <div class="mb-3 flex items-start justify-between gap-3">
+                        <section class="dash-card">
+                            <div class="dash-card-head">
                                 <p class="text-sm text-zinc-300">{{ $insight['site']->name }} — Response time</p>
                                 <p class="text-[11px] text-zinc-500 tabular-nums">avg {{ number_format($insight['avg_response']) }}ms &nbsp; p95 {{ number_format($insight['p95_response']) }}ms</p>
                             </div>

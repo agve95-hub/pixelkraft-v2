@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Dashboard' }} — pixelkraft</title>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @fluxAppearance(['nonce' => csp_nonce()])
     @livewireStyles
 </head>
-<body class="min-h-screen bg-[#27272a] antialiased text-white dark:bg-[#27272a]">
+<body class="pk-app-shell min-h-screen antialiased text-white">
 
     @php
         // $navSites and $searchIndex are injected by the AppServiceProvider View composer.
@@ -20,10 +20,10 @@
         $expandedSiteId = $activeSite?->id ?? session('expanded_site_id');
     @endphp
 
-    <flux:sidebar sticky collapsible="mobile" class="border-r border-zinc-700 bg-zinc-900 dark:border-zinc-700 dark:bg-zinc-900">
+    <flux:sidebar sticky collapsible="mobile" class="pk-sidebar border-r">
         <flux:sidebar.header>
-            <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-1 py-0.5 text-[15px] font-semibold tracking-tight text-white no-underline">
-                <span class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 text-xs font-bold text-black">P</span>
+            <a href="{{ route('dashboard') }}" class="pk-logo flex items-center gap-2.5 px-1 py-0.5 text-[15px] font-semibold tracking-tight text-white no-underline">
+                <span class="pk-logo-mark flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-black">P</span>
                 pixelkraft
             </a>
             <flux:sidebar.collapse class="lg:hidden" />
@@ -217,7 +217,7 @@
                     variant="{{ request()->routeIs('sites.create') ? 'primary' : 'subtle' }}"
                     size="sm"
                     icon="plus"
-                    class="w-full justify-start border border-white/10 bg-white/[0.04] text-zinc-200 hover:bg-white/[0.08] {{ request()->routeIs('sites.create') ? '!border-transparent !bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950' : '' }}"
+                    class="w-full justify-start border border-white/10 bg-white/[0.04] text-zinc-200 hover:bg-white/[0.08] {{ request()->routeIs('sites.create') ? '!border-transparent !bg-emerald-400 hover:!bg-emerald-300 !text-zinc-950 dark:!text-zinc-950' : '' }}"
                 >New project</flux:button>
             </div>
         </flux:sidebar.nav>
@@ -282,7 +282,7 @@
         </flux:dropdown>
     </flux:header>
 
-    <flux:main class="bg-[#27272a] dark:bg-[#27272a]">
+    <flux:main class="pk-main">
         @if (session('success'))
             <div class="mb-6" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)">
                 <flux:callout variant="success" icon="check-circle" dismissible>{{ session('success') }}</flux:callout>

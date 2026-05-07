@@ -37,14 +37,14 @@
     @endphp
 
     <div class="space-y-7">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="pk-page-head">
             <div class="space-y-2">
                 <a href="{{ route('sites.index') }}" class="inline-flex items-center gap-1 text-xs text-zinc-500 transition hover:text-zinc-300">
                     <flux:icon name="chevron-left" class="size-3.5" />
                     Sites
                 </a>
                 <div class="flex flex-wrap items-center gap-2.5">
-                    <flux:heading size="xl">{{ $site->name }}</flux:heading>
+                    <h1 class="pk-page-title">{{ $site->name }}</h1>
                     <span class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium {{ $deployStatusClasses }}">
                         <span class="size-1.5 rounded-full bg-current"></span>{{ $deployStatusLabel }}
                     </span>
@@ -88,43 +88,43 @@
             </div>
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-            <div class="rounded-xl border border-zinc-800/90 bg-zinc-900/85 p-4">
-                <p class="text-[11px] uppercase tracking-[0.12em] text-zinc-500">Visitors today</p>
-                <p class="mt-1 font-mono text-3xl font-semibold text-zinc-100">{{ number_format($visitorsToday) }}</p>
-                <p class="mt-1 text-xs {{ $trendClass }}">{{ $trendLabel }}</p>
+        <div class="pk-stat-grid">
+            <div class="stat">
+                <p class="stat-label">Visitors today</p>
+                <p class="stat-val tabular-nums">{{ number_format($visitorsToday) }}</p>
+                <p class="stat-note {{ $trendClass }}">{{ $trendLabel }}</p>
             </div>
 
-            <div class="rounded-xl border border-zinc-800/90 bg-zinc-900/85 p-4">
-                <p class="text-[11px] uppercase tracking-[0.12em] text-zinc-500">Uptime</p>
+            <div class="stat">
+                <p class="stat-label">Uptime</p>
                 <p class="mt-1 font-mono text-3xl font-semibold text-zinc-100">{{ $uptimePercent !== null ? $uptimePercent . '%' : '—' }}</p>
-                <p class="mt-1 text-xs text-zinc-500">{{ $uptimePercent === 100.0 ? 'No downtime' : 'Rolling 50 checks' }}</p>
+                <p class="stat-note">{{ $uptimePercent === 100.0 ? 'No downtime' : 'Rolling 50 checks' }}</p>
             </div>
 
-            <div class="rounded-xl border border-zinc-800/90 bg-zinc-900/85 p-4">
-                <p class="text-[11px] uppercase tracking-[0.12em] text-zinc-500">SSL</p>
+            <div class="stat">
+                <p class="stat-label">SSL</p>
                 <div class="mt-2">
                     <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium {{ $sslClasses }}">{{ $sslStatusLabel }}</span>
                 </div>
-                <p class="mt-2 text-xs text-zinc-500">{{ $sslStatus === 'active' ? 'Certificate valid' : 'Not provisioned' }}</p>
+                <p class="stat-note">{{ $sslStatus === 'active' ? 'Certificate valid' : 'Not provisioned' }}</p>
             </div>
 
-            <div class="rounded-xl border border-zinc-800/90 bg-zinc-900/85 p-4">
-                <p class="text-[11px] uppercase tracking-[0.12em] text-zinc-500">SEO issues</p>
-                <p class="mt-1 font-mono text-3xl font-semibold text-amber-300">{{ $seoIssueCount }}</p>
-                <p class="mt-1 text-xs text-zinc-500">{{ $warningCount }} warning{{ $warningCount === 1 ? '' : 's' }}</p>
+            <div class="stat">
+                <p class="stat-label">SEO issues</p>
+                <p class="stat-val tabular-nums text-amber-300">{{ $seoIssueCount }}</p>
+                <p class="stat-note">{{ $warningCount }} warning{{ $warningCount === 1 ? '' : 's' }}</p>
             </div>
 
-            <div class="rounded-xl border border-zinc-800/90 bg-zinc-900/85 p-4">
-                <p class="text-[11px] uppercase tracking-[0.12em] text-zinc-500">Errors</p>
-                <p class="mt-1 font-mono text-3xl font-semibold {{ $errorCount > 0 ? 'text-red-300' : 'text-zinc-100' }}">{{ $errorCount }}</p>
-                <p class="mt-1 text-xs text-zinc-500">{{ $errorCount > 0 ? 'Needs attention' : 'No active errors' }}</p>
+            <div class="stat">
+                <p class="stat-label">Errors</p>
+                <p class="stat-val tabular-nums {{ $errorCount > 0 ? 'text-red-300' : '' }}">{{ $errorCount }}</p>
+                <p class="stat-note">{{ $errorCount > 0 ? 'Needs attention' : 'No active errors' }}</p>
             </div>
 
-            <div class="rounded-xl border border-zinc-800/90 bg-zinc-900/85 p-4">
-                <p class="text-[11px] uppercase tracking-[0.12em] text-zinc-500">Response</p>
-                <p class="mt-1 font-mono text-3xl font-semibold text-zinc-100">{{ $latestResponseLabel }}</p>
-                <p class="mt-1 text-xs text-zinc-500">P95: {{ $p95ResponseLabel }}</p>
+            <div class="stat">
+                <p class="stat-label">Response</p>
+                <p class="stat-val tabular-nums">{{ $latestResponseLabel }}</p>
+                <p class="stat-note">P95: {{ $p95ResponseLabel }}</p>
             </div>
         </div>
 
