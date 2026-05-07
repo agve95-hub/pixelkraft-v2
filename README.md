@@ -224,6 +224,20 @@ server {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
+    # Livewire and Flux serve versioned JavaScript through Laravel routes.
+    # Keep these before any generic static asset location that matches .js.
+    location ^~ /livewire- {
+        try_files $uri /index.php?$query_string;
+    }
+
+    location ^~ /livewire/ {
+        try_files $uri /index.php?$query_string;
+    }
+
+    location ^~ /flux/ {
+        try_files $uri /index.php?$query_string;
+    }
+
     location ~ \.php$ {
         fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
