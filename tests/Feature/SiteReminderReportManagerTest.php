@@ -79,13 +79,29 @@ class SiteReminderReportManagerTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(ReportManager::class, ['siteId' => $site->id])
+            ->call('startCreate')
             ->set('form_title', 'Q1 summary')
             ->set('form_report_date', '2026-04-01')
             ->set('form_summary', 'Traffic up.')
+            ->set('form_status', 'draft')
+            ->set('form_sections.0.title', 'Development')
+            ->set('form_sections.0.items.0', 'CMS configured')
+            ->set('form_next_steps.0', 'Review content with client')
             ->call('save')
             ->assertHasNoErrors();
 
         $rep = Report::query()->where('site_id', $site->id)->firstOrFail();
+        $this->assertSame('draft', $rep->status());
+        $this->assertSame('CMS configured', $rep->sections()[0]['items'][0]);
+        $this->assertSame('Review content with client', $rep->nextSteps()[0]);
+
+        Livewire::actingAs($user)
+            ->test(ReportManager::class, ['siteId' => $site->id])
+            ->call('openReport', $rep->id)
+            ->assertSet('screen', 'show')
+            ->call('markSent', $rep->id);
+
+        $this->assertSame('sent', $rep->fresh()->status());
 
         Livewire::actingAs($user)
             ->test(ReportManager::class, ['siteId' => $site->id])

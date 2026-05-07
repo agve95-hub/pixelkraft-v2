@@ -43,4 +43,25 @@ class Report extends Model
     {
         return $this->belongsTo(Site::class);
     }
+
+    public function status(): string
+    {
+        return (string) data_get($this->meta, 'status', 'draft');
+    }
+
+    /** @return array<int, array{type: string, title: string, items: array<int, string>}> */
+    public function sections(): array
+    {
+        $sections = data_get($this->meta, 'sections', []);
+
+        return is_array($sections) ? $sections : [];
+    }
+
+    /** @return array<int, string> */
+    public function nextSteps(): array
+    {
+        $nextSteps = data_get($this->meta, 'next_steps', []);
+
+        return is_array($nextSteps) ? $nextSteps : [];
+    }
 }

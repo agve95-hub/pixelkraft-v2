@@ -424,6 +424,38 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+.tab-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) * 2);
+    background: hsl(var(--card));
+    padding: 3px;
+}
+
+.tab {
+    display: inline-flex;
+    height: 30px;
+    align-items: center;
+    gap: 6px;
+    border-radius: var(--radius);
+    padding: 0 10px;
+    color: hsl(var(--muted-foreground));
+    font-size: 12px;
+    font-weight: 500;
+    transition: background 120ms, color 120ms;
+}
+
+.tab:hover {
+    color: hsl(var(--foreground));
+}
+
+.tab.active {
+    background: hsl(var(--secondary));
+    color: hsl(var(--foreground));
+}
+
 .deploy-item {
     display: grid;
     grid-template-columns: 92px 90px 64px 1fr auto;

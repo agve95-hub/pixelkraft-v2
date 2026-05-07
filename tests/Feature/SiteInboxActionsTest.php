@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Sites\SiteInbox;
 use App\Models\Site;
 use App\Models\SiteInboxMessage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class SiteInboxActionsTest extends TestCase
@@ -129,6 +132,45 @@ class SiteInboxActionsTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseMissing('site_inbox_messages', ['id' => $message->id]);
+    }
+
+    public function test_livewire_inbox_filters_replies_and_archives(): void
+    {
+        Mail::fake();
+
+        $user = $this->makeUser();
+        $site = $this->makeSite($user);
+        $message = $this->makeMessage($site, [
+            'from_email' => 'client@example.com',
+            'from_name' => 'Client',
+            'subject' => 'Updated copy',
+            'body' => 'Please update the About page.',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(SiteInbox::class, ['siteId' => $site->id])
+            ->call('selectMessage', $message->id)
+            ->assertSet('selectedId', $message->id)
+            ->call('replyTo', $message->id)
+            ->assertSet('composerOpen', true)
+            ->assertSet('composeTo', 'client@example.com')
+            ->set('composeBody', 'Done, thanks.')
+            ->call('sendMessage')
+            ->assertHasNoErrors()
+            ->assertSet('composerOpen', false)
+            ->call('setFilter', 'sent')
+            ->assertSet('filter', 'sent')
+            ->call('archiveMessage', $message->id);
+
+        $this->assertTrue((bool) $message->fresh()->is_read);
+        $this->assertTrue((bool) $message->fresh()->is_archived);
+        $this->assertDatabaseHas('site_inbox_messages', [
+            'site_id' => $site->id,
+            'direction' => 'outbound',
+            'to_email' => 'client@example.com',
+            'subject' => 'Re: Updated copy',
+            'body' => 'Done, thanks.',
+        ]);
     }
 
     public function test_other_user_cannot_archive_message(): void
