@@ -2,78 +2,50 @@
     <x-slot:title>Sites</x-slot:title>
 
     @php
-        $selectedSite = null;
-        $selectedId = request()->query('site');
-
-        if ($selectedId) {
-            $selectedSite = \App\Support\SiteAccess::query()->whereKey($selectedId)->first();
-        }
-
-        if (! $selectedSite) {
-            $selectedSite = \App\Support\SiteAccess::query()->orderBy('name')->first();
-        }
+        $sites = \App\Support\SiteAccess::query()
+            ->with(['latestUptimeCheck'])
+            ->withCount(['pages', 'invoices as unpaid_invoice_count' => fn ($q) => $q->where('status', 'unpaid'), 'reminders as pending_reminder_count' => fn ($q) => $q->where('is_done', false)])
+            ->orderBy('name')
+            ->get();
+        $liveCount = $sites->filter(fn ($site) => $site->deploy_status === \App\Enums\DeployStatus::Live)->count();
+        $unpaidCount = $sites->sum('unpaid_invoice_count');
+        $pendingCount = $sites->sum('pending_reminder_count');
     @endphp
 
-    <div class="space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="space-y-5">
+        <div class="pk-page-head">
             <div>
-                <flux:heading size="xl">Sites</flux:heading>
-                <flux:subheading>Add, connect, and deploy from one workspace.</flux:subheading>
+                <h1 class="pk-page-title">All sites</h1>
+                <p class="pk-page-sub">{{ $sites->count() }} projects</p>
             </div>
-            <flux:button href="{{ route('sites.create') }}" variant="primary" icon="plus" class="!bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950 shrink-0">
-                Add new site
+            <flux:button href="{{ route('sites.create') }}" variant="primary" icon="plus" class="!bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950">
+                New project
             </flux:button>
         </div>
 
-        <div class="space-y-6">
-            <flux:card>
-                <flux:heading size="lg">Your sites</flux:heading>
-                <flux:subheading>Click a site name to view its status and deploy controls below.</flux:subheading>
-
-                <div class="mt-4">
-                    @livewire('dashboard.site-list')
-                </div>
-            </flux:card>
-
-            @if ($selectedSite)
-                <flux:card>
-                    <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                            <flux:heading size="lg">{{ $selectedSite->name }}</flux:heading>
-                            <flux:subheading class="font-mono text-xs mt-1">{{ $selectedSite->repo_url }}</flux:subheading>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <flux:button href="{{ route('sites.show', $selectedSite) }}" variant="subtle" size="sm">Full details</flux:button>
-                            <flux:button href="{{ route('sites.settings', $selectedSite) }}" variant="subtle" icon="cog-6-tooth" size="sm">Settings</flux:button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-                        <flux:card size="sm">
-                            <flux:subheading size="sm">Pages</flux:subheading>
-                            <flux:heading size="xl" class="mt-1 font-mono">{{ $selectedSite->pages()->count() }}</flux:heading>
-                        </flux:card>
-                        <flux:card size="sm">
-                            <flux:subheading size="sm">Type</flux:subheading>
-                            <flux:badge color="purple" class="mt-2">{{ $selectedSite->project_type }}</flux:badge>
-                        </flux:card>
-                        <flux:card size="sm">
-                            <flux:subheading size="sm">Last Deploy</flux:subheading>
-                            <flux:text class="mt-2">{{ $selectedSite->last_deployed_at?->diffForHumans() ?? 'Never' }}</flux:text>
-                        </flux:card>
-                        <flux:card size="sm">
-                            <flux:subheading size="sm">Last Sync</flux:subheading>
-                            <flux:text class="mt-2">{{ $selectedSite->last_synced_at?->diffForHumans() ?? 'Never' }}</flux:text>
-                        </flux:card>
-                    </div>
-                </flux:card>
-
-                @livewire('sites.deploy-controls', ['siteId' => $selectedSite->id], key('deploy-controls-'.$selectedSite->id))
-            @else
-                <flux:card>
-                    <flux:text>No sites yet — use Add new site above to create one and unlock deploy controls here.</flux:text>
-                </flux:card>
-            @endif
+        <div class="stats stats-4">
+            <div class="stat">
+                <p class="stat-label">Projects</p>
+                <p class="stat-val">{{ $sites->count() }}</p>
+                <p class="stat-note">{{ $liveCount }} live</p>
+            </div>
+            <div class="stat">
+                <p class="stat-label">Pages</p>
+                <p class="stat-val">{{ number_format($sites->sum('pages_count')) }}</p>
+                <p class="stat-note">Indexed across all sites</p>
+            </div>
+            <div class="stat">
+                <p class="stat-label">Invoices</p>
+                <p class="stat-val {{ $unpaidCount ? 'text-amber-400' : '' }}">{{ $unpaidCount }}</p>
+                <p class="stat-note">Unpaid</p>
+            </div>
+            <div class="stat">
+                <p class="stat-label">Reminders</p>
+                <p class="stat-val {{ $pendingCount ? 'text-amber-400' : '' }}">{{ $pendingCount }}</p>
+                <p class="stat-note">Pending</p>
+            </div>
         </div>
+
+        @livewire('dashboard.site-list')
     </div>
 </x-layouts.app>

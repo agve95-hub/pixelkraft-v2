@@ -6,6 +6,7 @@ use App\Jobs\CloneRepoJob;
 use App\Models\Site;
 use App\Rules\GitRemoteUrl;
 use Illuminate\Contracts\View\View;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -30,6 +31,10 @@ class SiteManager extends Component
     public string $name = '';
 
     public string $projectType = 'static_html';
+
+    public string $sourceType = 'github';
+
+    public string $sourceMode = 'managed_build';
 
     public string $billingCycle = 'monthly';
 
@@ -82,6 +87,12 @@ class SiteManager extends Component
 
     public string $ftpSshPassword = '';
 
+    public ?string $detectedStackNote = null;
+
+    public ?string $detectedLanguage = null;
+
+    public string $sourceCheckStatus = 'pending';
+
     protected function rules(): array
     {
         return [
@@ -95,12 +106,14 @@ class SiteManager extends Component
 
             'name' => 'required|string|max:255',
             'projectType' => 'required|string|in:'.implode(',', config('pixelkraft.project_types', ['static_html'])),
-            'billingCycle' => 'nullable|string|in:monthly,quarterly,yearly',
+            'sourceType' => ['required', Rule::in(['github', 'upload'])],
+            'sourceMode' => ['required', Rule::in(['managed_build', 'upload_ready_build'])],
+            'billingCycle' => 'nullable|string|in:monthly,quarterly,yearly,one_time',
             'monthlyRetainer' => 'nullable|numeric|min:0',
 
             // Restrict to known git hosting providers to prevent GitHub token exfiltration
             // via a crafted repo URL pointing to an attacker-controlled host.
-            'repoUrl' => ['required', 'string', 'max:500', new GitRemoteUrl],
+            'repoUrl' => [$this->sourceType === 'github' ? 'required' : 'nullable', 'string', 'max:500', new GitRemoteUrl],
             // Branch: same strict regex as SiteSettings to prevent injection.
             'branch' => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9\-._\/]*$/'],
             // Build command: disallow shell injection metacharacters (; | ` $ < >) and newlines.
@@ -148,9 +161,10 @@ class SiteManager extends Component
             'client_address' => $this->clientAddress ?: null,
             'client_notes' => $this->clientNotes ?: null,
             'project_type' => $this->projectType,
+            'source_type' => $this->sourceType,
             'billing_cycle' => $this->billingCycle ?: null,
             'monthly_retainer' => $this->monthlyRetainer ?: null,
-            'repo_url' => $this->repoUrl,
+            'repo_url' => $this->sourceType === 'github' ? $this->repoUrl : null,
             'branch' => $this->branch,
             'build_command' => $this->buildCommand ?: null,
             'github_token' => $this->githubToken ?: null,
@@ -173,11 +187,62 @@ class SiteManager extends Component
             'ftp_ssh_password' => $this->ftpSshPassword ?: null,
         ]);
 
-        CloneRepoJob::dispatch($site);
+        if ($this->sourceType === 'github' && $this->repoUrl !== '') {
+            CloneRepoJob::dispatch($site);
+        }
 
-        session()->flash('success', "Site '{$site->name}' created. Cloning repository in background...");
+        $message = $this->sourceType === 'github'
+            ? "Site '{$site->name}' created. Cloning repository in background..."
+            : "Project draft '{$site->name}' created. Upload a build package from the project files screen.";
 
-        $this->redirect(route('sites.index', ['site' => $site->id]), navigate: true);
+        session()->flash('success', $message);
+
+        $this->redirect(route('sites.show', $site), navigate: true);
+    }
+
+    public function updatedSourceMode(string $mode): void
+    {
+        $this->sourceType = $mode === 'upload_ready_build' ? 'upload' : 'github';
+        $this->sourceCheckStatus = 'pending';
+    }
+
+    public function detectStack(): void
+    {
+        $repoName = Str::lower(Str::replaceEnd('.git', '', basename(parse_url($this->repoUrl, PHP_URL_PATH) ?: $this->repoUrl)));
+
+        [$type, $language, $command, $note] = match (true) {
+            Str::contains($repoName, ['next', 'nextjs']) => ['nextjs', 'JavaScript / TypeScript', 'npm run build', 'Detected: Next.js project. Build output: .next/'],
+            Str::contains($repoName, ['react', 'cra']) => ['react', 'JavaScript', 'npm run build', 'Detected: React project. Build output: build/ or dist/.'],
+            Str::contains($repoName, 'vue') => ['vue', 'JavaScript', 'npm run build', 'Detected: Vue project. Build output: dist/.'],
+            Str::contains($repoName, 'astro') => ['astro', 'JavaScript / TypeScript', 'npm run build', 'Detected: Astro project. Build output: dist/.'],
+            Str::contains($repoName, ['laravel', 'php']) => ['custom', 'PHP', 'composer install', 'Detected: PHP/Laravel project. Confirm public/ as the web root before deploy.'],
+            default => ['static_html', 'HTML / CSS / JS', '', 'Detected: Static site. No build step required.'],
+        };
+
+        $this->projectType = $type;
+        $this->detectedLanguage = $language;
+        $this->detectedStackNote = $note;
+        if ($this->buildCommand === '' && $command !== '') {
+            $this->buildCommand = $command;
+        }
+        $this->sourceCheckStatus = 'detected';
+    }
+
+    public function checkSourceReadiness(): void
+    {
+        $this->validateOnly('sourceType');
+
+        if ($this->sourceType === 'github') {
+            $this->validateOnly('repoUrl');
+            $this->validateOnly('branch');
+            $this->sourceCheckStatus = 'ready';
+            $this->detectedStackNote ??= 'Repository URL and branch passed local validation. Create the project to queue clone/build.';
+
+            return;
+        }
+
+        $this->sourceCheckStatus = 'ready';
+        $this->detectedStackNote = 'Upload source selected. Create the project draft, then upload a ZIP or ready build package.';
     }
 
     public function render(): View

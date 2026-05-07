@@ -122,21 +122,22 @@
         @endif
     @endif
 
-    @if ($screen === 'create')
+    @if (in_array($screen, ['create', 'edit'], true))
         @php
             $t = $this->createTotals();
             $sym = Invoice::currencySymbol($form_currency_code);
+            $isEditing = $screen === 'edit';
         @endphp
         <div class="mb-8">
             <button
                 type="button"
-                wire:click="cancelCreate"
+                wire:click="{{ $isEditing ? 'cancelEdit' : 'cancelCreate' }}"
                 class="mb-4 inline-flex items-center gap-1 text-sm text-zinc-500 transition hover:text-zinc-300"
             >
                 <span aria-hidden="true">←</span>
                 Invoices
             </button>
-            <h1 class="text-2xl font-semibold tracking-tight text-zinc-100">New invoice</h1>
+            <h1 class="text-2xl font-semibold tracking-tight text-zinc-100">{{ $isEditing ? 'Edit invoice' : 'New invoice' }}</h1>
             <p class="mt-1 text-sm text-zinc-500">{{ $site->clientDisplayName() }} · {{ $form_number }}</p>
         </div>
 
@@ -298,9 +299,13 @@
             </flux:field>
 
             <div class="flex flex-wrap gap-3 pb-12">
-                <flux:button type="button" variant="primary" wire:click="saveInvoice">Create invoice</flux:button>
+                @if ($isEditing)
+                    <flux:button type="button" variant="primary" wire:click="updateInvoice">Save changes</flux:button>
+                @else
+                    <flux:button type="button" variant="primary" wire:click="saveInvoice">Create invoice</flux:button>
+                @endif
                 <flux:button type="button" variant="subtle" wire:click="previewDraft">Preview</flux:button>
-                <flux:button type="button" variant="ghost" wire:click="cancelCreate">Cancel</flux:button>
+                <flux:button type="button" variant="ghost" wire:click="{{ $isEditing ? 'cancelEdit' : 'cancelCreate' }}">Cancel</flux:button>
             </div>
         </div>
     @endif
@@ -445,6 +450,7 @@
                 <h1 class="text-2xl font-semibold tracking-tight text-zinc-100">{{ $inv->number }}</h1>
                 <span class="inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-semibold {{ $badge }}">● {{ $inv->displayStatus() }}</span>
                 <div class="ml-auto flex flex-wrap gap-2">
+                    <flux:button type="button" size="sm" variant="subtle" wire:click="startEdit">Edit</flux:button>
                     @if ($inv->status === Invoice::STATUS_UNPAID)
                         <flux:button type="button" size="sm" variant="subtle" wire:click="markPaid" wire:confirm="Mark this invoice as paid?">
                             Mark as paid

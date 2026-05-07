@@ -90,6 +90,36 @@ class MoreLivewireComponentsTest extends TestCase
 
     // ── RedirectManager ───────────────────────────
 
+    public function test_site_manager_detects_stack_from_repo_url(): void
+    {
+        $user = $this->makeUser('detect@mlw.com');
+
+        Livewire::actingAs($user)
+            ->test(SiteManager::class)
+            ->set('repoUrl', 'https://github.com/example/next-marketing-site.git')
+            ->call('detectStack')
+            ->assertSet('projectType', 'nextjs')
+            ->assertSet('buildCommand', 'npm run build')
+            ->assertSet('detectedLanguage', 'JavaScript / TypeScript');
+    }
+
+    public function test_site_manager_can_create_upload_project_draft_without_repo(): void
+    {
+        $user = $this->makeUser('upload-draft@mlw.com');
+
+        Livewire::actingAs($user)
+            ->test(SiteManager::class)
+            ->set('name', 'Upload Draft')
+            ->set('sourceMode', 'upload_ready_build')
+            ->call('create');
+
+        $this->assertDatabaseHas('sites', [
+            'name' => 'Upload Draft',
+            'source_type' => 'upload',
+            'repo_url' => null,
+        ]);
+    }
+
     public function test_redirect_manager_renders(): void
     {
         $user = $this->makeUser('rdir@mlw.com');

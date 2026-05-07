@@ -123,6 +123,49 @@ class LivewireComponentsTest extends TestCase
 
     // ── MaintenanceMode ───────────────────────────
 
+    public function test_invoice_manager_can_edit_existing_invoice(): void
+    {
+        $user = $this->makeUser('invoice-edit@lw.com');
+        $site = $this->makeSite($user);
+
+        $invoice = Invoice::create([
+            'site_id' => $site->id,
+            'number' => 'INV-2026-001',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'currency_code' => 'EUR',
+            'status' => 'unpaid',
+            'tax_rate' => 0,
+            'discount_percent' => 0,
+            'payment_terms' => 'net30',
+            'bill_to' => 'Original Client',
+        ]);
+
+        $invoice->items()->create([
+            'description' => 'Original work',
+            'quantity' => 1,
+            'rate' => 100,
+            'sort_order' => 0,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(InvoiceManager::class, ['siteId' => $site->id])
+            ->call('openInvoice', $invoice->id)
+            ->call('startEdit')
+            ->assertSet('screen', 'edit')
+            ->set('form_bill_to', 'Updated Client')
+            ->set('form_lines.0.description', 'Updated work')
+            ->set('form_lines.0.rate', '250')
+            ->call('updateInvoice')
+            ->assertSet('screen', 'show');
+
+        $fresh = $invoice->fresh('items');
+
+        $this->assertSame('Updated Client', $fresh->bill_to);
+        $this->assertSame('Updated work', $fresh->items->first()->description);
+        $this->assertSame(250.0, (float) $fresh->items->first()->rate);
+    }
+
     public function test_maintenance_mode_renders(): void
     {
         $user = $this->makeUser('maint@lw.com');

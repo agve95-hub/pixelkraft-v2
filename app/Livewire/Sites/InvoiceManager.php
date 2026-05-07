@@ -22,6 +22,8 @@ class InvoiceManager extends Component
     /** @var array<string, mixed>|null Built from the create form for preview-only rendering */
     public ?array $previewData = null;
 
+    public string $previewReturnScreen = 'create';
+
     public string $form_number = '';
 
     public string $form_invoice_date = '';
@@ -156,6 +158,24 @@ class InvoiceManager extends Component
         $this->resetCreateForm();
     }
 
+    public function startEdit(): void
+    {
+        $invoice = $this->resolveActiveInvoice();
+        if (! $invoice) {
+            return;
+        }
+
+        $this->previewData = null;
+        $this->fillFormFromInvoice($invoice);
+        $this->screen = 'edit';
+    }
+
+    public function cancelEdit(): void
+    {
+        $this->previewData = null;
+        $this->screen = 'show';
+    }
+
     public function previewDraft(): void
     {
         $lines = $this->billableFormLines();
@@ -208,13 +228,14 @@ class InvoiceManager extends Component
             'total' => number_format($total, 2, '.', ''),
         ];
 
+        $this->previewReturnScreen = $this->screen === 'edit' ? 'edit' : 'create';
         $this->screen = 'preview';
     }
 
     public function backFromPreview(): void
     {
         $this->previewData = null;
-        $this->screen = 'create';
+        $this->screen = $this->previewReturnScreen;
     }
 
     public function addLine(): void
@@ -251,7 +272,7 @@ class InvoiceManager extends Component
         if (! $invoice) {
             return;
         }
-        $invoice->update(['status' => Invoice::STATUS_PAID]);
+        $invoice->update(['status' => Invoice::STATUS_PAID, 'paid_at' => now()]);
         $this->dispatch('invoice-updated');
     }
 
@@ -300,8 +321,62 @@ class InvoiceManager extends Component
     {
         $site = SiteAccess::findOrFail($this->siteId);
 
-        $this->validate([
-            'form_number' => ['required', 'string', 'max:64', Rule::unique('invoices', 'number')->where('site_id', $site->id)],
+        $this->validate($this->formRules($site));
+
+        $lines = $this->billableFormLines();
+
+        if ($lines->isEmpty()) {
+            $this->addError('form_lines', 'Add at least one line item with a description and a rate greater than zero.');
+
+            return;
+        }
+
+        $this->persistFormInvoice($site, $lines);
+
+        $this->screen = 'index';
+        $this->resetCreateForm();
+        $this->dispatch('invoice-updated');
+    }
+
+    public function updateInvoice(): void
+    {
+        $site = SiteAccess::findOrFail($this->siteId);
+        $invoice = $this->resolveActiveInvoice();
+        if (! $invoice) {
+            return;
+        }
+
+        $this->validate($this->formRules($site, $invoice));
+
+        $lines = $this->billableFormLines();
+
+        if ($lines->isEmpty()) {
+            $this->addError('form_lines', 'Add at least one line item with a description and a rate greater than zero.');
+
+            return;
+        }
+
+        $this->persistFormInvoice($site, $lines, $invoice);
+
+        $this->previewData = null;
+        $this->screen = 'show';
+        $this->dispatch('invoice-updated');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function formRules(\App\Models\Site $site, ?Invoice $invoice = null): array
+    {
+        return [
+            'form_number' => [
+                'required',
+                'string',
+                'max:64',
+                Rule::unique('invoices', 'number')
+                    ->where('site_id', $site->id)
+                    ->ignore($invoice?->id),
+            ],
             'form_invoice_date' => ['required', 'date'],
             'form_due_date' => ['required', 'date'],
             'form_currency_code' => ['required', 'string', 'size:3'],
@@ -316,23 +391,24 @@ class InvoiceManager extends Component
             'form_lines.*.description' => ['nullable', 'string', 'max:2000'],
             'form_lines.*.quantity' => ['nullable', 'numeric', 'min:0'],
             'form_lines.*.rate' => ['nullable', 'numeric', 'min:0'],
-        ]);
+        ];
+    }
 
-        $lines = $this->billableFormLines();
-
-        if ($lines->isEmpty()) {
-            $this->addError('form_lines', 'Add at least one line item with a description and a rate greater than zero.');
-
-            return;
-        }
-
-        DB::transaction(function () use ($site, $lines) {
-            $invoice = Invoice::create([
+    /**
+     * @param Collection<int, array{description: string, quantity: string, rate: string}> $lines
+     */
+    protected function persistFormInvoice(\App\Models\Site $site, Collection $lines, ?Invoice $invoice = null): Invoice
+    {
+        return DB::transaction(function () use ($site, $lines, $invoice) {
+            $invoice ??= new Invoice([
                 'site_id' => $site->id,
+                'status' => Invoice::STATUS_UNPAID,
+            ]);
+
+            $invoice->fill([
                 'number' => $this->form_number,
                 'invoice_date' => $this->form_invoice_date,
                 'due_date' => $this->form_due_date,
-                'status' => Invoice::STATUS_UNPAID,
                 'currency_code' => strtoupper($this->form_currency_code),
                 'tax_rate' => $this->form_tax_rate,
                 'discount_percent' => $this->form_discount_percent,
@@ -341,8 +417,9 @@ class InvoiceManager extends Component
                 'payment_details' => $this->form_payment_details ?: null,
                 'from_address' => $this->form_from_address ?: null,
                 'bill_to' => $this->form_bill_to ?: null,
-            ]);
+            ])->save();
 
+            $invoice->items()->delete();
             foreach ($lines->values() as $i => $row) {
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
@@ -352,11 +429,35 @@ class InvoiceManager extends Component
                     'sort_order' => $i,
                 ]);
             }
-        });
 
-        $this->screen = 'index';
-        $this->resetCreateForm();
-        $this->dispatch('invoice-updated');
+            $this->activeInvoiceId = $invoice->id;
+
+            return $invoice;
+        });
+    }
+
+    protected function fillFormFromInvoice(Invoice $invoice): void
+    {
+        $invoice->loadMissing('items');
+
+        $this->form_number = (string) $invoice->number;
+        $this->form_invoice_date = $invoice->invoice_date?->toDateString() ?? now()->toDateString();
+        $this->form_due_date = $invoice->due_date?->toDateString() ?? now()->addDays(30)->toDateString();
+        $this->form_payment_terms = (string) ($invoice->payment_terms ?: 'net30');
+        $this->form_currency_code = (string) ($invoice->currency_code ?: 'EUR');
+        $this->form_tax_rate = (string) ($invoice->tax_rate ?? '0');
+        $this->form_discount_percent = (string) ($invoice->discount_percent ?? '0');
+        $this->form_notes = (string) ($invoice->notes ?? '');
+        $this->form_payment_details = (string) ($invoice->payment_details ?? '');
+        $this->form_from_address = (string) ($invoice->from_address ?? '');
+        $this->form_bill_to = (string) ($invoice->bill_to ?? '');
+        $this->form_lines = $invoice->items->map(fn (InvoiceItem $item) => [
+            'description' => (string) $item->description,
+            'quantity' => (string) $item->quantity,
+            'rate' => (string) $item->rate,
+        ])->values()->all() ?: [
+            ['description' => '', 'quantity' => '1', 'rate' => '0'],
+        ];
     }
 
     protected function resolveActiveInvoice(): ?Invoice

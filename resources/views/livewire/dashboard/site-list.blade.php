@@ -1,68 +1,61 @@
 <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
-        <flux:input wire:model.live.debounce.300ms="search" placeholder="Search sites..." icon="magnifying-glass" class="max-w-xs" />
-        <flux:button href="{{ route('sites.create') }}" size="sm" variant="subtle" icon="plus">Add new site</flux:button>
+        <flux:input wire:model.live.debounce.300ms="search" placeholder="Search projects..." icon="magnifying-glass" class="max-w-xs" />
+        <flux:button href="{{ route('sites.create') }}" size="sm" variant="subtle" icon="plus">New project</flux:button>
     </div>
 
-    <flux:table>
-        <flux:table.columns>
-            <flux:table.column>Site</flux:table.column>
-            <flux:table.column class="hidden md:table-cell">Pages</flux:table.column>
-            <flux:table.column>Domain</flux:table.column>
-            <flux:table.column>Type</flux:table.column>
-            <flux:table.column>Status</flux:table.column>
-            <flux:table.column>Last Deploy</flux:table.column>
-            <flux:table.column></flux:table.column>
-        </flux:table.columns>
-
-        <flux:table.rows>
-            @forelse ($sites as $site)
-                <flux:table.row>
-                    <flux:table.cell>
-                        <a href="{{ route('sites.index', ['site' => $site->id]) }}" class="flex items-center gap-2 hover:underline underline-offset-2">
-                            <span @class([
-                                'h-2 w-2 rounded-full shrink-0',
-                                'bg-lime-500' => $site->latestUptimeCheck?->is_up === true,
-                                'bg-red-500' => $site->latestUptimeCheck?->is_up === false,
-                                'bg-zinc-400' => is_null($site->latestUptimeCheck?->is_up),
-                            ])></span>
-                            <span class="font-medium">{{ $site->name }}</span>
-                        </a>
-                    </flux:table.cell>
-                    <flux:table.cell class="hidden md:table-cell text-xs font-mono">
-                        {{ number_format($site->pages_count) }}
-                    </flux:table.cell>
-                    <flux:table.cell class="font-mono text-xs">{{ $site->domain ?? '—' }}</flux:table.cell>
-                    <flux:table.cell><flux:badge size="sm" color="purple">{{ $site->project_type }}</flux:badge></flux:table.cell>
-                    <flux:table.cell>
-                        @if ($site->deploy_status === \App\Enums\DeployStatus::Live)
-                            <flux:badge size="sm" color="lime">Live</flux:badge>
-                        @elseif ($site->deploy_status === \App\Enums\DeployStatus::Failed)
-                            <flux:badge size="sm" color="red">Failed</flux:badge>
-                        @else
-                            <flux:badge size="sm" color="zinc">{{ $site->status }}</flux:badge>
-                        @endif
-                    </flux:table.cell>
-                    <flux:table.cell class="text-xs">{{ $site->last_deployed_at?->diffForHumans() ?? 'Never' }}</flux:table.cell>
-                    <flux:table.cell>
-                        <div class="flex items-center justify-end gap-1">
-                            <flux:button href="{{ route('sites.show', $site) }}" size="xs" variant="ghost">Open</flux:button>
-                            <flux:button href="{{ route('sites.settings', $site) }}" size="xs" variant="ghost" icon="cog-6-tooth" aria-label="Settings for {{ $site->name }}"></flux:button>
-                        </div>
-                    </flux:table.cell>
-                </flux:table.row>
-            @empty
-                <flux:table.row>
-                    <flux:table.cell colspan="7" class="text-center py-12">
-                        <div class="flex flex-col items-center gap-3">
-                            <flux:icon name="globe-alt" variant="outline" class="size-10 text-zinc-400" />
-                            <flux:heading>No sites yet</flux:heading>
-                            <flux:text size="sm">Add your first site to get started.</flux:text>
-                            <flux:button href="{{ route('sites.create') }}" variant="primary" icon="plus" class="mt-2 !bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950">Add your first site</flux:button>
-                        </div>
-                    </flux:table.cell>
-                </flux:table.row>
-            @endforelse
-        </flux:table.rows>
-    </flux:table>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th class="px-4 py-2.5">Site</th>
+                    <th class="px-4 py-2.5">Client</th>
+                    <th class="px-4 py-2.5">Type</th>
+                    <th class="px-4 py-2.5">Status</th>
+                    <th class="px-4 py-2.5">SSL</th>
+                    <th class="hidden px-4 py-2.5 md:table-cell">Pages</th>
+                    <th class="px-4 py-2.5 text-right">Last deploy</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($sites as $site)
+                    @php
+                        $isUp = $site->latestUptimeCheck?->is_up;
+                        $dot = $isUp === true ? 'bg-emerald-400' : ($isUp === false ? 'bg-red-400' : 'bg-amber-400');
+                        $statusClass = $site->deploy_status === \App\Enums\DeployStatus::Live
+                            ? 'pill-green'
+                            : ($site->deploy_status === \App\Enums\DeployStatus::Failed ? 'pill-red' : 'pill-yellow');
+                        $sslClass = $site->ssl_status === 'active' ? 'pill-green' : 'pill-yellow';
+                    @endphp
+                    <tr class="clickable" onclick="window.location='{{ route('sites.show', $site) }}'">
+                        <td class="px-4 py-3">
+                            <div class="site-name">
+                                <span class="site-dot {{ $dot }}"></span>
+                                <div class="min-w-0">
+                                    <div class="truncate font-medium text-zinc-100">{{ $site->name }}</div>
+                                    <div class="truncate font-mono text-[11px] text-zinc-500">{{ $site->domain ?: $site->repo_url ?: 'Draft project' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-zinc-400">{{ $site->clientDisplayName() }}</td>
+                        <td class="px-4 py-3"><span class="tag">{{ $site->project_type_label }}</span></td>
+                        <td class="px-4 py-3"><span class="pill {{ $statusClass }}">{{ $site->status }}</span></td>
+                        <td class="px-4 py-3"><span class="pill {{ $sslClass }}">{{ $site->ssl_status === 'active' ? 'Active' : 'Pending' }}</span></td>
+                        <td class="hidden px-4 py-3 font-mono text-xs text-zinc-400 md:table-cell">{{ number_format($site->pages_count) }}</td>
+                        <td class="px-4 py-3 text-right text-xs text-zinc-500">{{ $site->last_deployed_at?->diffForHumans() ?? 'Never' }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="px-4 py-12 text-center">
+                            <div class="empty">
+                                <div class="empty-icon"><flux:icon name="globe-alt" class="size-4" /></div>
+                                <div>No sites yet</div>
+                                <flux:button href="{{ route('sites.create') }}" variant="primary" icon="plus" class="mt-2 !bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950">Add your first site</flux:button>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>
