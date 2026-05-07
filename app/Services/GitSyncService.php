@@ -125,6 +125,7 @@ class GitSyncService
                 'working_branch' => $session?->working_branch,
                 'files' => array_values($files),
             ]);
+            $committedSha = null;
 
             try {
                 $this->configureCommitIdentity($repo);
@@ -141,6 +142,7 @@ class GitSyncService
                 }
 
                 $repo->commit($message);
+                $committedSha = $this->getCurrentSha($repo);
                 $repo->execute('push', 'origin', $site->branch);
 
                 $sha = $this->getCurrentSha($repo);
@@ -167,6 +169,10 @@ class GitSyncService
                     }
                 }
 
+                if ($committedSha && $this->shouldKeepLocalCommitWhenPushFails($site)) {
+                    return $this->finishAsLocalOnlyCommit($operation, $site, $committedSha, $e);
+                }
+
                 $this->finishOperation($operation, 'failed', error: $this->scrubSecrets($e->getMessage()));
                 throw $e;
             } catch (\Throwable $e) {
@@ -185,6 +191,7 @@ class GitSyncService
                 'branch' => $site->branch,
                 'working_branch' => $session?->working_branch,
             ]);
+            $committedSha = null;
 
             try {
                 $this->configureCommitIdentity($repo);
@@ -198,6 +205,7 @@ class GitSyncService
                 }
 
                 $repo->commit($message);
+                $committedSha = $this->getCurrentSha($repo);
                 $repo->execute('push', 'origin', $site->branch);
 
                 $sha = $this->getCurrentSha($repo);
@@ -215,6 +223,10 @@ class GitSyncService
                         $this->finishOperation($operation, 'conflict', error: $this->scrubSecrets($rebaseException->getMessage()));
                         throw $rebaseException;
                     }
+                }
+
+                if ($committedSha && $this->shouldKeepLocalCommitWhenPushFails($site)) {
+                    return $this->finishAsLocalOnlyCommit($operation, $site, $committedSha, $e);
                 }
 
                 $this->finishOperation($operation, 'failed', error: $this->scrubSecrets($e->getMessage()));
@@ -464,6 +476,31 @@ class GitSyncService
         return str_contains($message, 'rejected')
             || str_contains($message, 'non-fast-forward')
             || str_contains($message, 'fetch first');
+    }
+
+    private function shouldKeepLocalCommitWhenPushFails(Site $site): bool
+    {
+        return empty($site->github_token);
+    }
+
+    private function finishAsLocalOnlyCommit(
+        GitOperation $operation,
+        Site $site,
+        string $sha,
+        GitException $exception,
+    ): string {
+        $message = 'Committed locally; GitHub push skipped because no write token is configured. '
+            .'Add a GitHub token in site settings to sync editor saves upstream. '
+            .'Push error: '.$this->scrubSecrets($exception->getMessage());
+
+        $this->finishOperation($operation, 'success', commitSha: $sha, output: $message);
+
+        Log::warning("Kept local-only commit for site [{$site->slug}] after push failed.", [
+            'sha' => $sha,
+            'error' => $this->scrubSecrets($exception->getMessage()),
+        ]);
+
+        return $sha;
     }
 
     private function pullRebaseAndPush(Site $site, GitRepository $repo): string
