@@ -137,4 +137,40 @@ class EditorPreviewControllerTest extends TestCase
             ->get(route('editor.asset', ['site' => $site, 'path' => '../etc/passwd']))
             ->assertNotFound();
     }
+
+    public function test_asset_route_serves_next_export_assets_from_build_output(): void
+    {
+        $user = $this->makeUser();
+        $site = $this->makeSite($user);
+        $site->update([
+            'project_type' => 'nextjs',
+            'build_output_dir' => 'out',
+            'deployment_mode' => 'static',
+        ]);
+
+        $assetPath = 'out/_next/static/css/app.css';
+        $fullPath = $site->repo_path.'/'.$assetPath;
+        if (! is_dir(dirname($fullPath))) {
+            mkdir(dirname($fullPath), 0755, true);
+        }
+        file_put_contents($fullPath, '.demo { color: orange; }');
+
+        $this->actingAs($user)
+            ->get(route('editor.asset', ['site' => $site, 'path' => $assetPath]))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/css; charset=utf-8')
+            ->assertSee('color: orange', false);
+    }
+
+    public function test_production_nginx_passes_preview_assets_to_laravel_before_static_rule(): void
+    {
+        $config = file_get_contents(base_path('docker/nginx/prod.conf'));
+
+        $previewLocation = strpos($config, 'location ^~ /dashboard/preview/');
+        $staticLocation = strpos($config, 'location ~* \\.(css|js|jpg|jpeg|png|gif|ico|svg|webp|woff|woff2|ttf|eot)$');
+
+        $this->assertNotFalse($previewLocation);
+        $this->assertNotFalse($staticLocation);
+        $this->assertLessThan($staticLocation, $previewLocation);
+    }
 }
