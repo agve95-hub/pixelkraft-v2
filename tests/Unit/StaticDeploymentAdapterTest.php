@@ -2,11 +2,13 @@
 
 namespace Tests\Unit;
 
+use App\Models\DeployLog;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\Deployment\StaticDeploymentAdapter;
 use App\Services\SiteRuntimeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -212,10 +214,10 @@ class StaticDeploymentAdapterTest extends TestCase
         // Site::creating auto-assigns deploy_path; force-clear it after create
         $user = $this->makeUser();
         $site = $this->makeSite($user, ['repo_path' => $this->tempDir, 'build_output_dir' => null]);
-        \Illuminate\Support\Facades\DB::table('sites')->where('id', $site->id)->update(['deploy_path' => null]);
+        DB::table('sites')->where('id', $site->id)->update(['deploy_path' => null]);
         $site->refresh();
 
-        $log = new \App\Models\DeployLog(['site_id' => $site->id, 'status' => 'deploying']);
+        $log = new DeployLog(['site_id' => $site->id, 'status' => 'deploying']);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('No deploy path configured');

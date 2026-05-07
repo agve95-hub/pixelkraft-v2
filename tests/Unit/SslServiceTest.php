@@ -2,12 +2,11 @@
 
 namespace Tests\Unit;
 
-use App\Models\Notification;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\SslService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Process;
 use Tests\TestCase;
@@ -66,7 +65,7 @@ class SslServiceTest extends TestCase
     {
         $user = $this->makeUser();
         $site = $this->makeSite($user, ['domain' => null]);
-        \Illuminate\Support\Facades\DB::table('sites')
+        DB::table('sites')
             ->where('id', $site->id)
             ->update(['domain' => null]);
         $site->refresh();
@@ -112,7 +111,7 @@ class SslServiceTest extends TestCase
     {
         $user = $this->makeUser();
         $site = $this->makeSite($user);
-        \Illuminate\Support\Facades\DB::table('sites')
+        DB::table('sites')
             ->where('id', $site->id)->update(['domain' => null]);
 
         Process::fake();

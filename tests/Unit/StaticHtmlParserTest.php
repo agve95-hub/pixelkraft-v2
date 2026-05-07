@@ -167,7 +167,7 @@ class StaticHtmlParserTest extends TestCase
 
     public function test_detects_cms_editable_marker_region(): void
     {
-        $html = <<<HTML
+        $html = <<<'HTML'
         <html><body>
         <!-- cms:editable id="hero-title" type="text" -->
         <h1>Welcome</h1>
@@ -187,7 +187,7 @@ class StaticHtmlParserTest extends TestCase
 
     public function test_detects_pk_editable_marker_region(): void
     {
-        $html = <<<HTML
+        $html = <<<'HTML'
         <html><body>
         <!-- pk:editable:start:my-heading type="text" -->
         <h2>Section Title</h2>

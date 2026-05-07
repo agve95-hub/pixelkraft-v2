@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Jobs\DeploySiteJob;
 use App\Jobs\ParseSiteJob;
 use App\Jobs\SyncFromWebhookJob;
+use App\Models\Notification;
 use App\Models\Site;
 use App\Models\User;
 use App\Models\WebhookDelivery;
@@ -194,7 +195,7 @@ class SyncFromWebhookJobTest extends TestCase
         } catch (\RuntimeException) {
         }
 
-        $notification = \App\Models\Notification::where('site_id', $site->id)->first();
+        $notification = Notification::where('site_id', $site->id)->first();
         $this->assertNotNull($notification);
         $this->assertStringNotContainsString('ghp_MyS3cr3tToken', (string) $notification->body);
         $this->assertStringContainsString('[REDACTED]', (string) $notification->body);

@@ -4,7 +4,6 @@ namespace Tests\Unit;
 
 use App\Models\Site;
 use App\Models\User;
-use App\Services\Parsers\ParsedPage;
 use App\Services\Parsers\SsgOutputParser;
 use App\Services\Parsers\StaticHtmlParser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -114,7 +113,7 @@ class SsgOutputParserTest extends TestCase
 
     public function test_enriches_region_source_location_with_source_file_info(): void
     {
-        $html = <<<HTML
+        $html = <<<'HTML'
         <html><head><title>T</title></head>
         <body><main><h1>Built Page Heading Here</h1></main></body>
         </html>

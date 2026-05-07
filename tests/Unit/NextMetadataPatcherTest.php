@@ -136,7 +136,7 @@ class NextMetadataPatcherTest extends TestCase
         $content = "import type { Metadata } from 'next';\n\nexport const metadata = {\n  title: 'Old',\n};\n\nexport default function Page() { return null; }\n";
         $result = $this->patcher->patch($content, ['title' => 'New']);
 
-        $this->assertStringContainsString("import type { Metadata }", $result);
+        $this->assertStringContainsString('import type { Metadata }', $result);
         $this->assertStringContainsString('export default function Page', $result);
     }
 

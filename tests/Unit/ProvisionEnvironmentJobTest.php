@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use App\Jobs\ProvisionEnvironmentJob;
-use App\Jobs\ProvisionSslJob;
 use App\Models\DeployLog;
 use App\Models\DeploymentRelease;
 use App\Models\Site;

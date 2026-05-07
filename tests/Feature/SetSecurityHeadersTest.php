@@ -2,11 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\SetSecurityHeaders;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class SetSecurityHeadersTest extends TestCase
 {
-    private function loginPage(): \Illuminate\Testing\TestResponse
+    private function loginPage(): TestResponse
     {
         // /login is public and always rendered by the middleware stack
         return $this->get('/login');
@@ -84,11 +88,11 @@ class SetSecurityHeadersTest extends TestCase
         // The full HTTP stack strips the HTTPS server var before Request::isSecure()
         // sees it, so we invoke the middleware directly with a request whose server
         // bag already has HTTPS=on — the only reliable way to hit that branch.
-        $middleware = new \App\Http\Middleware\SetSecurityHeaders;
-        $request = \Illuminate\Http\Request::create('/login', 'GET');
+        $middleware = new SetSecurityHeaders;
+        $request = Request::create('/login', 'GET');
         $request->server->set('HTTPS', 'on');
 
-        $response = $middleware->handle($request, fn ($r) => new \Illuminate\Http\Response('ok'));
+        $response = $middleware->handle($request, fn ($r) => new Response('ok'));
         $hsts = $response->headers->get('Strict-Transport-Security');
 
         $this->assertNotNull($hsts);

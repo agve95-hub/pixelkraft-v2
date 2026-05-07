@@ -4,15 +4,15 @@ namespace Tests\Unit;
 
 use App\Models\Site;
 use App\Models\User;
-use App\Services\ParserService;
 use App\Services\Parsers\ParsedPage;
-use App\Services\Parsers\ParserInterface;
 use App\Services\Parsers\RenderedPhpParser;
 use App\Services\Parsers\SpaComponentParser;
 use App\Services\Parsers\SsgOutputParser;
 use App\Services\Parsers\StaticHtmlParser;
+use App\Services\ParserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class ParserServiceTest extends TestCase
@@ -57,7 +57,7 @@ class ParserServiceTest extends TestCase
 
     private function mockStaticParser(array $files, array $parsedPages = []): StaticHtmlParser
     {
-        /** @var StaticHtmlParser&\Mockery\MockInterface $parser */
+        /** @var StaticHtmlParser&MockInterface $parser */
         $parser = \Mockery::mock(StaticHtmlParser::class);
         $parser->shouldReceive('name')->andReturn('static_html')->byDefault();
         $parser->shouldReceive('discoverPages')->andReturn($files)->byDefault();
@@ -74,7 +74,7 @@ class ParserServiceTest extends TestCase
 
     private function mockSsgParser(array $files = []): SsgOutputParser
     {
-        /** @var SsgOutputParser&\Mockery\MockInterface $parser */
+        /** @var SsgOutputParser&MockInterface $parser */
         $parser = \Mockery::mock(SsgOutputParser::class);
         $parser->shouldReceive('name')->andReturn('ssg_output')->byDefault();
         $parser->shouldReceive('discoverPages')->andReturn($files)->byDefault();
@@ -85,7 +85,7 @@ class ParserServiceTest extends TestCase
 
     private function mockSpaParser(array $files = []): SpaComponentParser
     {
-        /** @var SpaComponentParser&\Mockery\MockInterface $parser */
+        /** @var SpaComponentParser&MockInterface $parser */
         $parser = \Mockery::mock(SpaComponentParser::class);
         $parser->shouldReceive('name')->andReturn('spa_component')->byDefault();
         $parser->shouldReceive('discoverPages')->andReturn($files)->byDefault();

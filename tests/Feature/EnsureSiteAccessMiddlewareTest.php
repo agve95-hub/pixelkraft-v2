@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Hash;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class EnsureSiteAccessMiddlewareTest extends TestCase
@@ -90,11 +91,11 @@ class EnsureSiteAccessMiddlewareTest extends TestCase
 
         $request = $this->buildRequest(null, $site->id);
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
 
         try {
             $this->middleware->handle($request, $this->passThrough());
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        } catch (HttpException $e) {
             $this->assertSame(401, $e->getStatusCode());
             throw $e;
         }
@@ -111,11 +112,11 @@ class EnsureSiteAccessMiddlewareTest extends TestCase
 
         $request = $this->buildRequest($otherUser, $site->id);
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
 
         try {
             $this->middleware->handle($request, $this->passThrough());
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        } catch (HttpException $e) {
             $this->assertSame(404, $e->getStatusCode());
             throw $e;
         }

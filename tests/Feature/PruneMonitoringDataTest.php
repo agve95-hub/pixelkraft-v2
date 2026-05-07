@@ -8,6 +8,7 @@ use App\Models\Site;
 use App\Models\UptimeCheck;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -70,7 +71,7 @@ class PruneMonitoringDataTest extends TestCase
         ]);
 
         // created_at is not in $fillable — update via query builder to bypass the guard
-        \Illuminate\Support\Facades\DB::table('analytics_events')
+        DB::table('analytics_events')
             ->where('id', $event->id)
             ->update(['created_at' => $createdAt]);
 

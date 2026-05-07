@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Site;
 use App\Models\User;
 use App\Support\SiteAccess;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -115,7 +116,7 @@ class SiteAccessTest extends TestCase
 
         Auth::login($other);
 
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
 
         SiteAccess::findOrFail($site->id);
     }
@@ -125,7 +126,7 @@ class SiteAccessTest extends TestCase
         $user = $this->makeUser();
         Auth::login($user);
 
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
 
         SiteAccess::findOrFail('00000000-0000-0000-0000-000000000000');
     }
