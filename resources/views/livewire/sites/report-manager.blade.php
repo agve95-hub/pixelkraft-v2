@@ -3,7 +3,7 @@
     $sentCount = $reports->getCollection()->filter(fn ($report) => $report->status() === 'sent')->count();
 @endphp
 
-<div class="max-w-5xl space-y-6">
+<div class="max-w-none space-y-6">
     @if ($screen === 'index')
         <div class="pk-page-head">
             <div>

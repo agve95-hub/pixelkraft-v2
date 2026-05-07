@@ -1,4 +1,4 @@
-<div class="max-w-6xl space-y-6">
+<div class="max-w-none space-y-6">
     <div class="pk-page-head">
         <div>
             <a href="{{ route('sites.show', $site) }}" wire:navigate class="mb-2 inline-flex items-center gap-1 text-sm text-zinc-500 transition hover:text-zinc-300">
