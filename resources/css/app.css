@@ -2261,3 +2261,27 @@
         width: 100%;
     }
 }
+
+/* Flux wraps controls; keep wrappers transparent and size the actual controls. */
+.pk-app-shell :is([data-flux-input], [data-flux-textarea], [data-flux-select]) {
+    height: auto !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.pk-app-shell :is([data-flux-input], [data-flux-textarea], [data-flux-select]):focus-within {
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.pk-app-shell [data-flux-button][class*="w-8"],
+.pk-app-shell [data-flux-button][class*="size-8"] {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 !important;
+}
