@@ -680,23 +680,28 @@ class ContentPatcher
     {
         $pos = strpos($haystack, $needle);
 
-        if ($pos === false) {
-            // Try with trimmed/normalized content
-            $normalizedNeedle = trim(preg_replace('/\s+/', ' ', $needle));
-            $normalizedHaystack = preg_replace('/\s+/', ' ', $haystack);
-
-            $pos = strpos($normalizedHaystack, $normalizedNeedle);
-
-            if ($pos === false) {
-                Log::warning('ContentPatcher: could not find content to replace', [
-                    'needle_preview' => mb_substr($needle, 0, 100),
-                ]);
-
-                return $haystack;
-            }
+        if ($pos !== false) {
+            return substr_replace($haystack, $replacement, $pos, strlen($needle));
         }
 
-        return substr_replace($haystack, $replacement, $pos, strlen($needle));
+        // Exact match failed. Try once with whitespace-normalized content.
+        // Replace in the normalized copy — $pos from the normalized string cannot
+        // be used as an offset into the original because extra whitespace before
+        // the needle shifts the positions and causes off-by-N corruption.
+        $normalizedNeedle = trim((string) preg_replace('/\s+/', ' ', $needle));
+        $normalizedHaystack = (string) preg_replace('/\s+/', ' ', $haystack);
+
+        if ($normalizedNeedle !== '' && str_contains($normalizedHaystack, $normalizedNeedle)) {
+            $pos = strpos($normalizedHaystack, $normalizedNeedle);
+
+            return substr_replace($normalizedHaystack, $replacement, $pos, strlen($normalizedNeedle));
+        }
+
+        Log::warning('ContentPatcher: could not find content to replace', [
+            'needle_preview' => mb_substr($needle, 0, 100),
+        ]);
+
+        return $haystack;
     }
 
     private function ensurePkMarkers(string $html, EditableRegion $region): string
