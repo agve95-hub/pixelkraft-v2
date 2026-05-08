@@ -80,7 +80,7 @@ Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and so
 - Per-site client profiles (contact, company, billing)
 - Invoice management with PDF export
 - Expense tracker per site
-- Newsletter subscriber management & campaign editor *(coming soon)*
+- Newsletter subscriber management & campaign editor with Resend integration
 - Contact form submission inbox with spam filtering
 - Site-scoped notification centre
 - Maintenance mode management
@@ -338,7 +338,7 @@ echo "✅ Deployment complete"
 
 ### `/api/v1` — Machine Clients
 
-Authenticate with **`Authorization: Bearer {token}`** (Sanctum personal access token). First-party Inertia sessions also authenticate on stateful domains.
+Authenticate with **`Authorization: Bearer {token}`** (Sanctum personal access token). First-party dashboard sessions also authenticate via cookie on stateful domains.
 
 | Ability | Routes |
 |---|---|
@@ -428,7 +428,7 @@ php artisan cache:clear && php artisan config:clear && php artisan route:clear &
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Run the test suite: `php artisan test` (184 tests, 0 failures)
+3. Run the test suite: `php artisan test` (990+ tests, 0 failures)
 4. Run static analysis: `composer phpstan`
 5. Run code style: `vendor/bin/pint`
 6. Open a pull request
@@ -443,7 +443,7 @@ Proprietary software. All rights reserved.
 
 <div align="center">
 
-**Built with [Laravel](https://laravel.com) · [React](https://react.dev) · [Inertia.js](https://inertiajs.com) · [Livewire](https://livewire.laravel.com) · [Tailwind CSS](https://tailwindcss.com)**
+**Built with [Laravel](https://laravel.com) · [Livewire](https://livewire.laravel.com) · [Flux](https://fluxui.dev) · [Tailwind CSS](https://tailwindcss.com)**
 
 *pixelkraft — Artisanal Git-to-Render, at scale.*
 
