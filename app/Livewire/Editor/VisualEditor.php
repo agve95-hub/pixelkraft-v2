@@ -395,6 +395,7 @@ class VisualEditor extends Component
         $patcher = app(ContentPatcher::class);
         $sourceBackups = [];
         $regionSnapshot = null;
+        $createdRevisionIds = [];
 
         try {
             $site = $this->resolveSite();
@@ -435,13 +436,14 @@ class VisualEditor extends Component
                 ];
 
                 // Create revision
-                ContentRevision::create([
+                $revision = ContentRevision::create([
                     'region_id' => $region->id,
                     'user_id' => auth()->id(),
                     'content_before' => $region->current_content,
                     'content_after' => $this->editContent,
                     'created_at' => now(),
                 ]);
+                $createdRevisionIds[] = $revision->id;
 
                 $changedFiles = $patcher->applyEdit($region, $this->editContent);
                 $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
@@ -501,6 +503,7 @@ class VisualEditor extends Component
 
         } catch (GitConflictException $e) {
             $this->restoreEditedSources($sourceBackups, $regionSnapshot);
+            $this->deleteCreatedRevisions($createdRevisionIds);
             if ($session = $this->resolveEditSession()) {
                 app(EditSessionService::class)->markConflict($session, [
                     'error' => $e->getMessage(),
@@ -517,6 +520,7 @@ class VisualEditor extends Component
             session()->flash('error', 'Save blocked by newer repo changes. Your edit session was marked as conflicted for developer review.');
         } catch (\Throwable $e) {
             $this->restoreEditedSources($sourceBackups, $regionSnapshot);
+            $this->deleteCreatedRevisions($createdRevisionIds);
             $this->debugTelemetry['last_save_success'] = false;
             $this->debugTelemetry['last_error'] = $e->getMessage();
             $this->debugTelemetry['exception_class'] = $e::class;
@@ -529,6 +533,18 @@ class VisualEditor extends Component
             $this->debugTelemetry['save_finished_at'] = now()->toIso8601String();
             $this->isSaving = false;
         }
+    }
+
+    /**
+     * @param  array<int, string>  $revisionIds
+     */
+    private function deleteCreatedRevisions(array $revisionIds): void
+    {
+        if ($revisionIds === []) {
+            return;
+        }
+
+        ContentRevision::query()->whereIn('id', $revisionIds)->delete();
     }
 
     #[On('region-updated')]

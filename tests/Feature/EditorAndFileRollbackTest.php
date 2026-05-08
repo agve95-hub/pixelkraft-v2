@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\DeployStatus;
 use App\Livewire\Editor\VisualEditor;
 use App\Livewire\Files\FileManager;
+use App\Models\EditableRegion;
 use App\Models\Page;
 use App\Models\Site;
 use App\Models\User;
@@ -44,6 +45,51 @@ class EditorAndFileRollbackTest extends TestCase
                 ->call('save');
 
             $this->assertSame('<h1>Before</h1>', File::get($root.'/index.html'));
+        } finally {
+            File::deleteDirectory($root);
+        }
+    }
+
+    public function test_visual_editor_removes_revision_when_git_push_fails(): void
+    {
+        $root = storage_path('framework/testing/visual-editor-rollback-'.uniqid());
+        File::ensureDirectoryExists($root);
+        File::put($root.'/index.html', '<main><h1>Before</h1></main>');
+
+        try {
+            [$user, $site] = $this->makeSite($root, 'visual-rollback@example.com');
+            $page = Page::create([
+                'site_id' => $site->id,
+                'file_path' => 'index.html',
+                'url_path' => '/',
+                'title' => 'Home',
+            ]);
+            $region = EditableRegion::create([
+                'page_id' => $page->id,
+                'selector' => 'h1',
+                'region_type' => 'text',
+                'is_static' => false,
+                'detection_method' => 'auto',
+                'confidence_score' => 0.9,
+                'current_content' => 'Before',
+                'source_location' => [
+                    'file' => 'index.html',
+                    'source_type' => 'html',
+                ],
+            ]);
+
+            $this->mockGitPushFailure();
+
+            Livewire::actingAs($user)
+                ->test(VisualEditor::class, ['siteId' => $site->id, 'pageId' => $page->id])
+                ->call('onRegionSelected', $region->id)
+                ->set('editContent', 'After')
+                ->set('deployAfterSave', false)
+                ->call('save');
+
+            $this->assertSame('<main><h1>Before</h1></main>', File::get($root.'/index.html'));
+            $this->assertSame('Before', $region->fresh()->current_content);
+            $this->assertDatabaseCount('content_revisions', 0);
         } finally {
             File::deleteDirectory($root);
         }
