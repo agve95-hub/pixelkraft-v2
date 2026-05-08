@@ -234,6 +234,8 @@ class PreviewOverlayService
             $html->setAttribute('data-pk-preview', 'editor');
             $html->setAttribute('data-pk-site-id', (string) $site->id);
             $html->setAttribute('data-pk-page-id', (string) $page->id);
+            // Overlays on by default — JS toggleBorders() can flip this at runtime.
+            $html->setAttribute('data-pk-borders', 'on');
         }
 
         $body = $document->getElementsByTagName('body')->item(0);
