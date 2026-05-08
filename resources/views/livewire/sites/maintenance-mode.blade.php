@@ -9,10 +9,10 @@
             <flux:text class="mt-1 !text-zinc-500">Design your maintenance page. Enforcement will be wired in a future release.</flux:text>
         </div>
         <div class="flex flex-wrap gap-2">
-            <flux:button type="submit" form="maintenance-form" variant="primary" icon="check" class="!bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950">
+            <flux:button type="submit" form="maintenance-form" variant="primary" icon="check">
                 Save
             </flux:button>
-            <flux:button href="{{ route('sites.maintenance.preview', $this->siteId) }}" target="_blank" variant="subtle" icon="arrow-top-right-on-square">
+                <flux:button href="{{ route('sites.maintenance.preview', $this->siteId) }}" target="_blank" rel="noopener noreferrer" variant="subtle" icon="arrow-top-right-on-square">
                 Open preview
             </flux:button>
         </div>

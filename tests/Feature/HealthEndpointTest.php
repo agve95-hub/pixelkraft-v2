@@ -21,4 +21,14 @@ class HealthEndpointTest extends TestCase
     {
         $this->getJson('/health')->assertOk();
     }
+
+    public function test_health_endpoint_does_not_start_a_browser_session(): void
+    {
+        $response = $this->getJson('/health');
+
+        $this->assertFalse(
+            $response->headers->has('Set-Cookie'),
+            'The public health endpoint must not emit session or CSRF cookies.'
+        );
+    }
 }

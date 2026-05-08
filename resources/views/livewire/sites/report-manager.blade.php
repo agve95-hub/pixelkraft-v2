@@ -14,7 +14,7 @@
                 <h1 class="pk-page-title">Reports</h1>
                 <p class="pk-page-sub">{{ $site->clientDisplayName() }} &middot; client and internal updates</p>
             </div>
-            <flux:button type="button" wire:click="startCreate" variant="primary" icon="plus" class="!bg-emerald-400 hover:!bg-emerald-300 !text-zinc-950 dark:!text-zinc-950">
+            <flux:button type="button" wire:click="startCreate" variant="primary" icon="plus">
                 New report
             </flux:button>
         </div>
@@ -248,7 +248,7 @@
 
             <div class="flex justify-end gap-2">
                 <flux:button type="button" wire:click="cancelCreate" variant="subtle">Cancel</flux:button>
-                <flux:button type="submit" variant="primary" class="!bg-emerald-400 hover:!bg-emerald-300 !text-zinc-950 dark:!text-zinc-950">Save report</flux:button>
+                <flux:button type="submit" variant="primary">Save report</flux:button>
             </div>
         </form>
     @endif

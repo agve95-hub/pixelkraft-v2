@@ -336,7 +336,7 @@
         </section>
 
         <div class="flex flex-wrap items-center gap-3 pb-8">
-            <flux:button type="submit" variant="primary" class="!bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950" wire:loading.attr="disabled">
+            <flux:button type="submit" variant="primary" wire:loading.attr="disabled">
                 <span wire:loading.remove wire:target="create">{{ $sourceType === 'upload' ? 'Create project draft' : 'Create project' }}</span>
                 <span wire:loading wire:target="create">Creating...</span>
             </flux:button>

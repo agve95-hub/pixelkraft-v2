@@ -54,7 +54,7 @@
                     @endif
                 </div>
                 @if (filled($site->domain))
-                    <a href="https://{{ $site->domain }}" target="_blank" class="inline-flex items-center gap-1 text-xs font-mono text-zinc-500 transition hover:text-zinc-300">
+                    <a href="https://{{ $site->domain }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-xs font-mono text-zinc-500 transition hover:text-zinc-300">
                         {{ $site->domain }}
                         <flux:icon name="arrow-top-right-on-square" class="size-3.5" />
                     </a>
@@ -129,120 +129,108 @@
         </div>
 
         <div class="grid gap-4 xl:grid-cols-5">
-            <div class="rounded-xl border border-zinc-800/90 bg-zinc-900/85 p-4 xl:col-span-3">
-                <div class="mb-3 flex items-center gap-2">
-                    <flux:icon name="x-circle" class="size-4 text-red-400" />
-                    <h2 class="text-lg font-semibold text-zinc-100">Errors</h2>
+            <div class="dash-card xl:col-span-3">
+                <div class="dash-card-head">
+                    <p class="dash-card-title">
+                        <flux:icon name="x-circle" class="size-4 text-red-400" />
+                        Errors
+                    </p>
                 </div>
-                <div class="space-y-1">
-                    @forelse ($errorItems as $error)
-                        <div class="flex items-start gap-3 rounded-lg border border-zinc-800/80 bg-zinc-950/60 px-3 py-2.5">
-                            <span class="mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-red-500/15">
-                                <flux:icon name="exclamation-circle" class="size-3.5 text-red-400" />
-                            </span>
-                            <div class="min-w-0 flex-1">
-                                <p class="text-sm text-zinc-100">{{ $error->title }}</p>
-                                <p class="text-xs text-zinc-500">
-                                    {{ \Illuminate\Support\Str::limit((string) ($error->body ?? 'Issue reported by system checks.'), 80) }}
-                                    · {{ $error->created_at?->diffForHumans() }}
-                                </p>
-                            </div>
+                @forelse ($errorItems as $error)
+                    <div class="issue-item">
+                        <span class="issue-icon issue-icon-red"><flux:icon name="exclamation-circle" /></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="issue-text">{{ $error->title }}</p>
+                            <p class="issue-meta">
+                                {{ \Illuminate\Support\Str::limit((string) ($error->body ?? 'Issue reported by system checks.'), 80) }}
+                                · {{ $error->created_at?->diffForHumans() }}
+                            </p>
                         </div>
-                    @empty
-                        <div class="rounded-lg border border-zinc-800/70 bg-zinc-950/40 px-3 py-5 text-center text-sm text-zinc-500">
-                            No recent error reports.
-                        </div>
-                    @endforelse
-                </div>
+                    </div>
+                @empty
+                    <div class="empty"><p>No recent error reports.</p></div>
+                @endforelse
             </div>
 
-            <div class="rounded-xl border border-zinc-800/90 bg-zinc-900/85 p-4 xl:col-span-2">
-                <div class="mb-3 flex items-center gap-2">
-                    <flux:icon name="magnifying-glass" class="size-4 text-zinc-500" />
-                    <h2 class="text-lg font-semibold text-zinc-100">SEO issues</h2>
+            <div class="dash-card xl:col-span-2">
+                <div class="dash-card-head">
+                    <p class="dash-card-title">
+                        <flux:icon name="magnifying-glass" class="size-4" />
+                        SEO issues
+                    </p>
                 </div>
-                <div class="space-y-1.5">
-                    @forelse ($seoIssues as $issue)
-                        <div class="flex items-start gap-3 rounded-lg border border-zinc-800/80 bg-zinc-950/60 px-3 py-2.5">
-                            @if ($issue['severity'] === 'error')
-                                <span class="mt-0.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase bg-red-400/15 text-red-300">Error</span>
-                            @elseif ($issue['severity'] === 'warning')
-                                <span class="mt-0.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase bg-amber-400/15 text-amber-300">Warning</span>
-                            @else
-                                <span class="mt-0.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase bg-sky-400/15 text-sky-300">Info</span>
-                            @endif
-                            <div class="min-w-0 flex-1">
-                                <p class="text-sm text-zinc-100">{{ $issue['message'] }}</p>
-                            </div>
-                            <span class="text-sm font-mono tabular-nums text-zinc-400">{{ $issue['count'] }}</span>
+                @forelse ($seoIssues as $issue)
+                    <div class="issue-item">
+                        <span @class([
+                            'issue-icon',
+                            'issue-icon-red' => $issue['severity'] === 'error',
+                            'issue-icon-yellow' => $issue['severity'] === 'warning',
+                            'issue-icon-blue' => !in_array($issue['severity'], ['error', 'warning']),
+                        ])><flux:icon name="exclamation-triangle" /></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="issue-text">{{ $issue['message'] }}</p>
                         </div>
-                    @empty
-                        <div class="rounded-lg border border-zinc-800/70 bg-zinc-950/40 px-3 py-5 text-center text-sm text-zinc-500">
-                            No SEO issues found.
-                        </div>
-                    @endforelse
-                </div>
+                        <span class="tag">{{ $issue['count'] }}</span>
+                    </div>
+                @empty
+                    <div class="empty"><p>No SEO issues found.</p></div>
+                @endforelse
             </div>
         </div>
 
-        <div class="rounded-xl border border-zinc-800/90 bg-zinc-900/85 p-4">
-            <div class="mb-4 flex flex-wrap items-center gap-5 border-b border-zinc-800 pb-2">
-                <span class="inline-flex items-center gap-2 border-b-2 border-zinc-200 pb-2 text-sm font-medium text-zinc-100">
-                    Pages
-                    <span class="rounded bg-zinc-700/60 px-1.5 py-0.5 text-[10px] text-zinc-300">{{ $site->pages_count }}</span>
+        <div class="dash-card !p-0">
+            <div class="pk-underline-tabs px-2">
+                <span class="pk-underline-tab active">
+                    Pages <span class="badge-count">{{ $site->pages_count }}</span>
                 </span>
-                <a href="{{ route('blog.index', $site) }}" class="inline-flex items-center gap-2 pb-2 text-sm text-zinc-400 transition hover:text-zinc-200">
-                    Blog posts
-                    <span class="rounded bg-zinc-700/40 px-1.5 py-0.5 text-[10px] text-zinc-400">{{ $site->blog_posts_count }}</span>
+                <a href="{{ route('blog.index', $site) }}" class="pk-underline-tab">
+                    Blog <span class="badge-count">{{ $site->blog_posts_count }}</span>
                 </a>
-                <a href="{{ route('templates.index', $site) }}" class="inline-flex items-center gap-2 pb-2 text-sm text-zinc-400 transition hover:text-zinc-200">
-                    Templates
-                    <span class="rounded bg-zinc-700/40 px-1.5 py-0.5 text-[10px] text-zinc-400">{{ $site->content_templates_count }}</span>
+                <a href="{{ route('templates.index', $site) }}" class="pk-underline-tab">
+                    Templates <span class="badge-count">{{ $site->content_templates_count }}</span>
                 </a>
-                <a href="{{ route('sites.files', $site) }}" class="inline-flex items-center gap-2 pb-2 text-sm text-zinc-400 transition hover:text-zinc-200">
-                    Files
-                </a>
+                <a href="{{ route('sites.files', $site) }}" class="pk-underline-tab">Files</a>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+                <table class="w-full">
                     <thead>
-                        <tr class="border-b border-zinc-800 text-left text-[11px] uppercase tracking-[0.12em] text-zinc-500">
-                            <th class="py-2 pr-3 font-medium">Page</th>
-                            <th class="px-3 py-2 font-medium">URL</th>
-                            <th class="px-3 py-2 font-medium">SEO</th>
-                            <th class="px-3 py-2 font-medium">Visitors</th>
-                            <th class="px-3 py-2 font-medium">Status</th>
-                            <th class="py-2 pl-3"></th>
+                        <tr>
+                            <th class="pl-4">Page</th>
+                            <th>URL</th>
+                            <th>SEO</th>
+                            <th>Visitors</th>
+                            <th>Status</th>
+                            <th class="pr-4"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-zinc-800/80">
+                    <tbody>
                         @forelse ($pages as $page)
                             @php
                                 $score = (int) ($page->seo_score ?? 0);
-                                $scoreClasses = match (true) {
-                                    $score >= 90 => 'bg-emerald-500/20 text-emerald-300',
-                                    $score >= 80 => 'bg-amber-500/20 text-amber-300',
-                                    default => 'bg-red-500/20 text-red-300',
+                                $scoreClass = match (true) {
+                                    $score >= 90 => 'pill-green',
+                                    $score >= 80 => 'pill-yellow',
+                                    default => 'pill-red',
                                 };
                             @endphp
-                            <tr class="transition hover:bg-zinc-800/35">
-                                <td class="py-2.5 pr-3">
-                                    <div class="font-medium text-zinc-100">{{ $page->title ?: \Illuminate\Support\Str::afterLast((string) $page->file_path, '/') }}</div>
+                            <tr class="clickable">
+                                <td class="pl-4">
+                                    <span class="font-medium text-zinc-100">{{ $page->title ?: \Illuminate\Support\Str::afterLast((string) $page->file_path, '/') }}</span>
                                 </td>
-                                <td class="px-3 py-2.5 font-mono text-xs text-zinc-400">{{ $page->url_path ?: '/' }}</td>
-                                <td class="px-3 py-2.5">
-                                    <span class="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold {{ $scoreClasses }}">{{ $score }}/100</span>
+                                <td class="font-mono text-xs">{{ $page->url_path ?: '/' }}</td>
+                                <td>
+                                    <span class="pill {{ $scoreClass }} pill-no-dot">{{ $score }}/100</span>
                                 </td>
-                                <td class="px-3 py-2.5 font-mono text-xs tabular-nums text-zinc-300">{{ number_format((int) ($page->visitors_30d ?? 0)) }}</td>
-                                <td class="px-3 py-2.5">
+                                <td class="font-mono tabular-nums">{{ number_format((int) ($page->visitors_30d ?? 0)) }}</td>
+                                <td>
                                     @if ($page->is_published)
-                                        <span class="inline-flex rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-300">Published</span>
+                                        <span class="pill pill-green pill-no-dot">Published</span>
                                     @else
-                                        <span class="inline-flex rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-300">Draft</span>
+                                        <span class="pill pill-yellow pill-no-dot">Draft</span>
                                     @endif
                                 </td>
-                                <td class="py-2.5 pl-3">
+                                <td class="pr-4">
                                     <div class="flex justify-end gap-1">
                                         <flux:button href="{{ route('seo.meta', ['site' => $site, 'page' => $page]) }}" size="xs" variant="ghost">SEO</flux:button>
                                         <flux:button href="{{ route('editor', ['site' => $site, 'page' => $page]) }}" size="xs" variant="subtle">Edit</flux:button>
@@ -251,7 +239,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="py-8 text-center text-sm text-zinc-500">No pages discovered yet.</td>
+                                <td colspan="6" class="py-8 text-center text-zinc-500">No pages discovered yet.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -259,11 +247,11 @@
             </div>
         </div>
 
-        <div id="deploy-controls" class="rounded-xl border border-zinc-800/90 bg-zinc-900/85 p-4">
-            <div class="mb-3 flex items-center justify-between gap-3">
+        <div id="deploy-controls" class="dash-card">
+            <div class="dash-card-head mb-3">
                 <div>
-                    <h2 class="text-lg font-semibold text-zinc-100">Deploy controls</h2>
-                    <p class="text-sm text-zinc-500">Deploy, inspect logs, and rollback previous snapshots.</p>
+                    <p class="section-title">Deploy controls</p>
+                    <p class="pk-page-sub">Deploy, inspect logs, and rollback previous snapshots.</p>
                 </div>
             </div>
             @livewire('sites.deploy-controls', ['siteId' => $site->id], key('deploy-controls-'.$site->id))

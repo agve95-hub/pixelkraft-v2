@@ -1,16 +1,14 @@
 <div class="space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="pk-page-head">
         <div>
-            <flux:heading size="xl">Reminders</flux:heading>
-            <flux:subheading>{{ $site->name }} — follow-ups and deadlines.</flux:subheading>
+            <h1 class="pk-page-title">Reminders</h1>
+            <p class="pk-page-sub">{{ $site->name }} — follow-ups and deadlines.</p>
         </div>
-        <flux:text class="text-zinc-400">
-            <span class="font-semibold text-zinc-100">{{ $openCount }}</span> open
-        </flux:text>
+        <span class="text-sm text-zinc-400"><span class="font-semibold text-zinc-100">{{ $openCount }}</span> open</span>
     </div>
 
-    <flux:card>
-        <flux:heading size="lg" class="mb-4">Add reminder</flux:heading>
+    <div class="dash-card">
+        <p class="section-title mb-4">Add reminder</p>
         <form wire:submit="save" class="grid gap-4 sm:grid-cols-2">
             <flux:field class="sm:col-span-2">
                 <flux:label>Title</flux:label>
@@ -28,42 +26,34 @@
                 <flux:error name="form_notes" />
             </flux:field>
             <div class="sm:col-span-2">
-                <flux:button type="submit" variant="primary" icon="plus" class="!bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950">
-                    Add reminder
-                </flux:button>
+                <button type="submit" class="btn btn-accent">+ Add reminder</button>
             </div>
         </form>
-    </flux:card>
+    </div>
 
-    <flux:card>
-        <flux:heading size="lg" class="mb-4">List</flux:heading>
-        <div class="space-y-2">
+    <div class="dash-card">
+        <p class="section-title mb-4">List</p>
+        <div class="reminder-list">
             @forelse ($reminders as $reminder)
-                <div class="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-zinc-800/80 bg-zinc-950/40 px-3 py-3">
+                <div class="reminder">
+                    <span class="reminder-check {{ $reminder->is_done ? 'done' : '' }}" wire:click="toggleDone('{{ $reminder->id }}')"></span>
                     <div class="min-w-0 flex-1">
-                        <p class="font-medium text-zinc-100 {{ $reminder->is_done ? 'line-through text-zinc-500' : '' }}">{{ $reminder->title }}</p>
-                        @if ($reminder->due_date)
-                            <p class="mt-0.5 text-xs text-zinc-500">Due {{ $reminder->due_date->format('M j, Y') }}</p>
-                        @endif
+                        <p class="reminder-text {{ $reminder->is_done ? 'done-text' : '' }}">{{ $reminder->title }}</p>
                         @if ($reminder->notes)
-                            <p class="mt-1 text-sm text-zinc-400">{{ \Illuminate\Support\Str::limit($reminder->notes, 200) }}</p>
+                            <p class="issue-meta">{{ \Illuminate\Support\Str::limit($reminder->notes, 200) }}</p>
                         @endif
                     </div>
-                    <div class="flex shrink-0 gap-2">
-                        <flux:button type="button" wire:click="toggleDone('{{ $reminder->id }}')" size="xs" variant="subtle">
-                            {{ $reminder->is_done ? 'Reopen' : 'Done' }}
-                        </flux:button>
-                        <flux:button type="button" wire:click="delete('{{ $reminder->id }}')" wire:confirm="Delete this reminder?" size="xs" variant="ghost" class="text-red-400">
-                            Delete
-                        </flux:button>
-                    </div>
+                    @if ($reminder->due_date)
+                        <span class="reminder-due {{ $reminder->due_date->isPast() && !$reminder->is_done ? 'overdue' : '' }}">
+                            {{ $reminder->due_date->format('M j') }}
+                        </span>
+                    @endif
+                    <flux:button type="button" wire:click="delete('{{ $reminder->id }}')" wire:confirm="Delete this reminder?" size="xs" variant="ghost" class="text-red-400">Delete</flux:button>
                 </div>
             @empty
-                <p class="py-6 text-center text-sm text-zinc-500">No reminders yet.</p>
+                <div class="empty"><p>No reminders yet.</p></div>
             @endforelse
         </div>
-        <div class="mt-4">
-            {{ $reminders->links() }}
-        </div>
-    </flux:card>
+        <div class="mt-4">{{ $reminders->links() }}</div>
+    </div>
 </div>

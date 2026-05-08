@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 // ── Health check (no auth) ───────────────────────
 // Used by post-deploy CI smoke tests, load balancers, and external uptime monitors.
@@ -35,7 +38,11 @@ Route::get('/health', function () {
         'checks' => $checks,
         'timestamp' => now()->toIso8601String(),
     ], $healthy ? 200 : 503);
-})->name('health');
+})->withoutMiddleware([
+    StartSession::class,
+    ShareErrorsFromSession::class,
+    PreventRequestForgery::class,
+])->name('health');
 
 // ── Guest ────────────────────────────────────────
 Route::get('/', fn () => redirect()->route('login'));

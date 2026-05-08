@@ -1,10 +1,10 @@
 <div>
-    <div class="h-full rounded-xl border border-zinc-800/80 bg-[#1e1e1e] p-5">
-        <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2">
-                <flux:icon name="calendar" class="size-4 text-zinc-500" />
-                <h3 class="text-sm font-semibold text-zinc-100">Upcoming</h3>
-            </div>
+    <div class="dash-card h-full">
+        <div class="dash-card-head">
+            <p class="dash-card-title">
+                <flux:icon name="calendar" class="size-4" />
+                Upcoming
+            </p>
             <span class="text-xs text-zinc-500">{{ $totalCount }} pending</span>
         </div>
 

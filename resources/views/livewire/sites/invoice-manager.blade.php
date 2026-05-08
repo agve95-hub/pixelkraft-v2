@@ -11,74 +11,52 @@
 
 <div class="max-w-5xl">
     @if ($screen === 'index')
-        <div class="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div class="pk-page-head mb-8">
             <div>
-                <a
-                    href="{{ route('sites.show', $site) }}"
-                    wire:navigate
-                    class="mb-2 inline-flex items-center gap-1 text-sm text-zinc-500 transition hover:text-zinc-300"
-                >
-                    <span aria-hidden="true">←</span>
-                    {{ $site->name }}
+                <a href="{{ route('sites.show', $site) }}" wire:navigate class="back-link">
+                    <flux:icon name="chevron-left" class="size-3.5" /> {{ $site->name }}
                 </a>
-                <h1 class="text-2xl font-semibold tracking-tight text-zinc-100">Invoices</h1>
-                <p class="mt-1 text-sm text-zinc-500">
-                    {{ $site->clientDisplayName() }}
-                    <span class="text-zinc-600">·</span>
-                    {{ $invoices->count() }} {{ Str::plural('invoice', $invoices->count()) }}
-                </p>
+                <h1 class="pk-page-title">Invoices</h1>
+                <p class="pk-page-sub">{{ $site->clientDisplayName() }} · {{ $invoices->count() }} {{ Str::plural('invoice', $invoices->count()) }}</p>
             </div>
-            <button
-                type="button"
-                wire:click="startCreate"
-                class="inline-flex items-center justify-center rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-zinc-950 shadow-sm transition hover:bg-emerald-400"
-            >
+            <button type="button" wire:click="startCreate" class="btn btn-accent">
                 + New invoice
             </button>
         </div>
 
-        <div
-            class="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-zinc-700/50 sm:grid-cols-4"
-            style="box-shadow: 0 1px 2px rgba(0,0,0,0.05)"
-        >
-            <div class="bg-zinc-900/80 px-4 py-4">
-                <div class="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Total invoiced</div>
-                <div class="mt-1 font-mono text-lg font-medium text-zinc-100">{{ $fmt($totalAllAmount, $symAll) }}</div>
+        <div class="stats stats-4 mb-6">
+            <div class="stat">
+                <p class="stat-label">Total invoiced</p>
+                <p class="stat-val">{{ $fmt($totalAllAmount, $symAll) }}</p>
             </div>
-            <div class="bg-zinc-900/80 px-4 py-4">
-                <div class="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Paid</div>
-                <div class="mt-1 font-mono text-lg font-medium text-emerald-400">{{ $fmt($totalPaidAmount, $symAll) }}</div>
-                <div class="mt-0.5 text-xs text-zinc-500">{{ $paidInvoices->count() }} {{ Str::plural('invoice', $paidInvoices->count()) }}</div>
+            <div class="stat">
+                <p class="stat-label">Paid</p>
+                <p class="stat-val" style="color:var(--pk-accent)">{{ $fmt($totalPaidAmount, $symAll) }}</p>
+                <p class="stat-note">{{ $paidInvoices->count() }} {{ Str::plural('invoice', $paidInvoices->count()) }}</p>
             </div>
-            <div class="bg-zinc-900/80 px-4 py-4">
-                <div class="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Outstanding</div>
-                <div @class(['mt-1 font-mono text-lg font-medium', 'text-amber-400' => $totalUnpaidAmount > 0, 'text-zinc-100' => $totalUnpaidAmount <= 0])>
-                    {{ $fmt($totalUnpaidAmount, $symAll) }}
-                </div>
-                <div class="mt-0.5 text-xs text-zinc-500">{{ $unpaidInvoices->count() }} unpaid</div>
+            <div class="stat">
+                <p class="stat-label">Outstanding</p>
+                <p class="stat-val {{ $totalUnpaidAmount > 0 ? 'text-amber-400' : '' }}">{{ $fmt($totalUnpaidAmount, $symAll) }}</p>
+                <p class="stat-note">{{ $unpaidInvoices->count() }} unpaid</p>
             </div>
-            <div class="bg-zinc-900/80 px-4 py-4">
-                <div class="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Invoices</div>
-                <div class="mt-1 font-mono text-lg font-medium text-zinc-100">{{ $invoices->count() }}</div>
+            <div class="stat">
+                <p class="stat-label">Invoices</p>
+                <p class="stat-val">{{ $invoices->count() }}</p>
             </div>
         </div>
 
         @if ($invoices->isEmpty())
-            <div
-                class="flex flex-col items-center justify-center rounded-xl border border-zinc-700/80 px-4 py-16 text-center text-sm text-zinc-500"
-            >
-                <div class="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-800/80 text-zinc-500">
-                    <flux:icon name="document-text" class="size-4 opacity-50" />
+            <div class="table-wrap">
+                <div class="empty py-16">
+                    <div class="empty-icon"><flux:icon name="document-text" /></div>
+                    <p>No invoices yet</p>
+                    <p class="text-xs text-zinc-600">Create your first invoice for {{ $site->clientDisplayName() }}</p>
                 </div>
-                <p>No invoices yet</p>
-                <p class="mt-1 text-xs text-zinc-600">Create your first invoice for {{ $site->clientDisplayName() }}</p>
             </div>
         @else
-            <div class="overflow-hidden rounded-xl border border-zinc-700/80 shadow-sm">
-                <div
-                    class="hidden grid-cols-[100px_1fr_auto_auto_auto] gap-4 border-b border-zinc-700/80 px-4 py-2.5 text-xs font-medium text-zinc-400 sm:grid"
-                >
-                    <span>Invoice</span>
+            <div class="inv-list">
+                <div class="hidden sm:grid inv-row" style="background:hsl(var(--card))">
+                    <span class="inv-id" style="color:hsl(var(--muted-foreground))">Invoice</span>
                     <span>Description</span>
                     <span>Date</span>
                     <span>Amount</span>
@@ -87,35 +65,27 @@
                 @foreach ($invoices as $inv)
                     @php
                         $sym = $inv->displayCurrencySymbol();
-                        $pill = $inv->status === Invoice::STATUS_PAID ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/25' : ($inv->isOverdue() ? 'bg-red-500/15 text-red-400 ring-1 ring-red-500/25' : 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/25');
+                        $pillClass = $inv->status === Invoice::STATUS_PAID ? 'pill-green' : ($inv->isOverdue() ? 'pill-red' : 'pill-yellow');
                         $first = $inv->items->first()?->description ?? '—';
                     @endphp
                     <button
                         type="button"
                         wire:click="openInvoice('{{ $inv->id }}')"
                         wire:key="inv-row-{{ $inv->id }}"
-                        class="grid w-full grid-cols-1 gap-2 border-b border-zinc-800/90 px-4 py-3 text-left text-sm transition last:border-b-0 hover:bg-zinc-800/30 sm:grid-cols-[100px_1fr_auto_auto_auto] sm:items-center sm:gap-4"
+                        class="inv-row w-full text-left"
                     >
-                        <span class="font-mono text-[13px] font-medium text-zinc-100">{{ $inv->number }}</span>
-                        <div class="min-w-0 text-left">
-                            <div class="truncate text-zinc-300">{{ $first }}</div>
+                        <span class="inv-id">{{ $inv->number }}</span>
+                        <div class="min-w-0">
+                            <div class="truncate">{{ $first }}</div>
                             <div class="text-[11px] text-zinc-500">
                                 {{ $inv->items->count() }} {{ Str::plural('item', $inv->items->count()) }}
-                                @if ((float) $inv->discount_percent > 0)
-                                    <span class="text-zinc-600">·</span> {{ $inv->discount_percent }}% disc.
-                                @endif
-                                @if ((float) $inv->tax_rate > 0)
-                                    <span class="text-zinc-600">·</span> {{ $inv->tax_rate }}% tax
-                                @endif
+                                @if ((float) $inv->discount_percent > 0) · {{ $inv->discount_percent }}% disc. @endif
+                                @if ((float) $inv->tax_rate > 0) · {{ $inv->tax_rate }}% tax @endif
                             </div>
                         </div>
-                        <span class="font-mono text-xs text-zinc-500">{{ $inv->invoice_date->toDateString() }}</span>
-                        <span class="font-mono text-sm font-medium text-zinc-100">{{ $fmt((float) $inv->total(), $sym) }}</span>
-                        <span class="inline-flex">
-                            <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold {{ $pill }}">
-                                {{ $inv->displayStatus() }}
-                            </span>
-                        </span>
+                        <span class="inv-date">{{ $inv->invoice_date->toDateString() }}</span>
+                        <span class="inv-total">{{ $fmt((float) $inv->total(), $sym) }}</span>
+                        <span class="pill {{ $pillClass }} pill-no-dot">{{ $inv->displayStatus() }}</span>
                     </button>
                 @endforeach
             </div>
@@ -128,17 +98,14 @@
             $sym = Invoice::currencySymbol($form_currency_code);
             $isEditing = $screen === 'edit';
         @endphp
-        <div class="mb-8">
-            <button
-                type="button"
-                wire:click="{{ $isEditing ? 'cancelEdit' : 'cancelCreate' }}"
-                class="mb-4 inline-flex items-center gap-1 text-sm text-zinc-500 transition hover:text-zinc-300"
-            >
-                <span aria-hidden="true">←</span>
-                Invoices
-            </button>
-            <h1 class="text-2xl font-semibold tracking-tight text-zinc-100">{{ $isEditing ? 'Edit invoice' : 'New invoice' }}</h1>
-            <p class="mt-1 text-sm text-zinc-500">{{ $site->clientDisplayName() }} · {{ $form_number }}</p>
+        <div class="pk-page-head mb-8">
+            <div>
+                <button type="button" wire:click="{{ $isEditing ? 'cancelEdit' : 'cancelCreate' }}" class="back-link mb-2">
+                    <flux:icon name="chevron-left" class="size-3.5" /> Invoices
+                </button>
+                <h1 class="pk-page-title">{{ $isEditing ? 'Edit invoice' : 'New invoice' }}</h1>
+                <p class="pk-page-sub">{{ $site->clientDisplayName() }} · {{ $form_number }}</p>
+            </div>
         </div>
 
         <div class="max-w-3xl space-y-8">

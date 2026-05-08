@@ -8,7 +8,7 @@
             <h1 class="pk-page-title">Inbox</h1>
             <p class="pk-page-sub">{{ $site->clientDisplayName() }} &middot; {{ $filterCounts['all'] }} {{ Str::plural('message', $filterCounts['all']) }}</p>
         </div>
-        <flux:button type="button" wire:click="openComposer" variant="primary" icon="pencil-square" class="!bg-emerald-400 hover:!bg-emerald-300 !text-zinc-950 dark:!text-zinc-950">
+        <flux:button type="button" wire:click="openComposer" variant="primary" icon="pencil-square">
             Compose
         </flux:button>
     </div>

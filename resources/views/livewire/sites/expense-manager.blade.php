@@ -1,23 +1,23 @@
 <div class="space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="pk-page-head">
         <div>
-            <flux:heading size="xl">Expenses</flux:heading>
-            <flux:subheading>{{ $site->name }} — recorded costs (dashboard totals use this data).</flux:subheading>
+            <h1 class="pk-page-title">Expenses</h1>
+            <p class="pk-page-sub">{{ $site->name }} — recorded costs.</p>
         </div>
-        <div class="text-right text-sm text-zinc-400">
+        <div class="text-right text-sm">
             @forelse ($totalsByCurrency as $row)
-                <p class="tabular-nums">
-                    <span class="font-mono text-zinc-500">{{ $row->currency }}</span>
-                    <span class="ml-2 font-semibold text-zinc-100">{{ number_format((float) $row->total, 2) }}</span>
+                <p class="font-mono tabular-nums">
+                    <span class="text-zinc-500">{{ $row->currency }}</span>
+                    <span class="ml-2 font-semibold">{{ number_format((float) $row->total, 2) }}</span>
                 </p>
             @empty
-                <p>No totals yet</p>
+                <p class="pk-page-sub">No totals yet</p>
             @endforelse
         </div>
     </div>
 
-    <flux:card>
-        <flux:heading size="lg" class="mb-4">Add expense</flux:heading>
+    <div class="dash-card">
+        <p class="section-title mb-4">Add expense</p>
         <form wire:submit="save" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <flux:field>
                 <flux:label>Label</flux:label>
@@ -40,37 +40,33 @@
                 <flux:error name="form_expense_date" />
             </flux:field>
             <div class="sm:col-span-2 lg:col-span-4">
-                <flux:button type="submit" variant="primary" icon="plus" class="!bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 dark:!text-zinc-950">
-                    Save expense
-                </flux:button>
+                <button type="submit" class="btn btn-accent">+ Save expense</button>
             </div>
         </form>
-    </flux:card>
+    </div>
 
-    <flux:card>
-        <flux:heading size="lg" class="mb-4">History</flux:heading>
+    <div class="dash-card !p-0">
+        <div class="dash-card-head px-[18px] pt-4 pb-3">
+            <p class="section-title">History</p>
+        </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="w-full">
                 <thead>
-                    <tr class="border-b border-zinc-800 text-left text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                        <th class="py-2 pr-4">Date</th>
-                        <th class="py-2 pr-4">Label</th>
-                        <th class="py-2 pr-4 text-right">Amount</th>
-                        <th class="py-2 w-24"></th>
+                    <tr>
+                        <th class="pl-[18px]">Date</th>
+                        <th>Label</th>
+                        <th class="text-right">Amount</th>
+                        <th class="pr-[18px] w-24"></th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-zinc-800/80">
+                <tbody>
                     @forelse ($expenses as $expense)
                         <tr>
-                            <td class="py-2.5 pr-4 text-zinc-400">{{ $expense->expense_date->format('Y-m-d') }}</td>
-                            <td class="py-2.5 pr-4 text-zinc-100">{{ $expense->label }}</td>
-                            <td class="py-2.5 pr-4 text-right font-mono tabular-nums text-zinc-200">
-                                {{ $expense->currency }} {{ number_format((float) $expense->amount, 2) }}
-                            </td>
-                            <td class="py-2.5 text-right">
-                                <flux:button type="button" wire:click="delete('{{ $expense->id }}')" wire:confirm="Remove this expense?" size="xs" variant="ghost" class="text-red-400">
-                                    Delete
-                                </flux:button>
+                            <td class="pl-[18px] font-mono">{{ $expense->expense_date->format('Y-m-d') }}</td>
+                            <td>{{ $expense->label }}</td>
+                            <td class="text-right font-mono tabular-nums">{{ $expense->currency }} {{ number_format((float) $expense->amount, 2) }}</td>
+                            <td class="pr-[18px] text-right">
+                                <flux:button type="button" wire:click="delete('{{ $expense->id }}')" wire:confirm="Remove this expense?" size="xs" variant="ghost" class="text-red-400">Delete</flux:button>
                             </td>
                         </tr>
                     @empty
@@ -81,8 +77,6 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-4">
-            {{ $expenses->links() }}
-        </div>
-    </flux:card>
+        <div class="px-[18px] py-3">{{ $expenses->links() }}</div>
+    </div>
 </div>

@@ -1,20 +1,18 @@
 <div class="space-y-6">
 
     {{-- Header --}}
-    <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="pk-page-head">
         <div>
-            <flux:heading size="xl">Campaigns &amp; Announcements</flux:heading>
-            <flux:subheading>{{ $site->name }} — popup campaigns and top-bar banners served by <code class="text-xs text-zinc-400">pixelkraft.js</code>.</flux:subheading>
+            <h1 class="pk-page-title">Campaigns &amp; Announcements</h1>
+            <p class="pk-page-sub">{{ $site->name }} — popup campaigns and top-bar banners.</p>
         </div>
-        <div class="flex gap-2">
-            <flux:button wire:click="$set('tab', 'campaigns')" size="sm"
-                variant="{{ $tab === 'campaigns' ? 'primary' : 'ghost' }}">
-                Campaigns <span class="ml-1 text-xs">({{ $campaigns->count() }})</span>
-            </flux:button>
-            <flux:button wire:click="$set('tab', 'announcements')" size="sm"
-                variant="{{ $tab === 'announcements' ? 'primary' : 'ghost' }}">
-                Announcements <span class="ml-1 text-xs">({{ $announcements->count() }})</span>
-            </flux:button>
+        <div class="tab-bar">
+            <button wire:click="$set('tab', 'campaigns')" class="tab {{ $tab === 'campaigns' ? 'active' : '' }}">
+                Campaigns <span class="badge-count">{{ $campaigns->count() }}</span>
+            </button>
+            <button wire:click="$set('tab', 'announcements')" class="tab {{ $tab === 'announcements' ? 'active' : '' }}">
+                Announcements <span class="badge-count">{{ $announcements->count() }}</span>
+            </button>
         </div>
     </div>
 

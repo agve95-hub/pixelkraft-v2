@@ -39,7 +39,7 @@
         </div>
 
         <p class="text-[10px] text-zinc-600 mt-2">
-            Test your markup at <a href="https://search.google.com/test/rich-results" target="_blank" class="text-violet-400 hover:text-violet-300">Google Rich Results Test</a>
+                    Test your markup at <a href="https://search.google.com/test/rich-results" target="_blank" rel="noopener noreferrer" class="text-violet-400 hover:text-violet-300">Google Rich Results Test</a>
         </p>
     </div>
 </div>
