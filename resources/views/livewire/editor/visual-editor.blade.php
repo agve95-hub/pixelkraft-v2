@@ -836,33 +836,38 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
 
             const style = doc.createElement('style');
             style.textContent = `
+                /* ── Base ─────────────────────────────────────────────────────────── */
+
                 [data-pk-region] {
                     transition: outline-color 120ms ease, background-color 120ms ease;
                 }
-                /* Element-type colour coding: text=green, image=amber, interactive=red, container=violet, default=indigo */
-                html[data-pk-borders="on"] [data-pk-region][data-pk-etype="text"] { outline: 1px solid rgba(34,197,94,0.5) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-etype="image"] { outline: 1px solid rgba(245,158,11,0.5) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-etype="interactive"] { outline: 1px solid rgba(239,68,68,0.5) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-etype="container"] { outline: 1px solid rgba(139,92,246,0.5) !important; }
-                html[data-pk-borders="on"] [data-pk-region] { outline: 1px solid rgba(99,102,241,0.5) !important; outline-offset: 1px !important; }
-                /* Hover: bump opacity to 100% */
-                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="text"] { outline: 1px solid rgba(34,197,94,1) !important; background: rgba(34,197,94,0.05) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="image"] { outline: 1px solid rgba(245,158,11,1) !important; background: rgba(245,158,11,0.05) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="interactive"] { outline: 1px solid rgba(239,68,68,1) !important; background: rgba(239,68,68,0.05) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="container"] { outline: 1px solid rgba(139,92,246,1) !important; background: rgba(139,92,246,0.05) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-hover] { outline: 1px solid rgba(99,102,241,1) !important; background: rgba(99,102,241,0.05) !important; }
-                /* Selected: same color at 100% opacity */
-                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="text"] { outline: 1px solid rgba(34,197,94,1) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="image"] { outline: 1px solid rgba(245,158,11,1) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="interactive"] { outline: 1px solid rgba(239,68,68,1) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="container"] { outline: 1px solid rgba(139,92,246,1) !important; }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-selected] { outline: 1px solid rgba(99,102,241,1) !important; }
-                /* Locked: dashed zinc, no pointer */
-                html[data-pk-borders="on"] [data-pk-region][data-pk-editable="false"] {
-                    outline: 1px dashed rgba(161,161,170,0.6) !important;
-                    cursor: not-allowed !important;
+
+                /* Cursor intent — always active regardless of border visibility */
+                html[data-pk-preview="editor"] [data-pk-region][data-pk-editable="true"] { cursor: text; }
+                html[data-pk-preview="editor"] [data-pk-region][data-pk-editable="false"] { cursor: not-allowed; }
+
+                /* ── Outlines (active when data-pk-borders="on") ─────────────────── */
+                /* Specificity: html[attr][attr] [attr] = (0,3,1), beats normal site CSS */
+
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region] {
+                    outline: 1px solid rgba(99, 102, 241, 0.5);
+                    outline-offset: 1px;
                 }
-                html[data-pk-borders="on"] [data-pk-region]::before {
+
+                /* Type-coded colours (higher specificity overrides the base above) */
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-etype="text"]        { outline-color: rgba(34,  197, 94,  0.5); }
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-etype="image"]       { outline-color: rgba(245, 158, 11,  0.5); }
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-etype="interactive"] { outline-color: rgba(239, 68,  68,  0.5); }
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-etype="container"]   { outline-color: rgba(139, 92,  246, 0.5); }
+
+                /* Locked: dashed */
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-editable="false"] {
+                    outline: 1px dashed rgba(161, 161, 170, 0.6);
+                    cursor: not-allowed;
+                }
+
+                /* Tag label pill */
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region]::before {
                     content: attr(data-pk-region-tag);
                     position: absolute;
                     top: 0;
@@ -878,72 +883,100 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     z-index: 99997;
                     pointer-events: none;
                 }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-editable="true"]::before {
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-editable="true"]::before {
                     color: #fdf2f8;
                     background: rgba(190, 24, 93, 0.95);
                 }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-editable="false"]::before {
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-editable="false"]::before {
                     color: #ffedd5;
                     background: rgba(217, 119, 6, 0.95);
                 }
-                [data-pk-region][data-pk-editable="true"] {
-                    cursor: text !important;
+
+                /* ── Hover ───────────────────────────────────────────────────────── */
+
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover] {
+                    outline: 1px solid rgba(99, 102, 241, 1);
+                    background: rgba(99, 102, 241, 0.05);
                 }
-                [data-pk-region][data-pk-editable="false"] {
-                    cursor: not-allowed !important;
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="text"]        { outline-color: rgba(34,  197, 94,  1); background: rgba(34,  197, 94,  0.05); }
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="image"]       { outline-color: rgba(245, 158, 11,  1); background: rgba(245, 158, 11,  0.05); }
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="interactive"] { outline-color: rgba(239, 68,  68,  1); background: rgba(239, 68,  68,  0.05); }
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="container"]   { outline-color: rgba(139, 92,  246, 1); background: rgba(139, 92,  246, 0.05); }
+
+                /* Hover + editable (highest specificity wins over type colours) */
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="true"] {
+                    outline: 2px solid rgba(244, 114, 182, 0.98);
+                    outline-offset: 2px;
+                    background: rgba(244, 114, 182, 0.12);
+                    box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.4), 0 0 0 1px rgba(244, 114, 182, 0.45);
                 }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="true"] {
-                    outline: 2px solid rgba(244, 114, 182, 0.98) !important;
-                    outline-offset: 2px !important;
-                    background: rgba(244, 114, 182, 0.12) !important;
-                    box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.4), 0 0 0 1px rgba(244, 114, 182, 0.45) !important;
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="false"] {
+                    outline: 3px solid rgba(245, 158, 11, 1);
+                    outline-offset: 2px;
+                    background: rgba(245, 158, 11, 0.2);
+                    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.55);
                 }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="false"] {
-                    outline: 3px solid rgba(245, 158, 11, 1) !important;
-                    outline-offset: 2px !important;
-                    background: rgba(245, 158, 11, 0.2) !important;
-                    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.55) !important;
+
+                /* ── Selected ────────────────────────────────────────────────────── */
+
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected] {
+                    outline: 1px solid rgba(99, 102, 241, 1);
                 }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"] {
-                    outline: 3px solid rgba(236, 72, 153, 1) !important;
-                    outline-offset: 2px !important;
-                    background: rgba(236, 72, 153, 0.12) !important;
-                    box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.4), 0 0 0 2px rgba(236, 72, 153, 0.75) !important;
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="text"]        { outline-color: rgba(34,  197, 94,  1); }
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="image"]       { outline-color: rgba(245, 158, 11,  1); }
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="interactive"] { outline-color: rgba(239, 68,  68,  1); }
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="container"]   { outline-color: rgba(139, 92,  246, 1); }
+
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"] {
+                    outline: 3px solid rgba(236, 72, 153, 1);
+                    outline-offset: 2px;
+                    background: rgba(236, 72, 153, 0.12);
+                    box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.4), 0 0 0 2px rgba(236, 72, 153, 0.75);
                 }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"]::before,
-                html[data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"]::before {
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="false"] {
+                    outline: 2px solid rgba(245, 158, 11, 0.95);
+                    outline-offset: 2px;
+                    background: rgba(245, 158, 11, 0.12);
+                    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.7);
+                }
+
+                /* ── Editing (active inline edit) ────────────────────────────────── */
+
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"] {
+                    outline: 2px solid rgba(219, 39, 119, 1);
+                    outline-offset: 2px;
+                    background: rgba(236, 72, 153, 0.18);
+                    box-shadow: inset 0 0 0 1px rgba(219, 39, 119, 0.55), 0 0 0 1px rgba(244, 114, 182, 0.9);
+                }
+
+                /* Label override for selected/editing state */
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"]::before,
+                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"]::before {
                     content: "selected";
                     color: #fff1f2;
                     background: rgba(190, 24, 93, 0.98);
                 }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="false"] {
-                    outline: 2px solid rgba(245, 158, 11, 0.95) !important;
-                    outline-offset: 2px !important;
-                    background: rgba(245, 158, 11, 0.12) !important;
-                    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.7) !important;
-                }
-                html[data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"] {
-                    outline: 2px solid rgba(219, 39, 119, 1) !important;
-                    outline-offset: 2px !important;
-                    background: rgba(236, 72, 153, 0.18) !important;
-                    box-shadow: inset 0 0 0 1px rgba(219, 39, 119, 0.55), 0 0 0 1px rgba(244, 114, 182, 0.9) !important;
-                }
+
+                /* ── Floating overlay boxes ──────────────────────────────────────── */
+
                 .pk-overlay-box {
                     position: fixed;
                     pointer-events: none;
                     z-index: 99998;
-                    border-radius: 2px;
                     display: none;
-                    border: 1px solid rgba(99,102,241,0.5);
+                    border-radius: 2px;
+                    border: 1px solid rgba(99, 102, 241, 0.5);
                 }
-                .pk-overlay-box--hover { border: 1px solid rgba(99,102,241,0.5); }
-                .pk-overlay-box--selected { border: 1px solid rgba(99,102,241,1); }
-                .pk-overlay-box[data-pk-etype="text"] { border-color: rgba(34,197,94,1); }
-                .pk-overlay-box[data-pk-etype="image"] { border-color: rgba(245,158,11,1); }
-                .pk-overlay-box[data-pk-etype="interactive"] { border-color: rgba(239,68,68,1); }
-                .pk-overlay-box[data-pk-etype="container"] { border-color: rgba(139,92,246,1); }
-                .pk-overlay-box--hover:not([data-pk-etype]) { border-color: rgba(99,102,241,0.5); }
-                /* Pill label above top-left of selected overlay */
+                .pk-overlay-box--hover                        { border-color: rgba(99,  102, 241, 0.5); }
+                .pk-overlay-box--selected                     { border-color: rgba(99,  102, 241, 1);   }
+                .pk-overlay-box[data-pk-etype="text"]         { border-color: rgba(34,  197, 94,  1);   }
+                .pk-overlay-box[data-pk-etype="image"]        { border-color: rgba(245, 158, 11,  1);   }
+                .pk-overlay-box[data-pk-etype="interactive"]  { border-color: rgba(239, 68,  68,  1);   }
+                .pk-overlay-box[data-pk-etype="container"]    { border-color: rgba(139, 92,  246, 1);   }
+                .pk-overlay-box--hover:not([data-pk-etype])   { border-color: rgba(99,  102, 241, 0.5); }
+
+                /* ── Pill label ──────────────────────────────────────────────────── */
+
                 .pk-overlay-pill {
                     position: fixed;
                     pointer-events: none;
@@ -957,14 +990,16 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     text-transform: lowercase;
                     white-space: nowrap;
                     color: #fff;
-                    background: rgba(99,102,241,1);
+                    background: rgba(99, 102, 241, 1);
                     transform: translateY(-100%);
                 }
-                .pk-overlay-pill[data-pk-etype="text"] { background: rgba(34,197,94,1); color: #000; }
-                .pk-overlay-pill[data-pk-etype="image"] { background: rgba(245,158,11,1); color: #000; }
-                .pk-overlay-pill[data-pk-etype="interactive"] { background: rgba(239,68,68,1); }
-                .pk-overlay-pill[data-pk-etype="container"] { background: rgba(139,92,246,1); }
-                /* Resize handles (8 points) */
+                .pk-overlay-pill[data-pk-etype="text"]        { background: rgba(34,  197, 94,  1); color: #000; }
+                .pk-overlay-pill[data-pk-etype="image"]       { background: rgba(245, 158, 11,  1); color: #000; }
+                .pk-overlay-pill[data-pk-etype="interactive"] { background: rgba(239, 68,  68,  1); }
+                .pk-overlay-pill[data-pk-etype="container"]   { background: rgba(139, 92,  246, 1); }
+
+                /* ── Resize handles ──────────────────────────────────────────────── */
+
                 .pk-handle {
                     position: fixed;
                     pointer-events: none;
@@ -973,25 +1008,28 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     width: 6px;
                     height: 6px;
                     border-radius: 1px;
-                    background: rgba(99,102,241,1);
+                    background: rgba(99, 102, 241, 1);
                     margin-left: -3px;
                     margin-top: -3px;
                 }
-                .pk-handle[data-pk-etype="text"] { background: rgba(34,197,94,1); }
-                .pk-handle[data-pk-etype="image"] { background: rgba(245,158,11,1); }
-                .pk-handle[data-pk-etype="interactive"] { background: rgba(239,68,68,1); }
-                .pk-handle[data-pk-etype="container"] { background: rgba(139,92,246,1); }
+                .pk-handle[data-pk-etype="text"]        { background: rgba(34,  197, 94,  1); }
+                .pk-handle[data-pk-etype="image"]       { background: rgba(245, 158, 11,  1); }
+                .pk-handle[data-pk-etype="interactive"] { background: rgba(239, 68,  68,  1); }
+                .pk-handle[data-pk-etype="container"]   { background: rgba(139, 92,  246, 1); }
+
+                /* ── Tooltip ─────────────────────────────────────────────────────── */
+
                 .pk-tooltip {
                     position: fixed;
+                    z-index: 99999;
+                    pointer-events: none;
                     border: 1px solid #3f3f46;
+                    border-radius: 6px;
                     background: #111827;
                     color: #e5e7eb;
                     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
                     font-size: 11px;
                     padding: 5px 8px;
-                    border-radius: 6px;
-                    pointer-events: none;
-                    z-index: 99999;
                     white-space: nowrap;
                     box-shadow: 0 12px 38px rgba(0, 0, 0, 0.4);
                 }
@@ -1145,17 +1183,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return;
         }
 
-        if (!this.bordersVisible) {
-            element.style.removeProperty('border');
-            element.style.removeProperty('border-radius');
-            element.style.removeProperty('box-sizing');
-            element.style.removeProperty('outline');
-            element.style.removeProperty('outline-offset');
-            element.style.removeProperty('box-shadow');
-            element.style.removeProperty('background');
-            return;
-        }
-
+        // Clear any legacy inline styles so the CSS attribute selectors take over.
         element.style.removeProperty('border');
         element.style.removeProperty('border-radius');
         element.style.removeProperty('box-sizing');
