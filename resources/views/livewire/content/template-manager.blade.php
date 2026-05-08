@@ -1,117 +1,96 @@
-<div class="max-w-4xl">
-    <div class="mb-6 flex items-center justify-between">
+<div class="max-w-4xl space-y-5">
+    <div class="pk-page-head">
         <div>
-            <h2 class="text-lg font-semibold text-zinc-100">Content Templates</h2>
-            <p class="text-sm text-zinc-500">Reusable page, section, and component templates with <code class="mono text-zinc-400">@{{placeholders}}</code>.</p>
+            <h1 class="pk-page-title">Content Templates</h1>
+            <p class="pk-page-sub">Reusable page, section, and component templates with <code class="font-mono text-zinc-400">@{{placeholders}}</code>.</p>
         </div>
         @unless ($showForm)
-            <button wire:click="create" class="flux-btn-primary text-sm">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                New Template
-            </button>
+            <flux:button wire:click="create" variant="primary" icon="plus">New Template</flux:button>
         @endunless
     </div>
 
     @if ($showForm)
-        {{-- Editor --}}
-        <div class="flux-card space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="flux-label">Name</label>
-                    <input type="text" wire:model="name" class="flux-input" placeholder="Blog Post Template">
-                    @error('name') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+        <x-ui.card>
+            <x-ui.card-header>
+                <x-ui.card-title>{{ $editingId ? 'Edit Template' : 'New Template' }}</x-ui.card-title>
+            </x-ui.card-header>
+            <x-ui.card-content>
+                <div class="grid grid-cols-2 gap-4">
+                    <flux:field>
+                        <flux:label>Name</flux:label>
+                        <flux:input wire:model="name" placeholder="Blog Post Template" />
+                        <flux:error name="name" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label>Type</flux:label>
+                        <flux:select wire:model="type">
+                            <flux:select.option value="page">Page</flux:select.option>
+                            <flux:select.option value="section">Section</flux:select.option>
+                            <flux:select.option value="component">Component (header/footer)</flux:select.option>
+                        </flux:select>
+                    </flux:field>
                 </div>
-                <div>
-                    <label class="flux-label">Type</label>
-                    <select wire:model="type" class="flux-input">
-                        <option value="page">Page</option>
-                        <option value="section">Section</option>
-                        <option value="component">Component (header/footer)</option>
-                    </select>
-                </div>
-            </div>
 
-            <div>
-                <label class="flux-label">HTML Template</label>
-                <p class="text-[10px] text-zinc-600 mb-2">Use <code class="text-zinc-400">@{{title}}</code>, <code class="text-zinc-400">@{{body}}</code>, <code class="text-zinc-400">@{{image}}</code> etc. as placeholders.</p>
-                <textarea
-                    wire:model="htmlTemplate"
-                    rows="16"
-                    class="flux-input mono text-xs resize-y"
-                    spellcheck="false"
-                    placeholder="<!DOCTYPE html>
+                <flux:field>
+                    <flux:label>HTML Template</flux:label>
+                    <flux:description>Use <code class="font-mono text-zinc-400">@{{title}}</code>, <code class="font-mono text-zinc-400">@{{body}}</code> etc. as placeholders.</flux:description>
+                    <flux:textarea wire:model="htmlTemplate" rows="16" class="font-mono text-xs" spellcheck="false"
+                        placeholder='<!DOCTYPE html>
 <html>
 <head><title>{{title}}</title></head>
 <body>
   <h1>{{title}}</h1>
   <div>{{body}}</div>
 </body>
-</html>"
-                ></textarea>
-                @error('htmlTemplate') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
-            </div>
+</html>' />
+                    <flux:error name="htmlTemplate" />
+                </flux:field>
 
-            <div>
-                <label class="flux-label">Fields Schema <span class="text-zinc-600 font-normal">(optional JSON)</span></label>
-                <textarea
-                    wire:model="fieldsSchema"
-                    rows="6"
-                    class="flux-input mono text-xs resize-y"
-                    spellcheck="false"
-                    placeholder='[
+                <flux:field>
+                    <flux:label>Fields Schema <span class="font-normal text-zinc-500">(optional JSON)</span></flux:label>
+                    <flux:textarea wire:model="fieldsSchema" rows="6" class="font-mono text-xs" spellcheck="false"
+                        placeholder='[
   {"name": "title", "type": "text", "required": true},
   {"name": "body", "type": "richtext", "required": true},
   {"name": "image", "type": "image"}
-]'
-                ></textarea>
-                @error('fieldsSchema') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
-            </div>
+]' />
+                    <flux:error name="fieldsSchema" />
+                </flux:field>
 
-            <div class="flex items-center gap-3">
-                <button wire:click="save" class="flux-btn-primary text-sm">{{ $editingId ? 'Update' : 'Create' }} Template</button>
-                <button wire:click="cancel" class="flux-btn-ghost text-sm">Cancel</button>
-            </div>
-        </div>
+                <div class="flex items-center gap-3">
+                    <flux:button wire:click="save" variant="primary">{{ $editingId ? 'Update' : 'Create' }} Template</flux:button>
+                    <flux:button wire:click="cancel" variant="ghost">Cancel</flux:button>
+                </div>
+            </x-ui.card-content>
+        </x-ui.card>
     @else
-        {{-- Template list --}}
         <div class="space-y-3">
             @forelse ($templates as $template)
-                <div class="flux-card-hover flex items-center justify-between">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h4 class="text-sm font-medium text-zinc-200">{{ $template->name }}</h4>
-                            @switch($template->type)
-                                @case('page')
-                                    <span class="flux-badge-blue !text-[10px]">page</span>
-                                    @break
-                                @case('section')
-                                    <span class="flux-badge-purple !text-[10px]">section</span>
-                                    @break
-                                @case('component')
-                                    <span class="flux-badge-green !text-[10px]">component</span>
-                                    @break
-                            @endswitch
-                            @if ($template->isGlobal())
-                                <span class="flux-badge-amber !text-[10px]">global</span>
-                            @endif
+                <x-ui.card>
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-medium">{{ $template->name }}</p>
+                                @switch($template->type)
+                                    @case('page') <x-ui.badge variant="info">page</x-ui.badge> @break
+                                    @case('section') <x-ui.badge>section</x-ui.badge> @break
+                                    @case('component') <x-ui.badge variant="success">component</x-ui.badge> @break
+                                @endswitch
+                                @if ($template->isGlobal())
+                                    <x-ui.badge variant="warning">global</x-ui.badge>
+                                @endif
+                            </div>
+                            <p class="mt-0.5 font-mono text-[10px] text-zinc-600">{{ Str::limit($template->html_template, 100) }}</p>
                         </div>
-                        <p class="mono text-[10px] text-zinc-600 mt-0.5">
-                            {{ Str::limit($template->html_template, 100) }}
-                        </p>
+                        <x-ui.button-group>
+                            <x-ui.button wire:click="edit('{{ $template->id }}')" size="xs" variant="ghost">Edit</x-ui.button>
+                            <x-ui.button wire:click="delete('{{ $template->id }}')" wire:confirm="Delete this template?" size="xs" variant="ghost" class="text-red-400">Delete</x-ui.button>
+                        </x-ui.button-group>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button wire:click="edit('{{ $template->id }}')" class="flux-btn-ghost text-xs !px-2 !py-1">Edit</button>
-                        <button
-                            wire:click="delete('{{ $template->id }}')"
-                            wire:confirm="Delete this template?"
-                            class="text-xs text-red-400 hover:text-red-300 px-2 py-1"
-                        >Delete</button>
-                    </div>
-                </div>
+                </x-ui.card>
             @empty
-                <div class="flux-card py-12 text-center text-sm text-zinc-500">
-                    No templates yet. Create your first template to use with blog posts and pages.
-                </div>
+                <x-ui.empty icon="rectangle-stack" title="No templates yet."
+                    description="Create your first template to use with blog posts and pages." />
             @endforelse
         </div>
     @endif

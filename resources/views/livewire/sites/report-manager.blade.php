@@ -54,7 +54,7 @@
                     <span class="font-mono text-xs text-zinc-500">{{ $report->report_date?->toDateString() }}</span>
                     <span class="font-mono text-xs text-zinc-500">{{ count($sections) }} sections &middot; {{ $itemCount }} items</span>
                     <span class="inline-flex">
-                        <span class="pill {{ $status === 'sent' ? 'pill-green' : 'pill-yellow' }}">{{ ucfirst($status) }}</span>
+                        <x-ui.badge :variant="$status === 'sent' ? 'success' : 'warning'">{{ ucfirst($status) }}</x-ui.badge>
                     </span>
                 </button>
             @empty
@@ -87,7 +87,7 @@
             <div>
                 <div class="flex flex-wrap items-center gap-3">
                     <h1 class="pk-page-title">{{ $activeReport->title }}</h1>
-                    <span class="pill {{ $status === 'sent' ? 'pill-green' : 'pill-yellow' }}">{{ ucfirst($status) }}</span>
+                    <x-ui.badge :variant="$status === 'sent' ? 'success' : 'warning'">{{ ucfirst($status) }}</x-ui.badge>
                 </div>
                 <p class="pk-page-sub">{{ $activeReport->report_date?->format('F j, Y') }} &middot; {{ $site->clientDisplayName() }}</p>
             </div>

@@ -1,97 +1,98 @@
-<div class="max-w-3xl">
-    <div class="mb-6 flex items-center justify-between">
+<div class="max-w-3xl space-y-5">
+    <div class="pk-page-head">
         <div>
-            <h2 class="text-lg font-semibold text-zinc-100">{{ $productId ? 'Edit Product' : 'New Product' }}</h2>
-            <p class="text-sm text-zinc-500">Manage a product listing.</p>
+            <h1 class="pk-page-title">{{ $productId ? 'Edit Product' : 'New Product' }}</h1>
+            <p class="pk-page-sub">Manage a product listing.</p>
         </div>
         <div class="flex items-center gap-2">
-            <select wire:model="status" class="flux-input text-sm w-auto">
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="archived">Archived</option>
-            </select>
-            <button wire:click="save" class="flux-btn-primary text-sm" wire:loading.attr="disabled">
+            <flux:select wire:model="status" size="sm" class="w-auto">
+                <flux:select.option value="draft">Draft</flux:select.option>
+                <flux:select.option value="active">Active</flux:select.option>
+                <flux:select.option value="archived">Archived</flux:select.option>
+            </flux:select>
+            <flux:button wire:click="save" variant="primary" wire:loading.attr="disabled">
                 {{ $productId ? 'Update' : 'Create' }}
-            </button>
+            </flux:button>
         </div>
     </div>
 
-    <div class="space-y-6">
-        {{-- Basic Info --}}
-        <div class="flux-card space-y-4">
-            <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Details</h3>
-
-            <div>
-                <label class="flux-label">Name</label>
-                <input type="text" wire:model="name" class="flux-input" placeholder="Product name">
-                @error('name') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
-            </div>
-
-            <div>
-                <label class="flux-label">Description</label>
-                <textarea wire:model="description" rows="5" class="flux-input text-sm resize-y" placeholder="Product description... HTML supported."></textarea>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="flux-label">Price</label>
-                    <input type="number" step="0.01" wire:model="price" class="flux-input mono" placeholder="0.00">
+    <div class="space-y-4">
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>Details</x-ui.card-title></x-ui.card-header>
+            <x-ui.card-content>
+                <flux:field>
+                    <flux:label>Name</flux:label>
+                    <flux:input wire:model="name" placeholder="Product name" />
+                    <flux:error name="name" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Description</flux:label>
+                    <flux:textarea wire:model="description" rows="5"
+                        placeholder="Product description... HTML supported." />
+                </flux:field>
+                <div class="grid grid-cols-2 gap-4">
+                    <flux:field>
+                        <flux:label>Price</flux:label>
+                        <flux:input type="number" step="0.01" wire:model="price"
+                            placeholder="0.00" class="font-mono" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label>Currency</flux:label>
+                        <flux:select wire:model="currency">
+                            <flux:select.option value="USD">USD</flux:select.option>
+                            <flux:select.option value="EUR">EUR</flux:select.option>
+                            <flux:select.option value="GBP">GBP</flux:select.option>
+                        </flux:select>
+                    </flux:field>
                 </div>
-                <div>
-                    <label class="flux-label">Currency</label>
-                    <select wire:model="currency" class="flux-input">
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="GBP">GBP</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+            </x-ui.card-content>
+        </x-ui.card>
 
-        {{-- Images --}}
-        <div class="flux-card space-y-3">
-            <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Images</h3>
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>Images</x-ui.card-title></x-ui.card-header>
             <div class="flex gap-2">
-                <input type="text" wire:model="imageInput" wire:keydown.enter.prevent="addImage" class="flux-input text-xs mono flex-1" placeholder="https://... image URL">
-                <button wire:click="addImage" class="flux-btn-secondary text-xs !py-1.5 !px-3">Add</button>
+                <flux:input wire:model="imageInput" wire:keydown.enter.prevent="addImage"
+                    placeholder="https://... image URL" class="font-mono text-xs flex-1" size="sm" />
+                <flux:button wire:click="addImage" variant="outline" size="sm">Add</flux:button>
             </div>
             @if (!empty($images))
-                <div class="grid grid-cols-3 gap-2">
+                <div class="mt-3 grid grid-cols-3 gap-2">
                     @foreach ($images as $index => $img)
-                        <div class="relative group rounded-lg border border-zinc-800 overflow-hidden">
-                            <img src="{{ $img }}" alt="" class="w-full h-24 object-cover">
-                            <button wire:click="removeImage({{ $index }})" class="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-600 text-white text-xs opacity-0 group-hover:opacity-100 transition flex items-center justify-center">×</button>
+                        <div class="group relative overflow-hidden rounded-lg border border-zinc-800">
+                            <img src="{{ $img }}" alt="" class="h-24 w-full object-cover">
+                            <button wire:click="removeImage({{ $index }})"
+                                class="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-white opacity-0 transition group-hover:opacity-100">&times;</button>
                         </div>
                     @endforeach
                 </div>
             @endif
-        </div>
+        </x-ui.card>
 
-        {{-- Attributes --}}
-        <div class="flux-card space-y-3">
-            <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider">Attributes</h3>
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>Attributes</x-ui.card-title></x-ui.card-header>
             <div class="flex gap-2">
-                <input type="text" wire:model="attrKey" class="flux-input text-xs flex-1" placeholder="Key (e.g. Color)">
-                <input type="text" wire:model="attrValue" wire:keydown.enter.prevent="addAttribute" class="flux-input text-xs flex-1" placeholder="Value (e.g. Red)">
-                <button wire:click="addAttribute" class="flux-btn-secondary text-xs !py-1.5 !px-3">Add</button>
+                <flux:input wire:model="attrKey" placeholder="Key (e.g. Color)" class="flex-1" size="sm" />
+                <flux:input wire:model="attrValue" wire:keydown.enter.prevent="addAttribute"
+                    placeholder="Value (e.g. Red)" class="flex-1" size="sm" />
+                <flux:button wire:click="addAttribute" variant="outline" size="sm">Add</flux:button>
             </div>
             @if (!empty($productAttributes))
-                <div class="space-y-1">
+                <div class="mt-3 space-y-1">
                     @foreach ($productAttributes as $key => $value)
                         <div class="flex items-center justify-between rounded bg-zinc-800/40 px-3 py-1.5">
-                            <span class="text-xs"><span class="text-zinc-400 font-medium">{{ $key }}:</span> <span class="text-zinc-300">{{ $value }}</span></span>
-                            <button wire:click="removeAttribute('{{ $key }}')" class="text-xs text-zinc-600 hover:text-red-400">×</button>
+                            <span class="text-xs"><span class="font-medium text-zinc-400">{{ $key }}:</span> <span class="text-zinc-300">{{ $value }}</span></span>
+                            <button wire:click="removeAttribute('{{ $key }}')" class="text-xs text-zinc-600 hover:text-red-400">&times;</button>
                         </div>
                     @endforeach
                 </div>
             @endif
-        </div>
+        </x-ui.card>
 
-        {{-- Output --}}
-        <div class="card">
-            <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider mb-3">Output Path</h3>
-            <input type="text" wire:model="outputPath" class="flux-input text-xs mono" placeholder="products/product-name.html">
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>Output Path</x-ui.card-title></x-ui.card-header>
+            <flux:input wire:model="outputPath" placeholder="products/product-name.html"
+                class="font-mono text-xs" />
             <p class="mt-1 text-[10px] text-zinc-600">Where in the repo the generated HTML file will be saved.</p>
-        </div>
+        </x-ui.card>
     </div>
 </div>

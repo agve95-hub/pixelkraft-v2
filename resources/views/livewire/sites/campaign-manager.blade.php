@@ -6,18 +6,18 @@
             <h1 class="pk-page-title">Campaigns &amp; Announcements</h1>
             <p class="pk-page-sub">{{ $site->name }} — popup campaigns and top-bar banners.</p>
         </div>
-        <div class="tab-bar">
-            <button wire:click="$set('tab', 'campaigns')" class="tab {{ $tab === 'campaigns' ? 'active' : '' }}">
+        <x-ui.tabs>
+            <button wire:click="$set('tab', 'campaigns')" @class(['pk-ui-tab', 'is-active' => $tab === 'campaigns'])>
                 Campaigns <span class="badge-count">{{ $campaigns->count() }}</span>
             </button>
-            <button wire:click="$set('tab', 'announcements')" class="tab {{ $tab === 'announcements' ? 'active' : '' }}">
+            <button wire:click="$set('tab', 'announcements')" @class(['pk-ui-tab', 'is-active' => $tab === 'announcements'])>
                 Announcements <span class="badge-count">{{ $announcements->count() }}</span>
             </button>
-        </div>
+        </x-ui.tabs>
     </div>
 
     @if (session('success'))
-        <flux:callout variant="success" icon="check-circle">{{ session('success') }}</flux:callout>
+        <x-ui.alert variant="success" icon="check-circle">{{ session('success') }}</x-ui.alert>
     @endif
 
     {{-- ── CAMPAIGNS TAB ──────────────────────────────────────────────────── --}}
