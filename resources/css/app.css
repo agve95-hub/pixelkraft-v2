@@ -2285,3 +2285,32 @@
 .expense-cat { font-size: 12px; color: hsl(var(--muted-foreground)); }
 .expense-amt { font-family: var(--mono); font-size: 13.5px; font-weight: 500; color: hsl(var(--foreground)); }
 .expense-date { font-size: 12px; color: hsl(var(--muted-foreground)); font-family: var(--mono); }
+
+/* Final sidebar guard: navigation rows must not inherit card/button boxes.
+   The only boxed control in the sidebar should be the explicit New project button. */
+.pk-app-shell .pk-sidebar [data-flux-sidebar-item],
+.pk-app-shell .pk-sidebar [data-flux-sidebar-item].rounded-lg,
+.pk-app-shell .pk-sidebar [data-flux-sidebar-item].rounded-xl,
+.pk-app-shell .pk-sidebar [data-flux-sidebar-item][class*="border"],
+.pk-app-shell .pk-sidebar [data-flux-sidebar-item][data-current],
+.pk-app-shell .pk-sidebar [data-flux-sidebar-item][aria-current="page"] {
+    border: 0 !important;
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.pk-app-shell .pk-sidebar [data-flux-sidebar-item] {
+    border-radius: 0 !important;
+}
+
+.pk-app-shell .pk-sidebar [data-flux-sidebar-item]:hover {
+    background: transparent !important;
+    color: var(--pk-text) !important;
+}
+
+.pk-app-shell .pk-sidebar [data-flux-sidebar-item][data-current],
+.pk-app-shell .pk-sidebar [data-flux-sidebar-item][aria-current="page"] {
+    color: var(--pk-text) !important;
+    font-weight: 650 !important;
+}
