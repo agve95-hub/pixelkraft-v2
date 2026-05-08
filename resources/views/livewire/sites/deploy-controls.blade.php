@@ -1,237 +1,141 @@
 @php
     $isDeploying = $site->deploy_status?->isActive() ?? false;
-
     $_ds = $site->deploy_status?->value ?? 'draft';
-    $statusColor = match ($_ds) {
-        'live', 'success' => 'green',
-        'building', 'deploying', 'queued' => 'yellow',
-        'failed' => 'red',
-        default => 'blue',
-    };
-
-    $statusLabel = $site->status; // computed attribute on Site model
-
-    $sslColor = match ((string) $site->ssl_status) {
-        'active' => 'green',
-        'expired', 'error' => 'red',
-        default => 'yellow',
-    };
-
-    $sslLabel = match ((string) $site->ssl_status) {
-        'active' => 'Active',
-        'expired' => 'Expired',
-        'error' => 'Error',
-        default => 'Pending',
-    };
+    $statusBadge = match ($_ds) { 'live', 'success' => 'success', 'building', 'deploying', 'queued' => 'warning', 'failed' => 'destructive', default => 'default' };
+    $statusLabel  = $site->status;
+    $sslBadge    = match ((string) $site->ssl_status) { 'active' => 'success', 'expired', 'error' => 'destructive', default => 'warning' };
+    $sslLabel    = match ((string) $site->ssl_status) { 'active' => 'Active', 'expired' => 'Expired', 'error' => 'Error', default => 'Pending' };
 @endphp
 
-<div wire:poll.5s style="display:grid;gap:16px">
-    <div class="dash-card">
-        <div class="dash-card-head" style="align-items:flex-start">
+<div wire:poll.5s class="space-y-4">
+    {{-- Deploy controls card --}}
+    <x-ui.card>
+        <x-ui.card-header>
             <div>
-                <div class="dash-card-title">
-                    <x-icons.zap />
-                    <span>Deploy &amp; infrastructure</span>
-                </div>
-                <div style="font-size:12px;color:var(--zinc-500);margin-top:4px">
-                    Trigger a new deploy, provision the domain, and watch the latest activity without leaving the project page.
-                </div>
+                <x-ui.card-title><x-icons.zap /> Deploy &amp; infrastructure</x-ui.card-title>
+                <x-ui.card-description>Trigger a new deploy, provision the domain, and watch the latest activity.</x-ui.card-description>
             </div>
-
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div class="flex flex-wrap items-center gap-2">
                 @if ($site->domain && ! $site->nginx_conf_path)
-                    <button
-                        type="button"
-                        wire:click="setupDomain"
-                        wire:target="setupDomain"
-                        wire:loading.attr="disabled"
-                        class="btn btn-sm"
-                    >
-                        <x-icons.globe />
+                    <flux:button type="button" wire:click="setupDomain" wire:target="setupDomain" wire:loading.attr="disabled" variant="outline" size="sm" icon="globe-alt">
                         <span wire:loading.remove wire:target="setupDomain">Setup domain &amp; SSL</span>
                         <span wire:loading wire:target="setupDomain">Setting up...</span>
-                    </button>
+                    </flux:button>
                 @endif
-
-                <button
-                    type="button"
-                    wire:click="deploy"
-                    wire:target="deploy"
-                    wire:loading.attr="disabled"
-                    @disabled($isDeploying)
-                    class="btn btn-accent btn-sm"
-                >
-                    <x-icons.zap />
+                <flux:button type="button" wire:click="deploy" wire:target="deploy" wire:loading.attr="disabled" @disabled($isDeploying) variant="primary" size="sm" icon="bolt">
                     @if ($isDeploying)
-                        <span>{{ $statusLabel }}...</span>
+                        {{ $statusLabel }}...
                     @else
                         <span wire:loading.remove wire:target="deploy">Deploy now</span>
                         <span wire:loading wire:target="deploy">Starting...</span>
                     @endif
-                </button>
+                </flux:button>
+            </div>
+        </x-ui.card-header>
+
+        <div class="stats stats-4">
+            <div class="stat">
+                <p class="stat-label">Status</p>
+                <div class="mt-2"><x-ui.badge variant="{{ $statusBadge }}" dot>{{ $statusLabel }}</x-ui.badge></div>
+                <p class="stat-note">{{ $site->deployLogs()->count() }} deploys recorded</p>
+            </div>
+            <div class="stat">
+                <p class="stat-label">SSL</p>
+                <div class="mt-2"><x-ui.badge variant="{{ $sslBadge }}" dot>{{ $sslLabel }}</x-ui.badge></div>
+                <p class="stat-note">{{ $site->domain ?: 'Domain not connected' }}</p>
+            </div>
+            <div class="stat">
+                <p class="stat-label">Last deploy</p>
+                <p class="stat-val-sm mt-1">{{ $site->last_deployed_at?->diffForHumans() ?? 'Never' }}</p>
+                <p class="stat-note">{{ $site->branch ?: 'No branch set' }}</p>
+            </div>
+            <div class="stat">
+                <p class="stat-label">Deploy path</p>
+                <p class="stat-val-sm mt-1 font-mono text-xs">{{ $productionTarget?->deploy_path ?: $site->deploy_path ?: 'Not configured' }}</p>
+                <p class="stat-note">{{ $productionTarget?->release_strategy ? strtoupper($productionTarget->release_strategy) . ' releases' : ($site->repo_url ? 'Git connected' : 'Repo missing') }}</p>
             </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,0.1);border-radius:12px;overflow:hidden">
-            <div class="stat">
-                <div class="stat-label">Status</div>
-                <div style="margin-top:4px;margin-bottom:4px">
-                    <x-pill :color="$statusColor">{{ $statusLabel }}</x-pill>
-                </div>
-                <div class="stat-note">{{ $site->deployLogs()->count() }} deploys recorded</div>
+        <div class="mt-4 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-lg border border-zinc-800/70 bg-zinc-950/30 p-3">
+                <p class="stat-label">Current release</p>
+                <p class="stat-val-sm mt-1 font-mono text-xs">{{ $currentRelease?->source_commit_sha ? \Illuminate\Support\Str::limit($currentRelease->source_commit_sha, 10, '') : 'No active release' }}</p>
+                <p class="stat-note">{{ $currentRelease?->activated_at?->diffForHumans() ?? 'Waiting for first deploy' }}</p>
             </div>
-
-            <div class="stat">
-                <div class="stat-label">SSL</div>
-                <div style="margin-top:4px;margin-bottom:4px">
-                    <x-pill :color="$sslColor">{{ $sslLabel }}</x-pill>
-                </div>
-                <div class="stat-note">{{ $site->domain ?: 'Domain not connected' }}</div>
+            <div class="rounded-lg border border-zinc-800/70 bg-zinc-950/30 p-3">
+                <p class="stat-label">Target runtime</p>
+                <p class="stat-val-sm mt-1">{{ $productionTarget?->runtime_type ?: 'static' }}</p>
+                <p class="stat-note">{{ $productionTarget?->host ?: ($site->ssh_host ?: 'Host not set') }}</p>
             </div>
-
-            <div class="stat">
-                <div class="stat-label">Last deploy</div>
-                <div class="stat-val-sm" style="margin-top:6px;font-size:12px">{{ $site->last_deployed_at?->diffForHumans() ?? 'Never' }}</div>
-                <div class="stat-note">{{ $site->branch ?: 'No branch set' }}</div>
-            </div>
-
-            <div class="stat">
-                <div class="stat-label">Deploy path</div>
-                <div class="stat-val-sm" style="margin-top:6px;font-size:12px">{{ $productionTarget?->deploy_path ?: $site->deploy_path ?: 'Not configured' }}</div>
-                <div class="stat-note">{{ $productionTarget?->release_strategy ? strtoupper($productionTarget->release_strategy) . ' releases' : ($site->repo_url ? 'Git connected' : 'Repo missing') }}</div>
+            <div class="rounded-lg border border-zinc-800/70 bg-zinc-950/30 p-3">
+                <p class="stat-label">Tracking</p>
+                <p class="stat-val-sm mt-1">{{ $trackingInstallation?->provider ? ucfirst($trackingInstallation->provider) : 'Not installed' }}</p>
+                <p class="stat-note">{{ $trackingInstallation?->script_route ?: 'Deploy-time injection pending' }}</p>
             </div>
         </div>
+    </x-ui.card>
 
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px">
-            <div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;background:rgba(255,255,255,0.03)">
-                <div class="stat-label">Current release</div>
-                <div class="stat-val-sm" style="margin-top:6px;font-size:12px">
-                    {{ $currentRelease?->source_commit_sha ? \Illuminate\Support\Str::limit($currentRelease->source_commit_sha, 10, '') : 'No active release' }}
-                </div>
-                <div class="stat-note">{{ $currentRelease?->activated_at?->diffForHumans() ?? 'Waiting for first successful deploy' }}</div>
-            </div>
-
-            <div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;background:rgba(255,255,255,0.03)">
-                <div class="stat-label">Target runtime</div>
-                <div class="stat-val-sm" style="margin-top:6px;font-size:12px">{{ $productionTarget?->runtime_type ?: 'static' }}</div>
-                <div class="stat-note">{{ $productionTarget?->host ?: ($site->ssh_host ?: 'Local/VPS host not set') }}</div>
-            </div>
-
-            <div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;background:rgba(255,255,255,0.03)">
-                <div class="stat-label">Tracking</div>
-                <div class="stat-val-sm" style="margin-top:6px;font-size:12px">{{ $trackingInstallation?->provider ? ucfirst($trackingInstallation->provider) : 'Not installed' }}</div>
-                <div class="stat-note">{{ $trackingInstallation?->script_route ?: 'Deploy-time injection pending' }}</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="dash-card">
-        <div class="dash-card-head">
-            <div class="dash-card-title">
-                <x-icons.report />
-                <span>Deploy history</span>
-            </div>
-            <span style="font-size:11px;color:var(--zinc-500)">Latest 15 runs</span>
-        </div>
+    {{-- Deploy history --}}
+    <x-ui.card padding="flush">
+        <x-ui.card-header class="px-[18px] pt-4 pb-3">
+            <x-ui.card-title><x-icons.report /> Deploy history</x-ui.card-title>
+            <span class="text-xs text-zinc-500">Latest 15 runs</span>
+        </x-ui.card-header>
 
         @if ($deployLogs->isEmpty())
-            <div class="empty" style="border:1px solid rgba(255,255,255,0.08);border-radius:12px">
-                <div class="empty-icon"><x-icons.zap /></div>
-                No deploys yet
-                <span style="font-size:12px">Trigger the first deploy to populate this history</span>
+            <div class="px-[18px] pb-4">
+                <x-ui.empty icon="bolt" title="No deploys yet" description="Trigger the first deploy to populate this history." />
             </div>
         @else
-            <div class="deploy-list">
-                @foreach ($deployLogs as $log)
-                    @php
-                        $logColor = match ((string) $log->status) {
-                            'success', 'live' => 'green',
-                            'failed' => 'red',
-                            default => 'yellow',
-                        };
-
-                        $logLabel = match ((string) $log->status) {
-                            'success' => 'Success',
-                            'failed' => 'Failed',
-                            'deploying' => 'Deploying',
-                            'building' => 'Building',
-                            'queued' => 'Queued',
-                            default => ucfirst((string) $log->status),
-                        };
-                    @endphp
-
-                    <div class="deploy-item">
-                        <div style="display:flex;align-items:center;gap:8px;min-width:0">
-                            <div class="issue-icon issue-icon-{{ $logColor }}">
-                                @if ($logColor === 'green')
-                                    <x-icons.check />
-                                @elseif ($logColor === 'red')
-                                    <x-icons.alert />
-                                @else
-                                    <x-icons.clock />
-                                @endif
-                            </div>
-                            <x-pill :color="$logColor" style="font-size:10px;width:fit-content">{{ $logLabel }}</x-pill>
-                        </div>
-
-                        <span class="deploy-hash">{{ $log->hash ?: 'manual' }}</span>
-                        <span class="deploy-dur">{{ $log->durationFormatted() }}</span>
-
-                        <div style="min-width:0">
-                            <div style="font-size:13px;color:rgba(255,255,255,0.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                                {{ $log->commit_message ?: ucfirst((string) $log->status) . ' deploy' }}
-                            </div>
-                            <div style="font-size:11px;color:var(--zinc-500);margin-top:2px">
-                                {{ $log->triggered_by ?: 'manual' }}
-                                @if ($log->created_at)
-                                    - {{ $log->created_at->format('M j, Y H:i') }}
-                                @endif
-                            </div>
-                        </div>
-
-                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap">
-                            <span class="deploy-time">{{ $log->created_at?->diffForHumans() ?? 'recently' }}</span>
-                            <button type="button" wire:click="viewLog('{{ $log->id }}')" class="btn btn-sm" style="font-size:11px;padding:4px 10px">Log</button>
-                            @if ($log->isSuccess() && $log->snapshot_tag)
-                                <button
-                                    type="button"
-                                    wire:click="rollback('{{ $log->id }}')"
-                                    wire:confirm="Rollback to this deploy?"
-                                    class="btn btn-sm"
-                                    style="font-size:11px;padding:4px 10px;color:var(--amber);border-color:rgba(245,158,11,0.3)"
-                                >
-                                    Rollback
-                                </button>
-                            @endif
-                        </div>
+            @foreach ($deployLogs as $log)
+                @php
+                    $logBadge = match ((string) $log->status) { 'success', 'live' => 'success', 'failed' => 'destructive', default => 'warning' };
+                    $logLabel = match ((string) $log->status) { 'success' => 'Success', 'failed' => 'Failed', 'deploying' => 'Deploying', 'building' => 'Building', 'queued' => 'Queued', default => ucfirst((string) $log->status) };
+                    $logIconClass = match ($logBadge) { 'success' => 'issue-icon-green', 'destructive' => 'issue-icon-red', default => 'issue-icon-yellow' };
+                @endphp
+                <div class="deploy-item">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="issue-icon {{ $logIconClass }}">
+                            @if ($logBadge === 'success') <x-icons.check />
+                            @elseif ($logBadge === 'destructive') <x-icons.alert />
+                            @else <x-icons.clock /> @endif
+                        </span>
+                        <x-ui.badge variant="{{ $logBadge }}">{{ $logLabel }}</x-ui.badge>
                     </div>
-                @endforeach
-            </div>
-        @endif
-    </div>
-
-    @if ($viewingLog)
-        <div class="dash-card">
-            <div class="dash-card-head">
-                <div class="dash-card-title">
-                    <x-icons.file />
-                    <span>Deploy log</span>
+                    <span class="deploy-hash">{{ $log->hash ?: 'manual' }}</span>
+                    <span class="deploy-dur">{{ $log->durationFormatted() }}</span>
+                    <div class="min-w-0">
+                        <p class="truncate text-[13px] text-zinc-200">{{ $log->commit_message ?: ucfirst((string) $log->status) . ' deploy' }}</p>
+                        <p class="text-[11px] text-zinc-500">{{ $log->triggered_by ?: 'manual' }}@if ($log->created_at) &mdash; {{ $log->created_at->format('M j, Y H:i') }}@endif</p>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 flex-wrap">
+                        <span class="deploy-time">{{ $log->created_at?->diffForHumans() ?? 'recently' }}</span>
+                        <x-ui.button type="button" wire:click="viewLog('{{ $log->id }}')" size="xs" variant="ghost">Log</x-ui.button>
+                        @if ($log->isSuccess() && $log->snapshot_tag)
+                            <x-ui.button type="button" wire:click="rollback('{{ $log->id }}')" wire:confirm="Rollback to this deploy?" size="xs" variant="outline" class="border-amber-500/30 text-amber-400 hover:bg-amber-500/10">Rollback</x-ui.button>
+                        @endif
+                    </div>
                 </div>
-                <button type="button" wire:click="closeLog" class="btn btn-sm">Close</button>
-            </div>
+            @endforeach
+        @endif
+    </x-ui.card>
 
-            <div style="font-size:12px;color:var(--zinc-500);margin-bottom:14px;font-family:var(--mono)">
-                {{ $viewingLog->created_at?->format('M j, Y H:i:s') ?? 'Unknown time' }} -
-                {{ $viewingLog->durationFormatted() }} -
-                {{ $viewingLog->triggered_by ?: 'manual' }}
-                @if ($viewingLog->commit_sha)
-                    - {{ \Illuminate\Support\Str::limit($viewingLog->commit_sha, 7, '') }}
-                @endif
+    {{-- Log viewer --}}
+    @if ($viewingLog)
+        <x-ui.card>
+            <x-ui.card-header>
+                <x-ui.card-title><x-icons.file /> Deploy log</x-ui.card-title>
+                <x-ui.button type="button" wire:click="closeLog" variant="ghost" size="sm">Close</x-ui.button>
+            </x-ui.card-header>
+            <p class="mb-3 font-mono text-xs text-zinc-500">
+                {{ $viewingLog->created_at?->format('M j, Y H:i:s') ?? 'Unknown time' }}
+                &mdash; {{ $viewingLog->durationFormatted() }}
+                &mdash; {{ $viewingLog->triggered_by ?: 'manual' }}
+                @if ($viewingLog->commit_sha) &mdash; {{ \Illuminate\Support\Str::limit($viewingLog->commit_sha, 7, '') }} @endif
+            </p>
+            <div class="max-h-[420px] overflow-auto rounded-lg border border-zinc-800/70 bg-zinc-950/50 p-4">
+                <pre class="font-mono text-xs leading-relaxed text-zinc-300 whitespace-pre-wrap">{{ $viewingLog->output_log ?? 'No output recorded.' }}</pre>
             </div>
-
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;max-height:420px;overflow:auto">
-                <pre style="margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;color:rgba(255,255,255,0.76);white-space:pre-wrap">{{ $viewingLog->output_log ?? 'No output recorded.' }}</pre>
-            </div>
-        </div>
+        </x-ui.card>
     @endif
 </div>

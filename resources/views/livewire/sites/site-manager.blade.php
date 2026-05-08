@@ -1,13 +1,13 @@
 <div class="w-full max-w-6xl">
     <div class="pk-page-head">
         <div>
-            <flux:button href="{{ route('sites.index') }}" variant="ghost" size="sm" icon="arrow-left" class="mb-3">
-                Back to sites
-            </flux:button>
+            <a href="{{ route('sites.index') }}" class="back-link mb-3">
+                <flux:icon name="chevron-left" class="size-3.5" /> Sites
+            </a>
             <h1 class="pk-page-title">Add a new site</h1>
             <p class="pk-page-sub">Set up a project with client info, source files, deployment checks, and production gates.</p>
         </div>
-        <flux:button type="button" variant="subtle" size="sm" wire:click="checkSourceReadiness">Run readiness checks</flux:button>
+        <x-ui.button type="button" variant="outline" size="sm" wire:click="checkSourceReadiness">Run readiness checks</x-ui.button>
     </div>
 
     <form wire:submit="create" class="space-y-8">
@@ -28,7 +28,7 @@
             </div>
             <p class="pk-section-help">Primary contact data is reused for approvals, invoices, reports, and maintenance pages.</p>
 
-            <div class="dash-card">
+            <x-ui.card>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <flux:field>
                         <flux:label>First name</flux:label>
@@ -68,7 +68,7 @@
                         <flux:error name="clientAddress" />
                     </flux:field>
                 </div>
-            </div>
+            </x-ui.card>
         </section>
 
         <section class="pk-section-block">
@@ -78,7 +78,7 @@
             </div>
             <p class="pk-section-help">The system can detect the project type from a Git source or start as an upload draft.</p>
 
-            <div class="dash-card">
+            <x-ui.card>
                 <flux:field>
                     <flux:label>Site / project name</flux:label>
                     <flux:input wire:model="name" placeholder="My Portfolio" />
@@ -90,7 +90,7 @@
                         <flux:label>
                             Project type
                             @if ($detectedStackNote)
-                                <flux:badge color="emerald" size="sm">Auto-detected</flux:badge>
+                                <x-ui.badge variant="success">Auto-detected</x-ui.badge>
                             @endif
                         </flux:label>
                         <flux:select wire:model="projectType">
@@ -136,7 +136,7 @@
                         <flux:error name="monthlyRetainer" />
                     </flux:field>
                 </div>
-            </div>
+            </x-ui.card>
         </section>
 
         <section class="pk-section-block">
@@ -176,14 +176,11 @@
             @endif
 
             @if ($sourceType === 'github')
-                <div class="dash-card">
-                    <div class="dash-card-head">
-                        <div class="dash-card-title">
-                            <flux:icon name="code-bracket" class="size-4" />
-                            Primary Git source
-                        </div>
+                <x-ui.card>
+                    <x-ui.card-header>
+                        <x-ui.card-title><flux:icon name="code-bracket" class="size-4" /> Primary Git source</x-ui.card-title>
                         <span class="tag">Recommended</span>
-                    </div>
+                    </x-ui.card-header>
 
                     <flux:field>
                         <flux:label>GitHub repository URL</flux:label>
@@ -220,38 +217,32 @@
                         <flux:button type="button" size="sm" variant="subtle" wire:click="checkSourceReadiness">Check repo access</flux:button>
                         <flux:button type="button" size="sm" variant="subtle" wire:click="checkSourceReadiness">Queue clone/build on create</flux:button>
                     </div>
-                </div>
+                </x-ui.card>
             @else
                 <div class="grid gap-4 lg:grid-cols-2">
-                    <div class="dash-card">
-                        <div class="dash-card-head">
-                            <div class="dash-card-title">
-                                <flux:icon name="archive-box-arrow-down" class="size-4" />
-                                Upload a ready build
-                            </div>
-                        </div>
+                    <x-ui.card>
+                        <x-ui.card-header>
+                            <x-ui.card-title><flux:icon name="archive-box-arrow-down" class="size-4" /> Upload a ready build</x-ui.card-title>
+                        </x-ui.card-header>
                         <p class="mb-4 text-sm text-zinc-500">Use this when the client hands over a ZIP, export folder, or static build artifact.</p>
                         <flux:field>
                             <flux:label>Accepted upload</flux:label>
                             <flux:input value=".zip, dist/, build/, public/" readonly />
                         </flux:field>
                         <flux:button type="button" class="mt-4" size="sm" variant="subtle" wire:click="checkSourceReadiness">Inspect upload readiness</flux:button>
-                    </div>
+                    </x-ui.card>
 
-                    <div class="dash-card">
-                        <div class="dash-card-head">
-                            <div class="dash-card-title">
-                                <flux:icon name="server-stack" class="size-4" />
-                                Release gate
-                            </div>
+                    <x-ui.card>
+                        <x-ui.card-header>
+                            <x-ui.card-title><flux:icon name="server-stack" class="size-4" /> Release gate</x-ui.card-title>
                             <span class="tag">Draft first</span>
-                        </div>
+                        </x-ui.card-header>
                         <div class="space-y-2 text-sm text-zinc-400">
                             <p class="flex items-center gap-2"><span class="pk-check-box"></span> Source package selected</p>
                             <p class="flex items-center gap-2"><span class="pk-check-box"></span> Build output will be detected after upload</p>
                             <p class="flex items-center gap-2"><span class="pk-check-box"></span> First deploy unlocks DNS and SSL</p>
                         </div>
-                    </div>
+                    </x-ui.card>
                 </div>
             @endif
         </section>
@@ -261,12 +252,12 @@
                 <span class="pk-step-dot pk-step-orange">4</span>
                 Domain & SSL
                 @if ($sourceCheckStatus !== 'ready')
-                    <span class="pill pill-yellow">Locked</span>
+                    <x-ui.badge variant="warning">Locked</x-ui.badge>
                 @endif
             </div>
             <p class="pk-section-help">DNS cutover and SSL issuance stay gated until the source checks pass.</p>
 
-            <div class="dash-card">
+            <x-ui.card>
                 <div class="grid gap-4 sm:grid-cols-3">
                     <flux:field>
                         <flux:label badge="Optional">Custom domain</flux:label>
@@ -296,7 +287,7 @@
                         <flux:error name="dnsProvider" />
                     </flux:field>
                 </div>
-            </div>
+            </x-ui.card>
         </section>
 
         <section class="pk-section-block {{ $sourceCheckStatus !== 'ready' ? 'pk-locked-section' : '' }}">
@@ -304,12 +295,12 @@
                 <span class="pk-step-dot pk-step-amber">5</span>
                 Integrations
                 @if ($sourceCheckStatus !== 'ready')
-                    <span class="pill pill-yellow">Locked</span>
+                    <x-ui.badge variant="warning">Locked</x-ui.badge>
                 @endif
             </div>
             <p class="pk-section-help">Service keys for analytics, DNS, mail providers, and form automation.</p>
 
-            <div class="dash-card">
+            <x-ui.card>
                 <div class="grid gap-4 lg:grid-cols-2">
                     <flux:field>
                         <flux:label badge="Optional">Google Analytics measurement ID</flux:label>
@@ -332,7 +323,7 @@
                         <flux:error name="smtpHost" />
                     </flux:field>
                 </div>
-            </div>
+            </x-ui.card>
         </section>
 
         <div class="flex flex-wrap items-center gap-3 pb-8">

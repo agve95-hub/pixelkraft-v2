@@ -1,20 +1,20 @@
 <div>
-    <div class="dash-card h-full">
-        <div class="dash-card-head">
-            <p class="dash-card-title">
+    <x-ui.card class="h-full">
+        <x-ui.card-header>
+            <x-ui.card-title>
                 <flux:icon name="calendar" class="size-4" />
                 Upcoming
-            </p>
+            </x-ui.card-title>
             <span class="text-xs text-zinc-500">{{ $totalCount }} pending</span>
-        </div>
+        </x-ui.card-header>
 
-        <div class="space-y-1.5">
+        <div class="space-y-1">
             @forelse ($upcoming as $item)
                 @php($href = $item['href'] ?? null)
                 @if ($href)
-                    <a href="{{ $href }}" class="flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 transition hover:border-zinc-700/70 hover:bg-zinc-950/50">
+                    <a href="{{ $href }}" class="issue-item hover:bg-secondary/30 rounded-md -mx-1 px-1 transition-colors">
                 @else
-                    <div class="flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 transition hover:border-zinc-700/70 hover:bg-zinc-950/50">
+                    <div class="issue-item">
                 @endif
                     <flux:icon :name="$item['icon']" @class([
                         'mt-0.5 size-4 shrink-0',
@@ -24,27 +24,17 @@
                     ]) />
                     <div class="min-w-0 flex-1">
                         <div class="flex items-start justify-between gap-2">
-                            <p class="text-sm text-zinc-100">{{ $item['title'] }}</p>
+                            <p class="issue-text">{{ $item['title'] }}</p>
                             @if ($item['overdue'])
-                                <span class="inline-flex shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-red-500/15 text-red-400">Overdue</span>
+                                <x-ui.badge variant="destructive">Overdue</x-ui.badge>
                             @endif
                         </div>
-                        <p class="mt-0.5 text-xs text-zinc-500">
-                            {{ $item['subtitle'] }}
-                            &middot;
-                            {{ $item['date']->format('M j') }}
-                        </p>
+                        <p class="issue-meta">{{ $item['subtitle'] }} &middot; {{ $item['date']->format('M j') }}</p>
                     </div>
-                @if ($href)
-                    </a>
-                @else
-                    </div>
-                @endif
+                @if ($href) </a> @else </div> @endif
             @empty
-                <div class="py-6 text-center">
-                    <p class="text-sm text-zinc-500">Nothing upcoming</p>
-                </div>
+                <x-ui.empty icon="calendar" title="Nothing upcoming" />
             @endforelse
         </div>
-    </div>
+    </x-ui.card>
 </div>

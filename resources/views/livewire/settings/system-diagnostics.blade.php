@@ -17,44 +17,44 @@
     </flux:callout>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        <flux:card>
-            <flux:subheading size="sm">Queue Driver</flux:subheading>
+        <x-ui.card>
+            <p class="stat-label">Queue Driver</p>
             <div class="mt-2 flex items-center gap-2">
                 <flux:badge :color="$systemInfo['queue_driver'] === 'redis' ? 'lime' : 'red'">{{ $systemInfo['queue_driver'] }}</flux:badge>
                 <flux:text size="sm">{{ $systemInfo['queue_connection'] }}</flux:text>
             </div>
             <flux:text size="xs" class="mt-2 font-mono">{{ $systemInfo['app_environment'] }}</flux:text>
-        </flux:card>
+        </x-ui.card>
 
-        <flux:card>
-            <flux:subheading size="sm">Redis</flux:subheading>
+        <x-ui.card>
+            <p class="stat-label">Redis</p>
             <div class="mt-2 flex items-center gap-2">
                 <flux:badge :color="$systemInfo['redis_status']['ok'] ? 'lime' : 'red'">
                     {{ $systemInfo['redis_status']['ok'] ? 'Reachable' : 'Unavailable' }}
                 </flux:badge>
                 <flux:text size="sm">{{ $systemInfo['redis_status']['connection'] }}</flux:text>
             </div>
-        </flux:card>
+        </x-ui.card>
 
-        <flux:card>
-            <flux:subheading size="sm">Pending Jobs</flux:subheading>
-            <flux:heading size="xl" class="mt-2 font-mono">{{ $summary['pending_jobs'] }}</flux:heading>
-        </flux:card>
+        <x-ui.card>
+            <p class="stat-label">Pending Jobs</p>
+            <p class="stat-val mt-2 font-mono">{{ $summary['pending_jobs'] }}</p>
+        </x-ui.card>
 
-        <flux:card>
-            <flux:subheading size="sm">Stuck Sites</flux:subheading>
-            <flux:heading size="xl" class="mt-2 font-mono">{{ $summary['stuck_sites'] }}</flux:heading>
-        </flux:card>
+        <x-ui.card>
+            <p class="stat-label">Stuck Sites</p>
+            <p class="stat-val mt-2 font-mono">{{ $summary['stuck_sites'] }}</p>
+        </x-ui.card>
 
-        <flux:card>
-            <flux:subheading size="sm">Failures (24h)</flux:subheading>
-            <flux:heading size="xl" class="mt-2 font-mono">{{ $summary['failed_jobs'] }}</flux:heading>
-        </flux:card>
+        <x-ui.card>
+            <p class="stat-label">Failures (24h)</p>
+            <p class="stat-val mt-2 font-mono">{{ $summary['failed_jobs'] }}</p>
+        </x-ui.card>
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <flux:card>
-            <flux:heading size="sm" class="mb-4">Health Checks</flux:heading>
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>Health Checks</x-ui.card-title></x-ui.card-header>
 
             <div class="space-y-3">
                 @foreach ($checks as $check)
@@ -72,10 +72,10 @@
                     </div>
                 @endforeach
             </div>
-        </flux:card>
+        </x-ui.card>
 
-        <flux:card>
-            <flux:heading size="sm" class="mb-4">Recommended Actions</flux:heading>
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>Recommended Actions</x-ui.card-title></x-ui.card-header>
 
             <div class="space-y-3">
                 @foreach ($recommendations as $recommendation)
@@ -84,11 +84,11 @@
                     </div>
                 @endforeach
             </div>
-        </flux:card>
+        </x-ui.card>
     </div>
 
-    <flux:card>
-        <flux:heading size="sm" class="mb-4">Queue Breakdown</flux:heading>
+    <x-ui.card>
+        <x-ui.card-header><x-ui.card-title>Queue Breakdown</x-ui.card-title></x-ui.card-header>
 
         <div class="space-y-2">
             @foreach ($queueStats as $queue)
@@ -97,9 +97,9 @@
                         <div class="flex items-center gap-2">
                             <flux:text size="sm" class="font-medium">{{ strtoupper($queue['name']) }}</flux:text>
                             @if (in_array($queue['name'], $systemInfo['configured_queues']))
-                                <flux:badge color="lime">Horizon</flux:badge>
+                                <x-ui.badge variant="success">Horizon</flux:badge>
                             @else
-                                <flux:badge color="red">Missing</flux:badge>
+                                <x-ui.badge variant="destructive">Missing</flux:badge>
                             @endif
                         </div>
 
@@ -118,11 +118,11 @@
                 </div>
             @endforeach
         </div>
-    </flux:card>
+    </x-ui.card>
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <flux:card>
-            <flux:heading size="sm" class="mb-4">Recent Failed Jobs</flux:heading>
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>Recent Failed Jobs</x-ui.card-title></x-ui.card-header>
 
             <div class="space-y-2">
                 @forelse ($recentFailures as $failure)
@@ -133,20 +133,20 @@
                                 <flux:text size="xs" class="mt-1 font-mono">{{ $failure['queue'] }} · {{ $failure['failed_at']->diffForHumans() }}</flux:text>
                                 <flux:text size="sm" class="mt-2">{{ $failure['summary'] }}</flux:text>
                             </div>
-                            <flux:badge color="red">Failed</flux:badge>
+                            <x-ui.badge variant="destructive">Failed</flux:badge>
                         </div>
                     </div>
                 @empty
                     <div class="py-8 text-center">
                         <flux:icon name="check-circle" variant="outline" class="size-8 text-lime-500 mx-auto mb-2" />
-                        <flux:subheading>No recent failed jobs</flux:subheading>
+                        <p class="pk-page-sub">No recent failed jobs</p>
                     </div>
                 @endforelse
             </div>
-        </flux:card>
+        </x-ui.card>
 
-        <flux:card>
-            <flux:heading size="sm" class="mb-4">Stuck Sites</flux:heading>
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>Stuck Sites</x-ui.card-title></x-ui.card-header>
 
             <div class="space-y-2">
                 @foreach (['setup' => 'Initial Setup', 'deploy' => 'Deploy Pipeline'] as $key => $label)
@@ -178,6 +178,6 @@
                     </div>
                 @endforeach
             </div>
-        </flux:card>
+        </x-ui.card>
     </div>
 </div>

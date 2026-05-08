@@ -1,19 +1,17 @@
 <x-layouts.app>
     <x-slot:title>Analytics</x-slot:title>
 
-    <div class="space-y-6">
-        <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="space-y-5">
+        <div class="pk-page-head">
             <div>
-                <flux:heading size="xl">Analytics</flux:heading>
-                <flux:text class="mt-2 text-base">Track traffic, speed, runtime, downtime, and user activity across your sites.</flux:text>
+                <h1 class="pk-page-title">Analytics</h1>
+                <p class="pk-page-sub">Track traffic, speed, runtime, downtime, and user activity across your sites.</p>
             </div>
-            <div class="flex items-center gap-2">
-                <flux:button href="{{ route('dashboard') }}" variant="subtle" icon="home">Back to dashboard</flux:button>
-                <flux:button href="{{ route('sites.index') }}" variant="subtle" icon="globe-alt">Manage sites</flux:button>
-            </div>
+            <x-ui.button-group>
+                <x-ui.button href="{{ route('dashboard') }}" variant="outline" size="sm" icon="home">Dashboard</x-ui.button>
+                <x-ui.button href="{{ route('sites.index') }}" variant="outline" size="sm" icon="globe-alt">Sites</x-ui.button>
+            </x-ui.button-group>
         </div>
-
-        <flux:separator variant="subtle" />
 
         @livewire('analytics.unified-dashboard')
     </div>

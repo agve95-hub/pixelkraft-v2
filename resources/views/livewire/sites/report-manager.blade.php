@@ -99,9 +99,9 @@
             </div>
         </div>
 
-        <section class="dash-card">
-            <div class="dash-card-head">
-                <p class="dash-card-title">Summary</p>
+        <x-ui.card>
+            <x-ui.card-header>
+                <p class="pk-ui-card-title">Summary</p>
                 <p class="font-mono text-xs text-zinc-500">{{ count($sections) }} sections</p>
             </div>
             <p class="whitespace-pre-wrap text-sm leading-6 text-zinc-300">{{ $activeReport->summary ?: 'No summary was added.' }}</p>
@@ -110,9 +110,9 @@
         <div class="grid gap-4 lg:grid-cols-3">
             <div class="space-y-4 lg:col-span-2">
                 @forelse ($sections as $section)
-                    <section class="dash-card">
-                        <div class="dash-card-head">
-                            <p class="dash-card-title">{{ $section['title'] ?? 'Section' }}</p>
+                    <x-ui.card>
+                        <x-ui.card-header>
+                            <p class="pk-ui-card-title">{{ $section['title'] ?? 'Section' }}</p>
                             <span class="tag">{{ $section['type'] ?? 'general' }}</span>
                         </div>
                         <ul class="space-y-2 text-sm text-zinc-300">
@@ -134,9 +134,9 @@
                 @endforelse
             </div>
 
-            <section class="dash-card">
-                <div class="dash-card-head">
-                    <p class="dash-card-title">Next steps</p>
+            <x-ui.card>
+                <x-ui.card-header>
+                    <p class="pk-ui-card-title">Next steps</p>
                 </div>
                 <ul class="space-y-2 text-sm text-zinc-300">
                     @forelse ($nextSteps as $step)
@@ -166,7 +166,7 @@
         </div>
 
         <form wire:submit="save" class="max-w-4xl space-y-5">
-            <section class="dash-card">
+            <x-ui.card>
                 <div class="grid gap-4 md:grid-cols-2">
                     <flux:field>
                         <flux:label>Title</flux:label>
@@ -196,9 +196,9 @@
                 </div>
             </section>
 
-            <section class="dash-card">
-                <div class="dash-card-head">
-                    <p class="dash-card-title">Sections</p>
+            <x-ui.card>
+                <x-ui.card-header>
+                    <p class="pk-ui-card-title">Sections</p>
                     <flux:button type="button" wire:click="addSection" size="sm" variant="subtle">Add section</flux:button>
                 </div>
 
@@ -231,9 +231,9 @@
                 </div>
             </section>
 
-            <section class="dash-card">
-                <div class="dash-card-head">
-                    <p class="dash-card-title">Next steps</p>
+            <x-ui.card>
+                <x-ui.card-header>
+                    <p class="pk-ui-card-title">Next steps</p>
                     <flux:button type="button" wire:click="addNextStep" size="sm" variant="subtle">Add step</flux:button>
                 </div>
                 <div class="space-y-2">

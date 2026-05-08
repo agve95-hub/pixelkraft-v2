@@ -54,11 +54,11 @@
 
         {{-- Events + Release --}}
         <div class="grid gap-4 lg:grid-cols-2">
-            <div class="dash-card">
-                <div class="dash-card-head">
-                    <p class="dash-card-title">First-party events</p>
+            <x-ui.card>
+                <x-ui.card-header>
+                    <x-ui.card-title>First-party events</x-ui.card-title>
                     <span class="font-mono text-xs text-zinc-400">{{ number_format($eventSummary['total_events']) }} total</span>
-                </div>
+                </x-ui.card-header>
                 <div class="stats stats-3 mb-4">
                     <div class="stat">
                         <p class="stat-label">Page views</p>
@@ -82,15 +82,15 @@
                         <span class="tag">{{ number_format($event['count']) }}</span>
                     </div>
                 @empty
-                    <div class="empty"><p>No custom events yet</p></div>
+                    <x-ui.empty icon="chart-bar" title="No custom events yet" />
                 @endforelse
-            </div>
+            </x-ui.card>
 
-            <div class="dash-card">
-                <div class="dash-card-head">
-                    <p class="dash-card-title">Release status</p>
+            <x-ui.card>
+                <x-ui.card-header>
+                    <x-ui.card-title>Release status</x-ui.card-title>
                     <span class="font-mono text-xs text-zinc-400">{{ $releaseCount }} release{{ $releaseCount === 1 ? '' : 's' }}</span>
-                </div>
+                </x-ui.card-header>
                 <div class="stats stats-2 mb-4">
                     <div class="stat">
                         <p class="stat-label">Current</p>
@@ -107,15 +107,15 @@
                     <p class="text-sm">Commit: <span class="tag">{{ $currentRelease?->source_commit_sha ? \Illuminate\Support\Str::limit($currentRelease->source_commit_sha, 12, '') : 'n/a' }}</span></p>
                     <p class="stat-note mt-1">Branch: {{ $currentRelease?->source_branch ?: $site->branch }}</p>
                 </div>
-            </div>
+            </x-ui.card>
         </div>
 
         {{-- Visitors chart --}}
-        <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 p-5">
-            <div class="flex items-center justify-between gap-2 mb-4">
-                <p class="text-sm font-semibold text-zinc-200">Visitors</p>
+        <x-ui.card>
+            <x-ui.card-header>
+                <x-ui.card-title>Visitors</x-ui.card-title>
                 <span class="font-mono text-xs text-zinc-400">{{ number_format($trafficTotal) }} total</span>
-            </div>
+            </x-ui.card-header>
             <div class="h-36 w-full">
                 @if ($trafficChart['line_path'] === '')
                     <div class="flex h-full items-center justify-center text-sm text-zinc-500">No traffic data yet</div>
@@ -132,15 +132,15 @@
                     </svg>
                 @endif
             </div>
-        </div>
+        </x-ui.card>
 
         {{-- Uptime + Response time --}}
         <div class="grid gap-4 lg:grid-cols-2">
-            <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 p-5">
-                <div class="flex items-center justify-between gap-2 mb-4">
-                    <p class="text-sm font-semibold text-zinc-200">Uptime</p>
+            <x-ui.card>
+                <x-ui.card-header>
+                    <x-ui.card-title>Uptime</x-ui.card-title>
                     <span class="font-mono text-xs {{ $uptimePercent >= 99.9 ? 'text-emerald-400' : 'text-amber-400' }}">{{ rtrim(rtrim(number_format($uptimePercent, 1, '.', ''), '0'), '.') }}%</span>
-                </div>
+                </x-ui.card-header>
                 <div class="flex gap-0.5">
                     @foreach ($dailyBars as $bar)
                         @php $barColor = ['up' => 'bg-emerald-400', 'degraded' => 'bg-amber-400', 'down' => 'bg-red-400'][$bar] ?? 'bg-zinc-700/50'; @endphp
@@ -152,13 +152,13 @@
                     <span class="flex items-center gap-1.5"><span class="inline-block h-2 w-2 rounded-full bg-amber-400"></span>Degraded</span>
                     <span class="flex items-center gap-1.5"><span class="inline-block h-2 w-2 rounded-full bg-red-400"></span>Down</span>
                 </div>
-            </div>
+            </x-ui.card>
 
-            <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 p-5">
-                <div class="flex items-center justify-between gap-2 mb-4">
-                    <p class="text-sm font-semibold text-zinc-200">Response time</p>
-                    <span class="font-mono text-xs text-zinc-400">avg {{ $avgResponseMs }}ms · p95 {{ $p95ResponseMs }}ms</span>
-                </div>
+            <x-ui.card>
+                <x-ui.card-header>
+                    <x-ui.card-title>Response time</x-ui.card-title>
+                    <span class="font-mono text-xs text-zinc-400">avg {{ $avgResponseMs }}ms &middot; p95 {{ $p95ResponseMs }}ms</span>
+                </x-ui.card-header>
                 <div class="h-24 w-full">
                     @if ($responseChart['path'] === '')
                         <div class="flex h-full items-center justify-center text-sm text-zinc-500">No response samples yet</div>
@@ -168,42 +168,38 @@
                         </svg>
                     @endif
                 </div>
-            </div>
+            </x-ui.card>
         </div>
 
         {{-- Recent deploys --}}
-        <div class="rounded-xl border border-zinc-800/80 bg-zinc-900/85 p-5">
-            <p class="text-sm font-semibold text-zinc-200 mb-4">Recent deploys</p>
-            <flux:table>
-                <flux:table.columns>
-                    <flux:table.column>Status</flux:table.column>
-                    <flux:table.column>Commit</flux:table.column>
-                    <flux:table.column class="hidden sm:table-cell">Duration</flux:table.column>
-                    <flux:table.column>When</flux:table.column>
-                    <flux:table.column></flux:table.column>
-                </flux:table.columns>
-                <flux:table.rows>
+        <x-ui.card padding="flush">
+            <x-ui.card-header class="px-[18px] pt-4 pb-3">
+                <x-ui.card-title>Recent deploys</x-ui.card-title>
+            </x-ui.card-header>
+            <x-ui.table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Commit</th>
+                        <th class="hidden sm:table-cell">Duration</th>
+                        <th>When</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
                     @forelse ($deploys as $deploy)
-                        <flux:table.row>
-                            <flux:table.cell>
-                                <flux:badge size="sm" color="{{ $deploy->isSuccess() ? 'lime' : 'red' }}">
-                                    {{ $deploy->isSuccess() ? 'Success' : 'Failed' }}
-                                </flux:badge>
-                            </flux:table.cell>
-                            <flux:table.cell class="font-mono text-xs">{{ $deploy->hash ?: 'snapshot' }}</flux:table.cell>
-                            <flux:table.cell class="hidden sm:table-cell text-xs text-zinc-400">{{ $deploy->duration }}</flux:table.cell>
-                            <flux:table.cell class="text-xs text-zinc-400">{{ $deploy->created_at?->diffForHumans() ?? 'recently' }}</flux:table.cell>
-                            <flux:table.cell>
-                                <button type="button" class="text-xs text-zinc-600 opacity-50 cursor-not-allowed" disabled title="Deploy log viewer coming soon">Log</button>
-                            </flux:table.cell>
-                        </flux:table.row>
+                        <tr>
+                            <td><x-ui.badge variant="{{ $deploy->isSuccess() ? 'success' : 'destructive' }}">{{ $deploy->isSuccess() ? 'Success' : 'Failed' }}</x-ui.badge></td>
+                            <td class="font-mono text-xs">{{ $deploy->hash ?: 'snapshot' }}</td>
+                            <td class="hidden sm:table-cell text-xs">{{ $deploy->duration }}</td>
+                            <td class="text-xs">{{ $deploy->created_at?->diffForHumans() ?? 'recently' }}</td>
+                            <td><x-ui.button size="xs" variant="ghost" disabled>Log</x-ui.button></td>
+                        </tr>
                     @empty
-                        <flux:table.row>
-                            <flux:table.cell colspan="5" class="py-8 text-center text-sm text-zinc-500">No deploy history yet</flux:table.cell>
-                        </flux:table.row>
+                        <tr><td colspan="5"><x-ui.empty icon="bolt" title="No deploy history yet" /></td></tr>
                     @endforelse
-                </flux:table.rows>
-            </flux:table>
-        </div>
+                </tbody>
+            </x-ui.table>
+        </x-ui.card>
     </div>
 </x-layouts.app>

@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-5">
     <div class="pk-page-head">
         <div>
             <h1 class="pk-page-title">Reminders</h1>
@@ -7,8 +7,10 @@
         <span class="text-sm text-zinc-400"><span class="font-semibold text-zinc-100">{{ $openCount }}</span> open</span>
     </div>
 
-    <div class="dash-card">
-        <p class="section-title mb-4">Add reminder</p>
+    <x-ui.card>
+        <x-ui.card-header>
+            <x-ui.card-title>Add reminder</x-ui.card-title>
+        </x-ui.card-header>
         <form wire:submit="save" class="grid gap-4 sm:grid-cols-2">
             <flux:field class="sm:col-span-2">
                 <flux:label>Title</flux:label>
@@ -26,13 +28,15 @@
                 <flux:error name="form_notes" />
             </flux:field>
             <div class="sm:col-span-2">
-                <button type="submit" class="btn btn-accent">+ Add reminder</button>
+                <flux:button type="submit" variant="primary" icon="plus">Add reminder</flux:button>
             </div>
         </form>
-    </div>
+    </x-ui.card>
 
-    <div class="dash-card">
-        <p class="section-title mb-4">List</p>
+    <x-ui.card padding="flush">
+        <x-ui.card-header class="px-[18px] pt-4 pb-3">
+            <x-ui.card-title>List</x-ui.card-title>
+        </x-ui.card-header>
         <div class="reminder-list">
             @forelse ($reminders as $reminder)
                 <div class="reminder">
@@ -48,12 +52,12 @@
                             {{ $reminder->due_date->format('M j') }}
                         </span>
                     @endif
-                    <flux:button type="button" wire:click="delete('{{ $reminder->id }}')" wire:confirm="Delete this reminder?" size="xs" variant="ghost" class="text-red-400">Delete</flux:button>
+                    <x-ui.button type="button" wire:click="delete('{{ $reminder->id }}')" wire:confirm="Delete this reminder?" size="xs" variant="ghost" class="text-red-400">Delete</x-ui.button>
                 </div>
             @empty
-                <div class="empty"><p>No reminders yet.</p></div>
+                <x-ui.empty icon="clock" title="No reminders yet." class="py-8" />
             @endforelse
         </div>
-        <div class="mt-4">{{ $reminders->links() }}</div>
-    </div>
+        <div class="px-[18px] py-3">{{ $reminders->links() }}</div>
+    </x-ui.card>
 </div>

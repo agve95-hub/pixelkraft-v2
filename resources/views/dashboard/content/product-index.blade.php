@@ -1,38 +1,38 @@
 <x-layouts.app>
     <x-slot:title>Products — {{ $site->name }}</x-slot:title>
 
-    <div class="max-w-4xl">
-        <div class="mb-6 flex items-center justify-between">
+    <div class="max-w-4xl space-y-5">
+        <div class="pk-page-head">
             <div>
-                <flux:heading size="xl">Product Listings</flux:heading>
-                <flux:subheading>{{ $site->name }}</flux:subheading>
+                <h1 class="pk-page-title">Product Listings</h1>
+                <p class="pk-page-sub">{{ $site->name }}</p>
             </div>
-            <flux:button href="{{ route('products.create', $site) }}" variant="primary" icon="plus" size="sm">New Product</flux:button>
+            <x-ui.button href="{{ route('products.create', $site) }}" icon="plus" size="sm">New Product</x-ui.button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             @forelse ($products as $product)
-                <flux:card>
+                <x-ui.card>
                     @if (!empty($product->images))
-                        <div class="rounded-lg overflow-hidden mb-3">
-                            <img src="{{ $product->images[0] }}" alt="{{ $product->name }}" class="w-full h-32 object-cover">
+                        <div class="-mx-[18px] -mt-4 mb-3 overflow-hidden rounded-t-[10px]">
+                            <img src="{{ $product->images[0] }}" alt="{{ $product->name }}" class="h-32 w-full object-cover">
                         </div>
                     @endif
-                    <flux:heading size="sm">{{ $product->name }}</flux:heading>
-                    <div class="flex items-center justify-between mt-2">
-                        <flux:text class="font-mono">{{ $product->formattedPrice() }}</flux:text>
+                    <x-ui.card-header>
+                        <div>
+                            <x-ui.card-title>{{ $product->name }}</x-ui.card-title>
+                        </div>
                         @switch($product->status)
-                            @case('active') <flux:badge size="sm" color="lime">Active</flux:badge> @break
-                            @case('archived') <flux:badge size="sm" color="zinc">Archived</flux:badge> @break
-                            @default <flux:badge size="sm" color="yellow">Draft</flux:badge>
+                            @case('active') <x-ui.badge variant="success">Active</x-ui.badge> @break
+                            @case('archived') <x-ui.badge>Archived</x-ui.badge> @break
+                            @default <x-ui.badge variant="warning">Draft</x-ui.badge>
                         @endswitch
-                    </div>
-                </flux:card>
+                    </x-ui.card-header>
+                    <p class="font-mono text-sm">{{ $product->formattedPrice() }}</p>
+                </x-ui.card>
             @empty
                 <div class="col-span-full">
-                    <flux:card class="py-12 text-center">
-                        <flux:subheading>No products yet.</flux:subheading>
-                    </flux:card>
+                    <x-ui.empty icon="cube" title="No products yet" description="Create your first product listing for {{ $site->name }}." />
                 </div>
             @endforelse
         </div>

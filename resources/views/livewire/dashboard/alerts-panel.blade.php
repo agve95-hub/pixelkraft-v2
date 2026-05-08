@@ -1,22 +1,20 @@
 <div wire:poll.60s>
-    <div class="dash-card">
-        <div class="dash-card-head">
-            <p class="dash-card-title">
+    <x-ui.card>
+        <x-ui.card-header>
+            <x-ui.card-title>
                 <flux:icon name="exclamation-triangle" class="size-4 text-amber-400" />
                 Action needed
-            </p>
+            </x-ui.card-title>
             @php $alertTotal = $alerts->count() + $sslExpiring->count(); @endphp
             @if ($alertTotal > 0)
-                <span class="text-xs text-zinc-500">{{ $alertTotal }} {{ Str::plural('item', $alertTotal) }}</span>
+                <x-ui.badge variant="warning">{{ $alertTotal }}</x-ui.badge>
             @endif
-        </div>
+        </x-ui.card-header>
 
         <div class="max-h-72 overflow-y-auto">
             @foreach ($sslExpiring as $site)
                 <div class="issue-item">
-                    <span class="issue-icon issue-icon-yellow">
-                        <flux:icon name="shield-exclamation" />
-                    </span>
+                    <span class="issue-icon issue-icon-yellow"><flux:icon name="shield-exclamation" /></span>
                     <div class="min-w-0 flex-1">
                         <p class="issue-text">SSL pending on {{ $site->name }}</p>
                         <p class="issue-meta">Certificate not yet provisioned</p>
@@ -33,14 +31,9 @@
                         'issue-icon-blue' => !in_array($alert->type, ['deploy_failed', 'uptime_down', 'ssl_expiring']),
                     ])>
                         @switch($alert->type)
-                            @case('deploy_failed')
-                                <flux:icon name="x-circle" />
-                                @break
-                            @case('uptime_down')
-                                <flux:icon name="signal-slash" />
-                                @break
-                            @default
-                                <flux:icon name="information-circle" />
+                            @case('deploy_failed') <flux:icon name="x-circle" /> @break
+                            @case('uptime_down') <flux:icon name="signal-slash" /> @break
+                            @default <flux:icon name="information-circle" />
                         @endswitch
                     </span>
                     <div class="min-w-0 flex-1">
@@ -56,11 +49,8 @@
             @endforeach
 
             @if ($alerts->isEmpty() && $sslExpiring->isEmpty())
-                <div class="empty">
-                    <div class="empty-icon"><flux:icon name="check-circle" variant="outline" /></div>
-                    <p>All clear — no action needed</p>
-                </div>
+                <x-ui.empty icon="check-circle" title="All clear" description="No action needed." />
             @endif
         </div>
-    </div>
+    </x-ui.card>
 </div>

@@ -7,10 +7,10 @@
         @endif
 
         <div class="space-y-5">
-            <div class="dash-card-head">
+            <div class="pk-ui-card-header">
                 <div>
-                    <h2 class="dash-card-title">Meta tags</h2>
-                    <p class="pk-page-sub">Start with the focus keyword, title, and description. These matter most for ranking.</p>
+                    <x-ui.card-title>Meta tags</x-ui.card-title>
+                    <x-ui.card-description>Start with the focus keyword, title, and description. These matter most for ranking.</x-ui.card-description>
                 </div>
                 <x-ui.button type="button" wire:click="runAnalysis" variant="outline" size="sm" icon="arrow-path">Re-analyze</x-ui.button>
             </div>
@@ -91,7 +91,7 @@
 
         <div class="space-y-5">
             <div>
-                <h2 class="dash-card-title">Open Graph / Social</h2>
+                <x-ui.card-title>Open Graph / Social</x-ui.card-title>
                 <p class="pk-page-sub">Controls how the page appears when shared on social platforms, Slack, Discord, etc.</p>
             </div>
 

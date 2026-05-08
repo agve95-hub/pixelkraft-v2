@@ -1,51 +1,54 @@
 <x-layouts.app>
     <x-slot:title>Blog Posts — {{ $site->name }}</x-slot:title>
 
-    <div class="max-w-4xl">
-        <div class="mb-6 flex items-center justify-between">
+    <div class="max-w-4xl space-y-5">
+        <div class="pk-page-head">
             <div>
-                <flux:heading size="xl">Blog Posts</flux:heading>
-                <flux:subheading>{{ $site->name }}</flux:subheading>
+                <h1 class="pk-page-title">Blog Posts</h1>
+                <p class="pk-page-sub">{{ $site->name }}</p>
             </div>
-            <flux:button href="{{ route('blog.create', $site) }}" variant="primary" icon="plus" size="sm">New Post</flux:button>
+            <x-ui.button href="{{ route('blog.create', $site) }}" icon="plus" size="sm">New Post</x-ui.button>
         </div>
 
-        <flux:table>
-            <flux:table.columns>
-                <flux:table.column>Title</flux:table.column>
-                <flux:table.column class="hidden md:table-cell">Slug</flux:table.column>
-                <flux:table.column>Status</flux:table.column>
-                <flux:table.column class="hidden lg:table-cell">Date</flux:table.column>
-                <flux:table.column></flux:table.column>
-            </flux:table.columns>
-
-            <flux:table.rows>
+        <x-ui.table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th class="hidden md:table-cell">Slug</th>
+                    <th>Status</th>
+                    <th class="hidden lg:table-cell">Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
                 @forelse ($posts as $post)
-                    <flux:table.row>
-                        <flux:table.cell class="font-medium">{{ $post->title }}</flux:table.cell>
-                        <flux:table.cell class="hidden md:table-cell font-mono text-xs">/{{ $post->slug }}</flux:table.cell>
-                        <flux:table.cell>
+                    <tr>
+                        <td class="font-medium">{{ $post->title }}</td>
+                        <td class="hidden md:table-cell font-mono text-xs">/{{ $post->slug }}</td>
+                        <td>
                             @switch($post->status)
-                                @case('published') <flux:badge size="sm" color="lime">Published</flux:badge> @break
-                                @case('scheduled') <flux:badge size="sm" color="yellow">Scheduled</flux:badge> @break
-                                @default <flux:badge size="sm" color="zinc">Draft</flux:badge>
+                                @case('published') <x-ui.badge variant="success">Published</x-ui.badge> @break
+                                @case('scheduled') <x-ui.badge variant="warning">Scheduled</x-ui.badge> @break
+                                @default <x-ui.badge>Draft</x-ui.badge>
                             @endswitch
-                        </flux:table.cell>
-                        <flux:table.cell class="hidden lg:table-cell text-xs">
+                        </td>
+                        <td class="hidden lg:table-cell text-xs">
                             {{ $post->published_at?->format('M j, Y') ?? $post->created_at->format('M j, Y') }}
-                        </flux:table.cell>
-                        <flux:table.cell>
-                            <flux:button href="{{ route('blog.edit', [$site, $post]) }}" size="xs" variant="ghost">Edit</flux:button>
-                        </flux:table.cell>
-                    </flux:table.row>
+                        </td>
+                        <td>
+                            <x-ui.button-group align="end">
+                                <x-ui.button href="{{ route('blog.edit', [$site, $post]) }}" size="xs" variant="ghost">Edit</x-ui.button>
+                            </x-ui.button-group>
+                        </td>
+                    </tr>
                 @empty
-                    <flux:table.row>
-                        <flux:table.cell colspan="5" class="text-center py-12">
-                            <flux:subheading>No blog posts yet.</flux:subheading>
-                        </flux:table.cell>
-                    </flux:table.row>
+                    <tr>
+                        <td colspan="5">
+                            <x-ui.empty icon="newspaper" title="No blog posts yet" description="Create the first post for {{ $site->name }}." />
+                        </td>
+                    </tr>
                 @endforelse
-            </flux:table.rows>
-        </flux:table>
+            </tbody>
+        </x-ui.table>
     </div>
 </x-layouts.app>

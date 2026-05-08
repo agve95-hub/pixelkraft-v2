@@ -24,10 +24,10 @@
     @if ($tab === 'campaigns')
 
         {{-- Campaign form --}}
-        <flux:card>
-            <flux:heading size="lg" class="mb-4">
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>
                 {{ $editingCampaignId ? 'Edit campaign' : 'New popup campaign' }}
-            </flux:heading>
+            </x-ui.card-title></x-ui.card-header>
 
             <form wire:submit="saveCampaign" class="grid gap-4 sm:grid-cols-2">
 
@@ -123,11 +123,11 @@
                     @endif
                 </div>
             </form>
-        </flux:card>
+        </x-ui.card>
 
         {{-- Campaign list --}}
-        <flux:card>
-            <flux:heading size="lg" class="mb-4">Campaigns</flux:heading>
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>Campaigns</x-ui.card-title></x-ui.card-header>
             <div class="space-y-2">
                 @forelse ($campaigns as $campaign)
                     <div class="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-zinc-800/80 bg-zinc-950/40 px-3 py-3">
@@ -165,7 +165,7 @@
                     <p class="py-6 text-center text-sm text-zinc-500">No popup campaigns yet.</p>
                 @endforelse
             </div>
-        </flux:card>
+        </x-ui.card>
 
     @endif
 
@@ -173,10 +173,10 @@
     @if ($tab === 'announcements')
 
         {{-- Announcement form --}}
-        <flux:card>
-            <flux:heading size="lg" class="mb-4">
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>
                 {{ $editingAnnouncementId ? 'Edit announcement' : 'New top-bar announcement' }}
-            </flux:heading>
+            </x-ui.card-title></x-ui.card-header>
 
             <form wire:submit="saveAnnouncement" class="grid gap-4 sm:grid-cols-2">
 
@@ -263,11 +263,11 @@
                     @endif
                 </div>
             </form>
-        </flux:card>
+        </x-ui.card>
 
         {{-- Announcement list --}}
-        <flux:card>
-            <flux:heading size="lg" class="mb-4">Announcements</flux:heading>
+        <x-ui.card>
+            <x-ui.card-header><x-ui.card-title>Announcements</x-ui.card-title></x-ui.card-header>
             <div class="space-y-2">
                 @forelse ($announcements as $announcement)
                     <div class="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-zinc-800/80 bg-zinc-950/40 px-3 py-3">
@@ -303,7 +303,7 @@
                     <p class="py-6 text-center text-sm text-zinc-500">No announcements yet.</p>
                 @endforelse
             </div>
-        </flux:card>
+        </x-ui.card>
 
     @endif
 

@@ -1,9 +1,9 @@
 <div>
-    <div class="dash-card h-full">
-        <div class="dash-card-head">
-            <p class="dash-card-title">Recorded expenses</p>
-            <p class="font-mono text-xs tabular-nums text-zinc-500">&euro;{{ number_format($grandTotal, 2) }}</p>
-        </div>
+    <x-ui.card class="h-full">
+        <x-ui.card-header>
+            <x-ui.card-title>Recorded expenses</x-ui.card-title>
+            <span class="font-mono text-xs tabular-nums text-zinc-500">&euro;{{ number_format($grandTotal, 2) }}</span>
+        </x-ui.card-header>
 
         <div>
             @foreach ($siteExpenses as $expense)
@@ -18,20 +18,17 @@
 
             @if ($siteExpenses->isNotEmpty())
                 <div class="separator"></div>
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between py-1">
                     <p class="text-sm font-medium">Total</p>
                     <p class="expense-amt">&euro;{{ number_format($grandTotal, 2) }}</p>
                 </div>
                 <div class="mt-2 flex items-center justify-between rounded-md border border-zinc-800/60 px-3 py-2">
                     <p class="text-sm text-zinc-400">{{ now()->format('F Y') }} report</p>
-                    <span class="pill pill-red pill-no-dot">Draft</span>
+                    <x-ui.badge variant="destructive">Draft</x-ui.badge>
                 </div>
             @else
-                <div class="empty">
-                    <p>No expense entries yet</p>
-                    <p class="text-xs text-zinc-600">Record expenses per site to see totals here.</p>
-                </div>
+                <x-ui.empty icon="banknotes" title="No expense entries yet" description="Record expenses per site to see totals here." />
             @endif
         </div>
-    </div>
+    </x-ui.card>
 </div>

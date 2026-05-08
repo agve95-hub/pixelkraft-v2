@@ -19,9 +19,7 @@
                 <h1 class="pk-page-title">Invoices</h1>
                 <p class="pk-page-sub">{{ $site->clientDisplayName() }} · {{ $invoices->count() }} {{ Str::plural('invoice', $invoices->count()) }}</p>
             </div>
-            <button type="button" wire:click="startCreate" class="btn btn-accent">
-                + New invoice
-            </button>
+            <flux:button type="button" wire:click="startCreate" variant="primary" icon="plus">New invoice</flux:button>
         </div>
 
         <div class="stats stats-4 mb-6">
@@ -46,49 +44,42 @@
         </div>
 
         @if ($invoices->isEmpty())
-            <div class="table-wrap">
-                <div class="empty py-16">
-                    <div class="empty-icon"><flux:icon name="document-text" /></div>
-                    <p>No invoices yet</p>
-                    <p class="text-xs text-zinc-600">Create your first invoice for {{ $site->clientDisplayName() }}</p>
-                </div>
-            </div>
+            <x-ui.empty icon="document-text" title="No invoices yet" description="Create your first invoice for {{ $site->clientDisplayName() }}." />
         @else
-            <div class="inv-list">
-                <div class="hidden sm:grid inv-row" style="background:hsl(var(--card))">
-                    <span class="inv-id" style="color:hsl(var(--muted-foreground))">Invoice</span>
-                    <span>Description</span>
-                    <span>Date</span>
-                    <span>Amount</span>
-                    <span>Status</span>
-                </div>
-                @foreach ($invoices as $inv)
-                    @php
-                        $sym = $inv->displayCurrencySymbol();
-                        $pillClass = $inv->status === Invoice::STATUS_PAID ? 'pill-green' : ($inv->isOverdue() ? 'pill-red' : 'pill-yellow');
-                        $first = $inv->items->first()?->description ?? '—';
-                    @endphp
-                    <button
-                        type="button"
-                        wire:click="openInvoice('{{ $inv->id }}')"
-                        wire:key="inv-row-{{ $inv->id }}"
-                        class="inv-row w-full text-left"
-                    >
-                        <span class="inv-id">{{ $inv->number }}</span>
-                        <div class="min-w-0">
-                            <div class="truncate">{{ $first }}</div>
-                            <div class="text-[11px] text-zinc-500">
-                                {{ $inv->items->count() }} {{ Str::plural('item', $inv->items->count()) }}
-                                @if ((float) $inv->discount_percent > 0) · {{ $inv->discount_percent }}% disc. @endif
-                                @if ((float) $inv->tax_rate > 0) · {{ $inv->tax_rate }}% tax @endif
-                            </div>
-                        </div>
-                        <span class="inv-date">{{ $inv->invoice_date->toDateString() }}</span>
-                        <span class="inv-total">{{ $fmt((float) $inv->total(), $sym) }}</span>
-                        <span class="pill {{ $pillClass }} pill-no-dot">{{ $inv->displayStatus() }}</span>
-                    </button>
-                @endforeach
-            </div>
+            <x-ui.table>
+                <thead>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Description</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($invoices as $inv)
+                        @php
+                            $sym = $inv->displayCurrencySymbol();
+                            $statusVariant = $inv->status === Invoice::STATUS_PAID ? 'success' : ($inv->isOverdue() ? 'destructive' : 'warning');
+                            $first = $inv->items->first()?->description ?? '—';
+                        @endphp
+                        <tr class="clickable" wire:click="openInvoice('{{ $inv->id }}')" wire:key="inv-row-{{ $inv->id }}">
+                            <td class="font-mono text-sm font-medium">{{ $inv->number }}</td>
+                            <td class="min-w-0">
+                                <div class="truncate">{{ $first }}</div>
+                                <div class="text-[11px] text-zinc-500">
+                                    {{ $inv->items->count() }} {{ Str::plural('item', $inv->items->count()) }}
+                                    @if ((float) $inv->discount_percent > 0) &middot; {{ $inv->discount_percent }}% disc. @endif
+                                    @if ((float) $inv->tax_rate > 0) &middot; {{ $inv->tax_rate }}% tax @endif
+                                </div>
+                            </td>
+                            <td class="font-mono text-xs">{{ $inv->invoice_date->toDateString() }}</td>
+                            <td class="font-mono font-medium">{{ $fmt((float) $inv->total(), $sym) }}</td>
+                            <td><x-ui.badge variant="{{ $statusVariant }}">{{ $inv->displayStatus() }}</x-ui.badge></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </x-ui.table>
         @endif
     @endif
 
@@ -110,7 +101,7 @@
 
         <div class="max-w-3xl space-y-8">
             @error('form_lines')
-                <flux:callout variant="danger" icon="exclamation-triangle">{{ $message }}</flux:callout>
+                <x-ui.alert variant="danger" icon="exclamation-triangle">{{ $message }}</x-ui.alert>
             @enderror
 
             <div class="grid gap-6 sm:grid-cols-2">

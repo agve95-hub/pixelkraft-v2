@@ -1,14 +1,14 @@
 <div>
-    <div class="dash-card !p-0">
-        <div class="dash-card-head px-[18px] pt-4 pb-3">
-            <p class="dash-card-title">
-                <flux:icon name="calendar" class="size-4" />
+    <x-ui.card padding="flush">
+        <x-ui.card-header class="px-[18px] pt-4 pb-3">
+            <x-ui.card-title>
+                <flux:icon name="server-stack" class="size-4" />
                 Site health
-            </p>
-        </div>
+            </x-ui.card-title>
+        </x-ui.card-header>
 
         <div class="overflow-x-auto">
-            <table class="w-full">
+            <table class="pk-ui-table">
                 <thead>
                     <tr>
                         <th class="pl-[18px]">Site</th>
@@ -23,7 +23,7 @@
                 </thead>
                 <tbody>
                     @forelse ($sites as $data)
-                        <tr class="clickable">
+                        <tr class="clickable" onclick="window.location='{{ route('sites.show', $data['site']) }}'">
                             <td class="pl-[18px]">
                                 <div class="site-name">
                                     <span @class([
@@ -40,18 +40,18 @@
                             </td>
                             <td>
                                 @if ($data['is_up'] === true)
-                                    <span class="pill pill-green pill-no-dot">Online</span>
+                                    <x-ui.badge variant="success" dot>Online</x-ui.badge>
                                 @elseif ($data['is_up'] === false)
-                                    <span class="pill pill-red pill-no-dot">Down</span>
+                                    <x-ui.badge variant="destructive" dot>Down</x-ui.badge>
                                 @else
                                     <span class="text-zinc-500">—</span>
                                 @endif
                             </td>
                             <td>
                                 @if ($data['ssl_status'] === 'active')
-                                    <span class="pill pill-green pill-no-dot">OK</span>
+                                    <x-ui.badge variant="success">OK</x-ui.badge>
                                 @elseif ($data['ssl_status'] === 'pending')
-                                    <span class="pill pill-yellow pill-no-dot">Pending</span>
+                                    <x-ui.badge variant="warning">Pending</x-ui.badge>
                                 @else
                                     <span class="text-zinc-500">—</span>
                                 @endif
@@ -64,11 +64,13 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-8 text-center text-zinc-500">No sites yet</td>
+                            <td colspan="8">
+                                <x-ui.empty icon="globe-alt" title="No sites yet" />
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.card>
 </div>

@@ -61,17 +61,17 @@
             </div>
         </div>
 
-        <section class="dash-card">
-            <div class="dash-card-head">
+        <x-ui.card>
+            <x-ui.card-header>
                 <div>
                     <p class="text-sm text-zinc-400">Traffic — All sites</p>
                     <p class="text-[11px] text-zinc-500">Last 30 days</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-xl font-semibold tabular-nums text-zinc-100">{{ number_format($trafficVisitors) }} <span class="text-sm font-normal text-zinc-500">visitors</span></p>
-                    <p class="text-[11px] text-zinc-500">{{ $trafficSeries->first()['label'] }} - {{ $trafficSeries->last()['label'] }}</p>
+                    <p class="text-xl font-semibold tabular-nums">{{ number_format($trafficVisitors) }} <span class="text-sm font-normal text-zinc-500">visitors</span></p>
+                    <p class="text-[11px] text-zinc-500">{{ $trafficSeries->first()['label'] }} – {{ $trafficSeries->last()['label'] }}</p>
                 </div>
-            </div>
+            </x-ui.card-header>
 
             <div class="chart-shell rounded-lg border border-zinc-800/90 bg-[#141414] p-3">
                 <svg class="h-52 w-full" viewBox="0 0 {{ $vbW }} {{ $vbH }}" preserveAspectRatio="none" role="img" aria-label="Traffic trend for all sites">
@@ -92,7 +92,7 @@
                     <span>{{ $trafficSeries->last()['label'] }}</span>
                 </div>
             </div>
-        </section>
+        </x-ui.card>
 
         <div class="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
             @livewire('dashboard.alerts-panel')
@@ -105,13 +105,13 @@
             <div class="space-y-5">
                 @foreach ($siteInsights as $insight)
                     <div class="space-y-4">
-                        <section class="dash-card">
-                            <div class="dash-card-head">
+                        <x-ui.card>
+                            <x-ui.card-header>
                                 <p class="text-sm text-zinc-300">{{ $insight['site']->name }} — Uptime</p>
                                 <p class="text-sm font-semibold tabular-nums {{ $insight['uptime_percent'] >= 99.8 ? 'text-emerald-400' : ($insight['uptime_percent'] >= 99 ? 'text-amber-400' : 'text-red-400') }}">
                                     {{ number_format($insight['uptime_percent'], 1) }}%
                                 </p>
-                            </div>
+                            </x-ui.card-header>
                             <div class="flex h-12 items-end gap-px">
                                 @foreach ($insight['daily_bars'] as $bar)
                                     <span @class([
@@ -128,22 +128,19 @@
                                 <span class="inline-flex items-center gap-1"><span class="size-2 rounded-[2px] bg-amber-400"></span>Degraded</span>
                                 <span class="inline-flex items-center gap-1"><span class="size-2 rounded-[2px] bg-red-400"></span>Down</span>
                             </div>
-                        </section>
+                        </x-ui.card>
 
-                        <section class="dash-card">
-                            <div class="dash-card-head">
+                        <x-ui.card>
+                            <x-ui.card-header>
                                 <p class="text-sm text-zinc-300">{{ $insight['site']->name }} — Response time</p>
                                 <p class="text-[11px] text-zinc-500 tabular-nums">avg {{ number_format($insight['avg_response']) }}ms &nbsp; p95 {{ number_format($insight['p95_response']) }}ms</p>
-                            </div>
+                            </x-ui.card-header>
                             @php
                                 $responseSeries = $insight['response_series'];
                                 $responseMax = max(1, $responseSeries->max() ?? 0);
                                 $responseCount = max(1, $responseSeries->count() - 1);
-                                $rW = 390;
-                                $rH = 120;
-                                $rPad = 8;
-                                $rPlotW = $rW - ($rPad * 2);
-                                $rPlotH = $rH - ($rPad * 2);
+                                $rW = 390; $rH = 120; $rPad = 8;
+                                $rPlotW = $rW - ($rPad * 2); $rPlotH = $rH - ($rPad * 2);
                                 $rPoints = [];
                                 foreach ($responseSeries as $i => $ms) {
                                     $x = $rPad + (($i / $responseCount) * $rPlotW);
@@ -164,7 +161,7 @@
                                     </svg>
                                 @endif
                             </div>
-                        </section>
+                        </x-ui.card>
                     </div>
                 @endforeach
             </div>
