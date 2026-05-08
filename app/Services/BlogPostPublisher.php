@@ -106,16 +106,27 @@ class BlogPostPublisher
         File::ensureDirectoryExists(dirname($fullPath));
 
         $html = $this->renderHtml($post);
+        $originalContent = File::exists($fullPath) ? File::get($fullPath) : null;
 
         File::put($fullPath, $html);
 
-        $post->update(['output_path' => $outputPath]);
+        try {
+            $post->update(['output_path' => $outputPath]);
 
-        $this->git->commitAndPush(
-            $site,
-            [$outputPath],
-            $commitMessage
-        );
+            $this->git->commitAndPush(
+                $site,
+                [$outputPath],
+                $commitMessage
+            );
+        } catch (\Throwable $e) {
+            if ($originalContent === null) {
+                File::delete($fullPath);
+            } else {
+                File::put($fullPath, $originalContent);
+            }
+
+            throw $e;
+        }
     }
 
     /**

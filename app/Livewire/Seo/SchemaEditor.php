@@ -176,7 +176,8 @@ class SchemaEditor extends Component
             throw new \RuntimeException('Refusing to write outside of repository.');
         }
 
-        $html = File::get($fullPath);
+        $originalHtml = File::get($fullPath);
+        $html = $originalHtml;
         $pattern = '/<script\s+type=["\']application\/ld\+json["\'][^>]*>.*?<\/script>/si';
 
         if ($json === '') {
@@ -194,7 +195,14 @@ class SchemaEditor extends Component
         }
 
         File::put($fullPath, $html);
-        $git->commitAndPush($site, [$page->file_path], "Update schema markup for {$page->url_path}");
+
+        try {
+            $git->commitAndPush($site, [$page->file_path], "Update schema markup for {$page->url_path}");
+        } catch (\Throwable $e) {
+            File::put($fullPath, $originalHtml);
+
+            throw $e;
+        }
     }
 
     private function refreshSupportState(Page $page): void

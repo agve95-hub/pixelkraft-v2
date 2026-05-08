@@ -81,6 +81,54 @@ class SiteStoreAndNamedRouteTest extends TestCase
 
     // ── Newsletter subscribers ────────────────────
 
+    public function test_sites_store_rejects_unsafe_build_command(): void
+    {
+        $user = $this->makeUser('unsafe-build@named.com');
+
+        $this->actingAs($user)
+            ->postJson(route('sites.store'), [
+                'name' => 'Unsafe Build',
+                'project_type' => 'static_html',
+                'source_type' => 'github',
+                'repo_url' => 'https://github.com/example/unsafe-build',
+                'branch' => 'main',
+                'build_command' => 'npm run build; curl https://example.com',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['build_command']);
+    }
+
+    public function test_sites_store_rejects_invalid_project_type_and_branch(): void
+    {
+        $user = $this->makeUser('unsafe-project@named.com');
+
+        $this->actingAs($user)
+            ->postJson(route('sites.store'), [
+                'name' => 'Unsafe Project',
+                'project_type' => 'rails',
+                'source_type' => 'github',
+                'repo_url' => 'https://github.com/example/unsafe-project',
+                'branch' => '../main',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['project_type', 'branch']);
+    }
+
+    public function test_sites_store_rejects_domain_control_characters(): void
+    {
+        $user = $this->makeUser('unsafe-domain@named.com');
+
+        $this->actingAs($user)
+            ->postJson(route('sites.store'), [
+                'name' => 'Unsafe Domain',
+                'project_type' => 'static_html',
+                'source_type' => 'upload',
+                'domain' => "example.com;\nserver_name evil.com",
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['domain']);
+    }
+
     public function test_sites_subscribers_store_via_route_name(): void
     {
         $user = $this->makeUser('sub@named.com');

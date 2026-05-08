@@ -241,12 +241,13 @@ class EditorPreviewController extends Controller
 
     private function resolvePreviewSource(Site $site, Page $page): array
     {
-        $sourceFilePath = "{$site->repo_path}/{$page->file_path}";
-        if ($this->isHtmlFile($sourceFilePath)) {
-            return array_merge(
-                ['mode' => 'file'],
-                $this->previews->contextForRepoRelativePath($site, $page->file_path),
-            );
+        try {
+            $sourceContext = $this->previews->contextForRepoRelativePath($site, $page->file_path);
+            if ($this->isHtmlFile($sourceContext['file_path'])) {
+                return array_merge(['mode' => 'file'], $sourceContext);
+            }
+        } catch (\Throwable) {
+            // Unsafe or unavailable source paths fall through to built-output/runtime preview.
         }
 
         if ($builtPath = $this->previews->findBuiltHtmlPath($site, $page->url_path)) {
@@ -368,7 +369,12 @@ HTML;
 
     private function renderSourceFallbackPreview(Site $site, Page $page): ?string
     {
-        $path = "{$site->repo_path}/{$page->file_path}";
+        try {
+            $path = $this->previews->contextForRepoRelativePath($site, $page->file_path)['file_path'];
+        } catch (\Throwable) {
+            return null;
+        }
+
         if (! File::exists($path)) {
             return null;
         }

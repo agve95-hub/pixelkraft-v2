@@ -151,7 +151,8 @@ class MetaEditor extends Component
             throw new \RuntimeException('Refusing to write outside of repository.');
         }
 
-        $html = File::get($fullPath);
+        $originalHtml = File::get($fullPath);
+        $html = $originalHtml;
 
         if ($this->metaEditingMode === 'next_metadata') {
             $html = app(NextMetadataPatcher::class)->patch($html, [
@@ -177,8 +178,14 @@ class MetaEditor extends Component
 
         File::put($fullPath, $html);
 
-        $git = app(GitSyncService::class);
-        $git->commitAndPush($site, [$page->file_path], "Update SEO meta for {$page->url_path}");
+        try {
+            $git = app(GitSyncService::class);
+            $git->commitAndPush($site, [$page->file_path], "Update SEO meta for {$page->url_path}");
+        } catch (\Throwable $e) {
+            File::put($fullPath, $originalHtml);
+
+            throw $e;
+        }
     }
 
     private function upsertMetaTag(string $html, string $type, ?string $name, string $value): string

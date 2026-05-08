@@ -6,6 +6,7 @@ use App\Models\Page;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -160,6 +161,59 @@ class EditorPreviewControllerTest extends TestCase
             ->assertOk()
             ->assertHeader('Content-Type', 'text/css; charset=utf-8')
             ->assertSee('color: orange', false);
+    }
+
+    public function test_preview_does_not_read_from_unsafe_build_output_directory(): void
+    {
+        $root = storage_path('framework/testing/preview-root-'.uniqid());
+        $outside = storage_path('framework/testing/preview-outside-'.uniqid());
+        File::ensureDirectoryExists($root);
+        File::ensureDirectoryExists($outside);
+        File::put($outside.'/index.html', '<h1>outside secret</h1>');
+
+        try {
+            $user = $this->makeUser();
+            $site = $this->makeSite($user);
+            $site->update([
+                'repo_path' => $root,
+                'project_type' => 'nextjs',
+                'build_output_dir' => '../'.basename($outside),
+                'deployment_mode' => 'static',
+            ]);
+            $page = $this->makePage($site, 'app/page.tsx');
+
+            $this->actingAs($user)
+                ->get(route('editor.preview', [$site, $page]))
+                ->assertOk()
+                ->assertDontSee('outside secret', false);
+        } finally {
+            File::deleteDirectory($root);
+            File::deleteDirectory($outside);
+        }
+    }
+
+    public function test_preview_does_not_read_page_file_outside_repository(): void
+    {
+        $root = storage_path('framework/testing/preview-page-root-'.uniqid());
+        $outside = storage_path('framework/testing/preview-page-outside-'.uniqid());
+        File::ensureDirectoryExists($root);
+        File::ensureDirectoryExists($outside);
+        File::put($outside.'/secret.html', '<h1>outside page secret</h1>');
+
+        try {
+            $user = $this->makeUser();
+            $site = $this->makeSite($user);
+            $site->update(['repo_path' => $root]);
+            $page = $this->makePage($site, '../'.basename($outside).'/secret.html');
+
+            $this->actingAs($user)
+                ->get(route('editor.preview', [$site, $page]))
+                ->assertOk()
+                ->assertDontSee('outside page secret', false);
+        } finally {
+            File::deleteDirectory($root);
+            File::deleteDirectory($outside);
+        }
     }
 
     public function test_production_nginx_passes_preview_assets_to_laravel_before_static_rule(): void

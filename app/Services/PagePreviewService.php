@@ -16,7 +16,7 @@ class PagePreviewService
     {
         $path = parse_url($urlPath ?? '/', PHP_URL_PATH) ?: '/';
 
-        if (str_contains($path, ':')) {
+        if (str_contains($path, ':') || str_contains($path, '..')) {
             return null;
         }
 
@@ -28,7 +28,7 @@ class PagePreviewService
         foreach ($this->staticOutputDirs($site) as $outputDir) {
             foreach ($candidates as $candidate) {
                 $repoRelativePath = trim($outputDir.'/'.$candidate, '/');
-                if (File::exists("{$site->repo_path}/{$repoRelativePath}")) {
+                if ($this->repoFileExists($site, $repoRelativePath)) {
                     return $repoRelativePath;
                 }
             }
@@ -46,7 +46,7 @@ class PagePreviewService
         $dirs = [];
 
         if ($site->build_output_dir && $site->build_output_dir !== '.next') {
-            $dirs[] = trim($site->build_output_dir, '/');
+            $dirs[] = $this->normalizeRepoRelativePath($site->build_output_dir);
         }
 
         $dirs = array_merge($dirs, $this->defaultOutputDirsForProjectType((string) $site->project_type));
@@ -56,7 +56,29 @@ class PagePreviewService
 
     public function contextForRepoRelativePath(Site $site, string $repoRelativePath): array
     {
-        $normalizedPath = trim(str_replace('\\', '/', $repoRelativePath), '/');
+        $normalizedPath = $this->normalizeRepoRelativePath($repoRelativePath);
+
+        if ($normalizedPath === null) {
+            throw new \RuntimeException('Preview path is outside of the repository.');
+        }
+
+        $repoRoot = realpath((string) $site->repo_path);
+        if ($repoRoot === false) {
+            throw new \RuntimeException('Repository path is unavailable.');
+        }
+
+        $repoRoot = $this->normalizeAbsolutePath($repoRoot);
+        $filePath = $repoRoot.'/'.$normalizedPath;
+        $realFilePath = realpath($filePath);
+
+        if (
+            $realFilePath !== false
+            && $this->normalizeAbsolutePath($realFilePath) !== $repoRoot
+            && ! str_starts_with($this->normalizeAbsolutePath($realFilePath), $repoRoot.'/')
+        ) {
+            throw new \RuntimeException('Preview file resolves outside of the repository.');
+        }
+
         $directoryPrefix = dirname($normalizedPath);
 
         if ($directoryPrefix === '.') {
@@ -64,10 +86,51 @@ class PagePreviewService
         }
 
         return [
-            'file_path' => "{$site->repo_path}/{$normalizedPath}",
+            'file_path' => $filePath,
             'root_prefix' => $this->rootPrefixForPath($site, $normalizedPath),
             'directory_prefix' => $directoryPrefix,
         ];
+    }
+
+    private function repoFileExists(Site $site, string $repoRelativePath): bool
+    {
+        try {
+            $context = $this->contextForRepoRelativePath($site, $repoRelativePath);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        $realPath = realpath($context['file_path']);
+
+        return $realPath !== false && File::isFile($realPath);
+    }
+
+    private function normalizeRepoRelativePath(?string $path): ?string
+    {
+        $normalized = trim(str_replace('\\', '/', (string) $path), '/');
+
+        if ($normalized === '') {
+            return '';
+        }
+
+        if (str_contains($normalized, ':')) {
+            return null;
+        }
+
+        $segments = array_filter(explode('/', $normalized), fn (string $segment): bool => $segment !== '');
+
+        foreach ($segments as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                return null;
+            }
+        }
+
+        return implode('/', $segments);
+    }
+
+    private function normalizeAbsolutePath(string $path): string
+    {
+        return rtrim(str_replace('\\', '/', $path), '/');
     }
 
     private function rootPrefixForPath(Site $site, string $normalizedPath): string

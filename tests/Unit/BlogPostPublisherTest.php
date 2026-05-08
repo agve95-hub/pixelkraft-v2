@@ -8,7 +8,9 @@ use App\Models\ContentTemplate;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\BlogPostPublisher;
+use App\Services\GitSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -238,5 +240,29 @@ class BlogPostPublisherTest extends TestCase
 
         $this->assertStringNotContainsString('<script>alert', $html);
         $this->assertStringContainsString('&lt;script&gt;', $html);
+    }
+
+    public function test_write_to_repository_restores_existing_file_when_push_fails(): void
+    {
+        $root = storage_path('framework/testing/blog-publisher-'.uniqid());
+        File::ensureDirectoryExists($root.'/blog');
+        File::put($root.'/blog/hello-world.html', 'before');
+
+        try {
+            $post = $this->makePost(['output_path' => 'blog/hello-world.html']);
+            $post->site->update(['repo_path' => $root]);
+
+            $this->mock(GitSyncService::class, function ($mock): void {
+                $mock->shouldReceive('isCloned')->andReturn(true);
+                $mock->shouldReceive('commitAndPush')->andThrow(new \RuntimeException('remote rejected'));
+            });
+
+            $this->expectException(\RuntimeException::class);
+
+            app(BlogPostPublisher::class)->writeToRepository($post->site->fresh(), $post, 'Update post');
+        } finally {
+            $this->assertSame('before', File::get($root.'/blog/hello-world.html'));
+            File::deleteDirectory($root);
+        }
     }
 }

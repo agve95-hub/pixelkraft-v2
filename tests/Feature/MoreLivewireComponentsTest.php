@@ -120,6 +120,37 @@ class MoreLivewireComponentsTest extends TestCase
         ]);
     }
 
+    public function test_site_manager_generates_unique_slug_for_duplicate_names(): void
+    {
+        $user = $this->makeUser('duplicate-slug@mlw.com');
+        $this->makeSite($user, ['name' => 'Upload Draft', 'slug' => 'upload-draft']);
+
+        Livewire::actingAs($user)
+            ->test(SiteManager::class)
+            ->set('name', 'Upload Draft')
+            ->set('sourceMode', 'upload_ready_build')
+            ->call('create');
+
+        $this->assertDatabaseHas('sites', [
+            'name' => 'Upload Draft',
+            'slug' => 'upload-draft-2',
+        ]);
+    }
+
+    public function test_site_manager_rejects_github_token_with_newline(): void
+    {
+        $user = $this->makeUser('bad-token@mlw.com');
+
+        Livewire::actingAs($user)
+            ->test(SiteManager::class)
+            ->set('name', 'Bad Token')
+            ->set('sourceType', 'github')
+            ->set('repoUrl', 'https://github.com/example/bad-token.git')
+            ->set('githubToken', "ghp_test\nbad")
+            ->call('create')
+            ->assertHasErrors(['githubToken']);
+    }
+
     public function test_redirect_manager_renders(): void
     {
         $user = $this->makeUser('rdir@mlw.com');

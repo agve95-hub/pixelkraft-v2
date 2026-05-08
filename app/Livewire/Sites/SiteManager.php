@@ -118,7 +118,7 @@ class SiteManager extends Component
             'branch' => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9\-._\/]*$/'],
             // Build command: disallow shell injection metacharacters (; | ` $ < >) and newlines.
             'buildCommand' => ['nullable', 'string', 'max:500', 'not_regex:/[;|`\$<>\r\n]/'],
-            'githubToken' => 'nullable|string|max:500',
+            'githubToken' => ['nullable', 'string', 'max:500', 'not_regex:/[\r\n]/'],
 
             // Hostname: letters, digits, dots, hyphens only; no newlines or shell chars.
             'domain' => ['nullable', 'string', 'max:253', 'regex:/^[a-zA-Z0-9*][a-zA-Z0-9.\-*]*$/'],
@@ -152,7 +152,7 @@ class SiteManager extends Component
         $site = Site::create([
             'user_id' => auth()->id(),
             'name' => $this->name,
-            'slug' => Str::slug($this->name),
+            'slug' => $this->uniqueSlug($this->name),
             'client_first_name' => $this->clientFirstName ?: null,
             'client_last_name' => $this->clientLastName ?: null,
             'client_email' => $this->clientEmail ?: null,
@@ -248,5 +248,18 @@ class SiteManager extends Component
     public function render(): View
     {
         return view('livewire.sites.site-manager');
+    }
+
+    private function uniqueSlug(string $name): string
+    {
+        $baseSlug = Str::slug($name) ?: 'site';
+        $slug = $baseSlug;
+        $suffix = 2;
+
+        while (Site::query()->where('slug', $slug)->exists()) {
+            $slug = $baseSlug.'-'.$suffix++;
+        }
+
+        return $slug;
     }
 }
