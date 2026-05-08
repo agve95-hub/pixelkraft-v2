@@ -131,7 +131,7 @@
     border-color: transparent !important;
 }
 .pk-sidebar [data-flux-sidebar-item][data-current] {
-    border-color: hsl(var(--border) / 0.5) !important;
+    border-color: transparent !important;
 }
 
 /* Mockup-aligned Pixelkraft shell */
@@ -1766,8 +1766,27 @@
 
 .pk-sidebar [data-current],
 .pk-sidebar [aria-current="page"] {
-    background: #2a2a2d !important;
+    background: transparent !important;
     color: var(--pk-text) !important;
+    font-weight: 650 !important;
+}
+
+.pk-sidebar [data-flux-sidebar-item] {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.pk-sidebar [data-flux-sidebar-item]:hover {
+    background: transparent !important;
+    color: var(--pk-text) !important;
+}
+
+.pk-sidebar [data-flux-sidebar-item][data-current],
+.pk-sidebar [data-flux-sidebar-item][aria-current="page"] {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
 .pk-sidebar .pk-logo {
