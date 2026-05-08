@@ -115,6 +115,17 @@
     }
 }
 
+/* Flux sidebar items carry `border border-transparent` for their active state
+   transitions. The global * { border-color } above overrides that transparent
+   to a visible line, making every nav item look like an outlined pill.
+   Reset it here so only the active/hover state shows a border. */
+.pk-sidebar [data-flux-sidebar-item] {
+    border-color: transparent !important;
+}
+.pk-sidebar [data-flux-sidebar-item][data-current] {
+    border-color: hsl(var(--border) / 0.5) !important;
+}
+
 /* Mockup-aligned Pixelkraft shell */
 .pk-app-shell {
     min-height: 100vh;

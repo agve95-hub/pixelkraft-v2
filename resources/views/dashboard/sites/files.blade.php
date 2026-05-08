@@ -1,11 +1,15 @@
 <x-layouts.app>
     <x-slot:title>Files — {{ $site->name }}</x-slot:title>
 
-    <div>
-        <div class="mb-6">
-            <a href="{{ route('sites.show', $site) }}" class="text-xs text-zinc-500 hover:text-violet-400 transition">← {{ $site->name }}</a>
-            <h2 class="text-lg font-semibold text-zinc-100 mt-1">File Manager</h2>
-            <p class="text-sm text-zinc-500">Browse, edit, and upload files in the repository.</p>
+    <div class="space-y-5">
+        <div class="pk-page-head">
+            <div>
+                <a href="{{ route('sites.show', $site) }}" class="back-link">
+                    <flux:icon name="chevron-left" class="size-3.5" /> {{ $site->name }}
+                </a>
+                <h1 class="pk-page-title">File Manager</h1>
+                <p class="pk-page-sub">Browse, edit, and upload files in the repository.</p>
+            </div>
         </div>
 
         @livewire('files.file-manager', ['siteId' => $site->id])

@@ -1,110 +1,89 @@
 <div class="space-y-4">
-    {{-- Breadcrumb + Upload --}}
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-1 text-xs text-zinc-500 mono">
-            <button wire:click="navigateTo('')" class="hover:text-violet-400 transition">root</button>
+    {{-- Breadcrumb + toolbar --}}
+    <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-1 font-mono text-xs text-zinc-500">
+            <button wire:click="navigateTo('')" class="hover:text-zinc-200 transition-colors">root</button>
             @foreach (explode('/', $currentPath) as $segment)
                 @if ($segment)
                     <span class="text-zinc-700">/</span>
-                    @php
-                        $partialPath = implode('/', array_slice(explode('/', $currentPath), 0, $loop->index + 1));
-                    @endphp
-                    <button wire:click="navigateTo('{{ $partialPath }}')" class="hover:text-violet-400 transition">{{ $segment }}</button>
+                    @php $partialPath = implode('/', array_slice(explode('/', $currentPath), 0, $loop->index + 1)); @endphp
+                    <button wire:click="navigateTo('{{ $partialPath }}')" class="hover:text-zinc-200 transition-colors">{{ $segment }}</button>
                 @endif
             @endforeach
         </div>
 
-        <div class="flex items-center gap-2">
+        <x-ui.button-group>
             @if ($currentPath)
-                <button wire:click="goUp" class="flux-btn-ghost text-xs !px-2 !py-1">
-                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" /></svg>
-                    Up
-                </button>
+                <x-ui.button wire:click="goUp" variant="outline" size="sm" icon="chevron-up">Up</x-ui.button>
             @endif
-
-            <label class="flux-btn-secondary text-xs cursor-pointer">
-                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+            <label class="inline-flex h-[var(--pk-control-h-sm)] cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-zinc-700 bg-transparent px-3 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800 hover:border-zinc-600">
+                <flux:icon name="arrow-up-tray" class="size-3.5" />
                 Upload
                 <input type="file" wire:model="uploadFile" class="hidden" x-on:change="$wire.upload()">
             </label>
-        </div>
+        </x-ui.button-group>
     </div>
 
     <div class="flex gap-4">
         {{-- File list --}}
-        <div @class(['card overflow-hidden !p-0', 'flex-1' => !$viewingFile, 'w-1/3 flex-shrink-0' => $viewingFile])>
-            <div class="divide-y divide-zinc-800/50">
-                @forelse ($entries as $entry)
-                    <div class="flex items-center gap-3 px-4 py-2 hover:bg-zinc-800/30 transition cursor-pointer group"
-                        @if ($entry['type'] === 'directory')
-                            wire:click="navigateTo('{{ $entry['path'] }}')"
-                        @else
-                            wire:click="viewFile('{{ $entry['path'] }}')"
-                        @endif
-                    >
-                        {{-- Icon --}}
-                        @if ($entry['type'] === 'directory')
-                            <svg class="h-4 w-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" /></svg>
-                        @else
-                            <svg class="h-4 w-4 text-zinc-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
-                        @endif
+        <x-ui.card padding="flush" @class(['flex-1' => !$viewingFile, 'w-1/3 shrink-0' => $viewingFile])>
+            @forelse ($entries as $entry)
+                <div
+                    class="group flex cursor-pointer items-center gap-3 border-b border-zinc-800/50 px-4 py-2.5 last:border-b-0 hover:bg-zinc-800/30 transition-colors"
+                    @if ($entry['type'] === 'directory')
+                        wire:click="navigateTo('{{ $entry['path'] }}')"
+                    @else
+                        wire:click="viewFile('{{ $entry['path'] }}')"
+                    @endif
+                >
+                    @if ($entry['type'] === 'directory')
+                        <flux:icon name="folder" class="size-4 shrink-0 text-amber-400" />
+                    @else
+                        <flux:icon name="document" class="size-4 shrink-0 text-zinc-500" />
+                    @endif
 
-                        <div class="flex-1 min-w-0">
-                            <span @class([
-                                'text-xs truncate',
-                                'text-zinc-200 font-medium' => $entry['type'] === 'directory',
-                                'text-zinc-400 mono' => $entry['type'] === 'file',
-                                'text-violet-400' => $viewingFile === $entry['path'],
-                            ])>{{ $entry['name'] }}</span>
-                        </div>
+                    <span @class([
+                        'flex-1 min-w-0 truncate text-sm',
+                        'font-medium text-zinc-200' => $entry['type'] === 'directory',
+                        'font-mono text-xs text-zinc-400' => $entry['type'] === 'file',
+                        'text-emerald-400' => $viewingFile === $entry['path'],
+                    ])>{{ $entry['name'] }}</span>
 
-                        @if ($entry['type'] === 'file')
-                            <span class="mono text-[10px] text-zinc-700 flex-shrink-0">
-                                {{ $this->formatSize($entry['size'] ?? 0) }}
-                            </span>
+                    @if ($entry['type'] === 'file')
+                        <span class="shrink-0 font-mono text-[10px] text-zinc-600">{{ $this->formatSize($entry['size'] ?? 0) }}</span>
+                        <x-ui.button
+                            wire:click.stop="deleteFile('{{ $entry['path'] }}')"
+                            wire:confirm="Delete {{ $entry['name'] }}?"
+                            variant="ghost"
+                            size="xs"
+                            class="opacity-0 group-hover:opacity-100 text-red-400 !px-1"
+                            icon="trash"
+                        />
+                    @endif
+                </div>
+            @empty
+                <x-ui.empty icon="folder-open" title="Empty directory" />
+            @endforelse
+        </x-ui.card>
 
-                            <button
-                                wire:click.stop="deleteFile('{{ $entry['path'] }}')"
-                                wire:confirm="Delete {{ $entry['name'] }}?"
-                                class="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 transition flex-shrink-0"
-                            >
-                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
-                            </button>
-                        @endif
-                    </div>
-                @empty
-                    <div class="px-4 py-8 text-center text-sm text-zinc-500">Empty directory</div>
-                @endforelse
-            </div>
-        </div>
-
-        {{-- File viewer --}}
+        {{-- File viewer / editor --}}
         @if ($viewingFile)
-            <div class="flex-1 card !p-0 flex flex-col overflow-hidden">
-                <div class="flex items-center justify-between px-4 py-2 border-b border-zinc-800">
-                    <span class="mono text-xs text-zinc-400 truncate">{{ $viewingFile }}</span>
-                    <div class="flex items-center gap-2">
-                        <button wire:click="saveFile" class="flux-btn-primary text-[10px] !px-2 !py-1">Save & Push</button>
-                        <button wire:click="closeFile" class="text-zinc-600 hover:text-zinc-400">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-                        </button>
-                    </div>
+            <x-ui.card padding="flush" class="flex flex-1 flex-col overflow-hidden">
+                <div class="flex items-center justify-between border-b border-zinc-800/70 px-4 py-2">
+                    <span class="truncate font-mono text-xs text-zinc-400">{{ $viewingFile }}</span>
+                    <x-ui.button-group>
+                        <flux:button wire:click="saveFile" variant="primary" size="sm">Save &amp; Push</flux:button>
+                        <x-ui.button wire:click="closeFile" variant="ghost" size="sm" icon="x-mark" />
+                    </x-ui.button-group>
                 </div>
                 <div class="flex-1 overflow-auto">
                     <textarea
                         wire:model.live.debounce.500ms="fileContent"
-                        class="w-full h-full bg-transparent text-zinc-300 mono text-xs p-4 resize-none border-0 focus:outline-none focus:ring-0 min-h-[400px]"
+                        class="min-h-[400px] h-full w-full resize-none border-0 bg-transparent p-4 font-mono text-xs text-zinc-300 focus:outline-none focus:ring-0"
                         spellcheck="false"
                     ></textarea>
                 </div>
-            </div>
+            </x-ui.card>
         @endif
     </div>
-
-    @php
-        // Helper method accessible in blade
-        if (!method_exists($this, 'formatSize')) {
-            // Will use the component method
-        }
-    @endphp
 </div>

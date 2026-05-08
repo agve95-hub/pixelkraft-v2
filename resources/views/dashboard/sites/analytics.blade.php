@@ -19,9 +19,7 @@
                 <h1 class="pk-page-title">Analytics</h1>
                 <p class="pk-page-sub">Traffic, uptime, and performance — last 30 days</p>
             </div>
-            <select class="btn opacity-60 cursor-not-allowed" disabled title="Date range filtering coming soon">
-                <option>Last 30 days</option>
-            </select>
+            <x-ui.button variant="outline" size="sm" disabled class="opacity-50 cursor-not-allowed">Last 30 days</x-ui.button>
         </div>
 
         {{-- Top-level stats --}}
