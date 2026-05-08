@@ -1,19 +1,13 @@
 <div class="space-y-5">
-    <div class="pk-page-head">
-        <div>
-            <h1 class="pk-page-title">Expenses</h1>
-            <p class="pk-page-sub">{{ $site->name }} — recorded costs.</p>
-        </div>
-        <div class="text-right text-sm">
-            @forelse ($totalsByCurrency as $row)
-                <p class="font-mono tabular-nums">
-                    <span class="text-zinc-500">{{ $row->currency }}</span>
-                    <span class="ml-2 font-semibold">{{ number_format((float) $row->total, 2) }}</span>
-                </p>
-            @empty
-                <p class="pk-page-sub">No totals yet</p>
-            @endforelse
-        </div>
+    <div class="flex items-center gap-3 text-sm text-zinc-400">
+        @forelse ($totalsByCurrency as $row)
+            <span class="font-mono tabular-nums">
+                <span class="text-zinc-500">{{ $row->currency }}</span>
+                <span class="ml-1 font-semibold text-zinc-100">{{ number_format((float) $row->total, 2) }}</span>
+            </span>
+        @empty
+            <span class="text-zinc-600">No expenses recorded yet</span>
+        @endforelse
     </div>
 
     <x-ui.card>

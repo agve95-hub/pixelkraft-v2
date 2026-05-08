@@ -3,17 +3,9 @@
     $sentCount = $reports->getCollection()->filter(fn ($report) => $report->status() === 'sent')->count();
 @endphp
 
-<div class="max-w-none space-y-6">
+<div class="space-y-6">
     @if ($screen === 'index')
-        <div class="pk-page-head">
-            <div>
-                <a href="{{ route('sites.show', $site) }}" wire:navigate class="mb-2 inline-flex items-center gap-1 text-sm text-zinc-500 transition hover:text-zinc-300">
-                    <span aria-hidden="true">&larr;</span>
-                    {{ $site->name }}
-                </a>
-                <h1 class="pk-page-title">Reports</h1>
-                <p class="pk-page-sub">{{ $site->clientDisplayName() }} &middot; client and internal updates</p>
-            </div>
+        <div class="flex items-center justify-end">
             <flux:button type="button" wire:click="startCreate" variant="primary" icon="plus">
                 New report
             </flux:button>

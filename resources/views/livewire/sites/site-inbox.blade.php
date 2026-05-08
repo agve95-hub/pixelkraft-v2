@@ -1,12 +1,6 @@
-<div class="max-w-none space-y-5">
-    <div class="pk-page-head">
-        <div>
-            <a href="{{ route('sites.show', $site) }}" wire:navigate class="back-link">
-                <flux:icon name="chevron-left" class="size-3.5" /> {{ $site->name }}
-            </a>
-            <h1 class="pk-page-title">Inbox</h1>
-            <p class="pk-page-sub">{{ $site->clientDisplayName() }} &middot; {{ $filterCounts['all'] }} {{ Str::plural('message', $filterCounts['all']) }}</p>
-        </div>
+<div class="space-y-5">
+    <div class="flex items-center justify-between">
+        <span class="text-sm text-zinc-400">{{ $filterCounts['all'] }} {{ Str::plural('message', $filterCounts['all']) }}</span>
         <flux:button type="button" wire:click="openComposer" variant="primary" icon="pencil-square">Compose</flux:button>
     </div>
 

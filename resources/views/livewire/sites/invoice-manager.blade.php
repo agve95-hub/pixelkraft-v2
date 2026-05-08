@@ -9,16 +9,10 @@
     };
 @endphp
 
-<div class="max-w-5xl">
+<div class="space-y-5">
     @if ($screen === 'index')
-        <div class="pk-page-head mb-8">
-            <div>
-                <a href="{{ route('sites.show', $site) }}" wire:navigate class="back-link">
-                    <flux:icon name="chevron-left" class="size-3.5" /> {{ $site->name }}
-                </a>
-                <h1 class="pk-page-title">Invoices</h1>
-                <p class="pk-page-sub">{{ $site->clientDisplayName() }} · {{ $invoices->count() }} {{ Str::plural('invoice', $invoices->count()) }}</p>
-            </div>
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-sm text-zinc-400">{{ $invoices->count() }} {{ Str::plural('invoice', $invoices->count()) }}</p>
             <flux:button type="button" wire:click="startCreate" variant="primary" icon="plus">New invoice</flux:button>
         </div>
 

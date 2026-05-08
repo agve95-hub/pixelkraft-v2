@@ -3,7 +3,7 @@
     $modeSource = ($supportProfile['deployment_mode_source'] ?? 'configured') === 'inferred' ? 'Auto' : 'Configured';
 @endphp
 
-<div class="max-w-[980px] space-y-5">
+<div class="space-y-5">
     @if (session()->has('success'))
         <x-ui.alert variant="success" icon="check-circle">{{ session('success') }}</x-ui.alert>
     @endif

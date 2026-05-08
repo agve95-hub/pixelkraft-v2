@@ -3,15 +3,9 @@
         These settings are saved but not yet served to live traffic. Enabling the toggle does not currently block public access.
     </x-ui.alert>
 
-    <div class="pk-page-head">
-        <div>
-            <x-ui.card-title>Maintenance mode</x-ui.card-title>
-            <p class="pk-page-sub mt-1">Design your maintenance page. Enforcement will be wired in a future release.</p>
-        </div>
-        <x-ui.button-group>
-            <flux:button type="submit" form="maintenance-form" variant="primary" icon="check">Save</flux:button>
-            <x-ui.button href="{{ route('sites.maintenance.preview', $this->siteId) }}" target="_blank" rel="noopener noreferrer" variant="outline" icon="arrow-top-right-on-square">Preview</x-ui.button>
-        </x-ui.button-group>
+    <div class="flex items-center justify-end gap-2">
+        <x-ui.button href="{{ route('sites.maintenance.preview', $this->siteId) }}" target="_blank" rel="noopener noreferrer" variant="outline" icon="arrow-top-right-on-square">Preview</x-ui.button>
+        <flux:button type="submit" form="maintenance-form" variant="primary" icon="check">Save</flux:button>
     </div>
 
     <form id="maintenance-form" wire:submit="save" class="grid gap-6 lg:grid-cols-2">

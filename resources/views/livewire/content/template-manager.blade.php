@@ -1,13 +1,9 @@
-<div class="max-w-4xl space-y-5">
-    <div class="pk-page-head">
-        <div>
-            <h1 class="pk-page-title">Content Templates</h1>
-            <p class="pk-page-sub">Reusable page, section, and component templates with <code class="font-mono text-zinc-400">@{{placeholders}}</code>.</p>
-        </div>
-        @unless ($showForm)
+<div class="space-y-5">
+    @unless ($showForm)
+        <div class="flex justify-end">
             <flux:button wire:click="create" variant="primary" icon="plus">New Template</flux:button>
-        @endunless
-    </div>
+        </div>
+    @endunless
 
     @if ($showForm)
         <x-ui.card>

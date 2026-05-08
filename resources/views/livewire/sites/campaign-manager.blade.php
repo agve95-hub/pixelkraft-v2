@@ -1,20 +1,13 @@
 <div class="space-y-6">
 
-    {{-- Header --}}
-    <div class="pk-page-head">
-        <div>
-            <h1 class="pk-page-title">Campaigns &amp; Announcements</h1>
-            <p class="pk-page-sub">{{ $site->name }} — popup campaigns and top-bar banners.</p>
-        </div>
-        <x-ui.tabs>
-            <button wire:click="$set('tab', 'campaigns')" @class(['pk-ui-tab', 'is-active' => $tab === 'campaigns'])>
-                Campaigns <span class="badge-count">{{ $campaigns->count() }}</span>
-            </button>
-            <button wire:click="$set('tab', 'announcements')" @class(['pk-ui-tab', 'is-active' => $tab === 'announcements'])>
-                Announcements <span class="badge-count">{{ $announcements->count() }}</span>
-            </button>
-        </x-ui.tabs>
-    </div>
+    <x-ui.tabs>
+        <button wire:click="$set('tab', 'campaigns')" @class(['pk-ui-tab', 'is-active' => $tab === 'campaigns'])>
+            Campaigns <span class="badge-count">{{ $campaigns->count() }}</span>
+        </button>
+        <button wire:click="$set('tab', 'announcements')" @class(['pk-ui-tab', 'is-active' => $tab === 'announcements'])>
+            Announcements <span class="badge-count">{{ $announcements->count() }}</span>
+        </button>
+    </x-ui.tabs>
 
     @if (session('success'))
         <x-ui.alert variant="success" icon="check-circle">{{ session('success') }}</x-ui.alert>

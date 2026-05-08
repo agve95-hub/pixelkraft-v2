@@ -1,5 +1,15 @@
 <x-layouts.app>
-    <x-slot:title>{{ $site->name }} — Inbox</x-slot:title>
-
-    @livewire('sites.site-inbox', ['siteId' => $site->id], key('inbox-' . $site->id))
+    <x-slot:title>Inbox — {{ $site->name }}</x-slot:title>
+    <div class="space-y-5">
+        <div class="pk-page-head">
+            <div>
+                <a href="{{ route('sites.show', $site) }}" class="back-link">
+                    <flux:icon name="chevron-left" class="size-3.5" /> {{ $site->name }}
+                </a>
+                <h1 class="pk-page-title">Inbox</h1>
+                <p class="pk-page-sub">Contact form submissions and conversations for {{ $site->name }}.</p>
+            </div>
+        </div>
+        @livewire('sites.site-inbox', ['siteId' => $site->id], key('inbox-' . $site->id))
+    </div>
 </x-layouts.app>

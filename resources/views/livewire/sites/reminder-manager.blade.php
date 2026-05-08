@@ -1,11 +1,5 @@
 <div class="space-y-5">
-    <div class="pk-page-head">
-        <div>
-            <h1 class="pk-page-title">Reminders</h1>
-            <p class="pk-page-sub">{{ $site->name }} — follow-ups and deadlines.</p>
-        </div>
-        <span class="text-sm text-zinc-400"><span class="font-semibold text-zinc-100">{{ $openCount }}</span> open</span>
-    </div>
+    <p class="text-sm text-zinc-400"><span class="font-semibold text-zinc-100">{{ $openCount }}</span> open</p>
 
     <x-ui.card>
         <x-ui.card-header>

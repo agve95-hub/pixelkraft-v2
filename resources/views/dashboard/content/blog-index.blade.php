@@ -1,11 +1,14 @@
 <x-layouts.app>
-    <x-slot:title>Blog Posts — {{ $site->name }}</x-slot:title>
+    <x-slot:title>Blog — {{ $site->name }}</x-slot:title>
 
-    <div class="max-w-4xl space-y-5">
+    <div class="space-y-5">
         <div class="pk-page-head">
             <div>
-                <h1 class="pk-page-title">Blog Posts</h1>
-                <p class="pk-page-sub">{{ $site->name }}</p>
+                <a href="{{ route('sites.show', $site) }}" class="back-link">
+                    <flux:icon name="chevron-left" class="size-3.5" /> {{ $site->name }}
+                </a>
+                <h1 class="pk-page-title">Blog</h1>
+                <p class="pk-page-sub">Draft, schedule, and publish posts for {{ $site->name }}.</p>
             </div>
             <x-ui.button href="{{ route('blog.create', $site) }}" icon="plus" size="sm">New Post</x-ui.button>
         </div>
@@ -52,3 +55,4 @@
         </x-ui.table>
     </div>
 </x-layouts.app>
+

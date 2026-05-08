@@ -1,11 +1,14 @@
 <x-layouts.app>
     <x-slot:title>Products — {{ $site->name }}</x-slot:title>
 
-    <div class="max-w-4xl space-y-5">
+    <div class="space-y-5">
         <div class="pk-page-head">
             <div>
-                <h1 class="pk-page-title">Product Listings</h1>
-                <p class="pk-page-sub">{{ $site->name }}</p>
+                <a href="{{ route('sites.show', $site) }}" class="back-link">
+                    <flux:icon name="chevron-left" class="size-3.5" /> {{ $site->name }}
+                </a>
+                <h1 class="pk-page-title">Products</h1>
+                <p class="pk-page-sub">Manage product listings and pricing for {{ $site->name }}.</p>
             </div>
             <x-ui.button href="{{ route('products.create', $site) }}" icon="plus" size="sm">New Product</x-ui.button>
         </div>
