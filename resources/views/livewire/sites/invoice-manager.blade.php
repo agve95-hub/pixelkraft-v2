@@ -172,7 +172,7 @@
             <div class="h-px bg-zinc-800/80"></div>
 
             <div class="flex items-center justify-between">
-                <flux:heading size="sm">Line items</flux:heading>
+                <x-ui.card-title>Line items</x-ui.card-title>
                 <flux:button type="button" size="sm" variant="subtle" wire:click="addLine">+ Add item</flux:button>
             </div>
 

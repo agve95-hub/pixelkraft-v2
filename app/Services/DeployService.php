@@ -66,7 +66,9 @@ class DeployService
 
         $release = $this->startRelease($site, $log, $target);
 
-        $site->transitionDeployStatus(DeployStatus::Queued);
+        if ($site->deploy_status !== DeployStatus::Queued) {
+            $site->transitionDeployStatus(DeployStatus::Queued);
+        }
         $log->appendLog('Deploy pipeline queued.');
 
         return [

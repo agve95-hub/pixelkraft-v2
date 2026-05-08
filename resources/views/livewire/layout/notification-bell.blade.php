@@ -2,13 +2,13 @@
     <flux:dropdown position="bottom" align="end">
         <flux:button variant="ghost" size="sm" icon="bell" class="relative">
             @if ($unreadCount > 0)
-                <flux:badge size="sm" color="red" class="absolute -top-1 -right-1 !px-1.5 !py-0 text-[10px]">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</flux:badge>
+                <span class="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-red-500 px-1 py-0.5 text-[10px] font-bold text-white">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
             @endif
         </flux:button>
 
         <flux:menu class="w-80">
             <div class="flex items-center justify-between px-3 py-2">
-                <flux:heading size="sm">Notifications</flux:heading>
+                <p class="text-sm font-semibold">Notifications</p>
                 @if ($unreadCount > 0)
                     <flux:button wire:click="markAllRead" size="xs" variant="ghost">Mark all read</flux:button>
                 @endif
@@ -18,32 +18,32 @@
 
             <div class="max-h-80 overflow-y-auto">
                 @forelse ($notifications as $notification)
-                    <div class="flex gap-3 px-3 py-2.5 {{ !$notification->is_read ? 'bg-zinc-50 dark:bg-white/5' : '' }}">
+                    <div class="flex gap-3 px-3 py-2.5 {{ !$notification->is_read ? 'bg-white/5' : '' }}">
                         @switch($notification->type)
                             @case('deploy_failed')
-                                <flux:icon name="x-circle" variant="solid" class="size-5 text-red-500 shrink-0 mt-0.5" />
+                                <flux:icon name="x-circle" variant="solid" class="mt-0.5 size-5 shrink-0 text-red-500" />
                                 @break
                             @case('ssl_expiring')
-                                <flux:icon name="exclamation-triangle" variant="solid" class="size-5 text-amber-500 shrink-0 mt-0.5" />
+                                <flux:icon name="exclamation-triangle" variant="solid" class="mt-0.5 size-5 shrink-0 text-amber-500" />
                                 @break
                             @case('form_received')
-                                <flux:icon name="envelope" variant="solid" class="size-5 text-blue-500 shrink-0 mt-0.5" />
+                                <flux:icon name="envelope" variant="solid" class="mt-0.5 size-5 shrink-0 text-blue-500" />
                                 @break
                             @default
-                                <flux:icon name="check-circle" variant="solid" class="size-5 text-lime-500 shrink-0 mt-0.5" />
+                                <flux:icon name="check-circle" variant="solid" class="mt-0.5 size-5 shrink-0 text-emerald-500" />
                         @endswitch
 
                         <div class="min-w-0 flex-1">
-                            <flux:text size="sm" class="font-medium truncate">{{ $notification->title }}</flux:text>
+                            <p class="truncate text-sm font-medium">{{ $notification->title }}</p>
                             @if ($notification->body)
-                                <flux:text size="xs" class="line-clamp-2 mt-0.5">{{ $notification->body }}</flux:text>
+                                <p class="mt-0.5 line-clamp-2 text-xs text-zinc-500">{{ $notification->body }}</p>
                             @endif
-                            <flux:text size="xs" class="font-mono mt-1">{{ $notification->created_at->diffForHumans() }}</flux:text>
+                            <p class="mt-1 font-mono text-xs text-zinc-600">{{ $notification->created_at->diffForHumans() }}</p>
                         </div>
                     </div>
                 @empty
                     <div class="px-3 py-8 text-center">
-                        <flux:subheading>No notifications yet</flux:subheading>
+                        <p class="pk-page-sub">No notifications yet</p>
                     </div>
                 @endforelse
             </div>

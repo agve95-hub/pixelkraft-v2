@@ -5,6 +5,10 @@
     $statusLabel  = $site->status;
     $sslBadge    = match ((string) $site->ssl_status) { 'active' => 'success', 'expired', 'error' => 'destructive', default => 'warning' };
     $sslLabel    = match ((string) $site->ssl_status) { 'active' => 'Active', 'expired' => 'Expired', 'error' => 'Error', default => 'Pending' };
+    $latestFailedDeploy = $deployLogs->firstWhere('status', 'failed');
+    $latestFailureExcerpt = $latestFailedDeploy?->output_log
+        ? \Illuminate\Support\Str::limit(trim(collect(explode("\n", $latestFailedDeploy->output_log))->filter()->take(-8)->implode("\n")), 900)
+        : null;
 @endphp
 
 <div wire:poll.5s class="space-y-4">
@@ -32,6 +36,18 @@
                 </flux:button>
             </div>
         </x-ui.card-header>
+
+        @if ($site->deploy_status === \App\Enums\DeployStatus::Failed && $latestFailedDeploy)
+            <div class="mx-[18px] mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-100">
+                <div class="font-semibold">Last deploy failed</div>
+                <div class="mt-1 text-xs text-red-100/75">
+                    {{ $latestFailedDeploy->created_at?->diffForHumans() ?? 'Recently' }}. Open the deploy log below for the full output.
+                </div>
+                @if ($latestFailureExcerpt)
+                    <pre class="mt-3 max-h-40 overflow-auto rounded-md bg-black/30 p-3 font-mono text-[11px] leading-relaxed text-red-50/90 whitespace-pre-wrap">{{ $latestFailureExcerpt }}</pre>
+                @endif
+            </div>
+        @endif
 
         <div class="stats stats-4">
             <div class="stat">

@@ -1,14 +1,13 @@
 <?php
 
-use App\Enums\DeployStatus;
 use App\Http\Controllers\Dashboard\SiteAnalyticsController;
 use App\Http\Controllers\EditorPreviewController;
-use App\Jobs\DeploySiteJob;
 use App\Models\Page;
 use App\Models\Redirect;
 use App\Models\Site;
 use App\Models\SiteInboxMessage;
 use App\Rules\GitRemoteUrl;
+use App\Services\DeployDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -54,8 +53,9 @@ Route::put('/sites/{site}/settings', function (Request $request, Site $site) {
     return back()->with('success', 'Settings saved.');
 })->name('sites.settings.update');
 Route::post('/sites/{site}/deploy', function (Site $site) {
-    $site->update(['deploy_status' => DeployStatus::Deploying]);
-    DeploySiteJob::dispatch($site, 'manual');
+    if (! app(DeployDispatcher::class)->dispatch($site, 'manual')) {
+        return back()->with('error', 'A deployment is already in progress.');
+    }
 
     return back()->with('success', 'Deployment started.');
 })->name('sites.deploy');

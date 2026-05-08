@@ -3,13 +3,13 @@
 namespace App\Livewire\Editor;
 
 use App\Enums\DeployStatus;
-use App\Jobs\DeploySiteJob;
 use App\Models\ContentRevision;
 use App\Models\EditableRegion;
 use App\Models\EditSession;
 use App\Models\Page;
 use App\Models\Site;
 use App\Services\ContentPatcher;
+use App\Services\DeployDispatcher;
 use App\Services\EditSessionService;
 use App\Services\GitConflictException;
 use App\Services\GitSyncService;
@@ -187,12 +187,17 @@ class VisualEditor extends Component
             }
 
             $page->update(['is_published' => true]);
-            DeploySiteJob::dispatch($site->fresh(), 'editor');
-            session()->flash('success', 'Changes saved, page published, and deploy queued.');
+            $deployQueued = app(DeployDispatcher::class)->dispatch($site->fresh(), 'editor');
+            session()->flash(
+                $deployQueued ? 'success' : 'info',
+                $deployQueued
+                    ? 'Changes saved, page published, and deploy queued.'
+                    : 'Changes saved and page published. A deploy is already in progress, so this publish will go live on the next deploy.'
+            );
             $this->dispatch('reload-iframe');
         } catch (\Throwable $e) {
             Log::error('Page publish failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
-            session()->flash('error', 'Publish failed. Check application logs for details.');
+            session()->flash('error', 'Publish failed: '.Str::limit($e->getMessage(), 220));
         }
     }
 
@@ -388,6 +393,8 @@ class VisualEditor extends Component
         $this->debugTelemetry['commit_sha'] = null;
         $this->debugTelemetry['deploy_queued'] = null;
         $patcher = app(ContentPatcher::class);
+        $sourceBackups = [];
+        $regionSnapshot = null;
 
         try {
             $site = $this->resolveSite();
@@ -405,6 +412,7 @@ class VisualEditor extends Component
             if ($this->mode === 'code') {
                 $fullPath = $this->resolveCodePath($site);
                 File::ensureDirectoryExists(dirname($fullPath));
+                $sourceBackups[$fullPath] = File::exists($fullPath) ? File::get($fullPath) : null;
                 File::put($fullPath, $this->codeContent);
                 $changedFiles[] = $this->codeFilePath;
                 $this->debugTelemetry['code_file_path'] = $this->codeFilePath;
@@ -416,6 +424,15 @@ class VisualEditor extends Component
 
                 // Save visual editor edit via ContentPatcher
                 $region = $this->resolveRegion($this->selectedRegionId);
+                $targetFile = (string) ($region->source_location['file'] ?? $page->file_path);
+                $fullPath = rtrim((string) $site->repo_path, '/\\').'/'.$targetFile;
+                if (File::exists($fullPath)) {
+                    $sourceBackups[$fullPath] = File::get($fullPath);
+                }
+                $regionSnapshot = [
+                    'region' => $region,
+                    'current_content' => $region->current_content,
+                ];
 
                 // Create revision
                 ContentRevision::create([
@@ -453,9 +470,9 @@ class VisualEditor extends Component
                 app(ParserService::class)->parseSinglePage($site, $page->file_path);
 
                 if ($this->deployAfterSave) {
-                    DeploySiteJob::dispatch($site->fresh(), 'editor');
-                    $this->debugTelemetry['deploy_queued'] = true;
-                    $this->debugTelemetry['deploy_trigger'] = 'editor';
+                    $deployQueued = app(DeployDispatcher::class)->dispatch($site->fresh(), 'editor');
+                    $this->debugTelemetry['deploy_queued'] = $deployQueued;
+                    $this->debugTelemetry['deploy_trigger'] = $deployQueued ? 'editor' : 'already_active';
                 } else {
                     $this->debugTelemetry['deploy_queued'] = false;
                 }
@@ -467,9 +484,7 @@ class VisualEditor extends Component
 
                 session()->flash(
                     'success',
-                    $this->deployAfterSave
-                        ? 'Changes saved, pushed to GitHub, and deploy queued.'
-                        : 'Changes saved and pushed to GitHub.'
+                    $this->saveSuccessMessage($site)
                 );
 
                 // Dispatch event to refresh iframe
@@ -485,6 +500,7 @@ class VisualEditor extends Component
             $this->showSaveModal = false;
 
         } catch (GitConflictException $e) {
+            $this->restoreEditedSources($sourceBackups, $regionSnapshot);
             if ($session = $this->resolveEditSession()) {
                 app(EditSessionService::class)->markConflict($session, [
                     'error' => $e->getMessage(),
@@ -500,6 +516,7 @@ class VisualEditor extends Component
             Log::error('Editor save conflict', ['error' => $e->getMessage()]);
             session()->flash('error', 'Save blocked by newer repo changes. Your edit session was marked as conflicted for developer review.');
         } catch (\Throwable $e) {
+            $this->restoreEditedSources($sourceBackups, $regionSnapshot);
             $this->debugTelemetry['last_save_success'] = false;
             $this->debugTelemetry['last_error'] = $e->getMessage();
             $this->debugTelemetry['exception_class'] = $e::class;
@@ -507,7 +524,7 @@ class VisualEditor extends Component
                 $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
             }
             Log::error('Editor save failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
-            session()->flash('error', 'Save failed. Check application logs for details.');
+            session()->flash('error', 'Save failed and local edits were restored: '.Str::limit($e->getMessage(), 220));
         } finally {
             $this->debugTelemetry['save_finished_at'] = now()->toIso8601String();
             $this->isSaving = false;
@@ -529,6 +546,47 @@ class VisualEditor extends Component
     public function clearDebugTelemetry(): void
     {
         $this->resetDebugTelemetry();
+    }
+
+    /**
+     * @param  array<string, string|null>  $sourceBackups
+     * @param  array{region: EditableRegion, current_content: string|null}|null  $regionSnapshot
+     */
+    private function restoreEditedSources(array $sourceBackups, ?array $regionSnapshot): void
+    {
+        foreach ($sourceBackups as $path => $contents) {
+            if ($contents === null) {
+                File::delete($path);
+
+                continue;
+            }
+
+            File::ensureDirectoryExists(dirname($path));
+            File::put($path, $contents);
+        }
+
+        if ($regionSnapshot) {
+            $regionSnapshot['region']->update([
+                'current_content' => $regionSnapshot['current_content'],
+            ]);
+        }
+    }
+
+    private function saveSuccessMessage(Site $site): string
+    {
+        if (empty($site->github_token)) {
+            return $this->deployAfterSave
+                ? 'Changes saved locally and deploy queued. Add a GitHub token to push editor saves upstream.'
+                : 'Changes saved locally. Add a GitHub token to push editor saves upstream.';
+        }
+
+        if ($this->deployAfterSave && $this->debugTelemetry['deploy_queued'] === false) {
+            return 'Changes saved and pushed to GitHub. A deploy is already in progress, so these changes will go live on the next deploy.';
+        }
+
+        return $this->deployAfterSave
+            ? 'Changes saved, pushed to GitHub, and deploy queued.'
+            : 'Changes saved and pushed to GitHub.';
     }
 
     public function render(): View
@@ -624,8 +682,9 @@ class VisualEditor extends Component
             return;
         }
 
-        DeploySiteJob::dispatch($site->fresh(), 'preview-build');
-        $this->previewBuildQueued = true;
+        if (app(DeployDispatcher::class)->dispatch($site->fresh(), 'preview-build')) {
+            $this->previewBuildQueued = true;
+        }
     }
 
     /**

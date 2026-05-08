@@ -2,9 +2,9 @@
 
 namespace App\Livewire\Sites;
 
-use App\Jobs\DeploySiteJob;
 use App\Jobs\ProvisionSslJob;
 use App\Models\DeployLog;
+use App\Services\DeployDispatcher;
 use App\Services\DeployService;
 use App\Services\NginxConfigService;
 use App\Support\SiteAccess;
@@ -24,13 +24,11 @@ class DeployControls extends Component
     {
         $site = SiteAccess::findOrFail($this->siteId);
 
-        if ($site->deploy_status?->isActive()) {
+        if (! app(DeployDispatcher::class)->dispatch($site, 'manual')) {
             session()->flash('error', 'A deploy is already in progress. Please wait for it to finish.');
 
             return;
         }
-
-        DeploySiteJob::dispatch($site, 'manual');
 
         session()->flash('success', "Deploy started for {$site->name}.");
     }

@@ -1,38 +1,37 @@
 <div class="space-y-6" wire:poll.10s>
-    <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="pk-page-head">
         <div>
-            <flux:heading size="lg">System Diagnostics</flux:heading>
-            <flux:text class="mt-1">Queue, worker, and stuck-site visibility for the current pixelkraft runtime.</flux:text>
+            <h1 class="pk-page-title">System diagnostics</h1>
+            <p class="pk-page-sub">Queue, worker, and stuck-site visibility for the current pixelkraft runtime.</p>
         </div>
-
-        <flux:button wire:click="$refresh" variant="subtle" size="sm" icon="arrow-path">Refresh</flux:button>
+        <flux:button wire:click="$refresh" variant="outline" size="sm" icon="arrow-path">Refresh</flux:button>
     </div>
 
-    <flux:callout
-        :variant="$workerHealth['status'] === 'pass' ? 'success' : ($workerHealth['status'] === 'warn' ? 'warning' : 'danger')"
-        :icon="$workerHealth['status'] === 'pass' ? 'check-circle' : 'exclamation-triangle'"
-    >
-        <strong>{{ $workerHealth['label'] }}</strong>
-        <div class="mt-1">{{ $workerHealth['message'] }}</div>
-    </flux:callout>
+    @php
+        $calloutVariant = $workerHealth['status'] === 'pass' ? 'success' : ($workerHealth['status'] === 'warn' ? 'warning' : 'danger');
+        $calloutIcon = $workerHealth['status'] === 'pass' ? 'check-circle' : 'exclamation-triangle';
+    @endphp
+    <x-ui.alert :variant="$calloutVariant" :icon="$calloutIcon" :title="$workerHealth['label']">
+        {{ $workerHealth['message'] }}
+    </x-ui.alert>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <x-ui.card>
             <p class="stat-label">Queue Driver</p>
             <div class="mt-2 flex items-center gap-2">
-                <flux:badge :color="$systemInfo['queue_driver'] === 'redis' ? 'lime' : 'red'">{{ $systemInfo['queue_driver'] }}</flux:badge>
-                <flux:text size="sm">{{ $systemInfo['queue_connection'] }}</flux:text>
+                <x-ui.badge variant="{{ $systemInfo['queue_driver'] === 'redis' ? 'success' : 'destructive' }}">{{ $systemInfo['queue_driver'] }}</x-ui.badge>
+                <span class="text-xs text-zinc-500">{{ $systemInfo['queue_connection'] }}</span>
             </div>
-            <flux:text size="xs" class="mt-2 font-mono">{{ $systemInfo['app_environment'] }}</flux:text>
+            <p class="mt-2 font-mono text-xs text-zinc-500">{{ $systemInfo['app_environment'] }}</p>
         </x-ui.card>
 
         <x-ui.card>
             <p class="stat-label">Redis</p>
             <div class="mt-2 flex items-center gap-2">
-                <flux:badge :color="$systemInfo['redis_status']['ok'] ? 'lime' : 'red'">
+                <x-ui.badge variant="{{ $systemInfo['redis_status']['ok'] ? 'success' : 'destructive' }}">
                     {{ $systemInfo['redis_status']['ok'] ? 'Reachable' : 'Unavailable' }}
-                </flux:badge>
-                <flux:text size="sm">{{ $systemInfo['redis_status']['connection'] }}</flux:text>
+                </x-ui.badge>
+                <span class="text-xs text-zinc-500">{{ $systemInfo['redis_status']['connection'] }}</span>
             </div>
         </x-ui.card>
 
@@ -52,127 +51,113 @@
         </x-ui.card>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <x-ui.card>
-            <x-ui.card-header><x-ui.card-title>Health Checks</x-ui.card-title></x-ui.card-header>
-
-            <div class="space-y-3">
+            <x-ui.card-header>
+                <x-ui.card-title>Health Checks</x-ui.card-title>
+            </x-ui.card-header>
+            <div class="space-y-2">
                 @foreach ($checks as $check)
-                    <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 px-4 py-3">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <flux:text size="sm" class="font-medium">{{ $check['title'] }}</flux:text>
-                                <flux:text size="sm" class="mt-1">{{ $check['message'] }}</flux:text>
-                            </div>
-
-                            <flux:badge :color="$check['status'] === 'pass' ? 'lime' : ($check['status'] === 'warn' ? 'yellow' : 'red')">
-                                {{ strtoupper($check['status']) }}
-                            </flux:badge>
+                    @php
+                        $checkVariant = match ($check['status']) { 'pass' => 'success', 'warn' => 'warning', default => 'destructive' };
+                    @endphp
+                    <div class="flex items-start justify-between gap-3 rounded-lg border border-zinc-800/70 px-4 py-3">
+                        <div>
+                            <p class="text-sm font-medium">{{ $check['title'] }}</p>
+                            <p class="mt-1 text-xs text-zinc-500">{{ $check['message'] }}</p>
                         </div>
+                        <x-ui.badge variant="{{ $checkVariant }}">{{ strtoupper($check['status']) }}</x-ui.badge>
                     </div>
                 @endforeach
             </div>
         </x-ui.card>
 
         <x-ui.card>
-            <x-ui.card-header><x-ui.card-title>Recommended Actions</x-ui.card-title></x-ui.card-header>
-
-            <div class="space-y-3">
+            <x-ui.card-header>
+                <x-ui.card-title>Recommended Actions</x-ui.card-title>
+            </x-ui.card-header>
+            <div class="space-y-2">
                 @foreach ($recommendations as $recommendation)
-                    <div class="rounded-lg bg-zinc-50 dark:bg-white/5 px-4 py-3">
-                        <flux:text size="sm">{{ $recommendation }}</flux:text>
-                    </div>
+                    <div class="rounded-lg bg-zinc-950/30 px-4 py-3 text-sm text-zinc-300">{{ $recommendation }}</div>
                 @endforeach
             </div>
         </x-ui.card>
     </div>
 
     <x-ui.card>
-        <x-ui.card-header><x-ui.card-title>Queue Breakdown</x-ui.card-title></x-ui.card-header>
-
+        <x-ui.card-header>
+            <x-ui.card-title>Queue Breakdown</x-ui.card-title>
+        </x-ui.card-header>
         <div class="space-y-2">
             @foreach ($queueStats as $queue)
-                <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 dark:border-zinc-700 px-4 py-3">
+                <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-800/70 px-4 py-3">
                     <div>
                         <div class="flex items-center gap-2">
-                            <flux:text size="sm" class="font-medium">{{ strtoupper($queue['name']) }}</flux:text>
+                            <p class="text-sm font-medium">{{ strtoupper($queue['name']) }}</p>
                             @if (in_array($queue['name'], $systemInfo['configured_queues']))
-                                <x-ui.badge variant="success">Horizon</flux:badge>
+                                <x-ui.badge variant="success">Horizon</x-ui.badge>
                             @else
-                                <x-ui.badge variant="destructive">Missing</flux:badge>
+                                <x-ui.badge variant="destructive">Missing</x-ui.badge>
                             @endif
                         </div>
-
                         @if ($queue['error'])
-                            <flux:text size="xs" class="mt-1 text-red-500">{{ $queue['error'] }}</flux:text>
+                            <p class="mt-1 text-xs text-red-500">{{ $queue['error'] }}</p>
                         @elseif ($queue['oldest_wait'])
-                            <flux:text size="xs" class="mt-1">Oldest waiting job: {{ $queue['oldest_wait'] }}</flux:text>
+                            <p class="mt-1 text-xs text-zinc-500">Oldest waiting job: {{ $queue['oldest_wait'] }}</p>
                         @else
-                            <flux:text size="xs" class="mt-1">No queue-age signal available for the current driver.</flux:text>
+                            <p class="mt-1 text-xs text-zinc-500">No queue-age signal available for the current driver.</p>
                         @endif
                     </div>
-
-                    <flux:heading size="lg" class="font-mono">
-                        {{ $queue['pending'] ?? '—' }}
-                    </flux:heading>
+                    <p class="font-mono text-lg font-semibold">{{ $queue['pending'] ?? '—' }}</p>
                 </div>
             @endforeach
         </div>
     </x-ui.card>
 
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <x-ui.card>
-            <x-ui.card-header><x-ui.card-title>Recent Failed Jobs</x-ui.card-title></x-ui.card-header>
-
+            <x-ui.card-header>
+                <x-ui.card-title>Recent Failed Jobs</x-ui.card-title>
+            </x-ui.card-header>
             <div class="space-y-2">
                 @forelse ($recentFailures as $failure)
-                    <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 px-4 py-3">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <flux:text size="sm" class="font-medium">{{ $failure['name'] }}</flux:text>
-                                <flux:text size="xs" class="mt-1 font-mono">{{ $failure['queue'] }} · {{ $failure['failed_at']->diffForHumans() }}</flux:text>
-                                <flux:text size="sm" class="mt-2">{{ $failure['summary'] }}</flux:text>
-                            </div>
-                            <x-ui.badge variant="destructive">Failed</flux:badge>
+                    <div class="flex items-start justify-between gap-3 rounded-lg border border-zinc-800/70 px-4 py-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium">{{ $failure['name'] }}</p>
+                            <p class="mt-1 font-mono text-xs text-zinc-500">{{ $failure['queue'] }} &middot; {{ $failure['failed_at']->diffForHumans() }}</p>
+                            <p class="mt-2 text-sm text-zinc-400">{{ $failure['summary'] }}</p>
                         </div>
+                        <x-ui.badge variant="destructive">Failed</x-ui.badge>
                     </div>
                 @empty
-                    <div class="py-8 text-center">
-                        <flux:icon name="check-circle" variant="outline" class="size-8 text-lime-500 mx-auto mb-2" />
-                        <p class="pk-page-sub">No recent failed jobs</p>
-                    </div>
+                    <x-ui.empty icon="check-circle" title="No recent failed jobs" />
                 @endforelse
             </div>
         </x-ui.card>
 
         <x-ui.card>
-            <x-ui.card-header><x-ui.card-title>Stuck Sites</x-ui.card-title></x-ui.card-header>
-
+            <x-ui.card-header>
+                <x-ui.card-title>Stuck Sites</x-ui.card-title>
+            </x-ui.card-header>
             <div class="space-y-2">
                 @foreach (['setup' => 'Initial Setup', 'deploy' => 'Deploy Pipeline'] as $key => $label)
-                    <div class="rounded-lg bg-zinc-50 dark:bg-white/5 px-4 py-3">
-                        <div class="flex items-center justify-between gap-3">
-                            <flux:text size="sm" class="font-medium">{{ $label }}</flux:text>
-                            <flux:badge :color="empty($stuckSites[$key]) ? 'lime' : 'red'">{{ count($stuckSites[$key]) }}</flux:badge>
+                    <div class="rounded-lg bg-zinc-950/30 px-4 py-3">
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                            <p class="text-sm font-medium">{{ $label }}</p>
+                            <x-ui.badge variant="{{ empty($stuckSites[$key]) ? 'success' : 'destructive' }}">{{ count($stuckSites[$key]) }}</x-ui.badge>
                         </div>
-
-                        <div class="mt-3 space-y-2">
+                        <div class="space-y-2">
                             @forelse ($stuckSites[$key] as $site)
-                                <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 px-3 py-3">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div>
-                                            <flux:text size="sm" class="font-medium">{{ $site['name'] }}</flux:text>
-                                            <flux:text size="xs" class="mt-1 font-mono">{{ $site['project_type'] }} · {{ $site['age'] }}</flux:text>
-                                            <flux:text size="sm" class="mt-2">{{ $site['reason'] }}</flux:text>
-                                        </div>
-
-                                        <flux:button href="{{ route('sites.show', $site['id']) }}" size="xs" variant="subtle">
-                                            Open
-                                        </flux:button>
+                                <div class="flex items-start justify-between gap-3 rounded-lg border border-zinc-800/70 px-3 py-3">
+                                    <div>
+                                        <p class="text-sm font-medium">{{ $site['name'] }}</p>
+                                        <p class="mt-1 font-mono text-xs text-zinc-500">{{ $site['project_type'] }} &middot; {{ $site['age'] }}</p>
+                                        <p class="mt-2 text-sm text-zinc-400">{{ $site['reason'] }}</p>
                                     </div>
+                                    <x-ui.button href="{{ route('sites.show', $site['id']) }}" size="xs" variant="outline">Open</x-ui.button>
                                 </div>
                             @empty
-                                <flux:text size="sm" class="text-zinc-500">No stuck sites in this category.</flux:text>
+                                <p class="text-sm text-zinc-500">No stuck sites in this category.</p>
                             @endforelse
                         </div>
                     </div>

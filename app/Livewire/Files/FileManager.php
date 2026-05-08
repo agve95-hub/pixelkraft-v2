@@ -82,6 +82,7 @@ class FileManager extends Component
             return;
         }
 
+        $originalContent = File::get($fullPath);
         File::put($fullPath, $this->fileContent);
 
         try {
@@ -89,8 +90,9 @@ class FileManager extends Component
             $git->commitAndPush($site, [$this->viewingFile], "Edit {$this->viewingFile}");
             session()->flash('success', 'File saved and pushed.');
         } catch (\Throwable $e) {
+            File::put($fullPath, $originalContent);
             Log::error('File save push failed', ['site_id' => $this->siteId, 'file' => $this->viewingFile, 'error' => $e->getMessage()]);
-            session()->flash('error', 'Saved locally but push failed. Check application logs for details.');
+            session()->flash('error', 'Push failed, so the local file was restored to its previous version. Check Git operations for details.');
         }
     }
 
@@ -122,6 +124,7 @@ class FileManager extends Component
 
         $destPath = "{$targetDir}/{$filename}";
 
+        $previousContent = File::exists($destPath) ? File::get($destPath) : null;
         File::move($sourcePath, $destPath);
 
         try {
@@ -130,8 +133,13 @@ class FileManager extends Component
             $git->commitAndPush($site, [$relativePath], "Upload {$filename}");
             session()->flash('success', "Uploaded {$filename}.");
         } catch (\Throwable $e) {
+            if ($previousContent === null) {
+                File::delete($destPath);
+            } else {
+                File::put($destPath, $previousContent);
+            }
             Log::error('File upload push failed', ['site_id' => $this->siteId, 'filename' => $filename, 'error' => $e->getMessage()]);
-            session()->flash('error', 'Uploaded locally but push failed. Check application logs for details.');
+            session()->flash('error', 'Push failed, so the uploaded file was rolled back locally. Check Git operations for details.');
         }
 
         $this->uploadFile = null;
@@ -147,6 +155,7 @@ class FileManager extends Component
             return;
         }
 
+        $originalContent = File::isFile($fullPath) ? File::get($fullPath) : null;
         File::delete($fullPath);
 
         try {
@@ -154,8 +163,11 @@ class FileManager extends Component
             $git->commitAllAndPush($site, "Delete {$relativePath}");
             session()->flash('success', "Deleted {$relativePath}.");
         } catch (\Throwable $e) {
+            if ($originalContent !== null) {
+                File::put($fullPath, $originalContent);
+            }
             Log::error('File delete push failed', ['site_id' => $this->siteId, 'file' => $relativePath, 'error' => $e->getMessage()]);
-            session()->flash('error', 'Deleted locally but push failed. Check application logs for details.');
+            session()->flash('error', 'Push failed, so the deleted file was restored locally. Check Git operations for details.');
         }
 
         if ($this->viewingFile === $relativePath) {
