@@ -29,7 +29,7 @@
         <x-ui.card padding="flush" @class(['flex-1' => !$viewingFile, 'w-1/3 shrink-0' => $viewingFile])>
             @forelse ($entries as $entry)
                 <div
-                    class="group flex cursor-pointer items-center gap-3 border-b border-zinc-800/50 px-4 py-2.5 last:border-b-0 hover:bg-zinc-800/30 transition-colors"
+                    class="group relative flex cursor-pointer items-center gap-3 border-b border-zinc-800/50 px-4 py-2.5 last:border-b-0 hover:bg-zinc-800/30 transition-colors"
                     @if ($entry['type'] === 'directory')
                         wire:click="navigateTo('{{ $entry['path'] }}')"
                     @else
@@ -50,13 +50,13 @@
                     ])>{{ $entry['name'] }}</span>
 
                     @if ($entry['type'] === 'file')
-                        <span class="shrink-0 font-mono text-[10px] text-zinc-600">{{ $this->formatSize($entry['size'] ?? 0) }}</span>
+                        <span class="shrink-0 pr-8 font-mono text-[10px] text-zinc-600 transition-opacity group-hover:opacity-0">{{ $this->formatSize($entry['size'] ?? 0) }}</span>
                         <x-ui.button
                             wire:click.stop="deleteFile('{{ $entry['path'] }}')"
                             wire:confirm="Delete {{ $entry['name'] }}?"
                             variant="ghost"
                             size="xs"
-                            class="opacity-0 group-hover:opacity-100 text-red-400 !px-1"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-400 !px-1"
                             icon="trash"
                         />
                     @endif

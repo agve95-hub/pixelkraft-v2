@@ -4,13 +4,13 @@
             <h1 class="pk-page-title">{{ $postId ? 'Edit Post' : 'New Post' }}</h1>
             <p class="pk-page-sub">Write and publish a blog post.</p>
         </div>
-        <div class="flex items-center gap-2">
-            <flux:select wire:model="status" size="sm" class="w-auto">
+        <div class="flex items-center overflow-hidden rounded-md border border-zinc-700 bg-zinc-950">
+            <flux:select wire:model="status" size="sm" class="w-[118px] rounded-none border-0 border-r border-zinc-700">
                 <flux:select.option value="draft">Draft</flux:select.option>
                 <flux:select.option value="scheduled">Scheduled</flux:select.option>
                 <flux:select.option value="published">Published</flux:select.option>
             </flux:select>
-            <flux:button wire:click="save" variant="primary" wire:loading.attr="disabled" wire:target="save">
+            <flux:button wire:click="save" variant="primary" class="rounded-none" wire:loading.attr="disabled" wire:target="save">
                 <span wire:loading.remove wire:target="save">{{ $postId ? 'Update' : 'Publish' }}</span>
                 <span wire:loading wire:target="save">Saving...</span>
             </flux:button>
@@ -31,14 +31,15 @@
             </div>
 
             <flux:field>
-                <flux:label>Content</flux:label>
+                <flux:label>Content <span class="text-xs font-normal text-zinc-500">(HTML)</span></flux:label>
                 <flux:textarea wire:model.live.debounce.500ms="body" rows="20"
-                    placeholder="Write your post content here... HTML is supported." />
+                    placeholder="Write HTML content here..."
+                    class="min-h-[400px] resize-y font-mono text-sm" />
                 <flux:error name="body" />
             </flux:field>
 
             <flux:field>
-                <flux:label>Excerpt <span class="font-normal text-zinc-500">(optional)</span></flux:label>
+                <flux:label>Excerpt <x-ui.badge variant="outline" class="ml-1.5 h-4 px-1 text-xs font-normal">Optional</x-ui.badge></flux:label>
                 <flux:textarea wire:model="excerpt" rows="3"
                     placeholder="Brief summary for previews and listings..." />
             </flux:field>

@@ -20,7 +20,7 @@
         <x-ui.card-header>
             <x-ui.card-title>Add expense</x-ui.card-title>
         </x-ui.card-header>
-        <form wire:submit="save" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <form wire:submit="save" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1.5fr]">
             <flux:field>
                 <flux:label>Label</flux:label>
                 <flux:input wire:model="form_label" placeholder="e.g. Hosting March" />
@@ -42,7 +42,7 @@
                 <flux:error name="form_expense_date" />
             </flux:field>
             <div class="sm:col-span-2 lg:col-span-4">
-                <flux:button type="submit" variant="primary" icon="plus">Save expense</flux:button>
+                <flux:button type="submit" variant="subtle" icon="plus">Save expense</flux:button>
             </div>
         </form>
     </x-ui.card>

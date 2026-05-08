@@ -19,9 +19,9 @@
         @endforeach
     </x-ui.tabs>
 
-    <div class="grid gap-4 lg:grid-cols-[minmax(320px,420px)_1fr]">
+    <div class="grid items-stretch gap-4 lg:grid-cols-[minmax(320px,420px)_1fr]">
         {{-- Thread list --}}
-        <div class="thread-list">
+        <div class="thread-list min-h-[420px]">
             @forelse ($messages as $message)
                 <button
                     type="button"
@@ -53,7 +53,7 @@
                 </button>
             @empty
                 <x-ui.empty icon="inbox" title="No {{ $filter === 'all' ? '' : $filter }} messages">
-                    <x-ui.button type="button" wire:click="openComposer" variant="outline" size="sm">Compose a message</x-ui.button>
+                    <x-ui.button type="button" wire:click="openComposer" variant="secondary" size="sm">Compose a message</x-ui.button>
                 </x-ui.empty>
             @endforelse
         </div>

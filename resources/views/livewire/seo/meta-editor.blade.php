@@ -131,7 +131,6 @@
         </div>
 
         <div class="pk-action-row border-t border-zinc-800 pt-4">
-            <x-ui.button type="button" wire:click="runAnalysis" variant="outline" size="sm" icon="arrow-path">Re-analyze</x-ui.button>
             <x-ui.button type="submit" variant="default" icon="bookmark" :disabled="! $metaEditingSupported">Save page SEO</x-ui.button>
         </div>
     </form>

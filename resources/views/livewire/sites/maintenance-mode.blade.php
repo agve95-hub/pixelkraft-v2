@@ -1,5 +1,5 @@
 <div class="space-y-6">
-    <x-ui.alert variant="warning" icon="information-circle" title="Preview only">
+    <x-ui.alert variant="warning" icon="exclamation-triangle" title="Preview only">
         These settings are saved but not yet served to live traffic. Enabling the toggle does not currently block public access.
     </x-ui.alert>
 
@@ -46,9 +46,18 @@
                 @endif
 
                 <div class="grid gap-4 sm:grid-cols-3">
-                    <flux:input wire:model.live="bgColor" type="color" label="Background" />
-                    <flux:input wire:model.live="textColor" type="color" label="Text" />
-                    <flux:input wire:model.live="accentColor" type="color" label="Accent" />
+                    <flux:field>
+                        <flux:label>Background</flux:label>
+                        <flux:input wire:model.live="bgColor" type="color" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label>Text</flux:label>
+                        <flux:input wire:model.live="textColor" type="color" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label>Accent</flux:label>
+                        <flux:input wire:model.live="accentColor" type="color" />
+                    </flux:field>
                 </div>
 
                 <flux:checkbox wire:model.live="showLogo" label="Show logo" />

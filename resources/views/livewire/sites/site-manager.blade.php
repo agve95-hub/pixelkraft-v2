@@ -258,7 +258,7 @@
             <p class="pk-section-help">DNS cutover and SSL issuance stay gated until the source checks pass.</p>
 
             <x-ui.card>
-                <div class="grid gap-4 sm:grid-cols-3">
+                <fieldset @disabled($sourceCheckStatus !== 'ready') class="grid gap-4 sm:grid-cols-3">
                     <flux:field>
                         <flux:label badge="Optional">Custom domain</flux:label>
                         <flux:input wire:model="domain" placeholder="www.example.com" />
@@ -286,7 +286,7 @@
                         </flux:select>
                         <flux:error name="dnsProvider" />
                     </flux:field>
-                </div>
+                </fieldset>
             </x-ui.card>
         </section>
 
@@ -301,7 +301,7 @@
             <p class="pk-section-help">Service keys for analytics, DNS, mail providers, and form automation.</p>
 
             <x-ui.card>
-                <div class="grid gap-4 lg:grid-cols-2">
+                <fieldset @disabled($sourceCheckStatus !== 'ready') class="grid gap-4 lg:grid-cols-2">
                     <flux:field>
                         <flux:label badge="Optional">Google Analytics measurement ID</flux:label>
                         <flux:input wire:model="gaPropertyId" placeholder="G-XXXXXXXXXX" class="font-mono" />
@@ -322,7 +322,7 @@
                         <flux:input wire:model="smtpHost" placeholder="smtp.example.com" class="font-mono" />
                         <flux:error name="smtpHost" />
                     </flux:field>
-                </div>
+                </fieldset>
             </x-ui.card>
         </section>
 

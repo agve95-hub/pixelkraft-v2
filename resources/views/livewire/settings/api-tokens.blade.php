@@ -33,9 +33,9 @@
                             value="{{ $ability }}"
                             class="mt-0.5 shrink-0 accent-violet-500"
                         >
-                        <div>
-                            <p class="text-xs font-medium text-zinc-200">{{ $label }}</p>
-                            <p class="text-[10px] font-mono text-zinc-500">{{ $ability }}</p>
+                        <div class="min-w-0">
+                            <p class="text-xs font-medium leading-snug text-zinc-200">{{ $label }}</p>
+                            <p class="truncate text-[10px] font-mono text-zinc-500">{{ $ability }}</p>
                         </div>
                     </label>
                 @endforeach

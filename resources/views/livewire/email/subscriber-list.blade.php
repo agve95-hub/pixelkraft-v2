@@ -28,7 +28,7 @@
                     <flux:label>Name</flux:label>
                     <flux:input wire:model="newName" placeholder="Optional" />
                 </flux:field>
-                <flux:button type="submit" variant="primary" size="sm">Add</flux:button>
+                <flux:button type="submit" variant="primary" size="sm" class="shrink-0">Add</flux:button>
             </form>
         </x-ui.card>
     @endif

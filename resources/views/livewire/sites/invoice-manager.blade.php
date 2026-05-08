@@ -29,7 +29,7 @@
             </div>
             <div class="stat">
                 <p class="stat-label">Paid</p>
-                <p class="stat-val" style="color:var(--pk-accent)">{{ $fmt($totalPaidAmount, $symAll) }}</p>
+                <p class="stat-val text-emerald-400">{{ $fmt($totalPaidAmount, $symAll) }}</p>
                 <p class="stat-note">{{ $paidInvoices->count() }} {{ Str::plural('invoice', $paidInvoices->count()) }}</p>
             </div>
             <div class="stat">
@@ -106,11 +106,11 @@
 
             <div class="grid gap-6 sm:grid-cols-2">
                 <flux:field>
-                    <flux:label>From <span class="font-normal text-zinc-500">(your business)</span></flux:label>
+                    <flux:label><span class="inline-flex items-baseline gap-1.5">From <span class="text-xs font-normal text-zinc-500">(your business)</span></span></flux:label>
                     <flux:textarea wire:model="form_from_address" rows="4" class="font-sans" />
                 </flux:field>
                 <flux:field>
-                    <flux:label>Bill to <span class="font-normal text-zinc-500">(client)</span></flux:label>
+                    <flux:label><span class="inline-flex items-baseline gap-1.5">Bill to <span class="text-xs font-normal text-zinc-500">(client)</span></span></flux:label>
                     <flux:textarea wire:model="form_bill_to" rows="4" class="font-sans" />
                 </flux:field>
             </div>
@@ -247,12 +247,12 @@
             <div class="h-px bg-zinc-800/80"></div>
 
             <flux:field>
-                <flux:label>Payment details <span class="font-normal text-zinc-500">Shown on invoice</span></flux:label>
+                <flux:label><span class="inline-flex items-baseline gap-1.5">Payment details <span class="text-xs font-normal text-zinc-500">Shown on invoice</span></span></flux:label>
                 <flux:textarea wire:model="form_payment_details" rows="3" class="font-mono text-sm" />
             </flux:field>
 
             <flux:field>
-                <flux:label>Notes <span class="font-normal text-zinc-500">Optional — visible to client</span></flux:label>
+                <flux:label><span class="inline-flex items-baseline gap-1.5">Notes <span class="text-xs font-normal text-zinc-500">Optional — visible to client</span></span></flux:label>
                 <flux:textarea wire:model="form_notes" rows="3" />
             </flux:field>
 

@@ -28,7 +28,7 @@
                 <flux:error name="form_notes" />
             </flux:field>
             <div class="sm:col-span-2">
-                <flux:button type="submit" variant="primary" icon="plus">Add reminder</flux:button>
+                <flux:button type="submit" variant="subtle" icon="plus">Add reminder</flux:button>
             </div>
         </form>
     </x-ui.card>

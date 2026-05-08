@@ -61,7 +61,7 @@
                 <div class="empty">
                     <div class="empty-icon"><flux:icon name="clipboard-document" class="size-4" /></div>
                     <p>No reports yet</p>
-                    <button type="button" wire:click="startCreate" class="text-sm font-medium text-emerald-400 hover:text-emerald-300">Create the first report</button>
+                    <button type="button" wire:click="startCreate" class="text-sm font-medium text-primary hover:underline">Create the first report</button>
                 </div>
             @endforelse
         </div>
@@ -204,11 +204,18 @@
 
                 <div class="space-y-4">
                     @foreach ($form_sections as $sectionIndex => $section)
-                        <div wire:key="report-section-{{ $sectionIndex }}" class="rounded-lg border border-zinc-800/80 p-3">
+                        <div wire:key="report-section-{{ $sectionIndex }}" class="rounded-lg border border-zinc-800/70 bg-zinc-800/35 p-4">
                             <div class="grid gap-3 md:grid-cols-[140px_1fr_auto] md:items-end">
                                 <flux:field>
                                     <flux:label>Type</flux:label>
-                                    <flux:input wire:model="form_sections.{{ $sectionIndex }}.type" placeholder="seo" />
+                                    <flux:select wire:model="form_sections.{{ $sectionIndex }}.type">
+                                        <flux:select.option value="development">Development</flux:select.option>
+                                        <flux:select.option value="deployment">Deployment</flux:select.option>
+                                        <flux:select.option value="seo">SEO</flux:select.option>
+                                        <flux:select.option value="design">Design</flux:select.option>
+                                        <flux:select.option value="content">Content</flux:select.option>
+                                        <flux:select.option value="general">General</flux:select.option>
+                                    </flux:select>
                                 </flux:field>
                                 <flux:field>
                                     <flux:label>Section title</flux:label>

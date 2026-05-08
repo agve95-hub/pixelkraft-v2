@@ -67,8 +67,8 @@ class SendCampaigns extends Command
             return;
         }
 
-        $fromEmail = config('mail.from.address', 'noreply@'.($campaign->site?->domain ?? 'localhost'));
-        $fromName = $campaign->site?->name ?? config('mail.from.name', 'pixelkraft');
+        $fromEmail = config('mail.from.address', 'noreply@'.($campaign->site->domain ?? 'localhost'));
+        $fromName = $campaign->site->name ?? config('mail.from.name', 'pixelkraft');
         $sent = 0;
         $failed = 0;
 

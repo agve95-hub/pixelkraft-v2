@@ -287,7 +287,7 @@
             </x-ui.card-header>
             <x-ui.card-description>Permanently delete this site and all associated data.</x-ui.card-description>
             <div class="mt-4" x-data="{ confirm: false }">
-                <x-ui.button type="button" x-show="!confirm" x-on:click="confirm = true" variant="outline" size="sm" class="border-red-500/30 text-red-400 hover:bg-red-500/10">Delete site</x-ui.button>
+                <x-ui.button type="button" x-show="!confirm" x-on:click="confirm = true" variant="destructive" size="sm">Delete site</x-ui.button>
                 <div x-show="confirm" x-cloak class="flex flex-wrap items-center gap-3">
                     <p class="text-xs text-red-400">Are you sure? This cannot be undone.</p>
                     <x-ui.button type="button" wire:click="deleteSite" variant="destructive" size="sm">Yes, delete</x-ui.button>
