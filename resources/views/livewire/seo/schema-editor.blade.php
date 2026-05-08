@@ -13,10 +13,10 @@
 
         <div class="mb-4 flex flex-wrap items-center gap-2">
             <span class="text-[11px] uppercase tracking-wider text-zinc-500">Presets</span>
-            <flux:button wire:click="usePreset('article')" variant="ghost" size="sm" @disabled(!$schemaEditingSupported)>Article</flux:button>
-            <flux:button wire:click="usePreset('product')" variant="ghost" size="sm" @disabled(!$schemaEditingSupported)>Product</flux:button>
-            <flux:button wire:click="usePreset('local_business')" variant="ghost" size="sm" @disabled(!$schemaEditingSupported)>Local Business</flux:button>
-            <flux:button wire:click="usePreset('faq')" variant="ghost" size="sm" @disabled(!$schemaEditingSupported)>FAQ</flux:button>
+            <flux:button wire:click="usePreset('article')" variant="ghost" size="sm" :disabled="!$schemaEditingSupported">Article</flux:button>
+            <flux:button wire:click="usePreset('product')" variant="ghost" size="sm" :disabled="!$schemaEditingSupported">Product</flux:button>
+            <flux:button wire:click="usePreset('local_business')" variant="ghost" size="sm" :disabled="!$schemaEditingSupported">Local Business</flux:button>
+            <flux:button wire:click="usePreset('faq')" variant="ghost" size="sm" :disabled="!$schemaEditingSupported">FAQ</flux:button>
         </div>
 
         <flux:textarea wire:model="schemaJson" rows="16" class="font-mono text-sm" spellcheck="false"
@@ -29,7 +29,7 @@
         <flux:error name="schemaJson" />
 
         <div class="mt-4 flex items-center gap-3">
-            <flux:button wire:click="save" variant="primary" @disabled(!$schemaEditingSupported)>Save &amp; Push</flux:button>
+            <flux:button wire:click="save" variant="primary" :disabled="!$schemaEditingSupported">Save &amp; Push</flux:button>
         </div>
 
         <p class="mt-2 text-[10px] text-zinc-600">

@@ -8,7 +8,7 @@
         </flux:select>
 
         @unless ($showEditor)
-            <flux:button wire:click="create" variant="primary" size="sm" icon="plus" @disabled(!$siteId)>New Campaign</flux:button>
+            <flux:button wire:click="create" variant="primary" size="sm" icon="plus" :disabled="!$siteId">New Campaign</flux:button>
         @endunless
     </div>
 
