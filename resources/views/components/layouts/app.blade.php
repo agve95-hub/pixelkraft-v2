@@ -59,7 +59,7 @@
                         {{ $navSite->name }}
                     </flux:sidebar.item>
                     @if ($siteSectionOpen)
-                        <div class="ml-6 flex flex-col gap-0.5 border-l border-zinc-600/90 pl-2">
+                        <div class="pk-site-subnav ml-6 flex flex-col gap-2 border-l border-zinc-600/90 pl-3 pt-2 pb-2">
                             <flux:sidebar.item
                                 icon="document-duplicate"
                                 href="{{ route('sites.pages', $navSite) }}"
