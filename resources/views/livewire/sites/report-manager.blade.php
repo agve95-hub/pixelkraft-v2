@@ -103,9 +103,9 @@
             <x-ui.card-header>
                 <p class="pk-ui-card-title">Summary</p>
                 <p class="font-mono text-xs text-zinc-500">{{ count($sections) }} sections</p>
-            </div>
+            </x-ui.card-header>
             <p class="whitespace-pre-wrap text-sm leading-6 text-zinc-300">{{ $activeReport->summary ?: 'No summary was added.' }}</p>
-        </section>
+        </x-ui.card>
 
         <div class="grid gap-4 lg:grid-cols-3">
             <div class="space-y-4 lg:col-span-2">
@@ -114,7 +114,7 @@
                         <x-ui.card-header>
                             <p class="pk-ui-card-title">{{ $section['title'] ?? 'Section' }}</p>
                             <span class="tag">{{ $section['type'] ?? 'general' }}</span>
-                        </div>
+                        </x-ui.card-header>
                         <ul class="space-y-2 text-sm text-zinc-300">
                             @forelse (($section['items'] ?? []) as $item)
                                 <li class="flex gap-2">
@@ -125,7 +125,7 @@
                                 <li class="text-zinc-500">No items in this section.</li>
                             @endforelse
                         </ul>
-                    </section>
+                    </x-ui.card>
                 @empty
                     <section class="empty rounded-xl border border-zinc-800">
                         <div class="empty-icon"><flux:icon name="list-bullet" class="size-4" /></div>
@@ -137,7 +137,7 @@
             <x-ui.card>
                 <x-ui.card-header>
                     <p class="pk-ui-card-title">Next steps</p>
-                </div>
+                </x-ui.card-header>
                 <ul class="space-y-2 text-sm text-zinc-300">
                     @forelse ($nextSteps as $step)
                         <li class="flex gap-2">
@@ -148,7 +148,7 @@
                         <li class="text-zinc-500">No next steps recorded.</li>
                     @endforelse
                 </ul>
-            </section>
+            </x-ui.card>
         </div>
     @endif
 
@@ -194,13 +194,13 @@
                         <flux:error name="form_summary" />
                     </flux:field>
                 </div>
-            </section>
+            </x-ui.card>
 
             <x-ui.card>
                 <x-ui.card-header>
                     <p class="pk-ui-card-title">Sections</p>
                     <flux:button type="button" wire:click="addSection" size="sm" variant="subtle">Add section</flux:button>
-                </div>
+                </x-ui.card-header>
 
                 <div class="space-y-4">
                     @foreach ($form_sections as $sectionIndex => $section)
@@ -229,13 +229,13 @@
                         </div>
                     @endforeach
                 </div>
-            </section>
+            </x-ui.card>
 
             <x-ui.card>
                 <x-ui.card-header>
                     <p class="pk-ui-card-title">Next steps</p>
                     <flux:button type="button" wire:click="addNextStep" size="sm" variant="subtle">Add step</flux:button>
-                </div>
+                </x-ui.card-header>
                 <div class="space-y-2">
                     @foreach ($form_next_steps as $index => $step)
                         <div wire:key="report-step-{{ $index }}" class="grid gap-2 md:grid-cols-[1fr_auto]">
@@ -244,7 +244,7 @@
                         </div>
                     @endforeach
                 </div>
-            </section>
+            </x-ui.card>
 
             <div class="flex justify-end gap-2">
                 <flux:button type="button" wire:click="cancelCreate" variant="subtle">Cancel</flux:button>

@@ -21,19 +21,19 @@
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 @if ($site->domain && ! $site->nginx_conf_path)
-                    <flux:button type="button" wire:click="setupDomain" wire:target="setupDomain" wire:loading.attr="disabled" variant="outline" size="sm" icon="globe-alt">
+                    <x-ui.button type="button" wire:click="setupDomain" wire:target="setupDomain" wire:loading.attr="disabled" variant="outline" size="sm" icon="globe-alt">
                         <span wire:loading.remove wire:target="setupDomain">Setup domain &amp; SSL</span>
                         <span wire:loading wire:target="setupDomain">Setting up...</span>
-                    </flux:button>
+                    </x-ui.button>
                 @endif
-                <flux:button type="button" wire:click="deploy" wire:target="deploy" wire:loading.attr="disabled" @disabled($isDeploying) variant="primary" size="sm" icon="bolt">
+                <x-ui.button type="button" wire:click="deploy" wire:target="deploy" wire:loading.attr="disabled" :disabled="$isDeploying" variant="primary" size="sm" icon="bolt">
                     @if ($isDeploying)
                         {{ $statusLabel }}...
                     @else
                         <span wire:loading.remove wire:target="deploy">Deploy now</span>
                         <span wire:loading wire:target="deploy">Starting...</span>
                     @endif
-                </flux:button>
+                </x-ui.button>
             </div>
         </x-ui.card-header>
 

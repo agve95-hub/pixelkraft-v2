@@ -987,9 +987,10 @@ class VisualEditor extends Component
             return;
         }
 
-        // Kick off the build silently
-        DeploySiteJob::dispatch($site->fresh(), 'preview-build');
-        $this->previewBuildQueued = true;
+        // Kick off the build silently.
+        if (app(DeployDispatcher::class)->dispatch($site->fresh(), 'preview-build')) {
+            $this->previewBuildQueued = true;
+        }
     }
 
     private function resetDebugTelemetry(): void

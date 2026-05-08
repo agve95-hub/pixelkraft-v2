@@ -6,6 +6,7 @@ use App\Models\Notification;
 use App\Models\Site;
 use App\Models\WebhookDelivery;
 use App\Services\GitConflictException;
+use App\Services\DeployDispatcher;
 use App\Services\GitSyncService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -56,8 +57,11 @@ class SyncFromWebhookJob implements ShouldQueue
             ParseSiteJob::dispatch($this->site);
 
             if ($this->site->deploy_on_webhook) {
-                DeploySiteJob::dispatch($this->site, 'webhook');
-                Log::info("SyncFromWebhookJob: dispatched deploy for [{$this->site->slug}]");
+                if (app(DeployDispatcher::class)->dispatch($this->site, 'webhook')) {
+                    Log::info("SyncFromWebhookJob: dispatched deploy for [{$this->site->slug}]");
+                } else {
+                    Log::info("SyncFromWebhookJob: deploy already active for [{$this->site->slug}]");
+                }
             }
 
             $this->markDeliveryProcessed('processed');

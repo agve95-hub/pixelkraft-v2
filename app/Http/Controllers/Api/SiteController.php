@@ -44,7 +44,7 @@ class SiteController extends Controller
             return response()->json([
                 'error' => 'conflict',
                 'message' => 'A deploy is currently in progress. Sync will run automatically once the deploy completes.',
-                'current_status' => $site->deploy_status->value,
+                'current_status' => $site->fresh()->deploy_status?->value,
             ], 409);
         }
 
@@ -71,7 +71,7 @@ class SiteController extends Controller
             return response()->json([
                 'error' => 'conflict',
                 'message' => 'A deploy is already in progress for this site.',
-                'current_status' => $site->deploy_status->value,
+                'current_status' => $site->fresh()->deploy_status?->value,
             ], 409);
         }
 

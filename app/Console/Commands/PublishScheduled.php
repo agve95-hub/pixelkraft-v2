@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Enums\BlogPostStatus;
-use App\Jobs\DeploySiteJob;
 use App\Models\BlogPost;
 use App\Services\BlogPostPublisher;
+use App\Services\DeployDispatcher;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -15,7 +15,7 @@ class PublishScheduled extends Command
 
     protected $description = 'Publish blog posts that are scheduled for the current time';
 
-    public function handle(BlogPostPublisher $publisher): int
+    public function handle(BlogPostPublisher $publisher, DeployDispatcher $deploys): int
     {
         $posts = BlogPost::where('status', 'scheduled')
             ->whereNotNull('scheduled_at')
@@ -61,8 +61,11 @@ class PublishScheduled extends Command
         }
 
         foreach ($sitesToDeploy as $site) {
-            DeploySiteJob::dispatch($site, 'schedule');
-            $this->info("Deploy triggered for: {$site->name}");
+            if ($deploys->dispatch($site, 'schedule')) {
+                $this->info("Deploy triggered for: {$site->name}");
+            } else {
+                $this->warn("Deploy already in progress for: {$site->name}");
+            }
         }
 
         $this->info("Processed {$posts->count()} scheduled post(s), triggered {$sitesToDeploy->count()} deploy(s).");

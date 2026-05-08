@@ -70,6 +70,7 @@ class LivewireComponentsTest extends TestCase
             ->call('deploy');
 
         Queue::assertPushed(DeploySiteJob::class);
+        $this->assertSame(DeployStatus::Queued, $site->fresh()->deploy_status);
     }
 
     public function test_deploy_controls_blocks_when_already_deploying(): void

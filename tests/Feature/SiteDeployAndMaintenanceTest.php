@@ -56,7 +56,7 @@ class SiteDeployAndMaintenanceTest extends TestCase
         });
     }
 
-    public function test_deploy_sets_status_to_deploying(): void
+    public function test_deploy_sets_status_to_queued_immediately(): void
     {
         Queue::fake();
 
@@ -66,7 +66,22 @@ class SiteDeployAndMaintenanceTest extends TestCase
         $this->actingAs($user)
             ->post(route('sites.deploy', $site));
 
-        $this->assertSame(DeployStatus::Deploying, $site->fresh()->deploy_status);
+        $this->assertSame(DeployStatus::Queued, $site->fresh()->deploy_status);
+    }
+
+    public function test_deploy_does_not_dispatch_when_already_queued(): void
+    {
+        Queue::fake();
+
+        $user = $this->makeUser();
+        $site = $this->makeSite($user, DeployStatus::Queued);
+
+        $this->actingAs($user)
+            ->post(route('sites.deploy', $site))
+            ->assertRedirect();
+
+        Queue::assertNothingPushed();
+        $this->assertSame(DeployStatus::Queued, $site->fresh()->deploy_status);
     }
 
     public function test_other_user_cannot_deploy_site(): void

@@ -31,7 +31,7 @@ enum DeployStatus: string
 
     public function isActive(): bool
     {
-        return in_array($this, [self::Building, self::Deploying, self::Queued], true);
+        return in_array($this, [self::Queued, self::Cloning, self::Parsing, self::Building, self::Deploying], true);
     }
 
     /** @return list<self> */

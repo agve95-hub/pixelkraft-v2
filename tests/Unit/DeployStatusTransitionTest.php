@@ -65,6 +65,17 @@ class DeployStatusTransitionTest extends TestCase
         $this->assertFalse(DeployStatus::Idle->canTransitionTo(DeployStatus::Failed));
     }
 
+    public function test_active_pipeline_states_are_marked_active(): void
+    {
+        foreach ([DeployStatus::Queued, DeployStatus::Cloning, DeployStatus::Parsing, DeployStatus::Building, DeployStatus::Deploying] as $status) {
+            $this->assertTrue($status->isActive(), "Expected [{$status->value}] to be active");
+        }
+
+        foreach ([DeployStatus::Draft, DeployStatus::Idle, DeployStatus::Live, DeployStatus::Failed] as $status) {
+            $this->assertFalse($status->isActive(), "Expected [{$status->value}] to be inactive");
+        }
+    }
+
     public function test_building_cannot_skip_to_live(): void
     {
         $this->assertFalse(DeployStatus::Building->canTransitionTo(DeployStatus::Live));
