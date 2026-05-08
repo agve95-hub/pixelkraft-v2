@@ -439,7 +439,6 @@ class Site extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(SiteInboxMessage::class)
-            ->orderByDesc('message_at')
             ->orderByDesc('created_at');
     }
 

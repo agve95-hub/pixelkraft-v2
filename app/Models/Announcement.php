@@ -76,7 +76,7 @@ class Announcement extends Model
     public function isActive(): bool
     {
         return $this->is_enabled
-            && $this->starts_at->lte(now())
-            && $this->ends_at->gte(now());
+            && $this->starts_at?->lte(now())
+            && $this->ends_at?->gte(now());
     }
 }
