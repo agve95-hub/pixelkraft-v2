@@ -165,12 +165,15 @@ class MiscRoutesTest extends TestCase
     {
         $user = $this->makeUser();
         $site = $this->makeSite($user);
-        $site->update(['maintenance_settings' => [
-            'enabled' => true,
-            'title' => '<script>alert("xss")</script>',
-            'message' => 'Back soon',
-            'allowed_ips' => [],
-        ]]);
+        $site->update([
+            'name' => '<img src=x onerror=alert(1)>',
+            'maintenance_settings' => [
+                'enabled' => true,
+                'title' => '<script>alert("xss")</script>',
+                'message' => 'Back soon',
+                'allowed_ips' => [],
+            ],
+        ]);
 
         $response = $this->actingAs($user)
             ->get(route('sites.maintenance.preview', $site))
@@ -178,7 +181,9 @@ class MiscRoutesTest extends TestCase
 
         // The title should be HTML-escaped, not injected as raw script
         $this->assertStringNotContainsString('<script>alert', $response->content());
+        $this->assertStringNotContainsString('<img src=x', $response->content());
         $this->assertStringContainsString('&lt;script&gt;', $response->content());
+        $this->assertStringContainsString('&lt;img src=x', $response->content());
     }
 
     // ── System diagnostics (admin only) ───────────

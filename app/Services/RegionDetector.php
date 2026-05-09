@@ -126,8 +126,8 @@ class RegionDetector
 
             $markerId = $region['marker_id'];
             $type = $region['region_type'] ?? 'text';
-            $openMarker = "<!-- pk:editable:start:{$markerId} type=\"{$type}\" -->";
-            $closeMarker = "<!-- pk:editable:end:{$markerId} -->";
+            $openMarker = "<!-- ui:editable:start:{$markerId} type=\"{$type}\" -->";
+            $closeMarker = "<!-- ui:editable:end:{$markerId} -->";
 
             // Try to find the element by its selector and wrap it
             $html = $this->wrapElementWithMarker($html, $region, $openMarker, $closeMarker);

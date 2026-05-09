@@ -69,18 +69,18 @@ class PreviewOverlayService
                 continue;
             }
 
-            $existingRegionId = $node->getAttribute('data-pk-region-id');
+            $existingRegionId = $node->getAttribute('data-ui-region-id');
             if ($existingRegionId !== '' && $existingRegionId !== $region->id) {
                 continue;
             }
 
-            $node->setAttribute('data-pk-region', '');
-            $node->setAttribute('data-pk-region-id', (string) $region->id);
-            $node->setAttribute('data-pk-node-id', $this->temporaryNodeId($region, $index));
-            $node->setAttribute('data-pk-region-type', (string) $region->region_type);
-            $node->setAttribute('data-pk-editable', $this->isVisualEditable($region) ? 'true' : 'false');
-            $node->setAttribute('data-pk-region-role', $this->isVisualEditable($region) ? 'editable' : 'code');
-            $node->setAttribute('data-pk-region-label', $this->regionLabel($region));
+            $node->setAttribute('data-ui-region', '');
+            $node->setAttribute('data-ui-region-id', (string) $region->id);
+            $node->setAttribute('data-ui-node-id', $this->temporaryNodeId($region, $index));
+            $node->setAttribute('data-ui-region-type', (string) $region->region_type);
+            $node->setAttribute('data-ui-editable', $this->isVisualEditable($region) ? 'true' : 'false');
+            $node->setAttribute('data-ui-region-role', $this->isVisualEditable($region) ? 'editable' : 'code');
+            $node->setAttribute('data-ui-region-label', $this->regionLabel($region));
 
             $index++;
         }
@@ -231,17 +231,17 @@ class PreviewOverlayService
     {
         $html = $document->getElementsByTagName('html')->item(0);
         if ($html instanceof DOMElement) {
-            $html->setAttribute('data-pk-preview', 'editor');
-            $html->setAttribute('data-pk-site-id', (string) $site->id);
-            $html->setAttribute('data-pk-page-id', (string) $page->id);
+            $html->setAttribute('data-ui-preview', 'editor');
+            $html->setAttribute('data-ui-site-id', (string) $site->id);
+            $html->setAttribute('data-ui-page-id', (string) $page->id);
             // Overlays on by default — JS toggleBorders() can flip this at runtime.
-            $html->setAttribute('data-pk-borders', 'on');
+            $html->setAttribute('data-ui-borders', 'on');
         }
 
         $body = $document->getElementsByTagName('body')->item(0);
         if ($body instanceof DOMElement) {
-            $body->setAttribute('data-pk-preview-mode', 'editor');
-            $body->setAttribute('data-pk-page-path', (string) ($page->url_path ?: '/'));
+            $body->setAttribute('data-ui-preview-mode', 'editor');
+            $body->setAttribute('data-ui-page-path', (string) ($page->url_path ?: '/'));
         }
 
         $head = $document->getElementsByTagName('head')->item(0);
@@ -250,13 +250,13 @@ class PreviewOverlayService
             return;
         }
 
-        if ($document->getElementById('pk-preview-meta')) {
+        if ($document->getElementById('ui-preview-meta')) {
             return;
         }
 
         $meta = $document->createElement('meta');
-        $meta->setAttribute('id', 'pk-preview-meta');
-        $meta->setAttribute('name', 'pixelkraft-preview');
+        $meta->setAttribute('id', 'ui-preview-meta');
+        $meta->setAttribute('name', 'platform-preview');
         $meta->setAttribute('content', 'editor');
 
         $head->appendChild($meta);
@@ -293,6 +293,6 @@ class PreviewOverlayService
 
     private function temporaryNodeId(EditableRegion $region, int $index): string
     {
-        return 'pk-node-'.Str::slug((string) $region->id, '-').'-'.$index;
+        return 'ui-node-'.Str::slug((string) $region->id, '-').'-'.$index;
     }
 }

@@ -86,7 +86,7 @@ class HtmlMinifier
                 function ($match) use (&$preserved, &$index) {
                     // Use a non-HTML-comment placeholder so the comment-removal
                     // step below cannot accidentally strip preserved content.
-                    $placeholder = "\x00PKPRESERVE_{$index}\x00";
+                    $placeholder = "\x00HTMLPRESERVE_{$index}\x00";
                     $preserved[$placeholder] = $match[0];
                     $index++;
 

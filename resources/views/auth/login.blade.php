@@ -1,5 +1,5 @@
 <x-layouts.auth>
-    <x-slot:title>Sign in — pixelkraft</x-slot:title>
+    <x-slot:title>Sign in - Universal Tool</x-slot:title>
     <x-slot:subtitle>Sign in to your dashboard</x-slot:subtitle>
 
     <form method="POST" action="{{ route('login') }}" class="space-y-6">

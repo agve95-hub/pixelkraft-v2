@@ -2,13 +2,13 @@
     <x-slot:title>Blog — {{ $site->name }}</x-slot:title>
 
     <div class="space-y-5">
-        <div class="pk-page-head">
+        <div class="ui-page-head">
             <div>
                 <a href="{{ route('sites.show', $site) }}" class="back-link">
                     <flux:icon name="chevron-left" class="size-3.5" /> {{ $site->name }}
                 </a>
-                <h1 class="pk-page-title">Blog</h1>
-                <p class="pk-page-sub">Draft, schedule, and publish posts for {{ $site->name }}.</p>
+                <h1 class="ui-page-title">Blog</h1>
+                <p class="ui-page-sub">Draft, schedule, and publish posts for {{ $site->name }}.</p>
             </div>
             <x-ui.button href="{{ route('blog.create', $site) }}" icon="plus" size="sm">New Post</x-ui.button>
         </div>

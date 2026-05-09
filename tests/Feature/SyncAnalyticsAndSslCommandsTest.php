@@ -37,14 +37,14 @@ class SyncAnalyticsAndSslCommandsTest extends TestCase
         ]);
     }
 
-    // ── pixelkraft:sync-analytics ─────────────────
+    // ── platform:sync-analytics ─────────────────
 
     public function test_sync_analytics_command_calls_aggregator_and_succeeds(): void
     {
         $aggregator = $this->mock(AnalyticsAggregator::class);
         $aggregator->shouldReceive('syncAll')->once()->andReturn(5);
 
-        $this->artisan('pixelkraft:sync-analytics')
+        $this->artisan('platform:sync-analytics')
             ->assertSuccessful()
             ->expectsOutputToContain('5 write operations');
     }
@@ -54,19 +54,19 @@ class SyncAnalyticsAndSslCommandsTest extends TestCase
         $aggregator = $this->mock(AnalyticsAggregator::class);
         $aggregator->shouldReceive('syncAll')->andReturn(0);
 
-        $this->artisan('pixelkraft:sync-analytics')
+        $this->artisan('platform:sync-analytics')
             ->assertSuccessful()
             ->expectsOutputToContain('Analytics sync completed');
     }
 
-    // ── pixelkraft:check-ssl ──────────────────────
+    // ── platform:check-ssl ──────────────────────
 
     public function test_check_ssl_command_calls_ssl_service_and_succeeds(): void
     {
         $ssl = $this->mock(SslService::class);
         $ssl->shouldReceive('checkAllCertificates')->once()->andReturn(0);
 
-        $this->artisan('pixelkraft:check-ssl')->assertSuccessful();
+        $this->artisan('platform:check-ssl')->assertSuccessful();
     }
 
     public function test_check_ssl_outputs_alert_count(): void
@@ -74,7 +74,7 @@ class SyncAnalyticsAndSslCommandsTest extends TestCase
         $ssl = $this->mock(SslService::class);
         $ssl->shouldReceive('checkAllCertificates')->andReturn(3);
 
-        $this->artisan('pixelkraft:check-ssl')
+        $this->artisan('platform:check-ssl')
             ->assertSuccessful()
             ->expectsOutputToContain('3 alerts');
     }

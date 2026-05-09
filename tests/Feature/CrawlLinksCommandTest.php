@@ -50,7 +50,7 @@ class CrawlLinksCommandTest extends TestCase
         $crawler = $this->mock(BrokenLinkCrawler::class);
         $crawler->shouldReceive('crawl')->once()->andReturn($this->crawlResult());
 
-        $this->artisan('pixelkraft:crawl-links')->assertSuccessful();
+        $this->artisan('platform:crawl-links')->assertSuccessful();
     }
 
     public function test_skips_inactive_sites(): void
@@ -61,7 +61,7 @@ class CrawlLinksCommandTest extends TestCase
         $crawler = $this->mock(BrokenLinkCrawler::class);
         $crawler->shouldReceive('crawl')->never();
 
-        $this->artisan('pixelkraft:crawl-links')->assertSuccessful();
+        $this->artisan('platform:crawl-links')->assertSuccessful();
     }
 
     public function test_skips_sites_without_domain(): void
@@ -72,7 +72,7 @@ class CrawlLinksCommandTest extends TestCase
         $crawler = $this->mock(BrokenLinkCrawler::class);
         $crawler->shouldReceive('crawl')->never();
 
-        $this->artisan('pixelkraft:crawl-links')->assertSuccessful();
+        $this->artisan('platform:crawl-links')->assertSuccessful();
     }
 
     public function test_filters_by_site_slug(): void
@@ -87,7 +87,7 @@ class CrawlLinksCommandTest extends TestCase
             ->with(\Mockery::on(fn ($s) => $s->id === $target->id))
             ->andReturn($this->crawlResult());
 
-        $this->artisan('pixelkraft:crawl-links', ['--site' => 'cl-target'])->assertSuccessful();
+        $this->artisan('platform:crawl-links', ['--site' => 'cl-target'])->assertSuccessful();
     }
 
     public function test_outputs_link_counts(): void
@@ -102,7 +102,7 @@ class CrawlLinksCommandTest extends TestCase
             redirects: ['/old'],
         ));
 
-        $this->artisan('pixelkraft:crawl-links')
+        $this->artisan('platform:crawl-links')
             ->expectsOutputToContain('Links: 25')
             ->assertSuccessful();
     }
@@ -116,6 +116,6 @@ class CrawlLinksCommandTest extends TestCase
         $crawler = $this->mock(BrokenLinkCrawler::class);
         $crawler->shouldReceive('crawl')->twice()->andReturn($this->crawlResult());
 
-        $this->artisan('pixelkraft:crawl-links')->assertSuccessful();
+        $this->artisan('platform:crawl-links')->assertSuccessful();
     }
 }

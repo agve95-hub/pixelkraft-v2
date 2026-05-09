@@ -1,7 +1,6 @@
 {{--
-    Pixelkraft dashboard mockup → existing Livewire + Alpine iframe editor.
-    Layout and chrome follow https://dashboard.pixelkraft.pro/ ; persistence still flows
-    through VisualEditor (Git save, regions, preview iframe) — we did not add a parallel SPA.
+    Editor workspace powered by the existing Livewire + Alpine iframe editor.
+    Persistence flows through VisualEditor for Git save, regions, and preview iframe state.
 --}}
 <div
     class="flex h-screen min-h-0 flex-col bg-zinc-950 text-zinc-100"
@@ -15,7 +14,7 @@
     x-on:mouseout.capture="onLayerRowOut($event)"
     x-on:click.capture="onLayerRowClick($event)"
 >
-    {{-- Row 1: developer / git signals from mockup (mapped to edit session + admin flag) --}}
+    {{-- Row 1: developer / git signals mapped to edit session + admin flag. --}}
     <div class="flex flex-wrap items-center gap-2 border-b border-zinc-800/80 bg-zinc-900 px-3 py-1.5 text-[11px] text-zinc-400">
         <span class="rounded border border-zinc-700 bg-zinc-950 px-2 py-0.5 text-zinc-300">
             {{ auth()->user()?->isAdmin() ? 'Developer' : 'Editor' }}
@@ -29,8 +28,8 @@
             @endif
         @endif
         <span class="ml-auto hidden items-center gap-2 sm:flex">
-            <span class="flex size-6 items-center justify-center rounded-md bg-gradient-to-br from-emerald-400 to-cyan-500 text-[10px] font-bold text-black">P</span>
-            <span class="text-zinc-500">pixelkraft</span>
+            <span class="flex size-6 items-center justify-center rounded-md bg-gradient-to-br from-emerald-400 to-cyan-500 text-[10px] font-bold text-black">U</span>
+            <span class="text-zinc-500">Universal Tool</span>
         </span>
     </div>
 
@@ -183,7 +182,7 @@
 
     <div class="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         @if ($mode === 'visual')
-            {{-- Left rail: mockup tabs; region list stays Livewire for real layer sync --}}
+            {{-- Left rail: editor tabs; region list stays Livewire for real layer sync. --}}
             <aside
                 class="flex h-auto max-h-[40vh] w-full shrink-0 flex-col border-b border-zinc-800 bg-zinc-900 lg:h-full lg:max-h-none lg:w-[17rem] lg:border-b-0 lg:border-r"
                 x-data="{ leftTab: 'layers' }"
@@ -455,7 +454,7 @@
                             <div x-show="propsOpen.attributes" x-cloak class="border-t border-zinc-800 bg-zinc-950/40 px-3 py-3">
                                 @if ($selectedRegion)
                                     <div class="space-y-1.5">
-                                        <p class="font-mono text-[10px] text-zinc-500">data-pk-region-id="{{ $selectedRegion->id }}"</p>
+                                        <p class="font-mono text-[10px] text-zinc-500">data-ui-region-id="{{ $selectedRegion->id }}"</p>
                                     </div>
                                 @else
                                     <p class="text-[11px] text-zinc-600">Select an element to view its attributes.</p>
@@ -551,10 +550,10 @@
                             <p class="mt-2 text-[12px] text-zinc-500">Cross-origin iframe: computed styles are not surfaced here. Use browser devtools on preview.</p>
                         </div>
                         <div class="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
-                            <p class="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">data-pk attributes</p>
+                            <p class="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">data-ui attributes</p>
                             <p class="mt-2 font-mono text-[11px] text-zinc-400">
                                 @if ($selectedRegion)
-                                    data-pk-region-id="{{ $selectedRegion->id }}"
+                                    data-ui-region-id="{{ $selectedRegion->id }}"
                                 @else
                                     —
                                 @endif
@@ -616,7 +615,7 @@
                         <input type="checkbox" wire:model.live="deployAfterSave" class="mt-0.5 h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-violet-500 focus:ring-violet-500">
                         <span>
                             Auto-deploy after push
-                            <span class="block text-[11px] text-zinc-500">Matches mockup “Publish” speed; turn off for draft-only pushes.</span>
+                            <span class="block text-[11px] text-zinc-500">Deploys immediately after push; turn off for draft-only pushes.</span>
                         </span>
                     </label>
                     <div class="flex items-center gap-3">
@@ -706,18 +705,18 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
 
         const element = this.lastRegionLookupMap[regionId]
-            || this.$refs.previewFrame?.contentDocument?.querySelector(`[data-pk-region-id="${regionId}"]`);
+            || this.$refs.previewFrame?.contentDocument?.querySelector(`[data-ui-region-id="${regionId}"]`);
         if (!this.isElementNode(element)) {
             return;
         }
 
         if (this.hoveredRegionElement && this.hoveredRegionElement !== element) {
-            this.hoveredRegionElement.removeAttribute('data-pk-hover');
+            this.hoveredRegionElement.removeAttribute('data-ui-hover');
         }
 
         this.hoveredRegionElement = element;
-        if (!element.hasAttribute('data-pk-selected') && element !== this.inlineEditingElement) {
-            element.setAttribute('data-pk-hover', '');
+        if (!element.hasAttribute('data-ui-selected') && element !== this.inlineEditingElement) {
+            element.setAttribute('data-ui-hover', '');
         }
         this.updateOverlayPosition(this.hoverOverlay, element);
         this.showTooltip(element);
@@ -831,44 +830,44 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return;
         }
 
-        if (!doc.documentElement.hasAttribute('data-pk-overlay-ready')) {
-            doc.documentElement.setAttribute('data-pk-overlay-ready', 'true');
+        if (!doc.documentElement.hasAttribute('data-ui-overlay-ready')) {
+            doc.documentElement.setAttribute('data-ui-overlay-ready', 'true');
 
             const style = doc.createElement('style');
             style.textContent = `
                 /* ── Base ─────────────────────────────────────────────────────────── */
 
-                [data-pk-region] {
+                [data-ui-region] {
                     transition: outline-color 120ms ease, background-color 120ms ease;
                 }
 
                 /* Cursor intent — always active regardless of border visibility */
-                html[data-pk-preview="editor"] [data-pk-region][data-pk-editable="true"] { cursor: text; }
-                html[data-pk-preview="editor"] [data-pk-region][data-pk-editable="false"] { cursor: not-allowed; }
+                html[data-ui-preview="editor"] [data-ui-region][data-ui-editable="true"] { cursor: text; }
+                html[data-ui-preview="editor"] [data-ui-region][data-ui-editable="false"] { cursor: not-allowed; }
 
-                /* ── Outlines (active when data-pk-borders="on") ─────────────────── */
+                /* ── Outlines (active when data-ui-borders="on") ─────────────────── */
                 /* Specificity: html[attr][attr] [attr] = (0,3,1), beats normal site CSS */
 
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region] {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region] {
                     outline: 1px solid rgba(99, 102, 241, 0.5);
                     outline-offset: 1px;
                 }
 
                 /* Type-coded colours (higher specificity overrides the base above) */
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-etype="text"]        { outline-color: rgba(34,  197, 94,  0.5); }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-etype="image"]       { outline-color: rgba(245, 158, 11,  0.5); }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-etype="interactive"] { outline-color: rgba(239, 68,  68,  0.5); }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-etype="container"]   { outline-color: rgba(139, 92,  246, 0.5); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-etype="text"]        { outline-color: rgba(34,  197, 94,  0.5); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-etype="image"]       { outline-color: rgba(245, 158, 11,  0.5); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-etype="interactive"] { outline-color: rgba(239, 68,  68,  0.5); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-etype="container"]   { outline-color: rgba(139, 92,  246, 0.5); }
 
                 /* Locked: dashed */
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-editable="false"] {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-editable="false"] {
                     outline: 1px dashed rgba(161, 161, 170, 0.6);
                     cursor: not-allowed;
                 }
 
                 /* Tag label pill */
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region]::before {
-                    content: attr(data-pk-region-tag);
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region]::before {
+                    content: attr(data-ui-region-tag);
                     position: absolute;
                     top: 0;
                     left: 0;
@@ -883,34 +882,34 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     z-index: 99997;
                     pointer-events: none;
                 }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-editable="true"]::before {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-editable="true"]::before {
                     color: #fdf2f8;
                     background: rgba(190, 24, 93, 0.95);
                 }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-editable="false"]::before {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-editable="false"]::before {
                     color: #ffedd5;
                     background: rgba(217, 119, 6, 0.95);
                 }
 
                 /* ── Hover ───────────────────────────────────────────────────────── */
 
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover] {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-hover] {
                     outline: 1px solid rgba(99, 102, 241, 1);
                     background: rgba(99, 102, 241, 0.05);
                 }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="text"]        { outline-color: rgba(34,  197, 94,  1); background: rgba(34,  197, 94,  0.05); }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="image"]       { outline-color: rgba(245, 158, 11,  1); background: rgba(245, 158, 11,  0.05); }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="interactive"] { outline-color: rgba(239, 68,  68,  1); background: rgba(239, 68,  68,  0.05); }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-etype="container"]   { outline-color: rgba(139, 92,  246, 1); background: rgba(139, 92,  246, 0.05); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-hover][data-ui-etype="text"]        { outline-color: rgba(34,  197, 94,  1); background: rgba(34,  197, 94,  0.05); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-hover][data-ui-etype="image"]       { outline-color: rgba(245, 158, 11,  1); background: rgba(245, 158, 11,  0.05); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-hover][data-ui-etype="interactive"] { outline-color: rgba(239, 68,  68,  1); background: rgba(239, 68,  68,  0.05); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-hover][data-ui-etype="container"]   { outline-color: rgba(139, 92,  246, 1); background: rgba(139, 92,  246, 0.05); }
 
                 /* Hover + editable (highest specificity wins over type colours) */
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="true"] {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-hover][data-ui-editable="true"] {
                     outline: 2px solid rgba(244, 114, 182, 0.98);
                     outline-offset: 2px;
                     background: rgba(244, 114, 182, 0.12);
                     box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.4), 0 0 0 1px rgba(244, 114, 182, 0.45);
                 }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-hover][data-pk-editable="false"] {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-hover][data-ui-editable="false"] {
                     outline: 3px solid rgba(245, 158, 11, 1);
                     outline-offset: 2px;
                     background: rgba(245, 158, 11, 0.2);
@@ -919,21 +918,21 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
 
                 /* ── Selected ────────────────────────────────────────────────────── */
 
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected] {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-selected] {
                     outline: 1px solid rgba(99, 102, 241, 1);
                 }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="text"]        { outline-color: rgba(34,  197, 94,  1); }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="image"]       { outline-color: rgba(245, 158, 11,  1); }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="interactive"] { outline-color: rgba(239, 68,  68,  1); }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-etype="container"]   { outline-color: rgba(139, 92,  246, 1); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-selected][data-ui-etype="text"]        { outline-color: rgba(34,  197, 94,  1); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-selected][data-ui-etype="image"]       { outline-color: rgba(245, 158, 11,  1); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-selected][data-ui-etype="interactive"] { outline-color: rgba(239, 68,  68,  1); }
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-selected][data-ui-etype="container"]   { outline-color: rgba(139, 92,  246, 1); }
 
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"] {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-selected][data-ui-editable="true"] {
                     outline: 3px solid rgba(236, 72, 153, 1);
                     outline-offset: 2px;
                     background: rgba(236, 72, 153, 0.12);
                     box-shadow: inset 0 0 0 1px rgba(236, 72, 153, 0.4), 0 0 0 2px rgba(236, 72, 153, 0.75);
                 }
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="false"] {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-selected][data-ui-editable="false"] {
                     outline: 2px solid rgba(245, 158, 11, 0.95);
                     outline-offset: 2px;
                     background: rgba(245, 158, 11, 0.12);
@@ -942,7 +941,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
 
                 /* ── Editing (active inline edit) ────────────────────────────────── */
 
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"] {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-editing][data-ui-editable="true"] {
                     outline: 2px solid rgba(219, 39, 119, 1);
                     outline-offset: 2px;
                     background: rgba(236, 72, 153, 0.18);
@@ -950,8 +949,8 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                 }
 
                 /* Label override for selected/editing state */
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-selected][data-pk-editable="true"]::before,
-                html[data-pk-preview="editor"][data-pk-borders="on"] [data-pk-region][data-pk-editing][data-pk-editable="true"]::before {
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-selected][data-ui-editable="true"]::before,
+                html[data-ui-preview="editor"][data-ui-borders="on"] [data-ui-region][data-ui-editing][data-ui-editable="true"]::before {
                     content: "selected";
                     color: #fff1f2;
                     background: rgba(190, 24, 93, 0.98);
@@ -959,7 +958,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
 
                 /* ── Floating overlay boxes ──────────────────────────────────────── */
 
-                .pk-overlay-box {
+                .ui-overlay-box {
                     position: fixed;
                     pointer-events: none;
                     z-index: 99998;
@@ -967,17 +966,17 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     border-radius: 2px;
                     border: 1px solid rgba(99, 102, 241, 0.5);
                 }
-                .pk-overlay-box--hover                        { border-color: rgba(99,  102, 241, 0.5); }
-                .pk-overlay-box--selected                     { border-color: rgba(99,  102, 241, 1);   }
-                .pk-overlay-box[data-pk-etype="text"]         { border-color: rgba(34,  197, 94,  1);   }
-                .pk-overlay-box[data-pk-etype="image"]        { border-color: rgba(245, 158, 11,  1);   }
-                .pk-overlay-box[data-pk-etype="interactive"]  { border-color: rgba(239, 68,  68,  1);   }
-                .pk-overlay-box[data-pk-etype="container"]    { border-color: rgba(139, 92,  246, 1);   }
-                .pk-overlay-box--hover:not([data-pk-etype])   { border-color: rgba(99,  102, 241, 0.5); }
+                .ui-overlay-box--hover                        { border-color: rgba(99,  102, 241, 0.5); }
+                .ui-overlay-box--selected                     { border-color: rgba(99,  102, 241, 1);   }
+                .ui-overlay-box[data-ui-etype="text"]         { border-color: rgba(34,  197, 94,  1);   }
+                .ui-overlay-box[data-ui-etype="image"]        { border-color: rgba(245, 158, 11,  1);   }
+                .ui-overlay-box[data-ui-etype="interactive"]  { border-color: rgba(239, 68,  68,  1);   }
+                .ui-overlay-box[data-ui-etype="container"]    { border-color: rgba(139, 92,  246, 1);   }
+                .ui-overlay-box--hover:not([data-ui-etype])   { border-color: rgba(99,  102, 241, 0.5); }
 
                 /* ── Pill label ──────────────────────────────────────────────────── */
 
-                .pk-overlay-pill {
+                .ui-overlay-pill {
                     position: fixed;
                     pointer-events: none;
                     z-index: 99999;
@@ -993,14 +992,14 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     background: rgba(99, 102, 241, 1);
                     transform: translateY(-100%);
                 }
-                .pk-overlay-pill[data-pk-etype="text"]        { background: rgba(34,  197, 94,  1); color: #000; }
-                .pk-overlay-pill[data-pk-etype="image"]       { background: rgba(245, 158, 11,  1); color: #000; }
-                .pk-overlay-pill[data-pk-etype="interactive"] { background: rgba(239, 68,  68,  1); }
-                .pk-overlay-pill[data-pk-etype="container"]   { background: rgba(139, 92,  246, 1); }
+                .ui-overlay-pill[data-ui-etype="text"]        { background: rgba(34,  197, 94,  1); color: #000; }
+                .ui-overlay-pill[data-ui-etype="image"]       { background: rgba(245, 158, 11,  1); color: #000; }
+                .ui-overlay-pill[data-ui-etype="interactive"] { background: rgba(239, 68,  68,  1); }
+                .ui-overlay-pill[data-ui-etype="container"]   { background: rgba(139, 92,  246, 1); }
 
                 /* ── Resize handles ──────────────────────────────────────────────── */
 
-                .pk-handle {
+                .ui-handle {
                     position: fixed;
                     pointer-events: none;
                     z-index: 99999;
@@ -1012,14 +1011,14 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                     margin-left: -3px;
                     margin-top: -3px;
                 }
-                .pk-handle[data-pk-etype="text"]        { background: rgba(34,  197, 94,  1); }
-                .pk-handle[data-pk-etype="image"]       { background: rgba(245, 158, 11,  1); }
-                .pk-handle[data-pk-etype="interactive"] { background: rgba(239, 68,  68,  1); }
-                .pk-handle[data-pk-etype="container"]   { background: rgba(139, 92,  246, 1); }
+                .ui-handle[data-ui-etype="text"]        { background: rgba(34,  197, 94,  1); }
+                .ui-handle[data-ui-etype="image"]       { background: rgba(245, 158, 11,  1); }
+                .ui-handle[data-ui-etype="interactive"] { background: rgba(239, 68,  68,  1); }
+                .ui-handle[data-ui-etype="container"]   { background: rgba(139, 92,  246, 1); }
 
                 /* ── Tooltip ─────────────────────────────────────────────────────── */
 
-                .pk-tooltip {
+                .ui-tooltip {
                     position: fixed;
                     z-index: 99999;
                     pointer-events: none;
@@ -1037,26 +1036,26 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             (doc.head || doc.documentElement).appendChild(style);
 
             this.tooltip = doc.createElement('div');
-            this.tooltip.className = 'pk-tooltip';
+            this.tooltip.className = 'ui-tooltip';
             this.tooltip.style.display = 'none';
             doc.body.appendChild(this.tooltip);
 
             this.hoverOverlay = doc.createElement('div');
-            this.hoverOverlay.className = 'pk-overlay-box pk-overlay-box--hover';
+            this.hoverOverlay.className = 'ui-overlay-box ui-overlay-box--hover';
             doc.body.appendChild(this.hoverOverlay);
 
             this.selectedOverlay = doc.createElement('div');
-            this.selectedOverlay.className = 'pk-overlay-box pk-overlay-box--selected';
+            this.selectedOverlay.className = 'ui-overlay-box ui-overlay-box--selected';
             doc.body.appendChild(this.selectedOverlay);
 
             this.selectionPill = doc.createElement('div');
-            this.selectionPill.className = 'pk-overlay-pill';
+            this.selectionPill.className = 'ui-overlay-pill';
             doc.body.appendChild(this.selectionPill);
 
             // 8 resize handles: tl, tc, tr, ml, mr, bl, bc, br
             this.selectionHandles = ['tl','tc','tr','ml','mr','bl','bc','br'].map(() => {
                 const h = doc.createElement('div');
-                h.className = 'pk-handle';
+                h.className = 'ui-handle';
                 doc.body.appendChild(h);
                 return h;
             });
@@ -1088,12 +1087,12 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                 }
 
                 if (this.hoveredRegionElement && this.hoveredRegionElement !== regionElement) {
-                    this.hoveredRegionElement.removeAttribute('data-pk-hover');
+                    this.hoveredRegionElement.removeAttribute('data-ui-hover');
                 }
 
                 this.hoveredRegionElement = regionElement;
-                if (!regionElement.hasAttribute('data-pk-selected') && regionElement !== this.inlineEditingElement) {
-                    regionElement.setAttribute('data-pk-hover', '');
+                if (!regionElement.hasAttribute('data-ui-selected') && regionElement !== this.inlineEditingElement) {
+                    regionElement.setAttribute('data-ui-hover', '');
                 }
                 this.updateOverlayPosition(this.hoverOverlay, regionElement);
                 this.showTooltip(regionElement);
@@ -1160,8 +1159,8 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     },
 
     applyBorderVisibility(doc) {
-        doc.documentElement.setAttribute('data-pk-borders', this.bordersVisible ? 'on' : 'off');
-        doc.querySelectorAll('[data-pk-region]').forEach((element) => this.applyRegionOutlineStyles(element));
+        doc.documentElement.setAttribute('data-ui-borders', this.bordersVisible ? 'on' : 'off');
+        doc.querySelectorAll('[data-ui-region]').forEach((element) => this.applyRegionOutlineStyles(element));
         this.refreshOverlayPositions();
     },
 
@@ -1194,7 +1193,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     },
 
     isRegionEditable(element) {
-        return element?.getAttribute('data-pk-editable') === 'true';
+        return element?.getAttribute('data-ui-editable') === 'true';
     },
 
     isInlineCapable(element) {
@@ -1202,7 +1201,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return false;
         }
 
-        const regionType = element.getAttribute('data-pk-region-type');
+        const regionType = element.getAttribute('data-ui-region-type');
         if (regionType === 'image') {
             return false;
         }
@@ -1230,8 +1229,8 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
 
         this.inlineEditingElement = element;
         element.setAttribute('contenteditable', 'true');
-        element.setAttribute('data-pk-editing', '');
-        element.removeAttribute('data-pk-hover');
+        element.setAttribute('data-ui-editing', '');
+        element.removeAttribute('data-ui-hover');
         element.focus({ preventScroll: true });
 
         const selection = element.ownerDocument.getSelection();
@@ -1249,7 +1248,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         const onBlur = () => this.finishInlineEditing(true);
         element.addEventListener('input', onInput);
         element.addEventListener('blur', onBlur, { once: true });
-        element._pkInlineHandlers = { onInput };
+        element._uiInlineHandlers = { onInput };
 
         this.queueRegionSync(element);
     },
@@ -1274,14 +1273,14 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return;
         }
 
-        const handlers = element._pkInlineHandlers;
+        const handlers = element._uiInlineHandlers;
         if (handlers?.onInput) {
             element.removeEventListener('input', handlers.onInput);
         }
 
-        delete element._pkInlineHandlers;
+        delete element._uiInlineHandlers;
         element.removeAttribute('contenteditable');
-        element.removeAttribute('data-pk-editing');
+        element.removeAttribute('data-ui-editing');
         this.inlineEditingElement = null;
 
         if (sync) {
@@ -1302,7 +1301,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return;
         }
 
-        const regionId = element.getAttribute('data-pk-region-id');
+        const regionId = element.getAttribute('data-ui-region-id');
         if (!regionId) {
             return;
         }
@@ -1313,7 +1312,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     },
 
     extractEditableContent(element) {
-        const type = element.getAttribute('data-pk-region-type');
+        const type = element.getAttribute('data-ui-region-type');
         if (type === 'image') {
             return element.getAttribute('src') || '';
         }
@@ -1333,10 +1332,10 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
 
         const region = regionId ? this.previewRegions.find((item) => item.id === regionId) : null;
-        doc.querySelectorAll('[data-pk-selected]').forEach((node) => node.removeAttribute('data-pk-selected'));
+        doc.querySelectorAll('[data-ui-selected]').forEach((node) => node.removeAttribute('data-ui-selected'));
 
         const bySelector = this.findRegionBySelector(doc, selector);
-        const byId = regionId ? doc.querySelector(`[data-pk-region-id="${regionId}"]`) : null;
+        const byId = regionId ? doc.querySelector(`[data-ui-region-id="${regionId}"]`) : null;
         const byText = region
             ? this.findRegionFallbackElement(doc, region)
             : (regionContent ? this.findRegionByTextContent(doc, regionContent) : null);
@@ -1387,7 +1386,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
     findRegionElement(target) {
         let current = target?.nodeType === 1 ? target : target?.parentElement;
         while (current && current !== current.ownerDocument?.documentElement) {
-            if (current.hasAttribute('data-pk-region-id')) {
+            if (current.hasAttribute('data-ui-region-id')) {
                 return current;
             }
             current = current.parentElement;
@@ -1475,7 +1474,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                 }
             }
 
-            if (node.hasAttribute('data-pk-region-id') && node.getAttribute('data-pk-region-id') !== region.id) {
+            if (node.hasAttribute('data-ui-region-id') && node.getAttribute('data-ui-region-id') !== region.id) {
                 score -= 1;
             }
 
@@ -1497,19 +1496,19 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return false;
         }
 
-        const existing = element.getAttribute('data-pk-region-id');
+        const existing = element.getAttribute('data-ui-region-id');
         if (existing && existing !== region.id) {
             return false;
         }
 
-        element.setAttribute('data-pk-region', '');
-        element.setAttribute('data-pk-region-id', region.id);
-        element.setAttribute('data-pk-editable', region.editable ? 'true' : 'false');
-        element.setAttribute('data-pk-region-type', region.type);
-        element.setAttribute('data-pk-region-label', region.content || region.type);
-        element.setAttribute('data-pk-region-role', region.editable ? 'editable' : 'code');
+        element.setAttribute('data-ui-region', '');
+        element.setAttribute('data-ui-region-id', region.id);
+        element.setAttribute('data-ui-editable', region.editable ? 'true' : 'false');
+        element.setAttribute('data-ui-region-type', region.type);
+        element.setAttribute('data-ui-region-label', region.content || region.type);
+        element.setAttribute('data-ui-region-role', region.editable ? 'editable' : 'code');
         const tagLabel = `<${String(element.tagName || '').toLowerCase()}>`;
-        element.setAttribute('data-pk-region-tag', tagLabel);
+        element.setAttribute('data-ui-region-tag', tagLabel);
         this.applyRegionOutlineStyles(element);
         this.lastRegionLookupMap[region.id] = element;
 
@@ -1543,7 +1542,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
 
     clearHoveredRegion() {
         if (this.hoveredRegionElement) {
-            this.hoveredRegionElement.removeAttribute('data-pk-hover');
+            this.hoveredRegionElement.removeAttribute('data-ui-hover');
             this.hoveredRegionElement = null;
         }
         if (this.hoverOverlay) this.hoverOverlay.style.display = 'none';
@@ -1570,7 +1569,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
             return;
         }
 
-        const label = element.getAttribute('data-pk-region-label') || element.getAttribute('data-pk-region-type') || 'region';
+        const label = element.getAttribute('data-ui-region-label') || element.getAttribute('data-ui-region-type') || 'region';
         const mode = this.isRegionEditable(element) ? 'click + type' : 'code mode only';
         this.tooltip.textContent = `${label} • ${mode}`;
         this.tooltip.style.display = 'block';
@@ -1587,9 +1586,9 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
 
         this.clearHoveredRegion();
-        doc.querySelectorAll('[data-pk-selected]').forEach((node) => node.removeAttribute('data-pk-selected'));
-        element.setAttribute('data-pk-selected', '');
-        this.selectedRegionId = element.getAttribute('data-pk-region-id');
+        doc.querySelectorAll('[data-ui-selected]').forEach((node) => node.removeAttribute('data-ui-selected'));
+        element.setAttribute('data-ui-selected', '');
+        this.selectedRegionId = element.getAttribute('data-ui-region-id');
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         this.updateOverlayPosition(this.selectedOverlay, element);
         this.queueLayerSync(this.selectedRegionId, false);
@@ -1610,7 +1609,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
 
         const element = this.lastRegionLookupMap[this.selectedRegionId]
-            || doc.querySelector(`[data-pk-region-id="${this.selectedRegionId}"]`);
+            || doc.querySelector(`[data-ui-region-id="${this.selectedRegionId}"]`);
         if (element) {
             this.selectRegionElement(element, false);
         }
@@ -1642,7 +1641,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
 
         const selectedElement = this.lastRegionLookupMap[this.selectedRegionId]
-            || doc.querySelector(`[data-pk-region-id="${this.selectedRegionId}"]`);
+            || doc.querySelector(`[data-ui-region-id="${this.selectedRegionId}"]`);
 
         if (selectedElement) {
             this.updateOverlayPosition(this.selectedOverlay, selectedElement);
@@ -1675,8 +1674,8 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
 
         const etype = this.getElementType(element);
-        overlay.dataset.pkEditable = this.isRegionEditable(element) ? 'true' : 'false';
-        if (etype) overlay.dataset.pkEtype = etype; else delete overlay.dataset.pkEtype;
+        overlay.dataset.uiEditable = this.isRegionEditable(element) ? 'true' : 'false';
+        if (etype) overlay.dataset.uiEtype = etype; else delete overlay.dataset.uiEtype;
 
         const l = Math.max(0, rect.left - 1);
         const t = Math.max(0, rect.top - 1);
@@ -1692,7 +1691,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         if (overlay === this.selectedOverlay && this.selectionPill) {
             const tag = (element.tagName || '').toLowerCase();
             this.selectionPill.textContent = tag;
-            if (etype) this.selectionPill.dataset.pkEtype = etype; else delete this.selectionPill.dataset.pkEtype;
+            if (etype) this.selectionPill.dataset.uiEtype = etype; else delete this.selectionPill.dataset.uiEtype;
             this.selectionPill.style.left = `${l}px`;
             this.selectionPill.style.top = `${t}px`;
             this.selectionPill.style.display = 'block';
@@ -1704,7 +1703,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
                 [l, t + h], [l + w/2, t + h], [l + w, t + h],
             ];
             handles.forEach((handle, i) => {
-                if (etype) handle.dataset.pkEtype = etype; else delete handle.dataset.pkEtype;
+                if (etype) handle.dataset.uiEtype = etype; else delete handle.dataset.uiEtype;
                 handle.style.left = `${positions[i][0]}px`;
                 handle.style.top = `${positions[i][1]}px`;
                 handle.style.display = 'block';
@@ -1727,7 +1726,7 @@ Alpine.data('editorState', ({ previewRegions, selectedRegionId }) => ({
         }
 
         const url = new URL(iframe.src, window.location.origin);
-        url.searchParams.set('_pk_preview', Date.now().toString());
+        url.searchParams.set('_ui_preview', Date.now().toString());
         iframe.src = url.toString();
     },
 }));

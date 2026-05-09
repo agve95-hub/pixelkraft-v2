@@ -163,7 +163,7 @@ class NginxConfigInjectionTest extends TestCase
     {
         $this->invoke('assertValidDeployPath', '/var/www/html');
         $this->invoke('assertValidDeployPath', '/srv/sites/my-site/dist');
-        $this->invoke('assertValidDeployPath', '/home/deploy/pixelkraft-sites/my-site');
+        $this->invoke('assertValidDeployPath', '/home/deploy/platform-sites/my-site');
         $this->assertTrue(true);
     }
 

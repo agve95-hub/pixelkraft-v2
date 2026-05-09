@@ -26,6 +26,6 @@ class SiteLockService
 
     private function key(Site $site, string $resource): string
     {
-        return "pixelkraft:site:{$site->id}:lock:{$resource}";
+        return "platform:site:{$site->id}:lock:{$resource}";
     }
 }

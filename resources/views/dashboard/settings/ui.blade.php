@@ -2,7 +2,7 @@
     <x-slot:title>UI System</x-slot:title>
 
     <div class="space-y-6">
-        <div class="pk-page-head">
+        <div class="ui-page-head">
             <div>
                 <x-ui.breadcrumb>
                     <a href="{{ route('dashboard') }}">Dashboard</a>
@@ -11,8 +11,8 @@
                     <span>/</span>
                     <span>UI system</span>
                 </x-ui.breadcrumb>
-                <h1 class="pk-page-title mt-3">Pixelkraft UI system</h1>
-                <p class="pk-page-sub">Shadcn-inspired Blade and Livewire primitives, spacing samples, and adopted component states.</p>
+                <h1 class="ui-page-title mt-3">UI system</h1>
+                <p class="ui-page-sub">Local Blade and Livewire primitives, spacing samples, and adopted component states.</p>
             </div>
             <x-ui.button-group align="end">
                 <x-ui.button href="{{ route('system.diagnostics') }}" variant="outline" size="sm" icon="server-stack">Diagnostics</x-ui.button>
@@ -79,7 +79,7 @@
                     <x-ui.badge variant="info">Field</x-ui.badge>
                 </x-ui.card-header>
                 <x-ui.card-content>
-                    <div class="pk-form-grid pk-form-grid-2">
+                    <div class="ui-form-grid ui-form-grid-2">
                         <x-ui.field label="Project name" hint="Use the client-facing name.">
                             <x-ui.input value="Spitexzentrum" />
                         </x-ui.field>
@@ -120,7 +120,7 @@
         </div>
 
         <x-ui.card padding="flush">
-            <x-ui.card-header class="p-[var(--pk-card-pad-y)] px-[var(--pk-card-pad-x)] pb-0">
+            <x-ui.card-header class="p-[var(--ui-card-pad-y)] px-[var(--ui-card-pad-x)] pb-0">
                 <div>
                     <x-ui.card-title>Data table sample</x-ui.card-title>
                     <x-ui.card-description>Dense row spacing with consistent actions and status badges.</x-ui.card-description>
@@ -131,7 +131,7 @@
                     <x-ui.tab>Attention</x-ui.tab>
                 </x-ui.tabs>
             </x-ui.card-header>
-            <x-ui.card-content class="p-[var(--pk-card-pad-y)] px-[var(--pk-card-pad-x)]">
+            <x-ui.card-content class="p-[var(--ui-card-pad-y)] px-[var(--ui-card-pad-x)]">
                 <x-ui.table>
                     <thead>
                         <tr>
@@ -167,7 +167,7 @@
                                     <span>Campaign microsite</span>
                                 </div>
                             </td>
-                            <td>Pixelkraft</td>
+                            <td>platform</td>
                             <td><x-ui.badge variant="warning" dot>Queued</x-ui.badge></td>
                             <td><x-ui.progress value="28" /></td>
                             <td>
@@ -239,7 +239,7 @@
                 </x-ui.card-header>
                 <div class="grid gap-3">
                     <x-ui.dialog title="Confirm rollback" description="This sample mirrors alert dialog spacing.">
-                        <div class="pk-action-row">
+                        <div class="ui-action-row">
                             <x-ui.button variant="outline" size="sm">Cancel</x-ui.button>
                             <x-ui.button variant="destructive" size="sm">Rollback</x-ui.button>
                         </div>

@@ -60,7 +60,7 @@ return [
     'r2' => [
         'key' => env('R2_ACCESS_KEY_ID'),
         'secret' => env('R2_SECRET_ACCESS_KEY'),
-        'bucket' => env('R2_BUCKET', 'pixelkraft-media'),
+        'bucket' => env('R2_BUCKET', 'platform-media'),
         'endpoint' => env('R2_ENDPOINT'),
         'url' => env('R2_URL'),
     ],
@@ -82,7 +82,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Runtime-managed sites (for example non-exported Next.js apps) are served
-    | from a local Node process that pixelkraft starts and health-checks.
+    | from a local Node process that platform starts and health-checks.
     |
     */
     'runtime' => [
@@ -93,7 +93,7 @@ return [
         'pid_path' => env('SITE_RUNTIME_PID_PATH', storage_path('app/runtime-pids')),
         'log_path' => env('SITE_RUNTIME_LOG_PATH', storage_path('logs/runtime-sites')),
         'startup_timeout_seconds' => (int) env('SITE_RUNTIME_STARTUP_TIMEOUT_SECONDS', 30),
-        // Set to true to have Pixelkraft write a Supervisor .conf file on every
+        // Set to true to have platform write a Supervisor .conf file on every
         // runtime deployment so the Node.js process survives server reboots.
         // Requires supervisord to be installed and the web server user to have
         // write access to SUPERVISOR_CONF_PATH.
@@ -117,12 +117,12 @@ return [
          * Data retention windows for high-volume monitoring tables.
          * uptime_checks grows at up to ~288 rows/site/day; raw analytics events
          * are aggregated nightly into analytics_snapshots so can be pruned sooner.
-         * Both tables are pruned by `pixelkraft:prune-monitoring` (runs weekly).
+         * Both tables are pruned by `platform:prune-monitoring` (runs weekly).
          */
         'uptime_retention_days' => (int) env('UPTIME_RETENTION_DAYS', 30),
         'events_retention_days' => (int) env('EVENTS_RETENTION_DAYS', 90),
         /**
-         * Webhook delivery audit rows (pruned weekly by `pixelkraft:prune-webhooks`).
+         * Webhook delivery audit rows (pruned weekly by `platform:prune-webhooks`).
          */
         'webhook_deliveries_retention_days' => (int) env('WEBHOOK_DELIVERIES_RETENTION_DAYS', 30),
     ],

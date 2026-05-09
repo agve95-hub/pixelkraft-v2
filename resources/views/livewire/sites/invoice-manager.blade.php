@@ -83,13 +83,13 @@
             $sym = Invoice::currencySymbol($form_currency_code);
             $isEditing = $screen === 'edit';
         @endphp
-        <div class="pk-page-head mb-8">
+        <div class="ui-page-head mb-8">
             <div>
                 <button type="button" wire:click="{{ $isEditing ? 'cancelEdit' : 'cancelCreate' }}" class="back-link mb-2">
                     <flux:icon name="chevron-left" class="size-3.5" /> Invoices
                 </button>
-                <h1 class="pk-page-title">{{ $isEditing ? 'Edit invoice' : 'New invoice' }}</h1>
-                <p class="pk-page-sub">{{ $site->clientDisplayName() }} · {{ $form_number }}</p>
+                <h1 class="ui-page-title">{{ $isEditing ? 'Edit invoice' : 'New invoice' }}</h1>
+                <p class="ui-page-sub">{{ $site->clientDisplayName() }} · {{ $form_number }}</p>
             </div>
         </div>
 
@@ -280,7 +280,7 @@
                 <h1 class="text-2xl font-semibold tracking-tight text-zinc-100">{{ $previewData['number'] }}</h1>
                 <span class="inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-semibold {{ $badge }}">Preview</span>
                 <div class="ml-auto flex flex-wrap gap-2">
-                    <flux:button type="button" size="sm" variant="subtle" onclick="window.pixelkraftPrintInvoice?.()">
+                    <flux:button type="button" size="sm" variant="subtle" onclick="window.platformPrintInvoice?.()">
                         Print / PDF
                     </flux:button>
                 </div>
@@ -408,7 +408,7 @@
                             Mark as paid
                         </flux:button>
                     @endif
-                    <flux:button type="button" size="sm" variant="subtle" onclick="window.pixelkraftPrintInvoice?.()">Print</flux:button>
+                    <flux:button type="button" size="sm" variant="subtle" onclick="window.platformPrintInvoice?.()">Print</flux:button>
                     <flux:button href="{{ route('sites.invoices.pdf', [$site, $inv]) }}" size="sm" variant="subtle" icon="arrow-down-tray">Download PDF</flux:button>
                     <flux:button type="button" size="sm" variant="subtle" wire:click="duplicate">Duplicate</flux:button>
                 </div>
@@ -516,7 +516,7 @@
 </div>
 
 <script>
-    window.pixelkraftPrintInvoice = function () {
+    window.platformPrintInvoice = function () {
         const el = document.getElementById('invoicePrint');
         if (!el) return;
         const w = window.open('', '', 'width=820,height=960');

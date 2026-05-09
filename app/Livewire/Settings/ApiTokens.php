@@ -18,12 +18,12 @@ class ApiTokens extends Component
 
     /** All abilities the UI can grant, keyed by ability string => human label. */
     public const ABILITIES = [
-        'pixelkraft:sites:read' => 'Read sites, pages, deploys, analytics',
-        'pixelkraft:sites:sync' => 'Trigger git sync',
-        'pixelkraft:sites:deploy' => 'Trigger deploys',
-        'pixelkraft:sites:rollback' => 'Trigger rollbacks',
-        'pixelkraft:notifications:read' => 'Read notifications',
-        'pixelkraft:notifications:write' => 'Mark notifications read',
+        'platform:sites:read' => 'Read sites, pages, deploys, analytics',
+        'platform:sites:sync' => 'Trigger git sync',
+        'platform:sites:deploy' => 'Trigger deploys',
+        'platform:sites:rollback' => 'Trigger rollbacks',
+        'platform:notifications:read' => 'Read notifications',
+        'platform:notifications:write' => 'Mark notifications read',
     ];
 
     public function createToken(): void

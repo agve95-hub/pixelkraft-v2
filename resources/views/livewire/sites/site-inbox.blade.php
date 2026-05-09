@@ -6,7 +6,7 @@
 
     <x-ui.tabs>
         @foreach (['inbox' => 'Inbox', 'sent' => 'Sent', 'archived' => 'Archived', 'all' => 'All'] as $key => $label)
-            <button type="button" wire:click="setFilter('{{ $key }}')" @class(['pk-ui-tab', 'is-active' => $filter === $key])>
+            <button type="button" wire:click="setFilter('{{ $key }}')" @class(['ui-tab', 'is-active' => $filter === $key])>
                 {{ $label }}
                 <span class="font-mono text-[11px] text-zinc-500">{{ $filterCounts[$key] }}</span>
             </button>
@@ -28,7 +28,7 @@
                 >
                     <span class="mt-2 flex w-2 justify-center">
                         @if ($message->direction === 'inbound' && ! $message->is_read)
-                            <span class="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.45)]"></span>
+                            <span class="ui-unread-dot"></span>
                         @endif
                     </span>
                     <span class="min-w-0">
@@ -105,11 +105,11 @@
     </x-ui.card>
 
     @if ($composerOpen)
-        <flux:modal name="inbox-composer" class="max-w-lg !bg-zinc-900" :show="true">
+        <flux:modal name="inbox-composer" class="max-w-lg bg-zinc-900" :show="true">
             <div class="space-y-4">
                 <div>
-                    <p class="pk-page-title">{{ $replyingToId ? 'Reply' : 'New message' }}</p>
-                    <p class="pk-page-sub mt-1">Sends with your configured mailer and stores the message in this thread.</p>
+                    <p class="ui-page-title">{{ $replyingToId ? 'Reply' : 'New message' }}</p>
+                    <p class="ui-page-sub mt-1">Sends with your configured mailer and stores the message in this thread.</p>
                 </div>
                 <div class="space-y-3">
                     <flux:field>

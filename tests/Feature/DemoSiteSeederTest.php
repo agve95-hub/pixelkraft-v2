@@ -17,7 +17,7 @@ class DemoSiteSeederTest extends TestCase
     {
         $this->seed(DemoSiteSeeder::class);
 
-        $user = User::query()->where('email', 'demo@pixelkraft.local')->firstOrFail();
+        $user = User::query()->where('email', 'demo@platform.local')->firstOrFail();
         $role = $user->role instanceof \BackedEnum ? $user->role->value : $user->role;
         $this->assertSame('admin', $role);
 

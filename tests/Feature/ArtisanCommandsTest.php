@@ -63,7 +63,7 @@ class ArtisanCommandsTest extends TestCase
             'checked_at' => now()->subDays(5),
         ]);
 
-        $this->artisan('pixelkraft:prune-monitoring', ['--uptime-days' => 30])
+        $this->artisan('platform:prune-monitoring', ['--uptime-days' => 30])
             ->assertExitCode(0);
 
         $this->assertSame(1, UptimeCheck::where('site_id', $site->id)->count());
@@ -82,7 +82,7 @@ class ArtisanCommandsTest extends TestCase
             'checked_at' => now()->subDays(60),
         ]);
 
-        $this->artisan('pixelkraft:prune-monitoring', ['--uptime-days' => 30, '--dry-run' => true])
+        $this->artisan('platform:prune-monitoring', ['--uptime-days' => 30, '--dry-run' => true])
             ->assertExitCode(0);
 
         $this->assertSame(1, UptimeCheck::where('site_id', $site->id)->count());
@@ -104,7 +104,7 @@ class ArtisanCommandsTest extends TestCase
         ]);
 
         // No RESEND_API_KEY set — command logs warning but doesn't crash
-        $this->artisan('pixelkraft:send-campaigns')->assertExitCode(0);
+        $this->artisan('platform:send-campaigns')->assertExitCode(0);
 
         // Campaign should have been moved to 'sending'
         $this->assertSame('sending', $campaign->fresh()->status);
@@ -123,7 +123,7 @@ class ArtisanCommandsTest extends TestCase
             'scheduled_at' => now()->addHours(2), // future
         ]);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertExitCode(0);
+        $this->artisan('platform:send-campaigns')->assertExitCode(0);
 
         $this->assertSame('scheduled', $campaign->fresh()->status);
     }
@@ -143,7 +143,7 @@ class ArtisanCommandsTest extends TestCase
         // No RESEND_API_KEY — should log warning and set status=sent with sent=0
         config(['services.resend.key' => null]);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertExitCode(0);
+        $this->artisan('platform:send-campaigns')->assertExitCode(0);
         $this->assertSame('sending', $campaign->fresh()->status); // no key = no-op
     }
 
@@ -169,7 +169,7 @@ class ArtisanCommandsTest extends TestCase
 
         config(['services.resend.key' => 'fake_resend_key']);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertExitCode(0);
+        $this->artisan('platform:send-campaigns')->assertExitCode(0);
 
         $fresh = $campaign->fresh();
         $this->assertSame('sent', $fresh->status);
@@ -183,7 +183,7 @@ class ArtisanCommandsTest extends TestCase
 
     public function test_replay_webhooks_runs_without_error(): void
     {
-        $this->artisan('pixelkraft:replay-webhooks', ['--since' => '1 hour ago'])
+        $this->artisan('platform:replay-webhooks', ['--since' => '1 hour ago'])
             ->assertExitCode(0);
     }
 
@@ -191,13 +191,13 @@ class ArtisanCommandsTest extends TestCase
 
     public function test_check_ssl_runs_without_error_on_empty_db(): void
     {
-        $this->artisan('pixelkraft:check-ssl')->assertExitCode(0);
+        $this->artisan('platform:check-ssl')->assertExitCode(0);
     }
 
     // ── CrawlLinks ────────────────────────────────
 
     public function test_crawl_links_runs_without_error_on_empty_db(): void
     {
-        $this->artisan('pixelkraft:crawl-links')->assertExitCode(0);
+        $this->artisan('platform:crawl-links')->assertExitCode(0);
     }
 }

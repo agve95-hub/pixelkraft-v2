@@ -17,7 +17,7 @@ class UIReferencePageTest extends TestCase
         $response = $this->actingAs($user)->get(route('system.ui'));
 
         $response->assertOk()
-            ->assertSee('Pixelkraft UI system')
+            ->assertSee('UI system')
             ->assertSee('Buttons and badges')
             ->assertSee('Form rhythm')
             ->assertSee('Data table sample')

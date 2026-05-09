@@ -1,1 +1,1 @@
-<kbd {{ $attributes->merge(['class' => 'pk-ui-kbd']) }}>{{ $slot }}</kbd>
+<kbd {{ $attributes->merge(['class' => 'ui-kbd']) }}>{{ $slot }}</kbd>

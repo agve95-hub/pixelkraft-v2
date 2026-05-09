@@ -129,7 +129,7 @@ class SiteProvisioningServiceTest extends TestCase
 
     // ── ensureDefaultTrackingInstallation ─────────
 
-    public function test_creates_pixelkraft_tracking_installation(): void
+    public function test_creates_platform_tracking_installation(): void
     {
         $user = $this->makeUser();
         $site = $this->makeSite($user);
@@ -138,7 +138,7 @@ class SiteProvisioningServiceTest extends TestCase
 
         $this->assertDatabaseHas('tracking_installations', [
             'site_id' => $site->id,
-            'provider' => 'pixelkraft',
+            'provider' => 'platform',
         ]);
     }
 

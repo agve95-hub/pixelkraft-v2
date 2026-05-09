@@ -353,7 +353,7 @@ class DeployService
             $buildCommand,
             $site->repo_path,
             $site,
-            timeout: config('pixelkraft.deploy.build_timeout_seconds', 300),
+            timeout: config('platform.deploy.build_timeout_seconds', 300),
         );
 
         $this->appendCommandResult($log, '  Build', $result);
@@ -481,7 +481,7 @@ class DeployService
     }
 
     /**
-     * Keep package-manager caches inside Pixelkraft-owned storage. Production
+     * Keep package-manager caches inside platform-owned storage. Production
      * workers often inherit HOME=/var/www, and a root-owned /var/www/.npm makes
      * otherwise valid deploys fail before the build even starts.
      *
@@ -521,7 +521,7 @@ class DeployService
 
         $count = $this->tracking->injectIntoDirectory($site, $outputDir);
         $release->update([
-            'tracking_version' => 'pixelkraft-v1',
+            'tracking_version' => 'platform-v1',
             'artifact_path' => $outputDir,
             'meta' => array_merge($release->meta ?? [], ['tracking_injected_files' => $count]),
         ]);
@@ -552,7 +552,7 @@ class DeployService
         $buildCommand = trim((string) ($site->build_command ?? ''));
 
         // Auto-infer a build command for framework sites that have none configured.
-        // This lets Pixelkraft build the app internally without requiring the user
+        // This lets platform build the app internally without requiring the user
         // to manually set a build command in site settings.
         if ($buildCommand === '') {
             $buildCommand = $this->inferDefaultBuildCommand($site);
@@ -672,7 +672,7 @@ class DeployService
 
     private function cleanOldSnapshots(Site $site): void
     {
-        $maxSnapshots = config('pixelkraft.deploy.rollback_snapshots', 10);
+        $maxSnapshots = config('platform.deploy.rollback_snapshots', 10);
 
         $oldDeploys = $site->deployLogs()
             ->where('status', 'success')

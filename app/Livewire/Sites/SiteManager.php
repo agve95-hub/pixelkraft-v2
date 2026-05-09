@@ -105,7 +105,7 @@ class SiteManager extends Component
             'clientNotes' => 'nullable|string|max:2000',
 
             'name' => 'required|string|max:255',
-            'projectType' => 'required|string|in:'.implode(',', config('pixelkraft.project_types', ['static_html'])),
+            'projectType' => 'required|string|in:'.implode(',', config('platform.project_types', ['static_html'])),
             'sourceType' => ['required', Rule::in(['github', 'upload'])],
             'sourceMode' => ['required', Rule::in(['managed_build', 'upload_ready_build'])],
             'billingCycle' => 'nullable|string|in:monthly,quarterly,yearly,one_time',

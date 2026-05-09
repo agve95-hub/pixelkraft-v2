@@ -135,7 +135,7 @@ class StaticDeploymentAdapter implements DeploymentAdapter
 
     private function replaceDirectory(string $sourceDir, string $targetDir): void
     {
-        $stagingDir = $targetDir.'.__pixelkraft_tmp';
+        $stagingDir = $targetDir.'.__platform_tmp';
 
         File::deleteDirectory($stagingDir);
         File::ensureDirectoryExists(dirname($targetDir), 0755, true);

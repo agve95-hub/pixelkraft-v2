@@ -239,7 +239,7 @@ class MoreLivewireComponentsTest extends TestCase
         Livewire::actingAs($user)
             ->test(ApiTokens::class)
             ->set('tokenName', 'My CI Token')
-            ->set('selectedAbilities', ['pixelkraft:sites:read'])
+            ->set('selectedAbilities', ['platform:sites:read'])
             ->call('createToken')
             ->assertHasNoErrors();
 
@@ -253,7 +253,7 @@ class MoreLivewireComponentsTest extends TestCase
     {
         $user = $this->makeUser('apir@mlw.com');
 
-        $token = $user->createToken('Old Token', ['pixelkraft:sites:read']);
+        $token = $user->createToken('Old Token', ['platform:sites:read']);
 
         Livewire::actingAs($user)
             ->test(ApiTokens::class)

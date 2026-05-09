@@ -43,7 +43,7 @@
                     </div>
                 @empty
                     <div class="px-3 py-8 text-center">
-                        <p class="pk-page-sub">No notifications yet</p>
+                        <p class="ui-page-sub">No notifications yet</p>
                     </div>
                 @endforelse
             </div>

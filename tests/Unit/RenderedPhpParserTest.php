@@ -22,7 +22,7 @@ class RenderedPhpParserTest extends TestCase
     {
         parent::setUp();
         $this->parser = new RenderedPhpParser(new StaticHtmlParser);
-        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'pk-php-'.uniqid();
+        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'ui-php-'.uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 

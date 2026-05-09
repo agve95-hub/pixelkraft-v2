@@ -1,5 +1,5 @@
 @props(['align' => 'start'])
 
-<div {{ $attributes->merge(['class' => 'pk-ui-button-group pk-ui-button-group-'.$align]) }}>
+<div {{ $attributes->merge(['class' => 'ui-button-group ui-button-group-'.$align]) }}>
     {{ $slot }}
 </div>

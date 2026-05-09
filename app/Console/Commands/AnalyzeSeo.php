@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class AnalyzeSeo extends Command
 {
-    protected $signature = 'pixelkraft:analyze-seo
+    protected $signature = 'platform:analyze-seo
                             {--site= : Site slug or UUID to limit analysis}
                             {--all : Analyze every active site (default when --site omitted)}';
 

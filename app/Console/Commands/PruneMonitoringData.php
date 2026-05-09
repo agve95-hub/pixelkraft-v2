@@ -11,10 +11,10 @@ class PruneMonitoringData extends Command
     /**
      * Artisan signature.
      *
-     * Without options the command uses the defaults defined in config/pixelkraft.php.
+     * Without options the command uses the defaults defined in config/platform.php.
      * Override per-run with --uptime-days=N and/or --events-days=N.
      */
-    protected $signature = 'pixelkraft:prune-monitoring
+    protected $signature = 'platform:prune-monitoring
                             {--uptime-days= : Days of uptime_checks to retain (default: config value)}
                             {--events-days= : Days of analytics_events to retain (default: config value)}
                             {--dry-run      : Report row counts without deleting anything}';
@@ -24,10 +24,10 @@ class PruneMonitoringData extends Command
     public function handle(): int
     {
         $uptimeDays = (int) ($this->option('uptime-days')
-            ?? config('pixelkraft.monitoring.uptime_retention_days', 30));
+            ?? config('platform.monitoring.uptime_retention_days', 30));
 
         $eventsDays = (int) ($this->option('events-days')
-            ?? config('pixelkraft.monitoring.events_retention_days', 90));
+            ?? config('platform.monitoring.events_retention_days', 90));
 
         $dryRun = (bool) $this->option('dry-run');
 

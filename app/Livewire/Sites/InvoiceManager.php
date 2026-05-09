@@ -91,7 +91,7 @@ class InvoiceManager extends Component
         $this->form_tax_rate = '0';
         $this->form_discount_percent = '0';
         $this->form_payment_details = "IBAN: XX00 0000 0000 0000 0000\nBIC/SWIFT: XXXXXX\nBank: Example Bank";
-        $this->form_from_address = "Pixelwerk\n".auth()->user()->name."\n".config('app.name');
+        $this->form_from_address = "platform\n".auth()->user()->name."\n".config('app.name');
         $bill = trim((string) $site->client_address);
         $this->form_bill_to = $bill !== '' ? $bill : $site->clientDisplayName();
         $termDays = $this->currentPaymentTermDays() ?? 30;

@@ -16,8 +16,8 @@ class InboxInboundController extends Controller
      */
     public function store(Request $request, string $slug): JsonResponse
     {
-        $globalSecret = config('pixelkraft.inbox_inbound_secret');
-        $requireSecret = (bool) config('pixelkraft.inbox_inbound_require_secret', ! app()->isLocal());
+        $globalSecret = config('platform.inbox_inbound_secret');
+        $requireSecret = (bool) config('platform.inbox_inbound_require_secret', ! app()->isLocal());
 
         $site = Site::where('slug', $slug)->where('is_active', true)->first();
 

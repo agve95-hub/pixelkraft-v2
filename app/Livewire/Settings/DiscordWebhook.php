@@ -60,7 +60,7 @@ class DiscordWebhook extends Component
 
         try {
             Http::post($url, [
-                'content' => 'pixelkraft test notification — webhook is working!',
+                'content' => 'platform test notification — webhook is working!',
             ]);
             session()->flash('success', 'Test message sent to Discord.');
         } catch (\Exception $e) {

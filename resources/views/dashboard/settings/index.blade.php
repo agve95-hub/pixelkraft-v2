@@ -2,10 +2,10 @@
     <x-slot:title>Settings</x-slot:title>
 
     <div class="max-w-4xl space-y-6">
-        <div class="pk-page-head">
+        <div class="ui-page-head">
             <div>
-                <h1 class="pk-page-title">Settings</h1>
-                <p class="pk-page-sub">Account, security, notifications, API tokens, and system tools.</p>
+                <h1 class="ui-page-title">Settings</h1>
+                <p class="ui-page-sub">Account, security, notifications, API tokens, and system tools.</p>
             </div>
             <x-ui.button-group align="end">
                 <x-ui.button href="{{ route('system.ui') }}" variant="outline" size="sm" icon="swatch">UI system</x-ui.button>
@@ -21,7 +21,7 @@
                         <x-ui.card-description>Keep the account name and email address current.</x-ui.card-description>
                     </div>
                 </x-ui.card-header>
-                <form method="POST" action="{{ route('user-profile-information.update') }}" class="pk-form-grid">
+                <form method="POST" action="{{ route('user-profile-information.update') }}" class="ui-form-grid">
                     @csrf
                     @method('PUT')
 
@@ -35,7 +35,7 @@
                         <flux:input type="email" name="email" value="{{ auth()->user()->email }}" required />
                     </flux:field>
 
-                    <div class="pk-action-row">
+                    <div class="ui-action-row">
                         <x-ui.button type="submit" size="sm">Save profile</x-ui.button>
                     </div>
                 </form>
@@ -45,10 +45,10 @@
                 <x-ui.card-header>
                     <div>
                         <x-ui.card-title>Change password</x-ui.card-title>
-                        <x-ui.card-description>Use a strong password unique to Pixelkraft.</x-ui.card-description>
+                        <x-ui.card-description>Use a strong password unique to this platform.</x-ui.card-description>
                     </div>
                 </x-ui.card-header>
-                <form method="POST" action="{{ route('user-password.update') }}" class="pk-form-grid">
+                <form method="POST" action="{{ route('user-password.update') }}" class="ui-form-grid">
                     @csrf
                     @method('PUT')
 
@@ -67,7 +67,7 @@
                         <flux:input type="password" name="password_confirmation" required viewable />
                     </flux:field>
 
-                    <div class="pk-action-row">
+                    <div class="ui-action-row">
                         <x-ui.button type="submit" size="sm">Update password</x-ui.button>
                     </div>
                 </form>
@@ -137,7 +137,7 @@
             <x-ui.card-header>
                 <div>
                     <x-ui.card-title>API tokens</x-ui.card-title>
-                    <x-ui.card-description>Generate scoped tokens for the Pixelkraft API.</x-ui.card-description>
+                    <x-ui.card-description>Generate scoped tokens for the platform API.</x-ui.card-description>
                 </div>
             </x-ui.card-header>
             @livewire('settings.api-tokens')

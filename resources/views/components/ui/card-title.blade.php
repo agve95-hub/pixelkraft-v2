@@ -1,3 +1,3 @@
-<h2 {{ $attributes->merge(['class' => 'pk-ui-card-title']) }}>
+<h2 {{ $attributes->merge(['class' => 'ui-card-title']) }}>
     {{ $slot }}
 </h2>

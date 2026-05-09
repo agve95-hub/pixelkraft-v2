@@ -1,7 +1,7 @@
 import './bootstrap';
 
 function parseSearchData() {
-    const el = document.getElementById('pk-search-data');
+    const el = document.getElementById('ui-search-data');
     if (!el?.textContent) {
         return [];
     }
@@ -13,12 +13,12 @@ function parseSearchData() {
 }
 
 function initSearchPalette() {
-    const overlay = document.getElementById('pk-search-overlay');
-    const input = document.getElementById('pk-search-input');
-    const results = document.getElementById('pk-search-results');
+    const overlay = document.getElementById('ui-search-overlay');
+    const input = document.getElementById('ui-search-input');
+    const results = document.getElementById('ui-search-results');
     const triggers = [
-        document.getElementById('pk-search-trigger'),
-        document.getElementById('pk-search-trigger-mobile'),
+        document.getElementById('ui-search-trigger'),
+        document.getElementById('ui-search-trigger-mobile'),
     ].filter(Boolean);
 
     if (!overlay || !input || !results) {
@@ -39,7 +39,7 @@ function initSearchPalette() {
         results.innerHTML = filtered
             .map(
                 (row, i) => `
-                <a href="${row.href}" data-pk-search-idx="${i}" class="flex items-center gap-3 px-5 py-2.5 text-zinc-200 no-underline transition hover:bg-white/[0.04] ${i === activeIndex ? 'bg-white/[0.06]' : ''}">
+                <a href="${row.href}" data-ui-search-idx="${i}" class="flex items-center gap-3 px-5 py-2.5 text-zinc-200 no-underline transition hover:bg-white/[0.04] ${i === activeIndex ? 'bg-white/[0.06]' : ''}">
                     <span class="truncate text-[13px]">${escapeHtml(row.label)}</span>
                 </a>`,
             )
@@ -59,8 +59,8 @@ function initSearchPalette() {
     }
 
     function updateActiveClasses() {
-        results.querySelectorAll('[data-pk-search-idx]').forEach((node) => {
-            const idx = Number(node.getAttribute('data-pk-search-idx'));
+        results.querySelectorAll('[data-ui-search-idx]').forEach((node) => {
+            const idx = Number(node.getAttribute('data-ui-search-idx'));
             node.classList.toggle('bg-white/[0.06]', idx === activeIndex);
         });
     }
@@ -133,11 +133,11 @@ function initSearchPalette() {
     });
 
     results.addEventListener('mousemove', (e) => {
-        const link = e.target.closest('[data-pk-search-idx]');
+        const link = e.target.closest('[data-ui-search-idx]');
         if (!link) {
             return;
         }
-        activeIndex = Number(link.getAttribute('data-pk-search-idx'));
+        activeIndex = Number(link.getAttribute('data-ui-search-idx'));
         updateActiveClasses();
     });
 }

@@ -48,7 +48,7 @@ class CheckUptimeSsrfTest extends TestCase
 
         $site = $this->makeLiveSite('127.0.0.1');
 
-        $this->artisan('pixelkraft:check-uptime');
+        $this->artisan('platform:check-uptime');
 
         // No outbound HTTP request should have been made.
         Http::assertNothingSent();
@@ -69,7 +69,7 @@ class CheckUptimeSsrfTest extends TestCase
 
         $site = $this->makeLiveSite('10.0.0.1');
 
-        $this->artisan('pixelkraft:check-uptime');
+        $this->artisan('platform:check-uptime');
 
         Http::assertNothingSent();
 
@@ -87,7 +87,7 @@ class CheckUptimeSsrfTest extends TestCase
         // 169.254.169.254 is the AWS instance metadata endpoint.
         $site = $this->makeLiveSite('169.254.169.254');
 
-        $this->artisan('pixelkraft:check-uptime');
+        $this->artisan('platform:check-uptime');
 
         Http::assertNothingSent();
 

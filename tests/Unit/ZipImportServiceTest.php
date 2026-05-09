@@ -25,7 +25,7 @@ class ZipImportServiceTest extends TestCase
         parent::setUp();
         Storage::fake('local');
         $this->service = new ZipImportService;
-        $this->repoDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'pk-zip-'.uniqid();
+        $this->repoDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'ui-zip-'.uniqid();
         mkdir($this->repoDir, 0777, true);
     }
 

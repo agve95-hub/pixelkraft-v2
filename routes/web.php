@@ -24,7 +24,7 @@ Route::get('/health', function () {
 
     // Cache / Redis connectivity
     try {
-        $key = 'pixelkraft:health:'.uniqid('', true);
+        $key = 'platform:health:'.uniqid('', true);
         Cache::put($key, 1, 10);
         Cache::forget($key);
         $checks['cache'] = 'ok';

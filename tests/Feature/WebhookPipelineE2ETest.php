@@ -43,8 +43,8 @@ class WebhookPipelineE2ETest extends TestCase
      */
     public function test_push_webhook_triggers_sync_parse_and_deploy_for_webhook_deploy_site(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', true);
-        config()->set('pixelkraft.github_webhook_secret', 'test-global-secret');
+        config()->set('platform.github_webhook_require_signature', true);
+        config()->set('platform.github_webhook_secret', 'test-global-secret');
 
         $site = Site::create([
             'name' => 'E2E Pipeline Site',
@@ -127,7 +127,7 @@ class WebhookPipelineE2ETest extends TestCase
      */
     public function test_push_webhook_skips_jobs_when_no_new_commits(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', false);
+        config()->set('platform.github_webhook_require_signature', false);
 
         $site = Site::create([
             'name' => 'Up To Date',
@@ -173,7 +173,7 @@ class WebhookPipelineE2ETest extends TestCase
      */
     public function test_push_webhook_does_not_deploy_when_auto_deploy_disabled(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', false);
+        config()->set('platform.github_webhook_require_signature', false);
 
         $site = Site::create([
             'name' => 'No Auto Deploy',

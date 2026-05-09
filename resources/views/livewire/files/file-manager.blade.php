@@ -16,7 +16,7 @@
             @if ($currentPath)
                 <x-ui.button wire:click="goUp" variant="outline" size="sm" icon="chevron-up">Up</x-ui.button>
             @endif
-            <label class="inline-flex h-[var(--pk-control-h-sm)] cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-zinc-700 bg-transparent px-3 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800 hover:border-zinc-600">
+            <label class="inline-flex h-[var(--ui-control-h-sm)] cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-zinc-700 bg-transparent px-3 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800 hover:border-zinc-600">
                 <flux:icon name="arrow-up-tray" class="size-3.5" />
                 Upload
                 <input type="file" wire:model="uploadFile" class="hidden" x-on:change="$wire.upload()">
@@ -56,7 +56,7 @@
                             wire:confirm="Delete {{ $entry['name'] }}?"
                             variant="ghost"
                             size="xs"
-                            class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-400 !px-1"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 px-1 text-red-400 opacity-0 group-hover:opacity-100"
                             icon="trash"
                         />
                     @endif

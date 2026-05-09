@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Http;
 
 class CheckUptime extends Command
 {
-    protected $signature = 'pixelkraft:check-uptime';
+    protected $signature = 'platform:check-uptime';
 
     protected $description = 'Run uptime checks on all active sites';
 
@@ -24,7 +24,7 @@ class CheckUptime extends Command
         foreach ($sites as $site) {
             $startTime = microtime(true);
 
-            $degradedAfterMs = (int) config('pixelkraft.monitoring.uptime_degraded_after_ms', 3000);
+            $degradedAfterMs = (int) config('platform.monitoring.uptime_degraded_after_ms', 3000);
 
             // SSRF guard: resolve the domain to an IP and reject requests to
             // private / loopback / link-local ranges.  A user-configured domain

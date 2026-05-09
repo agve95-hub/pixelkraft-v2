@@ -1,7 +1,7 @@
-# Pixelkraft Deep Audit Report
+# platform Deep Audit Report
 
 Date: 2026-04-18
-Workspace: `C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2`
+Workspace: `<workspace>`
 Scope: fresh code audit of the current repository state, plus a new verification pass on test/build/audit tooling.
 
 This report supersedes the older workspace notes in `Audit.txt` and `Repo-App-Audit.txt`.
@@ -48,7 +48,7 @@ Evidence:
 
 Why this matters:
 
-- Any authenticated dashboard user who can reach site creation can point Pixelkraft at an arbitrary readable directory on the host.
+- Any authenticated dashboard user who can reach site creation can point platform at an arbitrary readable directory on the host.
 - There is no allowlist restricting imports to a safe base such as a managed repos root.
 - That turns the site onboarding flow into a local filesystem attachment mechanism for arbitrary host paths.
 
@@ -132,7 +132,7 @@ Evidence:
 
 Why this matters:
 
-- If a user enters an attacker-controlled git host and also stores a GitHub token, Pixelkraft can hand that token to the attacker-controlled host during clone/pull/auth flows.
+- If a user enters an attacker-controlled git host and also stores a GitHub token, platform can hand that token to the attacker-controlled host during clone/pull/auth flows.
 - This is not hypothetical; the code path is explicit.
 
 Likely impact:
@@ -292,6 +292,6 @@ If the team wants the shortest path to materially lowering risk, the order shoul
 
 ## Bottom Line
 
-Pixelkraft is not in a "rewrite it" state. The codebase has a working spine and a decent safety culture in parts of the implementation.
+platform is not in a "rewrite it" state. The codebase has a working spine and a decent safety culture in parts of the implementation.
 
 The immediate concern is that the currently active dashboard site-management flow is more permissive than the safer validation and ownership boundaries already present elsewhere in the repository. Fixing that drift would remove the most serious risk much faster than any broad refactor.

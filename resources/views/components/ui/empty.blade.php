@@ -4,15 +4,15 @@
     'description' => null,
 ])
 
-<div {{ $attributes->merge(['class' => 'pk-ui-empty']) }}>
-    <span class="pk-ui-empty-icon"><flux:icon :name="$icon" /></span>
+<div {{ $attributes->merge(['class' => 'ui-empty']) }}>
+    <span class="ui-empty-icon"><flux:icon :name="$icon" /></span>
     <div>
-        <p class="pk-ui-empty-title">{{ $title }}</p>
+        <p class="ui-empty-title">{{ $title }}</p>
         @if ($description)
-            <p class="pk-ui-empty-description">{{ $description }}</p>
+            <p class="ui-empty-description">{{ $description }}</p>
         @endif
     </div>
     @if (trim((string) $slot) !== '')
-        <div class="pk-ui-empty-actions">{{ $slot }}</div>
+        <div class="ui-empty-actions">{{ $slot }}</div>
     @endif
 </div>

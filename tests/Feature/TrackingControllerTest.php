@@ -26,7 +26,7 @@ class TrackingControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/javascript; charset=utf-8');
-        $response->assertSee('window.pixelkraftTrack', false);
+        $response->assertSee('window.platformTrack', false);
         $response->assertSee((string) route('tracking.collect', ['site' => $site]), false);
     }
 

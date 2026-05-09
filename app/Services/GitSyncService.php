@@ -430,7 +430,7 @@ class GitSyncService
 
     private function credentialFilePath(Site $site): string
     {
-        return rtrim((string) $site->repo_path, '/').'/.git/.pk_credentials';
+        return rtrim((string) $site->repo_path, '/').'/.git/.tool_credentials';
     }
 
     /**
@@ -449,8 +449,8 @@ class GitSyncService
 
     private function configureCommitIdentity(GitRepository $repo): void
     {
-        $repo->execute('config', 'user.name', 'pixelkraft');
-        $repo->execute('config', 'user.email', 'pixelkraft@local');
+        $repo->execute('config', 'user.name', 'platform');
+        $repo->execute('config', 'user.email', 'platform@local');
     }
 
     private function hasChanges(GitRepository $repo): bool

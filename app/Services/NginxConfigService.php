@@ -114,11 +114,11 @@ class NginxConfigService
 
         $config = $this->renderStagingTemplate($site, $stagingDomain, $stagingPath);
 
-        $configPath = config('pixelkraft.nginx_sites_path')."/staging-{$site->slug}.conf";
+        $configPath = config('platform.nginx_sites_path')."/staging-{$site->slug}.conf";
         File::ensureDirectoryExists(dirname($configPath), 0755, true);
         File::put($configPath, $config);
 
-        $enabledDir = str_replace('sites-available', 'sites-enabled', config('pixelkraft.nginx_sites_path'));
+        $enabledDir = str_replace('sites-available', 'sites-enabled', config('platform.nginx_sites_path'));
         File::ensureDirectoryExists($enabledDir, 0755, true);
         $enabledPath = "{$enabledDir}/staging-{$site->slug}.conf";
 
@@ -134,8 +134,8 @@ class NginxConfigService
      */
     public function removeStagingConfig(Site $site): void
     {
-        $configPath = config('pixelkraft.nginx_sites_path')."/staging-{$site->slug}.conf";
-        $enabledDir = str_replace('sites-available', 'sites-enabled', config('pixelkraft.nginx_sites_path'));
+        $configPath = config('platform.nginx_sites_path')."/staging-{$site->slug}.conf";
+        $enabledDir = str_replace('sites-available', 'sites-enabled', config('platform.nginx_sites_path'));
         $enabledPath = "{$enabledDir}/staging-{$site->slug}.conf";
 
         File::delete([$configPath, $enabledPath]);
@@ -227,7 +227,7 @@ NGINX;
 
     private function renderRuntimeTemplate(Site $site, string $redirectBlock): string
     {
-        $host = config('pixelkraft.runtime.host', '127.0.0.1');
+        $host = config('platform.runtime.host', '127.0.0.1');
         $port = $this->runtime->effectivePortFor($site);
 
         return <<<NGINX
@@ -297,12 +297,12 @@ NGINX;
 
     private function getConfigPath(Site $site): string
     {
-        return config('pixelkraft.nginx_sites_path')."/{$site->slug}.conf";
+        return config('platform.nginx_sites_path')."/{$site->slug}.conf";
     }
 
     private function getEnabledPath(Site $site): string
     {
-        $enabledDir = str_replace('sites-available', 'sites-enabled', config('pixelkraft.nginx_sites_path'));
+        $enabledDir = str_replace('sites-available', 'sites-enabled', config('platform.nginx_sites_path'));
 
         return "{$enabledDir}/{$site->slug}.conf";
     }

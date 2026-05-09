@@ -1,10 +1,10 @@
 <div align="center">
 
-# ⚡ pixelkraft
+# ⚡ platform
 
-**The Git-to-Render Site Operations Platform**
+**The Git-to-Render Site Operations platform**
 
-*Push to Git. Pixelkraft handles everything else.*
+*Push to Git. platform handles everything else.*
 
 [![PHP](https://img.shields.io/badge/PHP-8.3+-8892BF?style=flat-square&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
@@ -17,9 +17,9 @@
 
 ---
 
-## What is Pixelkraft?
+## What is platform?
 
-Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and solo developers. It connects to your GitHub repositories and automates the entire lifecycle of a website — from the moment you push code to the second the page goes live.
+platform is a self-hosted **Site Operations platform** for web agencies and solo developers. It connects to your GitHub repositories and automates the entire lifecycle of a website — from the moment you push code to the second the page goes live.
 
 **One push. Everything happens automatically:**
 - Webhook received & verified (HMAC-SHA256)
@@ -112,8 +112,8 @@ Pixelkraft is a self-hosted **Site Operations Platform** for web agencies and so
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/your-org/pixelkraft.git
-cd pixelkraft
+git clone https://github.com/your-org/platform.git
+cd platform
 composer run setup   # installs deps, copies .env, migrates DB, builds assets
 ```
 
@@ -132,7 +132,7 @@ cp .env.example .env
 **Minimum required configuration:**
 
 ```env
-APP_NAME=pixelkraft
+APP_NAME=platform
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://your-dashboard-domain.com
@@ -141,8 +141,8 @@ APP_URL=https://your-dashboard-domain.com
 DB_CONNECTION=mariadb
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=pixelkraft
-DB_USERNAME=pixelkraft
+DB_DATABASE=platform
+DB_USERNAME=platform
 DB_PASSWORD=<strong-password>
 
 # Redis (required in production)
@@ -157,7 +157,7 @@ GITHUB_WEBHOOK_SECRET=<openssl rand -hex 32>
 GITHUB_WEBHOOK_REQUIRE_SIGNATURE=true
 
 # File paths
-REPOS_PATH=/var/www/pixelkraft/repos
+REPOS_PATH=/var/www/platform/repos
 SITES_DEPLOY_PATH=/var/www/sites
 NGINX_SITES_PATH=/etc/nginx/sites-available
 ```
@@ -188,20 +188,20 @@ php artisan tinker
 ### Supervisor (Horizon)
 
 ```ini
-; /etc/supervisor/conf.d/pixelkraft-horizon.conf
-[program:pixelkraft-horizon]
+; /etc/supervisor/conf.d/platform-horizon.conf
+[program:platform-horizon]
 process_name=%(program_name)s
-command=php /var/www/pixelkraft/artisan horizon
+command=php /var/www/platform/artisan horizon
 autostart=true
 autorestart=true
 user=www-data
 redirect_stderr=true
-stdout_logfile=/var/log/pixelkraft-horizon.log
+stdout_logfile=/var/log/platform-horizon.log
 stopwaitsecs=3600
 ```
 
 ```bash
-sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl start pixelkraft-horizon
+sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl start platform-horizon
 ```
 
 ### Nginx — Dashboard Vhost
@@ -210,7 +210,7 @@ sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl sta
 server {
     listen 443 ssl http2;
     server_name dashboard.example.com;
-    root /var/www/pixelkraft/public;
+    root /var/www/platform/public;
     index index.php;
 
     ssl_certificate     /etc/letsencrypt/live/dashboard.example.com/fullchain.pem;
@@ -251,7 +251,7 @@ server {
 ### Cron (Scheduler)
 
 ```bash
-* * * * * www-data php /var/www/pixelkraft/artisan schedule:run >> /dev/null 2>&1
+* * * * * www-data php /var/www/platform/artisan schedule:run >> /dev/null 2>&1
 ```
 
 ### Zero-Downtime Deploy
@@ -259,7 +259,7 @@ server {
 ```bash
 #!/bin/bash
 set -e
-APP_DIR=/var/www/pixelkraft
+APP_DIR=/var/www/platform
 
 cd $APP_DIR
 git pull origin main
@@ -269,7 +269,7 @@ php artisan migrate --force --graceful
 php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache
 php artisan horizon:terminate
 sudo systemctl reload php8.3-fpm
-sudo supervisorctl restart pixelkraft-horizon
+sudo supervisorctl restart platform-horizon
 echo "✅ Deployment complete"
 ```
 
@@ -342,12 +342,12 @@ Authenticate with **`Authorization: Bearer {token}`** (Sanctum personal access t
 
 | Ability | Routes |
 |---|---|
-| `pixelkraft:sites:read` | `GET /api/v1/sites`, `/sites/{site}`, pages, deploys, analytics, releases, git-operations |
-| `pixelkraft:sites:sync` | `POST /api/v1/sites/{site}/sync` |
-| `pixelkraft:sites:deploy` | `POST /api/v1/sites/{site}/deploy` |
-| `pixelkraft:sites:rollback` | `POST /api/v1/sites/{site}/rollback/{logId}` |
-| `pixelkraft:notifications:read` | `GET /api/v1/notifications` |
-| `pixelkraft:notifications:write` | `POST /api/v1/notifications/{id}/read` |
+| `platform:sites:read` | `GET /api/v1/sites`, `/sites/{site}`, pages, deploys, analytics, releases, git-operations |
+| `platform:sites:sync` | `POST /api/v1/sites/{site}/sync` |
+| `platform:sites:deploy` | `POST /api/v1/sites/{site}/deploy` |
+| `platform:sites:rollback` | `POST /api/v1/sites/{site}/rollback/{logId}` |
+| `platform:notifications:read` | `GET /api/v1/notifications` |
+| `platform:notifications:write` | `POST /api/v1/notifications/{id}/read` |
 
 ### `/api/inbox/{slug}` — Inbound Relay
 
@@ -355,13 +355,13 @@ POST JSON with `subject` and `body` (plus optional `from_email`, `from_name`, `t
 
 ### `/api/forms/{slug}` — Public Contact Forms
 
-Anonymous form submissions from marketing pages. Rate-limited to 10 requests/min per IP. Honeypot field `_hp` silently discards spam. Allowed fields: `email`, `name`, `first_name`, `last_name`, `phone`, `company`, `subject`, `message`, and more (see `config/pixelkraft.php`).
+Anonymous form submissions from marketing pages. Rate-limited to 10 requests/min per IP. Honeypot field `_hp` silently discards spam. Allowed fields: `email`, `name`, `first_name`, `last_name`, `phone`, `company`, `subject`, `message`, and more (see `config/platform.php`).
 
 ---
 
 ## Configuration Reference
 
-### `config/pixelkraft.php`
+### `config/platform.php`
 
 | Key | Default | Description |
 |---|---|---|
@@ -415,10 +415,10 @@ vendor/bin/pint
 php artisan horizon:list-failed
 
 # Re-queue stalled webhook deliveries
-php artisan pixelkraft:replay-webhooks --since="2 hours ago"
+php artisan platform:replay-webhooks --since="2 hours ago"
 
 # Prune old webhook delivery logs
-php artisan pixelkraft:prune-webhooks --days=30
+php artisan platform:prune-webhooks --days=30
 
 # Clear all caches
 php artisan cache:clear && php artisan config:clear && php artisan route:clear && php artisan view:clear
@@ -445,6 +445,6 @@ Proprietary software. All rights reserved.
 
 **Built with [Laravel](https://laravel.com) · [Livewire](https://livewire.laravel.com) · [Flux](https://fluxui.dev) · [Tailwind CSS](https://tailwindcss.com)**
 
-*pixelkraft — Artisanal Git-to-Render, at scale.*
+*platform — Artisanal Git-to-Render, at scale.*
 
 </div>

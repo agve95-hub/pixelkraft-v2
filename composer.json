@@ -1,10 +1,10 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "pixelkraft/pixelkraft",
+    "name": "platform/platform",
     "type": "project",
     "description": "Self-hosted Git-to-Render site operations platform (Laravel + Livewire).",
     "keywords": [
-        "pixelkraft",
+        "platform",
         "laravel",
         "livewire",
         "deployment",

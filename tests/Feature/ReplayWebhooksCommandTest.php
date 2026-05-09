@@ -56,13 +56,13 @@ class ReplayWebhooksCommandTest extends TestCase
 
     public function test_fails_without_since_option(): void
     {
-        $this->artisan('pixelkraft:replay-webhooks')->assertFailed();
+        $this->artisan('platform:replay-webhooks')->assertFailed();
     }
 
     public function test_fails_with_unparseable_since_value(): void
     {
         // Carbon::parse throws for clearly invalid values; the command catches and returns FAILURE.
-        $this->artisan('pixelkraft:replay-webhooks', ['--since' => 'not-a-date'])
+        $this->artisan('platform:replay-webhooks', ['--since' => 'not-a-date'])
             ->assertFailed();
     }
 
@@ -76,7 +76,7 @@ class ReplayWebhooksCommandTest extends TestCase
         $this->makeSite($user);
         $this->makeDelivery();
 
-        $this->artisan('pixelkraft:replay-webhooks', [
+        $this->artisan('platform:replay-webhooks', [
             '--since' => '2 hours ago',
             '--dry-run' => true,
         ])->assertSuccessful()
@@ -95,7 +95,7 @@ class ReplayWebhooksCommandTest extends TestCase
         $this->makeSite($user, 'https://github.com/acme/site');
         $this->makeDelivery(['repository' => 'https://github.com/acme/site']);
 
-        $this->artisan('pixelkraft:replay-webhooks', ['--since' => '2 hours ago'])
+        $this->artisan('platform:replay-webhooks', ['--since' => '2 hours ago'])
             ->assertSuccessful();
 
         Bus::assertDispatched(SyncFromWebhookJob::class);
@@ -109,7 +109,7 @@ class ReplayWebhooksCommandTest extends TestCase
         $this->makeSite($user);
         $this->makeDelivery(['processed_at' => now()->subMinutes(30)]);
 
-        $this->artisan('pixelkraft:replay-webhooks', ['--since' => '2 hours ago'])
+        $this->artisan('platform:replay-webhooks', ['--since' => '2 hours ago'])
             ->assertSuccessful();
 
         Bus::assertNotDispatched(SyncFromWebhookJob::class);
@@ -123,7 +123,7 @@ class ReplayWebhooksCommandTest extends TestCase
         $this->makeSite($user);
         $this->makeDelivery(['event' => 'pull_request']);
 
-        $this->artisan('pixelkraft:replay-webhooks', ['--since' => '2 hours ago'])
+        $this->artisan('platform:replay-webhooks', ['--since' => '2 hours ago'])
             ->assertSuccessful();
 
         Bus::assertNotDispatched(SyncFromWebhookJob::class);
@@ -137,7 +137,7 @@ class ReplayWebhooksCommandTest extends TestCase
         $this->makeSite($user); // branch=main
         $this->makeDelivery(['payload' => ['ref' => 'refs/heads/feature-xyz']]);
 
-        $this->artisan('pixelkraft:replay-webhooks', ['--since' => '2 hours ago'])
+        $this->artisan('platform:replay-webhooks', ['--since' => '2 hours ago'])
             ->assertSuccessful();
 
         Bus::assertNotDispatched(SyncFromWebhookJob::class);
@@ -151,7 +151,7 @@ class ReplayWebhooksCommandTest extends TestCase
         $this->makeSite($user);
         $this->makeDelivery(['payload' => ['commits' => []]]);
 
-        $this->artisan('pixelkraft:replay-webhooks', ['--since' => '2 hours ago'])
+        $this->artisan('platform:replay-webhooks', ['--since' => '2 hours ago'])
             ->assertSuccessful();
 
         Bus::assertNotDispatched(SyncFromWebhookJob::class);
@@ -159,7 +159,7 @@ class ReplayWebhooksCommandTest extends TestCase
 
     public function test_no_deliveries_found_exits_successfully(): void
     {
-        $this->artisan('pixelkraft:replay-webhooks', ['--since' => '2 hours ago'])
+        $this->artisan('platform:replay-webhooks', ['--since' => '2 hours ago'])
             ->assertSuccessful();
     }
 
@@ -171,7 +171,7 @@ class ReplayWebhooksCommandTest extends TestCase
         $this->makeSite($user);
         $this->makeDelivery(['received_at' => now()->subDays(2)]);
 
-        $this->artisan('pixelkraft:replay-webhooks', ['--since' => '1 hour ago'])
+        $this->artisan('platform:replay-webhooks', ['--since' => '1 hour ago'])
             ->assertSuccessful();
 
         Bus::assertNotDispatched(SyncFromWebhookJob::class);

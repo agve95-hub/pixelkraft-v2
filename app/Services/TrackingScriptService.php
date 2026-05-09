@@ -25,8 +25,8 @@ class TrackingScriptService
 (function () {
   const siteId = {$this->json($siteKey)};
   const endpoint = {$this->json($collectorUrl)};
-  const storageKey = 'pk_vid_' + siteId;
-  const sessionKey = 'pk_sid_' + siteId;
+  const storageKey = 'tool_vid_' + siteId;
+  const sessionKey = 'tool_sid_' + siteId;
   const visitorId = localStorage.getItem(storageKey) || crypto.randomUUID();
   const sessionId = sessionStorage.getItem(sessionKey) || crypto.randomUUID();
   localStorage.setItem(storageKey, visitorId);
@@ -45,7 +45,7 @@ class TrackingScriptService
     navigator.sendBeacon(endpoint, new Blob([JSON.stringify(body)], { type: 'application/json' }));
   }
 
-  window.pixelkraftTrack = send;
+  window.platformTrack = send;
   send('page_view', { title: document.title });
 
   document.addEventListener('click', function (event) {

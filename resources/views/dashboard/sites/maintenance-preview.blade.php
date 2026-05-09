@@ -22,21 +22,26 @@
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600&display=swap" rel="stylesheet" />
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Inter, system-ui, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        body { background: {{ $m['bgColor'] }}; color: {{ $m['textColor'] }}; font-family: Inter, system-ui, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        .maintenance-preview { max-width: 28rem; text-align: center; }
+        .maintenance-logo { align-items: center; background: linear-gradient(135deg, {{ $m['accentColor'] }}, #06b6d4); border-radius: 10px; color: #000; display: inline-flex; font-size: 14px; font-weight: 700; height: 40px; justify-content: center; margin-bottom: 20px; width: 40px; }
+        .maintenance-title { color: {{ $m['textColor'] }}; font-size: 1.35rem; font-weight: 600; margin-bottom: 10px; }
+        .maintenance-message { font-size: 0.9rem; line-height: 1.55; opacity: 0.78; }
+        .maintenance-countdown { font-family: ui-monospace, monospace; font-size: 11px; margin-top: 16px; opacity: 0.55; }
     </style>
     @if (filled($m['customCSS'] ?? ''))
         <style>{!! $m['customCSS'] !!}</style>
     @endif
 </head>
-<body style="background: {{ $m['bgColor'] }}; color: {{ $m['textColor'] }};">
-    <div style="text-align: center; max-width: 28rem;">
+<body>
+    <div class="maintenance-preview">
         @if ($m['showLogo'] ?? true)
-            <div style="display: inline-flex; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 10px; font-weight: 700; font-size: 14px; color: #000; margin-bottom: 20px; background: linear-gradient(135deg, {{ $m['accentColor'] }}, #06b6d4);">P</div>
+            <div class="maintenance-logo">U</div>
         @endif
-        <h1 style="font-size: 1.35rem; font-weight: 600; margin-bottom: 10px; color: {{ $m['textColor'] }};">{{ $m['heading'] }}</h1>
-        <p style="font-size: 0.9rem; line-height: 1.55; opacity: 0.78;">{{ $m['message'] }}</p>
+        <h1 class="maintenance-title">{{ $m['heading'] }}</h1>
+        <p class="maintenance-message">{{ $m['message'] }}</p>
         @if (! empty($m['showCountdown']) && filled($m['countdownTo'] ?? ''))
-            <p style="margin-top: 16px; font-family: ui-monospace, monospace; font-size: 11px; opacity: 0.55;">{{ $m['countdownTo'] }}</p>
+            <p class="maintenance-countdown">{{ $m['countdownTo'] }}</p>
         @endif
     </div>
 </body>

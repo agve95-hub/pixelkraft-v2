@@ -16,7 +16,7 @@ class ImageOptimizerTest extends TestCase
     {
         parent::setUp();
         $this->optimizer = new ImageOptimizer;
-        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'pk-img-'.uniqid();
+        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'ui-img-'.uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 

@@ -335,7 +335,7 @@ class AnalyticsAggregator
                 [
                     'page_id' => $page->id,
                     'date' => $date,
-                    'source' => AnalyticsSnapshot::SOURCE_PIXELKRAFT_TRACKER,
+                    'source' => AnalyticsSnapshot::SOURCE_PLATFORM_TRACKER,
                 ],
                 [
                     'visitors' => max($visitorIds, $pageViews > 0 ? 1 : 0),
@@ -357,7 +357,7 @@ class AnalyticsAggregator
 
     private function syncCloudflare(Site $site): int
     {
-        $token = config('pixelkraft.cloudflare_api_token');
+        $token = config('platform.cloudflare_api_token');
 
         if (! $token || ! $site->cf_zone_id) {
             return 0;
@@ -441,7 +441,7 @@ class AnalyticsAggregator
 
     private function syncGoogleAnalytics(Site $site): int
     {
-        $credentialsPath = config('pixelkraft.google_analytics_credentials_path');
+        $credentialsPath = config('platform.google_analytics_credentials_path');
         $propertyId = $this->normalizeGaPropertyId($site->ga_property_id);
 
         if (! $credentialsPath || ! File::isReadable($credentialsPath) || ! $propertyId) {
@@ -593,14 +593,14 @@ class AnalyticsAggregator
         $todayVisitors = AnalyticsSnapshot::query()
             ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
             ->where('pages.site_id', $site->id)
-            ->where('analytics_snapshots.source', AnalyticsSnapshot::SOURCE_PIXELKRAFT_TRACKER)
+            ->where('analytics_snapshots.source', AnalyticsSnapshot::SOURCE_PLATFORM_TRACKER)
             ->whereDate('analytics_snapshots.date', $today)
             ->sum('analytics_snapshots.visitors');
 
         $yesterdayVisitors = AnalyticsSnapshot::query()
             ->join('pages', 'pages.id', '=', 'analytics_snapshots.page_id')
             ->where('pages.site_id', $site->id)
-            ->where('analytics_snapshots.source', AnalyticsSnapshot::SOURCE_PIXELKRAFT_TRACKER)
+            ->where('analytics_snapshots.source', AnalyticsSnapshot::SOURCE_PLATFORM_TRACKER)
             ->whereDate('analytics_snapshots.date', $yesterday)
             ->sum('analytics_snapshots.visitors');
 

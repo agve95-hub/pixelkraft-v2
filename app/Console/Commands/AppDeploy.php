@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Laravel\Horizon\Contracts\MasterSupervisorRepository;
 
 /**
- * Safe production deployment sequence for the Pixelkraft platform itself.
+ * Safe production deployment sequence for the platform platform itself.
  *
  * Running `php artisan migrate` directly in production while the app and
  * Horizon are live risks two classes of failure:

@@ -1,3 +1,3 @@
-<select {{ $attributes->merge(['class' => 'pk-ui-select']) }}>
+<select {{ $attributes->merge(['class' => 'ui-select']) }}>
     {{ $slot }}
 </select>

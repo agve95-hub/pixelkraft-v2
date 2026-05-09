@@ -1,13 +1,13 @@
 <div>
-    <form wire:submit="save" class="pk-form-stack space-y-6">
+    <form wire:submit="save" class="ui-form-stack space-y-6">
         @if (! $metaEditingSupported)
-            <div class="pk-ui-alert pk-ui-alert-warning">
+            <div class="ui-alert ui-alert-warning">
                 {{ $metaEditingNotice }}
             </div>
         @endif
 
         <div class="space-y-5">
-            <div class="pk-ui-card-header">
+            <div class="ui-card-header">
                 <div>
                     <x-ui.card-title>Meta tags</x-ui.card-title>
                     <x-ui.card-description>Start with the focus keyword, title, and description. These matter most for ranking.</x-ui.card-description>
@@ -15,7 +15,7 @@
                 <x-ui.button type="button" wire:click="runAnalysis" variant="outline" size="sm" icon="arrow-path">Re-analyze</x-ui.button>
             </div>
 
-            <div class="pk-form-grid pk-form-grid-2">
+            <div class="ui-form-grid ui-form-grid-2">
                 <div>
                     <label class="mb-1.5 block">Focus keyword</label>
                     <flux:input
@@ -92,10 +92,10 @@
         <div class="space-y-5">
             <div>
                 <x-ui.card-title>Open Graph / Social</x-ui.card-title>
-                <p class="pk-page-sub">Controls how the page appears when shared on social platforms, Slack, Discord, etc.</p>
+                <p class="ui-page-sub">Controls how the page appears when shared on social platforms, Slack, Discord, etc.</p>
             </div>
 
-            <div class="pk-form-grid pk-form-grid-2">
+            <div class="ui-form-grid ui-form-grid-2">
                 <div>
                     <label class="mb-1.5 block">Social title</label>
                     <flux:input
@@ -130,7 +130,7 @@
             </div>
         </div>
 
-        <div class="pk-action-row border-t border-zinc-800 pt-4">
+        <div class="ui-action-row border-t border-zinc-800 pt-4">
             <x-ui.button type="submit" variant="default" icon="bookmark" :disabled="! $metaEditingSupported">Save page SEO</x-ui.button>
         </div>
     </form>

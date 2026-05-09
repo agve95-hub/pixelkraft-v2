@@ -324,9 +324,9 @@ class EditorPreviewController extends Controller
 
     private function assetBaseUrl(Site $site): string
     {
-        $assetRoute = route('editor.asset', ['site' => $site->id, 'path' => '__pk_asset__']);
+        $assetRoute = route('editor.asset', ['site' => $site->id, 'path' => '__ui_asset__']);
 
-        return Str::beforeLast($assetRoute, '/__pk_asset__');
+        return Str::beforeLast($assetRoute, '/__ui_asset__');
     }
 
     private function htmlResponse(string $html): Response
@@ -356,11 +356,22 @@ class EditorPreviewController extends Controller
 
         return <<<HTML
 <html>
-<body style="background:#09090b;color:#d4d4d8;font-family:system-ui;height:100vh;margin:0;display:flex;align-items:center;justify-content:center;padding:24px;">
-    <div style="max-width:720px;background:#18181b;border:1px solid #27272a;border-radius:16px;padding:24px;line-height:1.6;">
-        <h1 style="margin:0 0 12px;font-size:20px;color:#fafafa;">Preview unavailable</h1>
-        <p style="margin:0 0 12px;">The editor cannot preview the source file <code style="color:#a78bfa;">{$filePath}</code> directly because this page belongs to a <code style="color:#a78bfa;">{$projectType}</code> project.</p>
-        <p style="margin:0;">Build or deploy the site so the rendered page is available via <code style="color:#a78bfa;">{$expectedOutput}</code>, then reopen the page editor.</p>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body{align-items:center;background:#09090b;color:#d4d4d8;display:flex;font-family:system-ui;height:100vh;justify-content:center;margin:0;padding:24px}
+        .preview-message{background:#18181b;border:1px solid #27272a;border-radius:16px;line-height:1.6;max-width:720px;padding:24px}
+        .preview-title{color:#fafafa;font-size:20px;margin:0 0 12px}
+        .preview-copy{margin:0 0 12px}
+        .preview-copy:last-child{margin-bottom:0}
+        code{color:#a78bfa}
+    </style>
+</head>
+<body>
+    <div class="preview-message">
+        <h1 class="preview-title">Preview unavailable</h1>
+        <p class="preview-copy">The editor cannot preview the source file <code>{$filePath}</code> directly because this page belongs to a <code>{$projectType}</code> project.</p>
+        <p class="preview-copy">Build or deploy the site so the rendered page is available via <code>{$expectedOutput}</code>, then reopen the page editor.</p>
     </div>
 </body>
 </html>
@@ -399,8 +410,8 @@ HTML;
                 $label = $index + 1;
 
                 return <<<HTML
-<section data-pk-fallback-snippet="{$label}" style="padding:14px 16px;border:1px solid #27272a;border-radius:10px;background:#111827;">
-    <p style="margin:0;color:#e4e4e7;line-height:1.45;">{$safeSnippet}</p>
+<section class="fallback-snippet" data-ui-fallback-snippet="{$label}">
+    <p>{$safeSnippet}</p>
 </section>
 HTML;
             })
@@ -414,14 +425,24 @@ HTML;
 <head>
     <meta charset="utf-8">
     <title>Source fallback preview</title>
+    <style>
+        body{background:#09090b;color:#d4d4d8;font-family:system-ui,sans-serif;margin:0;padding:20px}
+        main{display:grid;gap:12px;margin:0 auto;max-width:920px}
+        .fallback-header{background:#18181b;border:1px solid #27272a;border-radius:12px;padding:14px 16px}
+        .fallback-header h1{color:#fafafa;font-size:16px;margin:0}
+        .fallback-header p{color:#a1a1aa;font-size:13px;line-height:1.5;margin:8px 0 0}
+        .fallback-snippet{background:#111827;border:1px solid #27272a;border-radius:10px;padding:14px 16px}
+        .fallback-snippet p{color:#e4e4e7;line-height:1.45;margin:0}
+        code{color:#a78bfa}
+    </style>
 </head>
-<body style="margin:0;background:#09090b;color:#d4d4d8;font-family:system-ui,sans-serif;padding:20px;">
-    <main data-pk-fallback-preview="true" style="max-width:920px;margin:0 auto;display:grid;gap:12px;">
-        <div style="border:1px solid #27272a;border-radius:12px;background:#18181b;padding:14px 16px;">
-            <h1 style="margin:0;font-size:16px;color:#fafafa;">Source fallback preview</h1>
-            <p style="margin:8px 0 0;color:#a1a1aa;font-size:13px;line-height:1.5;">
-                Live built output is unavailable for <code style="color:#a78bfa;">{$filePath}</code>.
-                This fallback extracts editable text snippets from the <code style="color:#a78bfa;">{$projectType}</code> source so Visual mode can still map and edit content.
+<body>
+    <main data-ui-fallback-preview="true">
+        <div class="fallback-header">
+            <h1>Source fallback preview</h1>
+            <p>
+                Live built output is unavailable for <code>{$filePath}</code>.
+                This fallback extracts editable text snippets from the <code>{$projectType}</code> source so Visual mode can still map and edit content.
             </p>
         </div>
         {$sections}
@@ -570,11 +591,22 @@ HTML;
 
         return <<<HTML
 <html>
-<body style="background:#09090b;color:#d4d4d8;font-family:system-ui;height:100vh;margin:0;display:flex;align-items:center;justify-content:center;padding:24px;">
-    <div style="max-width:760px;background:#18181b;border:1px solid #3f3f46;border-radius:16px;padding:24px;line-height:1.6;">
-        <h1 style="margin:0 0 12px;font-size:20px;color:#fafafa;">Preview failed</h1>
-        <p style="margin:0 0 12px;">pixelkraft hit an internal preview error while rendering <code style="color:#a78bfa;">{$filePath}</code> for <code style="color:#a78bfa;">{$siteName}</code>.</p>
-        <p style="margin:0;color:#fda4af;">The preview service encountered an internal error. Check application logs for details and try again.</p>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body{align-items:center;background:#09090b;color:#d4d4d8;display:flex;font-family:system-ui;height:100vh;justify-content:center;margin:0;padding:24px}
+        .preview-message{background:#18181b;border:1px solid #3f3f46;border-radius:16px;line-height:1.6;max-width:760px;padding:24px}
+        .preview-title{color:#fafafa;font-size:20px;margin:0 0 12px}
+        .preview-copy{margin:0 0 12px}
+        .preview-error{color:#fda4af;margin:0}
+        code{color:#a78bfa}
+    </style>
+</head>
+<body>
+    <div class="preview-message">
+        <h1 class="preview-title">Preview failed</h1>
+        <p class="preview-copy">The preview service hit an internal error while rendering <code>{$filePath}</code> for <code>{$siteName}</code>.</p>
+        <p class="preview-error">The preview service encountered an internal error. Check application logs for details and try again.</p>
     </div>
 </body>
 </html>

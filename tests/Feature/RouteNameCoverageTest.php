@@ -46,7 +46,7 @@ class RouteNameCoverageTest extends TestCase
     public function test_api_v1_sites_index_by_route_name(): void
     {
         $user = $this->makeUser();
-        Sanctum::actingAs($user, ['pixelkraft:sites:read']);
+        Sanctum::actingAs($user, ['platform:sites:read']);
 
         $this->getJson(route('api.v1.sites.index'))->assertOk();
     }
@@ -55,7 +55,7 @@ class RouteNameCoverageTest extends TestCase
     {
         $user = $this->makeUser('show@rn.com');
         $site = $this->makeSite($user);
-        Sanctum::actingAs($user, ['pixelkraft:sites:read']);
+        Sanctum::actingAs($user, ['platform:sites:read']);
 
         $this->getJson(route('api.v1.sites.show', $site))->assertOk();
     }
@@ -64,7 +64,7 @@ class RouteNameCoverageTest extends TestCase
     {
         $user = $this->makeUser('sync@rn.com');
         $site = $this->makeSite($user, 'sync-rn');
-        Sanctum::actingAs($user, ['pixelkraft:sites:sync']);
+        Sanctum::actingAs($user, ['platform:sites:sync']);
 
         // Sync dispatches a job; without a real repo it returns success or an error
         $response = $this->postJson(route('api.v1.sites.sync', $site));
@@ -77,7 +77,7 @@ class RouteNameCoverageTest extends TestCase
     {
         $user = $this->makeUser('notif@rn.com');
         $site = $this->makeSite($user, 'notif-rn');
-        Sanctum::actingAs($user, ['pixelkraft:notifications:read']);
+        Sanctum::actingAs($user, ['platform:notifications:read']);
 
         $this->getJson(route('api.v1.notifications.index'))->assertOk();
     }
@@ -96,7 +96,7 @@ class RouteNameCoverageTest extends TestCase
             'created_at' => now(),
         ]);
 
-        Sanctum::actingAs($user, ['pixelkraft:notifications:write']);
+        Sanctum::actingAs($user, ['platform:notifications:write']);
 
         $this->postJson(route('api.v1.notifications.read', $notification->id))
             ->assertOk();
@@ -118,7 +118,7 @@ class RouteNameCoverageTest extends TestCase
             'created_at' => now(),
         ]);
 
-        Sanctum::actingAs($user, ['pixelkraft:notifications:write']);
+        Sanctum::actingAs($user, ['platform:notifications:write']);
 
         $this->postJson(route('api.v1.notifications.readAll'))->assertOk();
     }

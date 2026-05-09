@@ -7,8 +7,8 @@ use Illuminate\Console\Command;
 
 class PruneWebhooks extends Command
 {
-    protected $signature = 'pixelkraft:prune-webhooks
-                            {--days= : Delete deliveries older than this many days (default: config pixelkraft.monitoring.webhook_deliveries_retention_days)}
+    protected $signature = 'platform:prune-webhooks
+                            {--days= : Delete deliveries older than this many days (default: config platform.monitoring.webhook_deliveries_retention_days)}
                             {--dry-run : Report how many rows would be deleted without deleting}';
 
     protected $description = 'Delete old webhook_deliveries rows to cap table growth and retention.';
@@ -18,7 +18,7 @@ class PruneWebhooks extends Command
         $opt = $this->option('days');
         $days = ($opt !== null && $opt !== '')
             ? max(1, (int) $opt)
-            : max(1, (int) config('pixelkraft.monitoring.webhook_deliveries_retention_days', 30));
+            : max(1, (int) config('platform.monitoring.webhook_deliveries_retention_days', 30));
         $dryRun = (bool) $this->option('dry-run');
 
         $cutoff = now()->subDays($days);

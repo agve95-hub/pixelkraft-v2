@@ -1,8 +1,8 @@
 <div class="space-y-6" wire:poll.30s>
-    <div class="pk-page-head">
+    <div class="ui-page-head">
         <div>
-            <h1 class="pk-page-title">Analytics &amp; Performance</h1>
-            <p class="pk-page-sub">{{ $stats['mode'] === 'site' ? 'Viewing ' . $stats['site_name'] : 'Portfolio-wide traffic, uptime, and deployment health' }}</p>
+            <h1 class="ui-page-title">Analytics &amp; Performance</h1>
+            <p class="ui-page-sub">{{ $stats['mode'] === 'site' ? 'Viewing ' . $stats['site_name'] : 'Portfolio-wide traffic, uptime, and deployment health' }}</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
             <flux:select wire:model.live="siteId" class="text-sm w-52">
@@ -89,7 +89,7 @@
                     $baseY  = $pad + $plotH;
                     $areaD  = $lineD.' L '.$lastX.' '.$baseY.' L '.$firstX.' '.$baseY.' Z';
                 @endphp
-                <div class="chart-shell rounded-lg border border-zinc-800/90 bg-[#141414] p-3">
+                <div class="chart-shell">
                     <svg class="h-36 w-full" viewBox="0 0 {{ $vbW }} {{ $vbH }}" preserveAspectRatio="none">
                         @foreach ([0, 1, 2, 3] as $g)
                             <line x1="{{ $pad }}" y1="{{ $pad + ($g / 3) * $plotH }}" x2="{{ $vbW - $pad }}" y2="{{ $pad + ($g / 3) * $plotH }}" stroke="rgb(39 39 42)" stroke-width="1" vector-effect="non-scaling-stroke" />
@@ -109,7 +109,7 @@
                     </div>
                 </div>
             @else
-                <x-ui.empty icon="chart-bar" title="No organic traffic data yet" description="Connect GA4 and run php artisan pixelkraft:sync-analytics." />
+                <x-ui.empty icon="chart-bar" title="No organic traffic data yet" description="Connect GA4 and run php artisan platform:sync-analytics." />
             @endif
         </x-ui.card>
 
@@ -162,9 +162,9 @@
                         <line x1="{{ $pL }}" y1="{{ $pT }}" x2="{{ $sw - $pR }}" y2="{{ $pT }}" stroke="rgb(63 63 70)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" />
                         <line x1="{{ $pL }}" y1="{{ $pT + $ph / 2 }}" x2="{{ $sw - $pR }}" y2="{{ $pT + $ph / 2 }}" stroke="rgb(63 63 70)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" />
                         <line x1="{{ $pL }}" y1="{{ $pT + $ph }}" x2="{{ $sw - $pR }}" y2="{{ $pT + $ph }}" stroke="rgb(63 63 70)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" />
-                        <text x="4" y="{{ $pT + 4 }}" class="fill-zinc-500" style="font-size: 9px">{{ $maxMs }}ms</text>
-                        <text x="4" y="{{ $pT + $ph / 2 + 3 }}" class="fill-zinc-500" style="font-size: 9px">{{ $yMid }}ms</text>
-                        <text x="4" y="{{ $pT + $ph + 3 }}" class="fill-zinc-500" style="font-size: 9px">0ms</text>
+                        <text x="4" y="{{ $pT + 4 }}" class="chart-axis-label fill-zinc-500">{{ $maxMs }}ms</text>
+                        <text x="4" y="{{ $pT + $ph / 2 + 3 }}" class="chart-axis-label fill-zinc-500">{{ $yMid }}ms</text>
+                        <text x="4" y="{{ $pT + $ph + 3 }}" class="chart-axis-label fill-zinc-500">0ms</text>
                         <path d="{{ $pathD }}" fill="none" stroke="rgb(161 161 170)" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
                         @foreach ($series as $i => $pt)
                             @php $x = $pL + ($nc <= 1 ? $pw / 2 : ($i / max(1, $nc - 1)) * $pw); $y = $pT + $ph - ($pt['ms'] / $maxMs) * $ph; @endphp

@@ -22,7 +22,7 @@ Route::post('/webhooks/github/{site}', [WebhookController::class, 'github'])
     ->middleware('throttle:120,1')
     ->name('webhooks.github.site');
 
-Route::get('/tracking/{site}/pixelkraft.js', [TrackingController::class, 'script'])
+Route::get('/tracking/{site}/platform.js', [TrackingController::class, 'script'])
     ->name('tracking.script');
 Route::post('/tracking/{site}/collect', [TrackingController::class, 'collect'])
     ->middleware('throttle:120,1')
@@ -37,7 +37,7 @@ Route::post('/forms/{slug}', [FormSubmissionController::class, 'store'])
 Route::get('/unsubscribe/{subscriber}', function (NewsletterSubscriber $subscriber) {
     $subscriber->update(['status' => 'unsubscribed']);
 
-    return response('<html><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f4f4f5;"><div style="text-align:center;"><h1>Unsubscribed</h1><p>You have been successfully unsubscribed.</p></div></body></html>', 200, [
+    return response('<html><head><style>body{align-items:center;background:#f4f4f5;display:flex;font-family:system-ui;height:100vh;justify-content:center;margin:0}.message{text-align:center}</style></head><body><div class="message"><h1>Unsubscribed</h1><p>You have been successfully unsubscribed.</p></div></body></html>', 200, [
         'Content-Type' => 'text/html',
     ]);
 })->name('api.unsubscribe')->middleware('signed');

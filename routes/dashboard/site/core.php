@@ -86,7 +86,7 @@ Route::delete('/sites/{site}/files/{filename}', function (Site $site, string $fi
 })->name('sites.files.destroy');
 Route::get('/sites/{site}/pages', fn (Site $site) => view('dashboard.sites.pages', ['site' => $site]))->name('sites.pages');
 
-// Editor ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â kept as Blade (Phase 3 overhaul)
+// Editor — kept as Blade (Phase 3 overhaul)
 Route::get('/sites/{site}/pages/{page}/edit', fn (Site $site, Page $page) => view('dashboard.editor.index', ['site' => $site, 'page' => $page]))->name('editor');
 
 // Editor preview
@@ -135,8 +135,9 @@ Route::get('/sites/{site}/maintenance/preview', function (Site $site) {
     $s = $site->maintenance_settings ?? [];
     $title = e($s['title'] ?? "We'll be back soon");
     $message = e($s['message'] ?? "We're performing scheduled maintenance. Please check back later.");
+    $siteName = e($site->name);
 
-    return response("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{$title}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0a0a0a;color:#e4e4e7;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}main{max-width:480px;text-align:center}h1{font-size:1.5rem;font-weight:600;margin-bottom:1rem}p{color:#a1a1aa;line-height:1.6}.badge{display:inline-block;background:#27272a;border:1px solid #3f3f46;border-radius:9999px;font-size:0.75rem;padding:0.25rem 0.75rem;margin-bottom:1.5rem;color:#71717a}</style></head><body><main><span class=\"badge\">Maintenance preview ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â {$site->name}</span><h1>{$title}</h1><p>{$message}</p></main></body></html>", 200, ['Content-Type' => 'text/html']);
+    return response("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{$title}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0a0a0a;color:#e4e4e7;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}main{max-width:480px;text-align:center}h1{font-size:1.5rem;font-weight:600;margin-bottom:1rem}p{color:#a1a1aa;line-height:1.6}.badge{display:inline-block;background:#27272a;border:1px solid #3f3f46;border-radius:9999px;font-size:0.75rem;padding:0.25rem 0.75rem;margin-bottom:1.5rem;color:#71717a}</style></head><body><main><span class=\"badge\">Maintenance preview — {$siteName}</span><h1>{$title}</h1><p>{$message}</p></main></body></html>", 200, ['Content-Type' => 'text/html']);
 })->name('sites.maintenance.preview');
 Route::post('/sites/{site}/inbox/{message}/read', function (Site $site, SiteInboxMessage $message) {
     abort_unless($message->site_id === $site->id, 403);

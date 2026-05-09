@@ -138,8 +138,8 @@ class SiteSupportService
     private function metaEditingNotice(Site $site, Page $page, string $mode): string
     {
         return match ($mode) {
-            'html' => 'Pixelkraft can write SEO tags directly into this page source.',
-            'next_metadata' => 'Pixelkraft can update this Next.js page because it exposes a literal `export const metadata` object.',
+            'html' => 'platform can write SEO tags directly into this page source.',
+            'next_metadata' => 'platform can update this Next.js page because it exposes a literal `export const metadata` object.',
             default => $site->project_type === 'nextjs'
                 ? 'SEO editing is disabled here because this page does not expose a patchable `export const metadata` object. Edit the owning page, layout, or shared metadata helper in Code mode.'
                 : 'SEO editing is disabled here because this page is managed by framework source rather than direct HTML. Use Code mode for SEO changes.',

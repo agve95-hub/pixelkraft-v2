@@ -40,10 +40,10 @@ HTML;
 
         $decorated = (new PreviewOverlayService)->decorate($site, $page, $html);
 
-        $this->assertStringContainsString('data-pk-preview="editor"', $decorated);
-        $this->assertStringContainsString('data-pk-region-id="region-hero"', $decorated);
-        $this->assertStringContainsString('data-pk-node-id="pk-node-region-hero-1"', $decorated);
-        $this->assertStringContainsString('name="pixelkraft-preview"', $decorated);
+        $this->assertStringContainsString('data-ui-preview="editor"', $decorated);
+        $this->assertStringContainsString('data-ui-region-id="region-hero"', $decorated);
+        $this->assertStringContainsString('data-ui-node-id="ui-node-region-hero-1"', $decorated);
+        $this->assertStringContainsString('name="platform-preview"', $decorated);
     }
 
     public function test_it_falls_back_to_text_matching_when_selector_no_longer_matches(): void
@@ -76,7 +76,7 @@ HTML;
 
         $decorated = (new PreviewOverlayService)->decorate($site, $page, $html);
 
-        $this->assertStringContainsString('data-pk-region-id="region-copy"', $decorated);
-        $this->assertStringContainsString('data-pk-region-type="text"', $decorated);
+        $this->assertStringContainsString('data-ui-region-id="region-copy"', $decorated);
+        $this->assertStringContainsString('data-ui-region-type="text"', $decorated);
     }
 }

@@ -58,7 +58,7 @@ class VisualEditor extends Component
     public array $debugTelemetry = [];
 
     /**
-     * Visual undo/redo for inline edits is not persisted as a stack yet; the mockup shows
+     * Visual undo/redo for inline edits is not persisted as a stack yet; the editor shows
      * these controls, so we expose the affordance and keep the action non-destructive.
      */
     public bool $canUndo = false;
@@ -347,7 +347,7 @@ class VisualEditor extends Component
     public function promoteSelectedRegion(): void
     {
         if (! $this->selectedRegionId) {
-            session()->flash('error', 'Select a layer first so pixelkraft knows which region to promote.');
+            session()->flash('error', 'Select a layer first so platform knows which region to promote.');
 
             return;
         }
@@ -366,7 +366,7 @@ class VisualEditor extends Component
     public function lockSelectedRegion(): void
     {
         if (! $this->selectedRegionId) {
-            session()->flash('error', 'Select a layer first so pixelkraft knows which region to lock.');
+            session()->flash('error', 'Select a layer first so platform knows which region to lock.');
 
             return;
         }
@@ -901,7 +901,7 @@ class VisualEditor extends Component
             return 'Visual save is disabled for this page type. Use Code mode to edit the source safely.';
         }
 
-        return 'This region is preview-only because pixelkraft could not map it back to a unique source edit safely. Use Code mode for this one.';
+        return 'This region is preview-only because platform could not map it back to a unique source edit safely. Use Code mode for this one.';
     }
 
     /**

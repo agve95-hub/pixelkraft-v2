@@ -185,13 +185,13 @@ class StaticHtmlParserTest extends TestCase
         $this->assertFalse($region['is_static']);
     }
 
-    public function test_detects_pk_editable_marker_region(): void
+    public function test_detects_ui_editable_marker_region(): void
     {
         $html = <<<'HTML'
         <html><body>
-        <!-- pk:editable:start:my-heading type="text" -->
+        <!-- ui:editable:start:my-heading type="text" -->
         <h2>Section Title</h2>
-        <!-- pk:editable:end:my-heading -->
+        <!-- ui:editable:end:my-heading -->
         </body></html>
         HTML;
 

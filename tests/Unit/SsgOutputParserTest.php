@@ -19,7 +19,7 @@ class SsgOutputParserTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'pk-ssg-'.uniqid();
+        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'ui-ssg-'.uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 

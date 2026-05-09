@@ -1,3 +1,3 @@
-<div {{ $attributes->merge(['class' => 'pk-ui-card-content']) }}>
+<div {{ $attributes->merge(['class' => 'ui-card-content']) }}>
     {{ $slot }}
 </div>

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class PublishScheduled extends Command
 {
-    protected $signature = 'pixelkraft:publish-scheduled';
+    protected $signature = 'platform:publish-scheduled';
 
     protected $description = 'Publish blog posts that are scheduled for the current time';
 

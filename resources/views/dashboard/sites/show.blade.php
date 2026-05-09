@@ -29,13 +29,13 @@
 
     <div class="space-y-6">
         {{-- Page header --}}
-        <div class="pk-page-head">
+        <div class="ui-page-head">
             <div class="space-y-2">
                 <a href="{{ route('sites.index') }}" class="back-link">
                     <flux:icon name="chevron-left" class="size-3.5" /> Sites
                 </a>
                 <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="pk-page-title">{{ $site->name }}</h1>
+                    <h1 class="ui-page-title">{{ $site->name }}</h1>
                     <x-ui.badge variant="{{ $deployBadgeVariant }}" dot>{{ $deployStatusLabel }}</x-ui.badge>
                     <x-ui.badge>{{ str($site->project_type ?? 'project')->lower() }}</x-ui.badge>
                     @if (filled($site->client_first_name) || filled($site->client_last_name) || filled($site->client_company))
@@ -68,7 +68,7 @@
         </div>
 
         {{-- Stats --}}
-        <div class="pk-stat-grid">
+        <div class="ui-stat-grid">
             <div class="stat">
                 <p class="stat-label">Visitors today</p>
                 <p class="stat-val tabular-nums">{{ number_format($visitorsToday) }}</p>
@@ -149,18 +149,18 @@
                     <x-ui.tab active>
                         Pages <span class="badge-count">{{ $site->pages_count }}</span>
                     </x-ui.tab>
-                    <a href="{{ route('blog.index', $site) }}" class="pk-ui-tab">
+                    <a href="{{ route('blog.index', $site) }}" class="ui-tab">
                         Blog <span class="badge-count">{{ $site->blog_posts_count }}</span>
                     </a>
-                    <a href="{{ route('templates.index', $site) }}" class="pk-ui-tab">
+                    <a href="{{ route('templates.index', $site) }}" class="ui-tab">
                         Templates <span class="badge-count">{{ $site->content_templates_count }}</span>
                     </a>
-                    <a href="{{ route('sites.files', $site) }}" class="pk-ui-tab">Files</a>
+                    <a href="{{ route('sites.files', $site) }}" class="ui-tab">Files</a>
                 </x-ui.tabs>
             </x-ui.card-header>
 
             <div class="overflow-x-auto">
-                <table class="pk-ui-table">
+                <table class="ui-table">
                     <thead>
                         <tr>
                             <th class="pl-[18px]">Page</th>

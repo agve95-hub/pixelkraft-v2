@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class SyncAnalytics extends Command
 {
-    protected $signature = 'pixelkraft:sync-analytics';
+    protected $signature = 'platform:sync-analytics';
 
     protected $description = 'Sync analytics (GA4 organic SEO + Cloudflare) into snapshots';
 

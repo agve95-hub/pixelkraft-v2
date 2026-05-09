@@ -13,7 +13,7 @@ class InboxInboundControllerTest extends TestCase
 
     public function test_accepts_payload_when_secret_not_required(): void
     {
-        config(['pixelkraft.inbox_inbound_require_secret' => false]);
+        config(['platform.inbox_inbound_require_secret' => false]);
 
         $site = Site::create([
             'name' => 'Inbox Site',
@@ -42,8 +42,8 @@ class InboxInboundControllerTest extends TestCase
     public function test_rejects_wrong_bearer_when_secret_configured(): void
     {
         config([
-            'pixelkraft.inbox_inbound_require_secret' => true,
-            'pixelkraft.inbox_inbound_secret' => 'correct-token-that-is-32-chars-ok',
+            'platform.inbox_inbound_require_secret' => true,
+            'platform.inbox_inbound_secret' => 'correct-token-that-is-32-chars-ok',
         ]);
 
         Site::create([
@@ -65,8 +65,8 @@ class InboxInboundControllerTest extends TestCase
     public function test_accepts_valid_bearer_token(): void
     {
         config([
-            'pixelkraft.inbox_inbound_require_secret' => true,
-            'pixelkraft.inbox_inbound_secret' => 'correct-token-that-is-32-chars-ok',
+            'platform.inbox_inbound_require_secret' => true,
+            'platform.inbox_inbound_secret' => 'correct-token-that-is-32-chars-ok',
         ]);
 
         $site = Site::create([
@@ -92,8 +92,8 @@ class InboxInboundControllerTest extends TestCase
     public function test_per_site_secret_used_when_global_unset(): void
     {
         config([
-            'pixelkraft.inbox_inbound_require_secret' => true,
-            'pixelkraft.inbox_inbound_secret' => null,
+            'platform.inbox_inbound_require_secret' => true,
+            'platform.inbox_inbound_secret' => null,
         ]);
 
         $site = Site::create([
@@ -120,8 +120,8 @@ class InboxInboundControllerTest extends TestCase
     public function test_per_site_secret_takes_precedence_over_global(): void
     {
         config([
-            'pixelkraft.inbox_inbound_require_secret' => true,
-            'pixelkraft.inbox_inbound_secret' => 'global-inbox-secret-32-chars-min-ok',
+            'platform.inbox_inbound_require_secret' => true,
+            'platform.inbox_inbound_secret' => 'global-inbox-secret-32-chars-min-ok',
         ]);
 
         $site = Site::create([

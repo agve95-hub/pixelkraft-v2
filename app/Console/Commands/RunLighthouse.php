@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Log;
  */
 class RunLighthouse extends Command
 {
-    protected $signature = 'pixelkraft:run-lighthouse {--site= : Specific site slug} {--strategy=mobile : mobile or desktop}';
+    protected $signature = 'platform:run-lighthouse {--site= : Specific site slug} {--strategy=mobile : mobile or desktop}';
 
     protected $description = 'Fetch PageSpeed Insights scores for all live site pages';
 
@@ -73,7 +73,7 @@ class RunLighthouse extends Command
     private function auditPage(Site $site, Page $page, string $strategy): ?array
     {
         $url = 'https://'.$site->domain.($page->url_path ?? '/');
-        $apiKey = config('pixelkraft.psi_api_key');
+        $apiKey = config('platform.psi_api_key');
 
         $params = [
             'url' => $url,

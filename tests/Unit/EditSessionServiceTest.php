@@ -137,7 +137,7 @@ class EditSessionServiceTest extends TestCase
 
         $session = $service->startOrResume($site, $page, $user);
 
-        $this->assertStringStartsWith("pixelkraft/{$site->slug}/", $session->working_branch);
+        $this->assertStringStartsWith("platform/{$site->slug}/", $session->working_branch);
     }
 
     public function test_start_does_not_resume_closed_session(): void

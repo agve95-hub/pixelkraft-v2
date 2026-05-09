@@ -271,10 +271,10 @@ class Site extends Model
                 $site->r2_bucket_prefix = 'sites/'.$site->slug.'/media';
             }
             if (empty($site->repo_path)) {
-                $site->repo_path = config('pixelkraft.repos_path').'/'.$site->slug;
+                $site->repo_path = config('platform.repos_path').'/'.$site->slug;
             }
             if (empty($site->deploy_path)) {
-                $site->deploy_path = config('pixelkraft.sites_deploy_path').'/'.$site->slug;
+                $site->deploy_path = config('platform.sites_deploy_path').'/'.$site->slug;
             }
         });
 
@@ -558,7 +558,7 @@ class Site extends Model
     public function activeTrackingInstallation(): HasOne
     {
         return $this->hasOne(TrackingInstallation::class)
-            ->where('provider', 'pixelkraft')
+            ->where('provider', 'platform')
             ->where('is_active', true);
     }
 
@@ -598,7 +598,7 @@ class Site extends Model
             ->findOrFail($id);
     }
 
-    private function isPlatformOwnedPath(?string $path): bool
+    private function isplatformOwnedPath(?string $path): bool
     {
         if ($path === null || $path === '') {
             return false;
@@ -614,13 +614,13 @@ class Site extends Model
 
     private function cleanupFilesystemArtifacts(): void
     {
-        if ($this->isPlatformOwnedPath($this->repo_path)) {
+        if ($this->isplatformOwnedPath($this->repo_path)) {
             $this->deleteDirectory($this->repo_path, $this->slug);
         } else {
             Log::info("Skipped cleanup of non-platform repo_path [{$this->repo_path}] for site [{$this->slug}]");
         }
 
-        if ($this->isPlatformOwnedPath($this->deploy_path)) {
+        if ($this->isplatformOwnedPath($this->deploy_path)) {
             $this->deleteDirectory($this->deploy_path, $this->slug);
         } else {
             Log::info("Skipped cleanup of non-platform deploy_path [{$this->deploy_path}] for site [{$this->slug}]");
@@ -635,25 +635,25 @@ class Site extends Model
 
     private function runtimeRootPath(): string
     {
-        return rtrim((string) config('pixelkraft.runtime.storage_path', storage_path('app/runtime-sites')), '/')
+        return rtrim((string) config('platform.runtime.storage_path', storage_path('app/runtime-sites')), '/')
             .'/'.$this->slug;
     }
 
     private function runtimePidPath(): string
     {
-        return rtrim((string) config('pixelkraft.runtime.pid_path', storage_path('app/runtime-pids')), '/')
+        return rtrim((string) config('platform.runtime.pid_path', storage_path('app/runtime-pids')), '/')
             .'/'.$this->slug.'.pid';
     }
 
     private function runtimeLogPath(): string
     {
-        return rtrim((string) config('pixelkraft.runtime.log_path', storage_path('logs/runtime-sites')), '/')
+        return rtrim((string) config('platform.runtime.log_path', storage_path('logs/runtime-sites')), '/')
             .'/'.$this->slug.'.log';
     }
 
     private function nginxConfigPath(): string
     {
-        return (string) ($this->nginx_conf_path ?: (rtrim((string) config('pixelkraft.nginx_sites_path'), '/').'/'.$this->slug.'.conf'));
+        return (string) ($this->nginx_conf_path ?: (rtrim((string) config('platform.nginx_sites_path'), '/').'/'.$this->slug.'.conf'));
     }
 
     private function nginxEnabledPath(): string
@@ -661,7 +661,7 @@ class Site extends Model
         $enabledDir = str_replace(
             'sites-available',
             'sites-enabled',
-            (string) config('pixelkraft.nginx_sites_path')
+            (string) config('platform.nginx_sites_path')
         );
 
         return rtrim($enabledDir, '/').'/'.$this->slug.'.conf';

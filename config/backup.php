@@ -20,7 +20,7 @@ return [
          * The name of this application. You can use this name to monitor
          * the backups.
          */
-        'name' => env('APP_NAME', 'pixelkraft'),
+        'name' => env('APP_NAME', 'platform'),
 
         'source' => [
 
@@ -106,7 +106,7 @@ return [
              * The disk names on which the backups will be stored.
              */
             'disks' => [
-                config('pixelkraft.backup.disk', 'r2'),
+                config('platform.backup.disk', 'r2'),
             ],
 
         ],
@@ -169,7 +169,7 @@ return [
             'to' => env('BACKUP_NOTIFICATION_EMAIL', env('MAIL_FROM_ADDRESS', 'admin@example.com')),
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'noreply@example.com'),
-                'name' => env('MAIL_FROM_NAME', 'Pixelkraft Backups'),
+                'name' => env('MAIL_FROM_NAME', 'platform Backups'),
             ],
         ],
 
@@ -194,8 +194,8 @@ return [
      */
     'monitor_backups' => [
         [
-            'name' => env('APP_NAME', 'pixelkraft'),
-            'disks' => [config('pixelkraft.backup.disk', 'r2')],
+            'name' => env('APP_NAME', 'platform'),
+            'disks' => [config('platform.backup.disk', 'r2')],
             'health_checks' => [
                 MaximumAgeInDays::class => 2,
                 MaximumStorageInMegabytes::class => 5000,

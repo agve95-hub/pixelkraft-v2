@@ -1,1 +1,1 @@
-<span {{ $attributes->merge(['class' => 'pk-ui-spinner']) }} aria-label="Loading"></span>
+<span {{ $attributes->merge(['class' => 'ui-spinner']) }} aria-label="Loading"></span>

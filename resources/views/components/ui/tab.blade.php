@@ -1,7 +1,7 @@
 @props(['active' => false, 'href' => null])
 
 @php
-    $class = 'pk-ui-tab'.($active ? ' is-active' : '');
+    $class = 'ui-tab'.($active ? ' is-active' : '');
 @endphp
 
 @if ($href)

@@ -63,7 +63,7 @@ class SiteSettings extends Component
             ->where('environment', 'production')
             ->first();
         $trackingInstallation = $site->trackingInstallations()
-            ->where('provider', 'pixelkraft')
+            ->where('provider', 'platform')
             ->latest()
             ->first();
 
@@ -195,7 +195,7 @@ class SiteSettings extends Component
 
         $trackingInstallation = $site->trackingInstallations()->firstOrCreate(
             [
-                'provider' => 'pixelkraft',
+                'provider' => 'platform',
             ],
             [
                 'site_id' => $site->id,
@@ -248,7 +248,7 @@ class SiteSettings extends Component
             'recentReleases' => $site->deploymentReleases()->latest('activated_at')->limit(4)->get(),
             'recentGitOperations' => $site->gitOperations()->latest('started_at')->limit(6)->get(),
             'recentWebhookDeliveries' => $site->webhookDeliveries()->latest('received_at')->limit(6)->get(),
-            'trackingInstallation' => $site->trackingInstallations()->where('provider', 'pixelkraft')->latest()->first(),
+            'trackingInstallation' => $site->trackingInstallations()->where('provider', 'platform')->latest()->first(),
         ]);
     }
 

@@ -12,13 +12,13 @@
                 <div class="activity-item">
                     @switch($activity->status)
                         @case('success')
-                            <span class="activity-dot" style="background:var(--pk-accent)"></span>
+                            <span class="activity-dot activity-dot-success"></span>
                             @break
                         @case('failed')
-                            <span class="activity-dot" style="background:var(--red)"></span>
+                            <span class="activity-dot activity-dot-danger"></span>
                             @break
                         @default
-                            <span class="activity-dot animate-pulse" style="background:var(--amber)"></span>
+                            <span class="activity-dot activity-dot-warning animate-pulse"></span>
                     @endswitch
                     <div class="min-w-0 flex-1">
                         <p class="activity-text">

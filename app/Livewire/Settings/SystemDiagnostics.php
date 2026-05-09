@@ -343,7 +343,7 @@ class SystemDiagnostics extends Component
                 'title' => 'Horizon queue coverage',
                 'status' => empty($missingQueues) ? 'pass' : 'fail',
                 'message' => empty($missingQueues)
-                    ? 'The configured supervisors cover the queues pixelkraft dispatches to.'
+                    ? 'The configured supervisors cover the queues platform dispatches to.'
                     : 'Missing Horizon queues: '.implode(', ', $missingQueues),
             ],
             [

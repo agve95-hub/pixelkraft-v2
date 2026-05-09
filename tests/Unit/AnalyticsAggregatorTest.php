@@ -211,7 +211,7 @@ class AnalyticsAggregatorTest extends TestCase
         AnalyticsSnapshot::create([
             'page_id' => $page->id,
             'date' => now()->subDays(3)->toDateString(),
-            'source' => AnalyticsSnapshot::SOURCE_PIXELKRAFT_TRACKER,
+            'source' => AnalyticsSnapshot::SOURCE_PLATFORM_TRACKER,
             'visitors' => 100,
             'pageviews' => 150,
             'created_at' => now(),
@@ -219,7 +219,7 @@ class AnalyticsAggregatorTest extends TestCase
         AnalyticsSnapshot::create([
             'page_id' => $page->id,
             'date' => now()->subDays(2)->toDateString(),
-            'source' => AnalyticsSnapshot::SOURCE_PIXELKRAFT_TRACKER,
+            'source' => AnalyticsSnapshot::SOURCE_PLATFORM_TRACKER,
             'visitors' => 50,
             'pageviews' => 80,
             'created_at' => now(),
@@ -249,7 +249,7 @@ class AnalyticsAggregatorTest extends TestCase
         AnalyticsSnapshot::create([
             'page_id' => $page->id,
             'date' => now()->subDays(2)->toDateString(),
-            'source' => AnalyticsSnapshot::SOURCE_PIXELKRAFT_TRACKER,
+            'source' => AnalyticsSnapshot::SOURCE_PLATFORM_TRACKER,
             'visitors' => 50,
             'pageviews' => 60,
             'created_at' => now(),
@@ -293,7 +293,7 @@ class AnalyticsAggregatorTest extends TestCase
         AnalyticsSnapshot::create([
             'page_id' => $page->id,
             'date' => now()->subDays(5)->toDateString(),
-            'source' => AnalyticsSnapshot::SOURCE_PIXELKRAFT_TRACKER,
+            'source' => AnalyticsSnapshot::SOURCE_PLATFORM_TRACKER,
             'visitors' => 40,
             'pageviews' => 55,
             'created_at' => now(),

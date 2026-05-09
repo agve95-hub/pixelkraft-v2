@@ -1,32 +1,32 @@
 <div class="w-full max-w-6xl">
-    <div class="pk-page-head">
+    <div class="ui-page-head">
         <div>
             <a href="{{ route('sites.index') }}" class="back-link mb-3">
                 <flux:icon name="chevron-left" class="size-3.5" /> Sites
             </a>
-            <h1 class="pk-page-title">Add a new site</h1>
-            <p class="pk-page-sub">Set up a project with client info, source files, deployment checks, and production gates.</p>
+            <h1 class="ui-page-title">Add a new site</h1>
+            <p class="ui-page-sub">Set up a project with client info, source files, deployment checks, and production gates.</p>
         </div>
         <x-ui.button type="button" variant="outline" size="sm" wire:click="checkSourceReadiness">Run readiness checks</x-ui.button>
     </div>
 
     <form wire:submit="create" class="space-y-8">
-        <div class="pk-stepper">
+        <div class="ui-stepper">
             @foreach ([['Client', 'green'], ['Project', 'blue'], ['Deploy', 'violet'], ['Domain', 'orange'], ['Integrations', 'amber']] as $i => [$label, $tone])
                 @php($locked = $i >= 3 && $sourceCheckStatus !== 'ready')
-                <div class="pk-step {{ $locked ? 'is-locked' : '' }}">
-                    <span class="pk-step-dot pk-step-{{ $tone }}">{{ $i + 1 }}</span>
+                <div class="ui-step {{ $locked ? 'is-locked' : '' }}">
+                    <span class="ui-step-dot ui-step-{{ $tone }}">{{ $i + 1 }}</span>
                     <span>{{ $label }}</span>
                 </div>
             @endforeach
         </div>
 
-        <section class="pk-section-block">
-            <div class="pk-section-title">
-                <span class="pk-step-dot pk-step-green">1</span>
+        <section class="ui-section-block">
+            <div class="ui-section-title">
+                <span class="ui-step-dot ui-step-green">1</span>
                 Client information
             </div>
-            <p class="pk-section-help">Primary contact data is reused for approvals, invoices, reports, and maintenance pages.</p>
+            <p class="ui-section-help">Primary contact data is reused for approvals, invoices, reports, and maintenance pages.</p>
 
             <x-ui.card>
                 <div class="grid gap-4 sm:grid-cols-2">
@@ -71,12 +71,12 @@
             </x-ui.card>
         </section>
 
-        <section class="pk-section-block">
-            <div class="pk-section-title">
-                <span class="pk-step-dot pk-step-blue">2</span>
+        <section class="ui-section-block">
+            <div class="ui-section-title">
+                <span class="ui-step-dot ui-step-blue">2</span>
                 Project setup
             </div>
-            <p class="pk-section-help">The system can detect the project type from a Git source or start as an upload draft.</p>
+            <p class="ui-section-help">The system can detect the project type from a Git source or start as an upload draft.</p>
 
             <x-ui.card>
                 <flux:field>
@@ -139,38 +139,38 @@
             </x-ui.card>
         </section>
 
-        <section class="pk-section-block">
-            <div class="pk-section-title">
-                <span class="pk-step-dot pk-step-violet">3</span>
+        <section class="ui-section-block">
+            <div class="ui-section-title">
+                <span class="ui-step-dot ui-step-violet">3</span>
                 Code, files & deployment
             </div>
-            <p class="pk-section-help">A source must be verified and built before domain, SSL, and integrations are unlocked.</p>
+            <p class="ui-section-help">A source must be verified and built before domain, SSL, and integrations are unlocked.</p>
 
-            <div class="pk-readiness-grid">
-                <div class="pk-readiness-card">
+            <div class="ui-readiness-grid">
+                <div class="ui-readiness-card">
                     <p class="stat-label">Source</p>
-                    <p class="pk-readiness-value">{{ $sourceType === 'github' ? 'Git repository' : 'Upload package' }}</p>
+                    <p class="ui-readiness-value">{{ $sourceType === 'github' ? 'Git repository' : 'Upload package' }}</p>
                     <p class="stat-note">{{ $sourceCheckStatus === 'ready' ? 'Ready' : 'Pending' }}</p>
                 </div>
-                <div class="pk-readiness-card">
+                <div class="ui-readiness-card">
                     <p class="stat-label">Language detected</p>
-                    <p class="pk-readiness-value {{ $detectedLanguage ? 'text-emerald-300' : 'text-zinc-500' }}">{{ $detectedLanguage ?: 'None yet' }}</p>
+                    <p class="ui-readiness-value {{ $detectedLanguage ? 'text-emerald-300' : 'text-zinc-500' }}">{{ $detectedLanguage ?: 'None yet' }}</p>
                     <p class="stat-note">From source inspection</p>
                 </div>
-                <div class="pk-readiness-card">
+                <div class="ui-readiness-card">
                     <p class="stat-label">Build artifact</p>
-                    <p class="pk-readiness-value {{ $sourceCheckStatus === 'ready' ? 'text-emerald-300' : 'text-amber-300' }}">{{ $sourceCheckStatus === 'ready' ? 'Expected' : 'Missing' }}</p>
+                    <p class="ui-readiness-value {{ $sourceCheckStatus === 'ready' ? 'text-emerald-300' : 'text-amber-300' }}">{{ $sourceCheckStatus === 'ready' ? 'Expected' : 'Missing' }}</p>
                     <p class="stat-note">Confirmed after build/import</p>
                 </div>
-                <div class="pk-readiness-card">
+                <div class="ui-readiness-card">
                     <p class="stat-label">Last deploy</p>
-                    <p class="pk-readiness-value text-zinc-500">Not deployed</p>
+                    <p class="ui-readiness-value text-zinc-500">Not deployed</p>
                     <p class="stat-note">First deploy unlocks production</p>
                 </div>
             </div>
 
             @if ($detectedStackNote)
-                <div class="pk-inline-alert {{ $sourceCheckStatus === 'ready' ? 'pk-inline-alert-ok' : '' }}">
+                <div class="ui-inline-alert {{ $sourceCheckStatus === 'ready' ? 'ui-inline-alert-ok' : '' }}">
                     {{ $detectedStackNote }}
                 </div>
             @endif
@@ -238,24 +238,24 @@
                             <span class="tag">Draft first</span>
                         </x-ui.card-header>
                         <div class="space-y-2 text-sm text-zinc-400">
-                            <p class="flex items-center gap-2"><span class="pk-check-box"></span> Source package selected</p>
-                            <p class="flex items-center gap-2"><span class="pk-check-box"></span> Build output will be detected after upload</p>
-                            <p class="flex items-center gap-2"><span class="pk-check-box"></span> First deploy unlocks DNS and SSL</p>
+                            <p class="flex items-center gap-2"><span class="ui-check-box"></span> Source package selected</p>
+                            <p class="flex items-center gap-2"><span class="ui-check-box"></span> Build output will be detected after upload</p>
+                            <p class="flex items-center gap-2"><span class="ui-check-box"></span> First deploy unlocks DNS and SSL</p>
                         </div>
                     </x-ui.card>
                 </div>
             @endif
         </section>
 
-        <section class="pk-section-block {{ $sourceCheckStatus !== 'ready' ? 'pk-locked-section' : '' }}">
-            <div class="pk-section-title">
-                <span class="pk-step-dot pk-step-orange">4</span>
+        <section class="ui-section-block {{ $sourceCheckStatus !== 'ready' ? 'ui-locked-section' : '' }}">
+            <div class="ui-section-title">
+                <span class="ui-step-dot ui-step-orange">4</span>
                 Domain & SSL
                 @if ($sourceCheckStatus !== 'ready')
                     <x-ui.badge variant="warning">Locked</x-ui.badge>
                 @endif
             </div>
-            <p class="pk-section-help">DNS cutover and SSL issuance stay gated until the source checks pass.</p>
+            <p class="ui-section-help">DNS cutover and SSL issuance stay gated until the source checks pass.</p>
 
             <x-ui.card>
                 <fieldset @disabled($sourceCheckStatus !== 'ready') class="grid gap-4 sm:grid-cols-3">
@@ -290,15 +290,15 @@
             </x-ui.card>
         </section>
 
-        <section class="pk-section-block {{ $sourceCheckStatus !== 'ready' ? 'pk-locked-section' : '' }}">
-            <div class="pk-section-title">
-                <span class="pk-step-dot pk-step-amber">5</span>
+        <section class="ui-section-block {{ $sourceCheckStatus !== 'ready' ? 'ui-locked-section' : '' }}">
+            <div class="ui-section-title">
+                <span class="ui-step-dot ui-step-amber">5</span>
                 Integrations
                 @if ($sourceCheckStatus !== 'ready')
                     <x-ui.badge variant="warning">Locked</x-ui.badge>
                 @endif
             </div>
-            <p class="pk-section-help">Service keys for analytics, DNS, mail providers, and form automation.</p>
+            <p class="ui-section-help">Service keys for analytics, DNS, mail providers, and form automation.</p>
 
             <x-ui.card>
                 <fieldset @disabled($sourceCheckStatus !== 'ready') class="grid gap-4 lg:grid-cols-2">

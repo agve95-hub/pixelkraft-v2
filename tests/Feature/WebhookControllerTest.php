@@ -18,8 +18,8 @@ class WebhookControllerTest extends TestCase
 
     public function test_it_rejects_webhook_without_delivery_id(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', true);
-        config()->set('pixelkraft.github_webhook_secret', 'test-secret');
+        config()->set('platform.github_webhook_require_signature', true);
+        config()->set('platform.github_webhook_secret', 'test-secret');
 
         $payload = $this->pushPayload();
 
@@ -34,8 +34,8 @@ class WebhookControllerTest extends TestCase
 
     public function test_it_returns_503_when_signature_is_required_but_secret_missing(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', true);
-        config()->set('pixelkraft.github_webhook_secret', null);
+        config()->set('platform.github_webhook_require_signature', true);
+        config()->set('platform.github_webhook_secret', null);
 
         $payload = $this->pushPayload();
 
@@ -50,8 +50,8 @@ class WebhookControllerTest extends TestCase
 
     public function test_it_rejects_invalid_signature(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', true);
-        config()->set('pixelkraft.github_webhook_secret', 'test-secret');
+        config()->set('platform.github_webhook_require_signature', true);
+        config()->set('platform.github_webhook_secret', 'test-secret');
 
         $payload = $this->pushPayload();
         $headers = $this->githubHeaders($payload);
@@ -68,8 +68,8 @@ class WebhookControllerTest extends TestCase
 
     public function test_it_dispatches_sync_only_for_exact_repo_and_matching_branch(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', true);
-        config()->set('pixelkraft.github_webhook_secret', 'test-secret');
+        config()->set('platform.github_webhook_require_signature', true);
+        config()->set('platform.github_webhook_secret', 'test-secret');
 
         $targetSite = Site::create([
             'name' => 'Target',
@@ -114,8 +114,8 @@ class WebhookControllerTest extends TestCase
 
     public function test_it_ignores_duplicate_delivery_ids(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', true);
-        config()->set('pixelkraft.github_webhook_secret', 'test-secret');
+        config()->set('platform.github_webhook_require_signature', true);
+        config()->set('platform.github_webhook_secret', 'test-secret');
 
         Site::create([
             'name' => 'Target',
@@ -142,8 +142,8 @@ class WebhookControllerTest extends TestCase
 
     public function test_it_requires_refs_heads_branch_format(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', true);
-        config()->set('pixelkraft.github_webhook_secret', 'test-secret');
+        config()->set('platform.github_webhook_require_signature', true);
+        config()->set('platform.github_webhook_secret', 'test-secret');
 
         Site::create([
             'name' => 'Target',
@@ -168,8 +168,8 @@ class WebhookControllerTest extends TestCase
 
     public function test_it_accepts_site_scoped_webhook_route_and_records_site_id(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', true);
-        config()->set('pixelkraft.github_webhook_secret', 'test-secret');
+        config()->set('platform.github_webhook_require_signature', true);
+        config()->set('platform.github_webhook_secret', 'test-secret');
 
         $site = Site::create([
             'name' => 'Scoped',
@@ -233,8 +233,8 @@ class WebhookControllerTest extends TestCase
 
     public function test_per_site_secret_blocks_dispatch_when_signature_does_not_match(): void
     {
-        config()->set('pixelkraft.github_webhook_require_signature', true);
-        config()->set('pixelkraft.github_webhook_secret', 'global-secret');
+        config()->set('platform.github_webhook_require_signature', true);
+        config()->set('platform.github_webhook_secret', 'global-secret');
 
         // Site has its own per-site secret; the incoming request is signed only with the global secret.
         $site = Site::create([
@@ -268,8 +268,8 @@ class WebhookControllerTest extends TestCase
         // When GitHub is configured per-repo with a site-specific secret, operators
         // point the webhook at /api/webhooks/github/{site} and disable the global
         // signature requirement (no shared global secret needed).
-        config()->set('pixelkraft.github_webhook_require_signature', false);
-        config()->set('pixelkraft.github_webhook_secret', null);
+        config()->set('platform.github_webhook_require_signature', false);
+        config()->set('platform.github_webhook_secret', null);
 
         $perSiteSecret = 'per-site-supersecret-value-here';
 
@@ -333,7 +333,7 @@ class WebhookControllerTest extends TestCase
 
         if ($includeSignature) {
             $body = json_encode($payload, JSON_THROW_ON_ERROR);
-            $secret = (string) config('pixelkraft.github_webhook_secret', '');
+            $secret = (string) config('platform.github_webhook_secret', '');
             $headers['X-Hub-Signature-256'] = 'sha256='.hash_hmac('sha256', $body, $secret);
         }
 

@@ -1,8 +1,8 @@
 <div class="max-w-4xl space-y-5">
-    <div class="pk-page-head">
+    <div class="ui-page-head">
         <div>
-            <h1 class="pk-page-title">{{ $postId ? 'Edit Post' : 'New Post' }}</h1>
-            <p class="pk-page-sub">Write and publish a blog post.</p>
+            <h1 class="ui-page-title">{{ $postId ? 'Edit Post' : 'New Post' }}</h1>
+            <p class="ui-page-sub">Write and publish a blog post.</p>
         </div>
         <div class="flex items-center overflow-hidden rounded-md border border-zinc-700 bg-zinc-950">
             <flux:select wire:model="status" size="sm" class="w-[118px] rounded-none border-0 border-r border-zinc-700">

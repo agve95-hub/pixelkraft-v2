@@ -46,7 +46,7 @@ class PublicUrlRuleTest extends TestCase
 
     public function test_it_rejects_link_local_range(): void
     {
-        // 169.254.0.0/16 â€” includes AWS instance metadata endpoint
+        // 169.254.0.0/16 — includes AWS instance metadata endpoint
         $this->assertFalse($this->passes('http://169.254.169.254/latest/meta-data/'));
         $this->assertFalse($this->passes('http://169.254.0.1/'));
     }
@@ -66,9 +66,9 @@ class PublicUrlRuleTest extends TestCase
 
     public function test_it_accepts_public_http_url(): void
     {
-        $url = 'http://93.184.216.34/'; // example.com IP â€” public
+        $url = 'http://93.184.216.34/'; // example.com IP — public
 
-        // Directly pass an IP URL â€” no DNS needed, and this is a known public IP.
+        // Directly pass an IP URL — no DNS needed, and this is a known public IP.
         // Note: filter_var with NO_PRIV_RANGE | NO_RES_RANGE accepts 93.184.216.34.
         $this->assertTrue($this->passes($url));
     }

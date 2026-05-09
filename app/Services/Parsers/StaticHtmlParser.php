@@ -176,9 +176,9 @@ class StaticHtmlParser implements ParserInterface
         $regions = [];
         $html = $crawler->html();
 
-        // Match legacy cms:editable and newer pk:editable markers.
+        // Match legacy cms:editable and newer ui:editable markers.
         preg_match_all(
-            '/<!--\s*(?:cms:editable\s+id="([^"]+)"(?:\s+type="([^"]+)")?|pk:editable:start:([A-Za-z0-9\-_]+)(?:\s+type="([^"]+)")?)\s*-->/',
+            '/<!--\s*(?:cms:editable\s+id="([^"]+)"(?:\s+type="([^"]+)")?|ui:editable:start:([A-Za-z0-9\-_]+)(?:\s+type="([^"]+)")?)\s*-->/',
             $html,
             $matches,
             PREG_SET_ORDER | PREG_OFFSET_CAPTURE
@@ -189,7 +189,7 @@ class StaticHtmlParser implements ParserInterface
             $type = ($match[2][0] ?? $match[4][0] ?? 'text') ?: 'text';
             $offset = $match[0][1];
 
-            $closePattern = '/<!--\s*(?:\/cms:editable|pk:editable:end:'.preg_quote($markerId, '/').')\s*-->/';
+            $closePattern = '/<!--\s*(?:\/cms:editable|ui:editable:end:'.preg_quote($markerId, '/').')\s*-->/';
             $remaining = substr($html, $offset + strlen($match[0][0]));
 
             if (preg_match($closePattern, $remaining, $closeMatch, PREG_OFFSET_CAPTURE)) {
@@ -481,7 +481,7 @@ class StaticHtmlParser implements ParserInterface
 
         if ($domNode instanceof \DOMElement) {
             foreach ($domNode->attributes as $attribute) {
-                if (str_starts_with($attribute->name, 'data-pk-')) {
+                if (str_starts_with($attribute->name, 'data-ui-')) {
                     continue;
                 }
 

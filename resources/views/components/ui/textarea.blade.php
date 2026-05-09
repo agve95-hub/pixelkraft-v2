@@ -1,1 +1,1 @@
-<textarea {{ $attributes->merge(['class' => 'pk-ui-textarea']) }}>{{ $slot }}</textarea>
+<textarea {{ $attributes->merge(['class' => 'ui-textarea']) }}>{{ $slot }}</textarea>

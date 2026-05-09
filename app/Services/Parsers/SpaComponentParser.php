@@ -329,7 +329,7 @@ class SpaComponentParser implements ParserInterface
 
         foreach ($extracted['text_nodes'] as $text) {
             $regions[] = [
-                'selector' => "[data-pk-region=\"spa-{$index}\"]",
+                'selector' => "[data-ui-region=\"spa-{$index}\"]",
                 'type' => 'text',
                 'is_static' => false,
                 'confidence' => 0.6, // Lower confidence for regex-extracted content
@@ -344,7 +344,7 @@ class SpaComponentParser implements ParserInterface
 
         foreach ($extracted['images'] ?? [] as $src) {
             $regions[] = [
-                'selector' => "[data-pk-region=\"spa-{$index}\"]",
+                'selector' => "[data-ui-region=\"spa-{$index}\"]",
                 'type' => 'image',
                 'is_static' => false,
                 'confidence' => 0.5,

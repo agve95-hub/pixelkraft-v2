@@ -75,7 +75,7 @@ class RunLighthouseCommandTest extends TestCase
         $site = $this->makeSite($user);
         $page = $this->makePage($site);
 
-        $this->artisan('pixelkraft:run-lighthouse')->assertSuccessful();
+        $this->artisan('platform:run-lighthouse')->assertSuccessful();
 
         $page->refresh();
         $this->assertNotNull($page->lighthouse_score);
@@ -92,7 +92,7 @@ class RunLighthouseCommandTest extends TestCase
         $user = $this->makeUser();
         $this->makeSite($user, ['is_active' => false]);
 
-        $this->artisan('pixelkraft:run-lighthouse')->assertSuccessful();
+        $this->artisan('platform:run-lighthouse')->assertSuccessful();
 
         Http::assertNothingSent();
     }
@@ -104,7 +104,7 @@ class RunLighthouseCommandTest extends TestCase
         $user = $this->makeUser();
         $this->makeSite($user, ['domain' => null]);
 
-        $this->artisan('pixelkraft:run-lighthouse')->assertSuccessful();
+        $this->artisan('platform:run-lighthouse')->assertSuccessful();
 
         Http::assertNothingSent();
     }
@@ -116,7 +116,7 @@ class RunLighthouseCommandTest extends TestCase
         $user = $this->makeUser();
         $this->makeSite($user, ['deploy_status' => DeployStatus::Idle]);
 
-        $this->artisan('pixelkraft:run-lighthouse')->assertSuccessful();
+        $this->artisan('platform:run-lighthouse')->assertSuccessful();
 
         Http::assertNothingSent();
     }
@@ -134,7 +134,7 @@ class RunLighthouseCommandTest extends TestCase
         $this->makePage($site1);
         $this->makePage($site2);
 
-        $this->artisan('pixelkraft:run-lighthouse', ['--site' => 'rlh-target'])
+        $this->artisan('platform:run-lighthouse', ['--site' => 'rlh-target'])
             ->assertSuccessful();
 
         Http::assertSentCount(1);
@@ -150,7 +150,7 @@ class RunLighthouseCommandTest extends TestCase
         $site = $this->makeSite($user);
         $page = $this->makePage($site);
 
-        $this->artisan('pixelkraft:run-lighthouse')->assertSuccessful();
+        $this->artisan('platform:run-lighthouse')->assertSuccessful();
 
         // Score not stored on API failure
         $page->refresh();
@@ -172,7 +172,7 @@ class RunLighthouseCommandTest extends TestCase
         $site = $this->makeSite($user);
         $this->makePage($site);
 
-        $this->artisan('pixelkraft:run-lighthouse', ['--strategy' => 'desktop'])
+        $this->artisan('platform:run-lighthouse', ['--strategy' => 'desktop'])
             ->assertSuccessful();
 
         $this->assertNotEmpty($captured);

@@ -12,15 +12,15 @@
     @endphp
 
     <div class="space-y-5">
-        <div class="pk-page-head">
+        <div class="ui-page-head">
             <div>
-                <h1 class="pk-page-title">{{ $greeting }}, {{ $user->name }}</h1>
-                <p class="pk-page-sub">{{ now()->format('l, F j, Y') }}</p>
+                <h1 class="ui-page-title">{{ $greeting }}, {{ $user->name }}</h1>
+                <p class="ui-page-sub">{{ now()->format('l, F j, Y') }}</p>
             </div>
             <x-ui.button href="{{ route('sites.index') }}" variant="outline" size="sm">View all sites</x-ui.button>
         </div>
 
-        <div class="pk-stat-grid">
+        <div class="ui-stat-grid">
             <div class="stat">
                 <p class="stat-label">Sites</p>
                 <p class="stat-val tabular-nums">{{ $totalSites }}</p>
@@ -73,7 +73,7 @@
                 </div>
             </x-ui.card-header>
 
-            <div class="chart-shell rounded-lg border border-zinc-800/90 bg-[#141414] p-3">
+            <div class="chart-shell">
                 <svg class="h-52 w-full" viewBox="0 0 {{ $vbW }} {{ $vbH }}" preserveAspectRatio="none" role="img" aria-label="Traffic trend for all sites">
                     @foreach ([0, 1, 2, 3] as $line)
                         <line x1="{{ $pad }}" y1="{{ $pad + (($line / 3) * $plotH) }}" x2="{{ $vbW - $pad }}" y2="{{ $pad + (($line / 3) * $plotH) }}" stroke="rgb(39 39 42)" stroke-width="1" vector-effect="non-scaling-stroke" />
@@ -149,7 +149,7 @@
                                 }
                                 $responsePath = empty($rPoints) ? '' : 'M ' . implode(' L ', $rPoints);
                             @endphp
-                            <div class="rounded-lg border border-zinc-800/90 bg-[#141414] p-2">
+                            <div class="chart-shell chart-shell-sm">
                                 @if (empty($rPoints))
                                     <p class="py-6 text-center text-xs text-zinc-500">No response samples yet.</p>
                                 @else

@@ -3,6 +3,6 @@
     'dot' => false,
 ])
 
-<span {{ $attributes->merge(['class' => 'pk-ui-badge pk-ui-badge-'.$variant.($dot ? ' pk-ui-badge-dot' : '')]) }}>
+<span {{ $attributes->merge(['class' => 'ui-badge ui-badge-'.$variant.($dot ? ' ui-badge-dot' : '')]) }}>
     {{ $slot }}
 </span>

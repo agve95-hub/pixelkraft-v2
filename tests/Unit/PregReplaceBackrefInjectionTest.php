@@ -76,8 +76,8 @@ class PregReplaceBackrefInjectionTest extends TestCase
     /** @test */
     public function test_patch_by_marker_open_and_close_markers_preserved(): void
     {
-        $openMarker = '<!-- pk:editable:start:main-heading type="text" -->';
-        $closeMarker = '<!-- pk:editable:end:main-heading -->';
+        $openMarker = '<!-- ui:editable:start:main-heading type="text" -->';
+        $closeMarker = '<!-- ui:editable:end:main-heading -->';
         $html = "{$openMarker}original{$closeMarker}";
         $result = $this->callPatcher('patchByMarker', $html, 'main-heading', 'replacement');
 

@@ -235,7 +235,7 @@ class ZipImportService
      */
     private function prepareRepoDirectory(string $repoPath, Site $site): void
     {
-        $reposBase = rtrim((string) config('pixelkraft.repos_path'), '/\\');
+        $reposBase = rtrim((string) config('platform.repos_path'), '/\\');
 
         // Only clear the directory if it's under the platform repos path
         if (File::isDirectory($repoPath)) {

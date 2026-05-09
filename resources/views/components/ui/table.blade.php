@@ -1,5 +1,5 @@
-<div {{ $attributes->merge(['class' => 'pk-ui-table-wrap']) }}>
-    <table class="pk-ui-table">
+<div {{ $attributes->merge(['class' => 'ui-table-wrap']) }}>
+    <table class="ui-table">
         {{ $slot }}
     </table>
 </div>

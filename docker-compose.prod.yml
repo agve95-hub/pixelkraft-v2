@@ -4,7 +4,7 @@ services:
     build:
       context: .
       target: production
-    image: pixelkraft-app:prod
+    image: platform-app:prod
     restart: unless-stopped
     env_file: .env
     volumes:
@@ -15,7 +15,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks: [pixelkraft]
+    networks: [platform]
 
   nginx:
     image: nginx:1.27-alpine
@@ -28,10 +28,10 @@ services:
     volumes_from:
       - app:ro
     depends_on: [app]
-    networks: [pixelkraft]
+    networks: [platform]
 
   worker:
-    image: pixelkraft-app:prod
+    image: platform-app:prod
     restart: unless-stopped
     command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
     env_file: .env
@@ -43,10 +43,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks: [pixelkraft]
+    networks: [platform]
 
   scheduler:
-    image: pixelkraft-app:prod
+    image: platform-app:prod
     restart: unless-stopped
     command: php artisan schedule:work
     env_file: .env
@@ -58,14 +58,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks: [pixelkraft]
+    networks: [platform]
 
   db:
     image: mariadb:11.4
     restart: unless-stopped
     environment:
-      MARIADB_DATABASE: pixelkraft
-      MARIADB_USER: pixelkraft
+      MARIADB_DATABASE: platform
+      MARIADB_USER: platform
       MARIADB_PASSWORD: ${DB_PASSWORD}
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
@@ -75,7 +75,7 @@ services:
       interval: 5s
       retries: 10
       start_period: 30s
-    networks: [pixelkraft]
+    networks: [platform]
 
   redis:
     image: redis:7.4-alpine
@@ -87,7 +87,7 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       retries: 5
-    networks: [pixelkraft]
+    networks: [platform]
 
 volumes:
   db-data:
@@ -96,5 +96,5 @@ volumes:
   app-bootstrap:
 
 networks:
-  pixelkraft:
+  platform:
     driver: bridge

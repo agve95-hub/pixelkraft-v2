@@ -10,7 +10,7 @@ use Illuminate\Support\Carbon;
 
 class ReplayWebhooks extends Command
 {
-    protected $signature = 'pixelkraft:replay-webhooks
+    protected $signature = 'platform:replay-webhooks
                             {--since= : ISO8601 or relative time (e.g. "2 hours ago") — required}
                             {--dry-run : List matching deliveries without dispatching jobs}';
 

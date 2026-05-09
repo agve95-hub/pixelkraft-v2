@@ -1,7 +1,7 @@
-# Pixelkraft Repo + App Audit
+# platform Repo + App Audit
 
 Date: 2026-04-18
-Workspace: `C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2`
+Workspace: `<workspace>`
 
 ## Executive Summary
 
@@ -90,7 +90,7 @@ Evidence:
 
 Root cause:
 
-- [app/Http/Middleware/HandleInertiaRequests.php](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\app\Http\Middleware\HandleInertiaRequests.php:24) unconditionally adds `withCount()` clauses for:
+- [app/Http/Middleware/HandleInertiaRequests.php](<workspace>\app\Http\Middleware\HandleInertiaRequests.php:24) unconditionally adds `withCount()` clauses for:
   - `inboxMessages as unread_inbox_count`
   - `invoices as unpaid_invoices_count`
   - `reminders as overdue_reminders_count`
@@ -103,7 +103,7 @@ Why this matters:
 Recommendation:
 
 - Guard these counts with schema checks before building the query.
-- Keep the shared Inertia nav logic aligned with the guarded Blade composer logic in [app/Providers/AppServiceProvider.php](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\app\Providers\AppServiceProvider.php:49).
+- Keep the shared Inertia nav logic aligned with the guarded Blade composer logic in [app/Providers/AppServiceProvider.php](<workspace>\app\Providers\AppServiceProvider.php:49).
 
 ### 3. Source fallback preview is broken for TSX/JSX pages
 
@@ -116,7 +116,7 @@ Evidence:
 
 Root cause:
 
-- [app/Http/Controllers/EditorPreviewController.php](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\app\Http\Controllers\EditorPreviewController.php:455) strips JSX expressions with:
+- [app/Http/Controllers/EditorPreviewController.php](<workspace>\app\Http\Controllers\EditorPreviewController.php:455) strips JSX expressions with:
   - `preg_replace('/\{[^{}]*\}/', ' ', $source)`
   - repeated twice
 - For a typical TSX component, that can remove the entire function body before snippet extraction runs, leaving no fallback content.
@@ -142,9 +142,9 @@ Evidence:
 
 Concrete issues:
 
-- [app/Providers/FortifyServiceProvider.php](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\app\Providers\FortifyServiceProvider.php:14) imports `UpdateUserPasswordResponse` and `UpdateUserProfileInformationResponse`, but the installed Fortify version exposes `PasswordUpdateResponse` and `ProfileInformationUpdatedResponse` instead.
-- [app/Livewire/Dashboard/SiteHealthTable.php](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\app\Livewire\Dashboard\SiteHealthTable.php:43) still has a real collection callback typing issue.
-- [phpstan-baseline.neon](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\phpstan-baseline.neon:175) contains multiple ignore patterns for `SiteHealthTable` and `FileManager` that no longer match current errors.
+- [app/Providers/FortifyServiceProvider.php](<workspace>\app\Providers\FortifyServiceProvider.php:14) imports `UpdateUserPasswordResponse` and `UpdateUserProfileInformationResponse`, but the installed Fortify version exposes `PasswordUpdateResponse` and `ProfileInformationUpdatedResponse` instead.
+- [app/Livewire/Dashboard/SiteHealthTable.php](<workspace>\app\Livewire\Dashboard\SiteHealthTable.php:43) still has a real collection callback typing issue.
+- [phpstan-baseline.neon](<workspace>\phpstan-baseline.neon:175) contains multiple ignore patterns for `SiteHealthTable` and `FileManager` that no longer match current errors.
 
 Why this matters:
 
@@ -163,9 +163,9 @@ Severity: Low
 
 Evidence:
 
-- [tests/Feature/SiteShowDashboardTest.php](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\tests\Feature\SiteShowDashboardTest.php:101) uses `assertSee('Visitors today')` and similar HTML assertions.
-- The site dashboard labels do exist in [resources/js/pages/sites/show.tsx](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\resources\js\pages\sites\show.tsx:112).
-- The root view is a standard Inertia mount in [resources/views/app.blade.php](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\resources\views\app.blade.php:10), so those labels are rendered client-side, not in the initial response HTML.
+- [tests/Feature/SiteShowDashboardTest.php](<workspace>\tests\Feature\SiteShowDashboardTest.php:101) uses `assertSee('Visitors today')` and similar HTML assertions.
+- The site dashboard labels do exist in [resources/js/pages/sites/show.tsx](<workspace>\resources\js\pages\sites\show.tsx:112).
+- The root view is a standard Inertia mount in [resources/views/app.blade.php](<workspace>\resources\views\app.blade.php:10), so those labels are rendered client-side, not in the initial response HTML.
 
 Why this matters:
 
@@ -182,14 +182,14 @@ Recommendation:
 
 There are two separate implementations for nav-site counts:
 
-- [app/Http/Middleware/HandleInertiaRequests.php](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\app\Http\Middleware\HandleInertiaRequests.php:18)
-- [app/Providers/AppServiceProvider.php](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\app\Providers\AppServiceProvider.php:49)
+- [app/Http/Middleware/HandleInertiaRequests.php](<workspace>\app\Http\Middleware\HandleInertiaRequests.php:18)
+- [app/Providers/AppServiceProvider.php](<workspace>\app\Providers\AppServiceProvider.php:49)
 
 This duplication has already drifted. The Blade path is schema-guarded; the Inertia path is not.
 
 ### Schema helper cache can go stale inside long-lived processes
 
-[app/Support/SchemaState.php](C:\Users\agonv\Documents\AG PK 2\pixelkraft-v2\app\Support\SchemaState.php:12) caches table/column existence statically for the lifetime of the PHP process.
+[app/Support/SchemaState.php](<workspace>\app\Support\SchemaState.php:12) caches table/column existence statically for the lifetime of the PHP process.
 
 That is fast, but risky during compatibility tests, migrations, or long-lived workers if schema changes without a full process restart.
 
@@ -210,4 +210,4 @@ That is fast, but risky during compatibility tests, migrations, or long-lived wo
 
 ## Bottom Line
 
-Pixelkraft is close on backend behavior and core tenancy/security coverage, but it is not yet release-ready because the frontend build is broken and the suite still exposes two real app regressions in shared dashboard data and editor fallback preview behavior.
+platform is close on backend behavior and core tenancy/security coverage, but it is not yet release-ready because the frontend build is broken and the suite still exposes two real app regressions in shared dashboard data and editor fallback preview behavior.

@@ -16,7 +16,7 @@ class AnalyzeSeoCommandTest extends TestCase
 
     public function test_command_requires_site_or_all_flag(): void
     {
-        $this->artisan('pixelkraft:analyze-seo')
+        $this->artisan('platform:analyze-seo')
             ->assertExitCode(1);
     }
 
@@ -52,7 +52,7 @@ class AnalyzeSeoCommandTest extends TestCase
             'is_published' => true,
         ]);
 
-        $exitCode = Artisan::call('pixelkraft:analyze-seo', ['--site' => 'cmd-site-seo']);
+        $exitCode = Artisan::call('platform:analyze-seo', ['--site' => 'cmd-site-seo']);
 
         $this->assertSame(0, $exitCode);
     }

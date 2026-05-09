@@ -71,7 +71,7 @@ class SendCampaignsCommandTest extends TestCase
         $campaign = $this->makeCampaign($site, ['status' => 'scheduled', 'scheduled_at' => now()->subHour()]);
         $this->makeSubscriber($site);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         $campaign->refresh();
         $this->assertSame('sent', $campaign->status);
@@ -83,7 +83,7 @@ class SendCampaignsCommandTest extends TestCase
         $site = $this->makeSite($user);
         $campaign = $this->makeCampaign($site, ['status' => 'scheduled', 'scheduled_at' => now()->addHour()]);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         $campaign->refresh();
         $this->assertSame('scheduled', $campaign->status);
@@ -101,7 +101,7 @@ class SendCampaignsCommandTest extends TestCase
         $campaign = $this->makeCampaign($site, ['status' => 'sending']);
         $this->makeSubscriber($site);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         Http::assertSent(fn ($req) => $req->url() === 'https://api.resend.com/emails');
 
@@ -118,7 +118,7 @@ class SendCampaignsCommandTest extends TestCase
         $site = $this->makeSite($user);
         $campaign = $this->makeCampaign($site, ['status' => 'sending']);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         $campaign->refresh();
         $this->assertSame('sent', $campaign->status);
@@ -135,7 +135,7 @@ class SendCampaignsCommandTest extends TestCase
         $this->makeCampaign($site, ['status' => 'sending']);
         $this->makeSubscriber($site);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         Http::assertNothingSent();
     }
@@ -157,7 +157,7 @@ class SendCampaignsCommandTest extends TestCase
         $this->makeCampaign($site, ['status' => 'sending', 'body_html' => 'Hello {{name}}, your email is {{email}}']);
         $this->makeSubscriber($site, ['name' => 'Bob', 'email' => 'bob@example.com']);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         $this->assertNotEmpty($captured);
         $this->assertStringContainsString('Hello Bob', $captured[0]['html']);
@@ -174,7 +174,7 @@ class SendCampaignsCommandTest extends TestCase
         $this->makeCampaign($site, ['status' => 'sending']);
         $subscriber = $this->makeSubscriber($site);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         $subscriber->refresh();
         $this->assertSame('bounced', $subscriber->status);
@@ -190,7 +190,7 @@ class SendCampaignsCommandTest extends TestCase
         $this->makeCampaign($site, ['status' => 'sending']);
         $this->makeSubscriber($site, ['status' => 'unsubscribed']);
 
-        $this->artisan('pixelkraft:send-campaigns')->assertSuccessful();
+        $this->artisan('platform:send-campaigns')->assertSuccessful();
 
         Http::assertNothingSent();
     }

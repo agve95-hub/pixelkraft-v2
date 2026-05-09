@@ -17,7 +17,7 @@ class RegionPanel extends Component
 {
     public string $pageId;
 
-    /** When `compact`, the panel drops extra chrome so it fits the mockup left rail. */
+    /** When `compact`, the panel drops extra chrome so it fits the editor left rail. */
     public string $variant = 'default';
 
     public string $filter = 'all'; // all|dynamic|static|unconfirmed

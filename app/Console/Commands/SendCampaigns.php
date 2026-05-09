@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\URL;
 
 class SendCampaigns extends Command
 {
-    protected $signature = 'pixelkraft:send-campaigns';
+    protected $signature = 'platform:send-campaigns';
 
     protected $description = 'Send scheduled and queued newsletter campaigns via Resend';
 
@@ -68,7 +68,7 @@ class SendCampaigns extends Command
         }
 
         $fromEmail = config('mail.from.address', 'noreply@'.($campaign->site->domain ?? 'localhost'));
-        $fromName = $campaign->site->name ?? config('mail.from.name', 'pixelkraft');
+        $fromName = $campaign->site->name ?? config('mail.from.name', 'App');
         $sent = 0;
         $failed = 0;
 

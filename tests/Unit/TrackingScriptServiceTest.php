@@ -98,7 +98,7 @@ class TrackingScriptServiceTest extends TestCase
         $site = $this->makeSite();
         $script = $this->service->trackerScript($site);
 
-        $this->assertStringContainsString('pixelkraftTrack', $script);
+        $this->assertStringContainsString('platformTrack', $script);
     }
 
     // ── injectIntoHtml ────────────────────────────

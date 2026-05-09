@@ -1,8 +1,8 @@
 <div class="space-y-6" wire:poll.10s>
-    <div class="pk-page-head">
+    <div class="ui-page-head">
         <div>
-            <h1 class="pk-page-title">System diagnostics</h1>
-            <p class="pk-page-sub">Queue, worker, and stuck-site visibility for the current pixelkraft runtime.</p>
+            <h1 class="ui-page-title">System diagnostics</h1>
+            <p class="ui-page-sub">Queue, worker, and stuck-site visibility for the current platform runtime.</p>
         </div>
         <flux:button wire:click="$refresh" variant="outline" size="sm" icon="arrow-path">Refresh</flux:button>
     </div>

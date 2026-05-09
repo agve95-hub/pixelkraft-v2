@@ -10,7 +10,7 @@
         <x-ui.tabs>
             @foreach (['unread', 'all', 'spam'] as $tab)
                 <button wire:click="$set('filter', '{{ $tab }}')"
-                    @class(['pk-ui-tab', 'is-active' => $filter === $tab])>
+                    @class(['ui-tab', 'is-active' => $filter === $tab])>
                     {{ ucfirst($tab) }}
                     <span class="font-mono text-[10px] opacity-60">{{ $counts[$tab] }}</span>
                 </button>

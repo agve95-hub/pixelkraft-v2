@@ -1,5 +1,5 @@
 <x-layouts.auth>
-    <x-slot:title>Forgot password — pixelkraft</x-slot:title>
+    <x-slot:title>Forgot password - Universal Tool</x-slot:title>
     <x-slot:subtitle>Reset your password</x-slot:subtitle>
 
     <flux:subheading class="mb-4">Enter your email and we'll send you a reset link.</flux:subheading>

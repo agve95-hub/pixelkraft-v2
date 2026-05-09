@@ -9,19 +9,31 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Instrument Sans', 'system-ui', 'sans-serif'],
-                mono: ['DM Mono', 'monospace'],
+                sans: ['Geist', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                mono: ['Geist Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
             },
             colors: {
-                surface: {
-                    DEFAULT: '#111114',
-                    2: '#18181b',
-                    3: '#1e1e23',
-                },
-                border: {
-                    DEFAULT: '#27272a',
-                    light: '#3f3f46',
-                },
+                background: 'hsl(var(--background) / <alpha-value>)',
+                foreground: 'hsl(var(--foreground) / <alpha-value>)',
+                card: 'hsl(var(--card) / <alpha-value>)',
+                popover: 'hsl(var(--popover) / <alpha-value>)',
+                primary: 'hsl(var(--primary) / <alpha-value>)',
+                secondary: 'hsl(var(--secondary) / <alpha-value>)',
+                muted: 'hsl(var(--muted) / <alpha-value>)',
+                accent: 'hsl(var(--accent) / <alpha-value>)',
+                destructive: 'hsl(var(--destructive) / <alpha-value>)',
+                border: 'hsl(var(--border) / <alpha-value>)',
+                input: 'hsl(var(--input) / <alpha-value>)',
+                ring: 'hsl(var(--ring) / <alpha-value>)',
+                success: 'hsl(var(--success) / <alpha-value>)',
+                warning: 'hsl(var(--warning) / <alpha-value>)',
+            },
+            borderRadius: {
+                sm: 'var(--radius-sm)',
+                DEFAULT: 'var(--radius)',
+                md: 'var(--radius-md)',
+                lg: 'var(--radius-lg)',
+                xl: 'var(--radius-xl)',
             },
         },
     },

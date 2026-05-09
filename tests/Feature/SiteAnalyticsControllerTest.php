@@ -164,7 +164,7 @@ class SiteAnalyticsControllerTest extends TestCase
         AnalyticsSnapshot::create([
             'page_id' => $page->id,
             'date' => now()->subDays(2)->toDateString(),
-            'source' => 'pixelkraft_tracker',
+            'source' => 'platform_tracker',
             'visitors' => 120,
             'pageviews' => 180,
             'created_at' => now(),

@@ -91,8 +91,8 @@ class SiteRuntimeService
 
     public function portFor(Site $site): int
     {
-        $portStart = (int) config('pixelkraft.runtime.port_start', 4100);
-        $portSpan = max(100, (int) config('pixelkraft.runtime.port_span', 2000));
+        $portStart = (int) config('platform.runtime.port_start', 4100);
+        $portSpan = max(100, (int) config('platform.runtime.port_span', 2000));
 
         return $portStart + (abs(crc32((string) $site->id)) % $portSpan);
     }
@@ -176,7 +176,7 @@ class SiteRuntimeService
         $this->writePortFile($site, $port);
 
         // Write a Supervisor config so the process survives server reboots.
-        // Requires supervisord to be installed and the pixelkraft app user to
+        // Requires supervisord to be installed and the platform app user to
         // have write access to SUPERVISOR_CONF_PATH (default: /etc/supervisor/conf.d/).
         if ($this->supervisorEnabled()) {
             try {
@@ -194,7 +194,7 @@ class SiteRuntimeService
     /**
      * Generate and write a Supervisor program config for a runtime site.
      *
-     * The config file is written to SUPERVISOR_CONF_PATH/pixelkraft-{slug}.conf.
+     * The config file is written to SUPERVISOR_CONF_PATH/platform-{slug}.conf.
      * supervisorctl reread + update are issued so the change takes effect immediately.
      */
     public function writeSupervisorConfig(Site $site, array $execution): void
@@ -219,8 +219,8 @@ class SiteRuntimeService
             ."'";
 
         $conf = implode("\n", [
-            '; Pixelkraft-managed — do not edit manually. Re-generated on every deploy.',
-            "[program:pixelkraft-{$site->slug}]",
+            '; platform-managed — do not edit manually. Re-generated on every deploy.',
+            "[program:platform-{$site->slug}]",
             "command={$command}",
             "directory={$execution['working_dir']}",
             'autostart=true',
@@ -273,7 +273,7 @@ class SiteRuntimeService
         }
 
         // Stop the supervised process before removing the config.
-        Process::timeout(15)->run(['supervisorctl', 'stop', "pixelkraft-{$site->slug}"]);
+        Process::timeout(15)->run(['supervisorctl', 'stop', "platform-{$site->slug}"]);
         File::delete($confPath);
 
         try {
@@ -285,17 +285,17 @@ class SiteRuntimeService
 
     private function supervisorEnabled(): bool
     {
-        return (bool) config('pixelkraft.runtime.supervisor_enabled', false);
+        return (bool) config('platform.runtime.supervisor_enabled', false);
     }
 
     private function supervisorConfPath(Site $site): string
     {
         $confDir = rtrim(
-            (string) config('pixelkraft.runtime.supervisor_conf_path', '/etc/supervisor/conf.d'),
+            (string) config('platform.runtime.supervisor_conf_path', '/etc/supervisor/conf.d'),
             '/'
         );
 
-        return "{$confDir}/pixelkraft-{$site->slug}.conf";
+        return "{$confDir}/platform-{$site->slug}.conf";
     }
 
     private function prepareExecution(Site $site, DeployLog $log, int $port): array
@@ -398,7 +398,7 @@ class SiteRuntimeService
 
     private function waitUntilHealthy(Site $site, DeployLog $log, int $port): void
     {
-        $timeout = max(5, (int) config('pixelkraft.runtime.startup_timeout_seconds', 30));
+        $timeout = max(5, (int) config('platform.runtime.startup_timeout_seconds', 30));
         $deadline = microtime(true) + $timeout;
         $desiredPort = $port;
 
@@ -421,19 +421,19 @@ class SiteRuntimeService
 
     private function runtimeRoot(Site $site): string
     {
-        return rtrim((string) config('pixelkraft.runtime.storage_path', storage_path('app/runtime-sites')), '/')
+        return rtrim((string) config('platform.runtime.storage_path', storage_path('app/runtime-sites')), '/')
             .'/'.$site->slug;
     }
 
     private function pidFile(Site $site): string
     {
-        return rtrim((string) config('pixelkraft.runtime.pid_path', storage_path('app/runtime-pids')), '/')
+        return rtrim((string) config('platform.runtime.pid_path', storage_path('app/runtime-pids')), '/')
             .'/'.$site->slug.'.pid';
     }
 
     private function portFile(Site $site): string
     {
-        return rtrim((string) config('pixelkraft.runtime.pid_path', storage_path('app/runtime-pids')), '/')
+        return rtrim((string) config('platform.runtime.pid_path', storage_path('app/runtime-pids')), '/')
             .'/'.$site->slug.'.port';
     }
 
@@ -446,7 +446,7 @@ class SiteRuntimeService
 
     private function logFile(Site $site): string
     {
-        return rtrim((string) config('pixelkraft.runtime.log_path', storage_path('logs/runtime-sites')), '/')
+        return rtrim((string) config('platform.runtime.log_path', storage_path('logs/runtime-sites')), '/')
             .'/'.$site->slug.'.log';
     }
 
@@ -508,7 +508,7 @@ class SiteRuntimeService
 
     private function host(): string
     {
-        return (string) config('pixelkraft.runtime.host', '127.0.0.1');
+        return (string) config('platform.runtime.host', '127.0.0.1');
     }
 
     private function normalizePath(string $path): string
@@ -629,8 +629,8 @@ class SiteRuntimeService
         }
 
         // Preferred port is occupied by something else.  Scan forward.
-        $portStart = (int) config('pixelkraft.runtime.port_start', 4100);
-        $portSpan = max(100, (int) config('pixelkraft.runtime.port_span', 2000));
+        $portStart = (int) config('platform.runtime.port_start', 4100);
+        $portSpan = max(100, (int) config('platform.runtime.port_span', 2000));
 
         for ($offset = 1; $offset < $portSpan; $offset++) {
             $candidate = $portStart + (($preferred - $portStart + $offset) % $portSpan);

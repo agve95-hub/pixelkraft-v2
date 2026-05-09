@@ -67,6 +67,6 @@ class EditSessionService
         $userToken = $user?->id ? substr((string) $user->id, 0, 8) : 'system';
         $pageToken = substr(md5($page->id), 0, 8);
 
-        return "pixelkraft/{$site->slug}/{$userToken}-{$pageToken}";
+        return "platform/{$site->slug}/{$userToken}-{$pageToken}";
     }
 }

@@ -62,14 +62,17 @@
 
         <div class="space-y-3">
             <p class="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">Live preview</p>
-            <div class="overflow-hidden rounded-xl border border-zinc-700/80 shadow-lg"
-                 style="background: {{ $bgColor }}; color: {{ $textColor }};">
+            <style>
+                .maintenance-live-preview { background: {{ $bgColor }}; color: {{ $textColor }}; }
+                .maintenance-live-logo { background: linear-gradient(135deg, {{ $accentColor }}, #06b6d4); }
+                .maintenance-live-title { color: {{ $textColor }}; }
+            </style>
+            <div class="maintenance-live-preview overflow-hidden rounded-xl border border-zinc-700/80 shadow-lg">
                 <div class="flex min-h-[280px] flex-col items-center justify-center gap-4 px-8 py-12 text-center">
                     @if ($showLogo)
-                        <div class="flex size-10 items-center justify-center rounded-lg text-sm font-bold text-black"
-                             style="background: linear-gradient(135deg, {{ $accentColor }}, #06b6d4);">P</div>
+                        <div class="maintenance-live-logo flex size-10 items-center justify-center rounded-lg text-sm font-bold text-black">U</div>
                     @endif
-                    <h2 class="text-xl font-semibold" style="color: {{ $textColor }};">{{ $heading }}</h2>
+                    <h2 class="maintenance-live-title text-xl font-semibold">{{ $heading }}</h2>
                     <p class="max-w-md text-sm leading-relaxed opacity-80">{{ $message ?: '—' }}</p>
                     @if ($showCountdown && filled($countdownTo))
                         <p class="font-mono text-xs opacity-60">Ends: {{ $countdownTo }}</p>

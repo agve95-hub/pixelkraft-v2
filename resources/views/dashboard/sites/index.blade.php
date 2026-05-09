@@ -13,10 +13,10 @@
     @endphp
 
     <div class="space-y-5">
-        <div class="pk-page-head">
+        <div class="ui-page-head">
             <div>
-                <h1 class="pk-page-title">All sites</h1>
-                <p class="pk-page-sub">{{ $sites->count() }} projects</p>
+                <h1 class="ui-page-title">All sites</h1>
+                <p class="ui-page-sub">{{ $sites->count() }} projects</p>
             </div>
             <x-ui.button href="{{ route('sites.create') }}" icon="plus">
                 New project

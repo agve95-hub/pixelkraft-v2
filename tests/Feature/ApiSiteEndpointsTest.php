@@ -42,10 +42,10 @@ class ApiSiteEndpointsTest extends TestCase
     private function actingWithToken(User $user): void
     {
         Sanctum::actingAs($user, [
-            'pixelkraft:sites:read',
-            'pixelkraft:sites:deploy',
-            'pixelkraft:sites:rollback',
-            'pixelkraft:sites:write',
+            'platform:sites:read',
+            'platform:sites:deploy',
+            'platform:sites:rollback',
+            'platform:sites:write',
         ]);
     }
 

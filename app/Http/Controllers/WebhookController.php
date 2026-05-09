@@ -25,8 +25,8 @@ class WebhookController extends Controller
         }
 
         // Verify signature based on environment/config.
-        $secret = config('pixelkraft.github_webhook_secret');
-        $mustVerifySignature = (bool) config('pixelkraft.github_webhook_require_signature', ! app()->environment('local'));
+        $secret = config('platform.github_webhook_secret');
+        $mustVerifySignature = (bool) config('platform.github_webhook_require_signature', ! app()->environment('local'));
 
         if ($mustVerifySignature && ! $secret) {
             Log::error('GitHub webhook secret is required but missing', [

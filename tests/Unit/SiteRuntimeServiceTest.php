@@ -218,8 +218,8 @@ class SiteRuntimeServiceTest extends TestCase
 
         $port = $this->service->portFor($site);
 
-        $portStart = (int) config('pixelkraft.runtime.port_start', 4100);
-        $portSpan = max(100, (int) config('pixelkraft.runtime.port_span', 2000));
+        $portStart = (int) config('platform.runtime.port_start', 4100);
+        $portSpan = max(100, (int) config('platform.runtime.port_span', 2000));
 
         $this->assertGreaterThanOrEqual($portStart, $port);
         $this->assertLessThan($portStart + $portSpan, $port);

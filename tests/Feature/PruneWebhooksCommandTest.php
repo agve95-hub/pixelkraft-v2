@@ -28,7 +28,7 @@ class PruneWebhooksCommandTest extends TestCase
             'received_at' => now()->subDays(5),
         ]);
 
-        $this->artisan('pixelkraft:prune-webhooks', ['--days' => 30])
+        $this->artisan('platform:prune-webhooks', ['--days' => 30])
             ->assertSuccessful();
 
         $this->assertDatabaseMissing('webhook_deliveries', ['delivery_id' => 'old-delivery']);
@@ -45,7 +45,7 @@ class PruneWebhooksCommandTest extends TestCase
             'received_at' => now()->subDays(60),
         ]);
 
-        $this->artisan('pixelkraft:prune-webhooks', ['--days' => 30, '--dry-run' => true])
+        $this->artisan('platform:prune-webhooks', ['--days' => 30, '--dry-run' => true])
             ->assertSuccessful();
 
         $this->assertDatabaseHas('webhook_deliveries', ['delivery_id' => 'dry-old']);
@@ -53,7 +53,7 @@ class PruneWebhooksCommandTest extends TestCase
 
     public function test_prune_uses_config_default_when_days_omitted(): void
     {
-        config(['pixelkraft.monitoring.webhook_deliveries_retention_days' => 10]);
+        config(['platform.monitoring.webhook_deliveries_retention_days' => 10]);
 
         WebhookDelivery::create([
             'provider' => 'github',
@@ -63,7 +63,7 @@ class PruneWebhooksCommandTest extends TestCase
             'received_at' => now()->subDays(20),
         ]);
 
-        $this->artisan('pixelkraft:prune-webhooks')->assertSuccessful();
+        $this->artisan('platform:prune-webhooks')->assertSuccessful();
 
         $this->assertDatabaseMissing('webhook_deliveries', ['delivery_id' => 'cfg-old']);
     }

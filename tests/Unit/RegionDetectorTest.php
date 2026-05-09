@@ -182,8 +182,8 @@ class RegionDetectorTest extends TestCase
 
         $result = $this->detector->injectMarkers($html, $regions);
 
-        $this->assertStringContainsString('<!-- pk:editable:start:hero-block', $result);
-        $this->assertStringContainsString('<!-- pk:editable:end:hero-block -->', $result);
+        $this->assertStringContainsString('<!-- ui:editable:start:hero-block', $result);
+        $this->assertStringContainsString('<!-- ui:editable:end:hero-block -->', $result);
     }
 
     public function test_inject_markers_skips_region_without_marker_id(): void
@@ -195,7 +195,7 @@ class RegionDetectorTest extends TestCase
 
         $result = $this->detector->injectMarkers($html, $regions);
 
-        $this->assertStringNotContainsString('pk:editable', $result);
+        $this->assertStringNotContainsString('ui:editable', $result);
     }
 
     public function test_inject_markers_wraps_class_element(): void
@@ -207,7 +207,7 @@ class RegionDetectorTest extends TestCase
 
         $result = $this->detector->injectMarkers($html, $regions);
 
-        $this->assertStringContainsString('pk:editable:start:hero-title', $result);
+        $this->assertStringContainsString('ui:editable:start:hero-title', $result);
     }
 
     public function test_inject_markers_returns_html_unchanged_when_selector_not_found(): void

@@ -8,7 +8,7 @@
         </x-ui.card-header>
 
         <div class="overflow-x-auto">
-            <table class="pk-ui-table">
+            <table class="ui-table">
                 <thead>
                     <tr>
                         <th class="pl-[18px]">Site</th>

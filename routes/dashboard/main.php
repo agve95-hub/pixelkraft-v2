@@ -241,7 +241,7 @@ Route::get('/sites/{siteId}/import-status', function (string $siteId) {
     ]);
 })->name('sites.import-status');
 
-// ZIP upload Ã¢â‚¬â€ called after site creation when source_type=upload
+// ZIP upload — called after site creation when source_type=upload
 Route::post('/sites/{siteId}/import/zip', function (Request $request, string $siteId) {
     $site = SiteAccess::findOrFail($siteId);
 

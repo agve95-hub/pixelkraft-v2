@@ -1,3 +1,3 @@
-<nav {{ $attributes->merge(['class' => 'pk-ui-breadcrumb']) }} aria-label="Breadcrumb">
+<nav {{ $attributes->merge(['class' => 'ui-breadcrumb']) }} aria-label="Breadcrumb">
     {{ $slot }}
 </nav>

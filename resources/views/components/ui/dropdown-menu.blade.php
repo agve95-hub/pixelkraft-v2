@@ -1,3 +1,3 @@
-<div {{ $attributes->merge(['class' => 'pk-ui-menu']) }} role="menu">
+<div {{ $attributes->merge(['class' => 'ui-menu']) }} role="menu">
     {{ $slot }}
 </div>

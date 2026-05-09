@@ -23,7 +23,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
  *
  * Additional hosts can be allowed via the ALLOWED_GIT_HOSTS env variable
  * (comma-separated, e.g. "github.mycompany.com,git.example.com"), read
- * through config('pixelkraft.allowed_git_hosts') so it works with cached config.
+ * through config('platform.allowed_git_hosts') so it works with cached config.
  */
 class GitRemoteUrl implements ValidationRule
 {
@@ -33,7 +33,7 @@ class GitRemoteUrl implements ValidationRule
     public function __construct()
     {
         $defaults = ['github.com', 'gitlab.com', 'bitbucket.org'];
-        $extra = config('pixelkraft.allowed_git_hosts', []);
+        $extra = config('platform.allowed_git_hosts', []);
 
         $this->allowedHosts = array_values(array_unique(array_merge($defaults, $extra)));
     }

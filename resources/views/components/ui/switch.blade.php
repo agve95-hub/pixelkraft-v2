@@ -1,8 +1,8 @@
 @props(['label' => null])
 
-<label class="pk-ui-switch {{ $attributes->get('class') }}">
+<label class="ui-switch {{ $attributes->get('class') }}">
     <input type="checkbox" {{ $attributes->except('class') }}>
-    <span class="pk-ui-switch-track"><span class="pk-ui-switch-thumb"></span></span>
+    <span class="ui-switch-track"><span class="ui-switch-thumb"></span></span>
     @if ($label)
         <span>{{ $label }}</span>
     @else

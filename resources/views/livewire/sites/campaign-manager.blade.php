@@ -1,10 +1,10 @@
 <div class="space-y-6">
 
     <x-ui.tabs>
-        <button wire:click="$set('tab', 'campaigns')" @class(['pk-ui-tab', 'is-active' => $tab === 'campaigns'])>
+        <button wire:click="$set('tab', 'campaigns')" @class(['ui-tab', 'is-active' => $tab === 'campaigns'])>
             Campaigns <span class="badge-count">{{ $campaigns->count() }}</span>
         </button>
-        <button wire:click="$set('tab', 'announcements')" @class(['pk-ui-tab', 'is-active' => $tab === 'announcements'])>
+        <button wire:click="$set('tab', 'announcements')" @class(['ui-tab', 'is-active' => $tab === 'announcements'])>
             Announcements <span class="badge-count">{{ $announcements->count() }}</span>
         </button>
     </x-ui.tabs>

@@ -44,7 +44,7 @@ class PublishScheduledCommandTest extends TestCase
             'scheduled_at' => now()->subMinute(),
         ]);
 
-        $this->artisan('pixelkraft:publish-scheduled')->assertSuccessful();
+        $this->artisan('platform:publish-scheduled')->assertSuccessful();
 
         $post->refresh();
         $status = $post->status instanceof \BackedEnum ? $post->status->value : $post->status;
@@ -54,6 +54,6 @@ class PublishScheduledCommandTest extends TestCase
 
     public function test_command_noops_when_nothing_due(): void
     {
-        $this->artisan('pixelkraft:publish-scheduled')->assertSuccessful();
+        $this->artisan('platform:publish-scheduled')->assertSuccessful();
     }
 }

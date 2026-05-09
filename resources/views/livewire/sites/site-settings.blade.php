@@ -76,7 +76,7 @@
                     <flux:field>
                         <flux:label>Project type</flux:label>
                         <flux:select wire:model.live="projectType">
-                            @foreach (config('pixelkraft.project_types') as $type)
+                            @foreach (config('platform.project_types') as $type)
                                 <flux:select.option value="{{ $type }}">{{ $type }}</flux:select.option>
                             @endforeach
                         </flux:select>
@@ -188,7 +188,7 @@
                 <label class="option-label-sm">
                     <flux:checkbox wire:model="trackingEnabled" />
                     <div>
-                        <p class="text-sm font-medium">Enable first-party pixelkraft tracker</p>
+                        <p class="text-sm font-medium">Enable first-party platform tracker</p>
                         <p class="text-xs text-zinc-500">Inject the tracker into deploy artifacts and collect page views, CTA clicks, and form events.</p>
                     </div>
                 </label>
@@ -229,7 +229,7 @@
             </x-ui.card-header>
             @forelse ($recentGitOperations as $operation)
                 <div class="activity-item">
-                    <span class="activity-dot" style="background:var(--pk-accent)"></span>
+                    <span class="activity-dot activity-dot-success"></span>
                     <div class="flex-1 min-w-0">
                         <p class="activity-text">{{ ucfirst($operation->operation) }} &middot; {{ ucfirst($operation->status) }}</p>
                         <p class="activity-time">{{ $operation->working_branch ?: $operation->branch ?: $branch }}</p>
@@ -247,7 +247,7 @@
             </x-ui.card-header>
             @forelse ($recentWebhookDeliveries as $delivery)
                 <div class="activity-item">
-                    <span class="activity-dot" style="background:var(--blue)"></span>
+                    <span class="activity-dot activity-dot-info"></span>
                     <div class="flex-1 min-w-0">
                         <p class="activity-text">{{ $delivery->event ?: 'push' }} &middot; {{ $delivery->status ?: 'received' }}</p>
                         <p class="activity-time">{{ $delivery->repository ?: 'GitHub delivery' }}</p>

@@ -75,13 +75,13 @@
             Reports
         </button>
 
-        <div class="pk-page-head">
+        <div class="ui-page-head">
             <div>
                 <div class="flex flex-wrap items-center gap-3">
-                    <h1 class="pk-page-title">{{ $activeReport->title }}</h1>
+                    <h1 class="ui-page-title">{{ $activeReport->title }}</h1>
                     <x-ui.badge :variant="$status === 'sent' ? 'success' : 'warning'">{{ ucfirst($status) }}</x-ui.badge>
                 </div>
-                <p class="pk-page-sub">{{ $activeReport->report_date?->format('F j, Y') }} &middot; {{ $site->clientDisplayName() }}</p>
+                <p class="ui-page-sub">{{ $activeReport->report_date?->format('F j, Y') }} &middot; {{ $site->clientDisplayName() }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 @if ($status !== 'sent')
@@ -93,7 +93,7 @@
 
         <x-ui.card>
             <x-ui.card-header>
-                <p class="pk-ui-card-title">Summary</p>
+                <p class="ui-card-title">Summary</p>
                 <p class="font-mono text-xs text-zinc-500">{{ count($sections) }} sections</p>
             </x-ui.card-header>
             <p class="whitespace-pre-wrap text-sm leading-6 text-zinc-300">{{ $activeReport->summary ?: 'No summary was added.' }}</p>
@@ -104,7 +104,7 @@
                 @forelse ($sections as $section)
                     <x-ui.card>
                         <x-ui.card-header>
-                            <p class="pk-ui-card-title">{{ $section['title'] ?? 'Section' }}</p>
+                            <p class="ui-card-title">{{ $section['title'] ?? 'Section' }}</p>
                             <span class="tag">{{ $section['type'] ?? 'general' }}</span>
                         </x-ui.card-header>
                         <ul class="space-y-2 text-sm text-zinc-300">
@@ -128,7 +128,7 @@
 
             <x-ui.card>
                 <x-ui.card-header>
-                    <p class="pk-ui-card-title">Next steps</p>
+                    <p class="ui-card-title">Next steps</p>
                 </x-ui.card-header>
                 <ul class="space-y-2 text-sm text-zinc-300">
                     @forelse ($nextSteps as $step)
@@ -150,10 +150,10 @@
             Reports
         </button>
 
-        <div class="pk-page-head">
+        <div class="ui-page-head">
             <div>
-                <h1 class="pk-page-title">New report</h1>
-                <p class="pk-page-sub">{{ $site->clientDisplayName() }}</p>
+                <h1 class="ui-page-title">New report</h1>
+                <p class="ui-page-sub">{{ $site->clientDisplayName() }}</p>
             </div>
         </div>
 
@@ -190,7 +190,7 @@
 
             <x-ui.card>
                 <x-ui.card-header>
-                    <p class="pk-ui-card-title">Sections</p>
+                    <p class="ui-card-title">Sections</p>
                     <flux:button type="button" wire:click="addSection" size="sm" variant="subtle">Add section</flux:button>
                 </x-ui.card-header>
 
@@ -232,7 +232,7 @@
 
             <x-ui.card>
                 <x-ui.card-header>
-                    <p class="pk-ui-card-title">Next steps</p>
+                    <p class="ui-card-title">Next steps</p>
                     <flux:button type="button" wire:click="addNextStep" size="sm" variant="subtle">Add step</flux:button>
                 </x-ui.card-header>
                 <div class="space-y-2">

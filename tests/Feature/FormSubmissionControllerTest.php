@@ -126,7 +126,7 @@ class FormSubmissionControllerTest extends TestCase
     public function test_per_form_config_strips_fields_not_in_subset(): void
     {
         config([
-            'pixelkraft.form_submission_allowed_fields' => [
+            'platform.form_submission_allowed_fields' => [
                 '*' => [
                     'email',
                     'name',
@@ -186,7 +186,7 @@ class FormSubmissionControllerTest extends TestCase
     public function test_honeypot_still_detected_when_hp_not_in_stored_allowlist(): void
     {
         config([
-            'pixelkraft.form_submission_allowed_fields' => [
+            'platform.form_submission_allowed_fields' => [
                 '*' => ['email', 'message'],
             ],
         ]);

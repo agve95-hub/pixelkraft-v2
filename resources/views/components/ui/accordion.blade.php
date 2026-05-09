@@ -1,3 +1,3 @@
-<div {{ $attributes->merge(['class' => 'pk-ui-accordion']) }}>
+<div {{ $attributes->merge(['class' => 'ui-accordion']) }}>
     {{ $slot }}
 </div>

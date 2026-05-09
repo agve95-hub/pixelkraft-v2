@@ -25,10 +25,10 @@ class SiteDeletionCleanupTest extends TestCase
         $nginxAvailableRoot = "{$sandboxRoot}/nginx/sites-available";
         $nginxEnabledRoot = "{$sandboxRoot}/nginx/sites-enabled";
 
-        config()->set('pixelkraft.runtime.storage_path', $runtimeStorageRoot);
-        config()->set('pixelkraft.runtime.pid_path', $runtimePidRoot);
-        config()->set('pixelkraft.runtime.log_path', $runtimeLogRoot);
-        config()->set('pixelkraft.nginx_sites_path', $nginxAvailableRoot);
+        config()->set('platform.runtime.storage_path', $runtimeStorageRoot);
+        config()->set('platform.runtime.pid_path', $runtimePidRoot);
+        config()->set('platform.runtime.log_path', $runtimeLogRoot);
+        config()->set('platform.nginx_sites_path', $nginxAvailableRoot);
 
         $repoPath = "{$reposRoot}/{$slug}";
         $deployPath = "{$deployRoot}/{$slug}";

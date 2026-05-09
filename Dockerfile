@@ -122,7 +122,7 @@ RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
     && apk del .build-deps
 
 # PHP config
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/pixelkraft.ini
+COPY docker/php/php.ini /usr/local/etc/php/conf.d/platform.ini
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 WORKDIR /var/www/html

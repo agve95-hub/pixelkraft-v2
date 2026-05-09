@@ -21,7 +21,7 @@ class DemoSiteSeeder extends Seeder
     public function run(): void
     {
         $user = User::query()->firstOrCreate(
-            ['email' => 'demo@pixelkraft.local'],
+            ['email' => 'demo@platform.local'],
             [
                 'name' => 'Demo Admin',
                 'password' => Hash::make('password'),
@@ -59,7 +59,7 @@ class DemoSiteSeeder extends Seeder
                     'title' => 'Welcome — Demo Studio',
                     'meta_description' => 'A seeded demo page so the dashboard is not empty.',
                     'og_title' => 'Demo Studio',
-                    'og_description' => 'Preview of pixelkraft with sample content.',
+                    'og_description' => 'Preview of platform with sample content.',
                     'is_published' => true,
                 ],
             );
@@ -103,7 +103,7 @@ class DemoSiteSeeder extends Seeder
             ],
             [
                 'report_date' => now()->toDateString(),
-                'summary' => "1. Configure domain and SSL\n2. Connect GitHub and run sync\n3. Run: php artisan pixelkraft:analyze-seo --site=demo-studio",
+                'summary' => "1. Configure domain and SSL\n2. Connect GitHub and run sync\n3. Run: php artisan platform:analyze-seo --site=demo-studio",
             ],
         );
 

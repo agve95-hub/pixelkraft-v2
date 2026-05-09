@@ -91,7 +91,7 @@ class ContentPatcher
         // Do not silently accept a "save" when no source edit was applied.
         if ($patched === $originalContent && $contentChanged) {
             $this->lastPatchTelemetry['error'] = 'No patch delta produced';
-            throw new \RuntimeException('pixelkraft could not map this edit back to source code safely. Try a smaller element or switch to Code mode.');
+            throw new \RuntimeException('platform could not map this edit back to source code safely. Try a smaller element or switch to Code mode.');
         }
 
         // Update region snapshot only after a successful source update (or true no-op).
@@ -194,7 +194,7 @@ class ContentPatcher
     {
         $escapedId = preg_quote($markerId, '/');
 
-        $pattern = '/(<!--\s*(?:cms:editable\s+id="'.$escapedId.'"[^>]*|pk:editable:start:'.$escapedId.'[^>]*)-->)\s*(.*?)\s*(<!--\s*(?:\/cms:editable|pk:editable:end:'.$escapedId.')\s*-->)/s';
+        $pattern = '/(<!--\s*(?:cms:editable\s+id="'.$escapedId.'"[^>]*|ui:editable:start:'.$escapedId.'[^>]*)-->)\s*(.*?)\s*(<!--\s*(?:\/cms:editable|ui:editable:end:'.$escapedId.')\s*-->)/s';
 
         // Use preg_replace_callback so $newContent is never parsed for backreferences.
         // Capture groups $1 and $3 (open/close markers) are preserved explicitly.
@@ -350,7 +350,7 @@ class ContentPatcher
         $strategy = $this->resolveComponentTextStrategy($content, $region);
 
         if (! $strategy) {
-            throw new \RuntimeException('pixelkraft could not safely map this rendered text back to a unique source string. Use Code mode for this region.');
+            throw new \RuntimeException('platform could not safely map this rendered text back to a unique source string. Use Code mode for this region.');
         }
 
         return substr_replace($content, $newContent, $strategy['start'], $strategy['length']);
@@ -361,7 +361,7 @@ class ContentPatcher
         $strategy = $this->resolveComponentImageStrategy($content, $region);
 
         if (! $strategy) {
-            throw new \RuntimeException('pixelkraft could not safely map this image back to a unique source attribute. Use Code mode for this region.');
+            throw new \RuntimeException('platform could not safely map this image back to a unique source attribute. Use Code mode for this region.');
         }
 
         return preg_replace_callback(
@@ -711,7 +711,7 @@ class ContentPatcher
         }
 
         if (
-            str_contains($html, "pk:editable:start:{$region->marker_id}")
+            str_contains($html, "ui:editable:start:{$region->marker_id}")
             || str_contains($html, "cms:editable id=\"{$region->marker_id}\"")
         ) {
             return $html;
@@ -722,8 +722,8 @@ class ContentPatcher
             return $html;
         }
 
-        $open = "<!-- pk:editable:start:{$region->marker_id} type=\"{$region->region_type}\" -->";
-        $close = "<!-- pk:editable:end:{$region->marker_id} -->";
+        $open = "<!-- ui:editable:start:{$region->marker_id} type=\"{$region->region_type}\" -->";
+        $close = "<!-- ui:editable:end:{$region->marker_id} -->";
 
         return $this->safeReplace($html, $currentContent, $open."\n".$currentContent."\n".$close);
     }

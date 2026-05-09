@@ -197,7 +197,7 @@ class FormSubmissionController extends Controller
      */
     private function allowedFormSubmissionKeysForForm(string $formName): array
     {
-        $config = config('pixelkraft.form_submission_allowed_fields', []);
+        $config = config('platform.form_submission_allowed_fields', []);
         $star = $config['*'] ?? self::FORM_SUBMISSION_FIELD_KEYS;
         $star = array_values(array_intersect(
             is_array($star) ? $star : [],

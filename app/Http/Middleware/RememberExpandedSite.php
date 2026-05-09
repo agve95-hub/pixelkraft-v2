@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 class RememberExpandedSite
 {
     /**
-     * Remember which project’s sidebar subsection should stay open (mockup-style).
+     * Remember which project sidebar subsection should stay open.
      *
      * @param  Closure(Request): (Response)  $next
      */

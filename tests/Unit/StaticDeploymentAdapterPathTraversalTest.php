@@ -25,7 +25,7 @@ class StaticDeploymentAdapterPathTraversalTest extends TestCase
     {
         parent::setUp();
 
-        $base = sys_get_temp_dir().'/pk_static_adapter_test_'.uniqid('', true);
+        $base = sys_get_temp_dir().'/tool_static_adapter_test_'.uniqid('', true);
         $this->repoDir = $base.'/repo';
         $this->outsideDir = $base.'/outside';
 

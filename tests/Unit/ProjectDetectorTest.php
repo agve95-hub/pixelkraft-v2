@@ -21,7 +21,7 @@ class ProjectDetectorTest extends TestCase
     {
         parent::setUp();
         $this->detector = new ProjectDetector;
-        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'pk-detect-'.uniqid();
+        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'ui-detect-'.uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 

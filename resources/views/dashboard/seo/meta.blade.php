@@ -21,16 +21,16 @@
     @endphp
 
     <div class="space-y-5" x-data="{ tab: 'meta' }">
-        <div class="pk-page-head">
+        <div class="ui-page-head">
             <div>
                 <a href="{{ route('sites.show', $site) }}" class="back-link mb-2">
                     <flux:icon name="chevron-left" class="size-3.5" /> {{ $site->name }}
                 </a>
                 <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="pk-page-title">SEO Settings</h1>
+                    <h1 class="ui-page-title">SEO Settings</h1>
                     <x-ui.badge variant="{{ $scoreVariant }}">{{ $seoScore }}/100</x-ui.badge>
                 </div>
-                <p class="pk-page-sub">{{ $site->name }} &middot; {{ $previewTitle }} <span class="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400">{{ $pagePath }}</span></p>
+                <p class="ui-page-sub">{{ $site->name }} &middot; {{ $previewTitle }} <span class="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400">{{ $pagePath }}</span></p>
             </div>
             <x-ui.button-group>
                 <x-ui.button type="button" variant="outline" size="sm" x-on:click="tab = 'meta'">Run audit</x-ui.button>
@@ -66,9 +66,9 @@
         <div class="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
             <section class="space-y-5">
                 <x-ui.tabs>
-                    <button type="button" x-on:click="tab = 'meta'" x-bind:class="{ 'is-active': tab === 'meta' }" class="pk-ui-tab">Meta tags</button>
-                    <button type="button" x-on:click="tab = 'schema'" x-bind:class="{ 'is-active': tab === 'schema' }" class="pk-ui-tab">Structured data</button>
-                    <button type="button" x-on:click="tab = 'robots'" x-bind:class="{ 'is-active': tab === 'robots' }" class="pk-ui-tab">Robots</button>
+                    <button type="button" x-on:click="tab = 'meta'" x-bind:class="{ 'is-active': tab === 'meta' }" class="ui-tab">Meta tags</button>
+                    <button type="button" x-on:click="tab = 'schema'" x-bind:class="{ 'is-active': tab === 'schema' }" class="ui-tab">Structured data</button>
+                    <button type="button" x-on:click="tab = 'robots'" x-bind:class="{ 'is-active': tab === 'robots' }" class="ui-tab">Robots</button>
                 </x-ui.tabs>
 
                 <div x-show="tab === 'meta'" x-cloak>

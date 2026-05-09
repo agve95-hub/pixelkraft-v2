@@ -11,13 +11,13 @@
     <div class="space-y-6 text-zinc-100">
 
         {{-- Header --}}
-        <div class="pk-page-head">
+        <div class="ui-page-head">
             <div>
                 <a href="{{ route('sites.show', $site) }}" class="back-link">
                     <flux:icon name="chevron-left" class="size-3.5" /> {{ $site->name }}
                 </a>
-                <h1 class="pk-page-title">Analytics</h1>
-                <p class="pk-page-sub">Traffic, uptime, and performance — last 30 days</p>
+                <h1 class="ui-page-title">Analytics</h1>
+                <p class="ui-page-sub">Traffic, uptime, and performance — last 30 days</p>
             </div>
             <x-ui.button variant="outline" size="sm" disabled class="opacity-50 cursor-not-allowed">Last 30 days</x-ui.button>
         </div>
@@ -75,7 +75,7 @@
                     <div class="activity-item">
                         <div class="min-w-0 flex-1">
                             <p class="activity-text truncate">{{ $event['event_name'] }}</p>
-                            <p class="activity-time">Captured by pixelkraft tracker</p>
+                            <p class="activity-time">Captured by platform tracker</p>
                         </div>
                         <span class="tag">{{ number_format($event['count']) }}</span>
                     </div>

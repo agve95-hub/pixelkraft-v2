@@ -113,7 +113,7 @@ return new class extends Migration
         Schema::create('tracking_installations', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('site_id')->constrained()->cascadeOnDelete();
-            $table->string('provider', 32)->default('pixelkraft');
+            $table->string('provider', 32)->default('platform');
             $table->string('measurement_id')->nullable();
             $table->string('container_id')->nullable();
             $table->string('script_route')->nullable();

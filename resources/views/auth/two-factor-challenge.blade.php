@@ -1,5 +1,5 @@
 <x-layouts.auth>
-    <x-slot:title>Two-factor authentication — pixelkraft</x-slot:title>
+    <x-slot:title>Two-factor authentication - Universal Tool</x-slot:title>
     <x-slot:subtitle>Confirm your identity</x-slot:subtitle>
 
     <div x-data="{ recovery: false }">

@@ -1,5 +1,5 @@
 <x-layouts.auth>
-    <x-slot:title>Create account — pixelkraft</x-slot:title>
+    <x-slot:title>Create account - Universal Tool</x-slot:title>
     <x-slot:subtitle>Create your account</x-slot:subtitle>
 
     <form method="POST" action="{{ route('register') }}" class="space-y-6">

@@ -19,7 +19,7 @@ class ContentPatcherPathTraversalTest extends TestCase
         parent::setUp();
 
         // Create an isolated temp repo directory with a legitimate file inside
-        $this->tmpRepo = sys_get_temp_dir().'/pk_patcher_test_'.uniqid('', true);
+        $this->tmpRepo = sys_get_temp_dir().'/tool_patcher_test_'.uniqid('', true);
         mkdir($this->tmpRepo, 0755, true);
         file_put_contents($this->tmpRepo.'/index.html', '<h1>hello</h1>');
 

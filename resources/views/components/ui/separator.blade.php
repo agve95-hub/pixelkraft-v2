@@ -1,1 +1,1 @@
-<div {{ $attributes->merge(['class' => 'pk-ui-separator']) }}></div>
+<div {{ $attributes->merge(['class' => 'ui-separator']) }}></div>

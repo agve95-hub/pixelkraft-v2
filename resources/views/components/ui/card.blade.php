@@ -1,5 +1,5 @@
 @props(['padding' => 'default'])
 
-<section {{ $attributes->merge(['class' => 'pk-ui-card pk-ui-card-'.$padding]) }}>
+<section {{ $attributes->merge(['class' => 'ui-card ui-card-'.$padding]) }}>
     {{ $slot }}
 </section>

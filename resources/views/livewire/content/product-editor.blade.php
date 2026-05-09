@@ -1,8 +1,8 @@
 <div class="max-w-3xl space-y-5">
-    <div class="pk-page-head">
+    <div class="ui-page-head">
         <div>
-            <h1 class="pk-page-title">{{ $productId ? 'Edit Product' : 'New Product' }}</h1>
-            <p class="pk-page-sub">Manage a product listing.</p>
+            <h1 class="ui-page-title">{{ $productId ? 'Edit Product' : 'New Product' }}</h1>
+            <p class="ui-page-sub">Manage a product listing.</p>
         </div>
         <div class="flex items-center gap-2">
             <flux:select wire:model="status" size="sm" class="w-auto">

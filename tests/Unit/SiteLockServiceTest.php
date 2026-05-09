@@ -41,7 +41,7 @@ class SiteLockServiceTest extends TestCase
         $this->service->forSite($site, 'repo', 60);
 
         Cache::shouldHaveReceived('lock')
-            ->with('pixelkraft:site:xyz-123:lock:repo', 60)
+            ->with('platform:site:xyz-123:lock:repo', 60)
             ->once();
     }
 
@@ -62,11 +62,11 @@ class SiteLockServiceTest extends TestCase
         $this->service->forSite($site, 'nginx', 30);
 
         Cache::shouldHaveReceived('lock')
-            ->with('pixelkraft:site:res-test:lock:repo', 30)
+            ->with('platform:site:res-test:lock:repo', 30)
             ->once();
 
         Cache::shouldHaveReceived('lock')
-            ->with('pixelkraft:site:res-test:lock:nginx', 30)
+            ->with('platform:site:res-test:lock:nginx', 30)
             ->once();
     }
 
@@ -78,7 +78,7 @@ class SiteLockServiceTest extends TestCase
         $site = $this->makeSite('timeout-test');
 
         // Acquire the lock so the block call will time out
-        $lock = Cache::lock('pixelkraft:site:timeout-test:lock:repo', 60);
+        $lock = Cache::lock('platform:site:timeout-test:lock:repo', 60);
         $lock->get();
 
         try {

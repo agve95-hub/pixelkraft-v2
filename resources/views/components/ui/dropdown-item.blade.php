@@ -1,7 +1,7 @@
 @props(['href' => null, 'icon' => null, 'destructive' => false])
 
 @php
-    $class = 'pk-ui-menu-item'.($destructive ? ' is-destructive' : '');
+    $class = 'ui-menu-item'.($destructive ? ' is-destructive' : '');
 @endphp
 
 @if ($href)

@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class CrawlLinks extends Command
 {
-    protected $signature = 'pixelkraft:crawl-links {--site= : Specific site slug}';
+    protected $signature = 'platform:crawl-links {--site= : Specific site slug}';
 
     protected $description = 'Crawl sites for broken links';
 

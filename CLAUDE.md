@@ -28,12 +28,12 @@ vendor/bin/pint --test
 # Code style — auto-fix
 vendor/bin/pint
 
-# Platform deploy (maintenance mode → migrate → cache clear → workers restart)
+# platform deploy (maintenance mode → migrate → cache clear → workers restart)
 php artisan app:deploy
 
 # Artisan utilities
-php artisan pixelkraft:replay-webhooks --since="2 hours ago"
-php artisan pixelkraft:prune-webhooks --days=30
+php artisan platform:replay-webhooks --since="2 hours ago"
+php artisan platform:prune-webhooks --days=30
 php artisan horizon:list-failed
 ```
 
@@ -52,7 +52,7 @@ Services: `app` (php-fpm:9000), `nginx` (:8080), `vite` (:5173 HMR), `horizon`, 
 
 ## Architecture overview
 
-Pixelkraft is a **self-hosted Git-to-Render site operations platform** built on Laravel 13 + Livewire v4 + Flux v2 + Tailwind v4. Its central model is `Site` (UUID primary key). Everything revolves around automating the lifecycle: push → sync → parse → deploy.
+platform is a **self-hosted Git-to-Render site operations platform** built on Laravel 13 + Livewire v4 + Flux v2 + Tailwind v4. Its central model is `Site` (UUID primary key). Everything revolves around automating the lifecycle: push → sync → parse → deploy.
 
 The dashboard UI is **PHP-only**: Blade templates (`resources/views/dashboard/`) + Livewire 4 components (`app/Livewire/`) + Flux 2 UI kit. There is no React, TypeScript, or Inertia.js. The only JavaScript is `resources/js/app.js` (vanilla JS search palette) and the Livewire/Flux runtime bundles loaded via `@livewireScripts` / `@fluxScripts`.
 
@@ -91,7 +91,7 @@ POST /api/webhooks/github
 
 ### Concurrency safety
 
-`SiteLockService` wraps every `GitSyncService` operation (clone, pull, push, tag) in a Redis `Cache::lock("pixelkraft:site:{id}:lock:{resource}")`. This prevents two queue workers from running concurrent Git operations on the same repo. Lock wait timeout is 10 s; if exceeded, a `RuntimeException` is thrown (not silently dropped).
+`SiteLockService` wraps every `GitSyncService` operation (clone, pull, push, tag) in a Redis `Cache::lock("platform:site:{id}:lock:{resource}")`. This prevents two queue workers from running concurrent Git operations on the same repo. Lock wait timeout is 10 s; if exceeded, a `RuntimeException` is thrown (not silently dropped).
 
 ### Deployment adapters
 
@@ -116,7 +116,7 @@ Each parser implements `discoverPages()` + `parsePage()` returning a `ParsedPage
 ### Visual editor pipeline
 
 `VisualEditor` (Livewire) renders the site in an iframe via `EditorPreviewController`. On save:
-1. `RegionDetector` locates editable regions by CSS selector or `data-pk-region` markers.
+1. `RegionDetector` locates editable regions by CSS selector or `data-ui-region` markers.
 2. `ContentPatcher` writes the edited content back to the source file (HTML/JSX/Markdown) in the repo.
 3. `GitSyncService` commits and pushes the change (with `GitOperation` audit log entry).
 4. Optionally dispatches `DeploySiteJob` for an immediate redeploy.
@@ -164,4 +164,4 @@ The scheduler runs: `CheckUptime`, `CheckSsl`, `CrawlLinks`, `AnalyzeSeo`, `Sync
 
 ### Key config
 
-`config/pixelkraft.php` is the primary application config. Notable keys: `repos_path` (where repos are cloned), `sites_deploy_path` (Nginx-served root), `nginx_sites_path`, `deploy.build_timeout_seconds` (300), `deploy.rollback_snapshots` (10), `runtime.port_start` (4100), `registration_enabled` (mirrors `REGISTRATION_ENABLED` env var).
+`config/platform.php` is the primary application config. Notable keys: `repos_path` (where repos are cloned), `sites_deploy_path` (Nginx-served root), `nginx_sites_path`, `deploy.build_timeout_seconds` (300), `deploy.rollback_snapshots` (10), `runtime.port_start` (4100), `registration_enabled` (mirrors `REGISTRATION_ENABLED` env var).

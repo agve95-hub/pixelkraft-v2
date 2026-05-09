@@ -36,7 +36,7 @@ class SpaComponentParserTest extends TestCase
             $runtime,
         );
 
-        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'pk-spa-'.uniqid();
+        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'ui-spa-'.uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 

@@ -24,7 +24,7 @@ class StaticDeploymentAdapterTest extends TestCase
     {
         parent::setUp();
         $this->adapter = new StaticDeploymentAdapter;
-        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'pk-sda-'.uniqid();
+        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'ui-sda-'.uniqid();
         mkdir($this->tempDir, 0777, true);
     }
 

@@ -88,7 +88,7 @@ class PruneMonitoringDataTest extends TestCase
         $old = $this->makeUptimeCheck($site, now()->subDays(31)->toDateTimeString());
         $recent = $this->makeUptimeCheck($site, now()->subDays(1)->toDateTimeString());
 
-        $this->artisan('pixelkraft:prune-monitoring', ['--uptime-days' => 30])
+        $this->artisan('platform:prune-monitoring', ['--uptime-days' => 30])
             ->assertSuccessful();
 
         $this->assertDatabaseMissing('uptime_checks', ['id' => $old->id]);
@@ -104,7 +104,7 @@ class PruneMonitoringDataTest extends TestCase
         $old = $this->makeAnalyticsEvent($site, $page, now()->subDays(91)->toDateTimeString());
         $recent = $this->makeAnalyticsEvent($site, $page, now()->subDays(1)->toDateTimeString());
 
-        $this->artisan('pixelkraft:prune-monitoring', ['--events-days' => 90])
+        $this->artisan('platform:prune-monitoring', ['--events-days' => 90])
             ->assertSuccessful();
 
         $this->assertDatabaseMissing('analytics_events', ['id' => $old->id]);
@@ -119,7 +119,7 @@ class PruneMonitoringDataTest extends TestCase
         $site = $this->makeSite($user);
         $old = $this->makeUptimeCheck($site, now()->subDays(60)->toDateTimeString());
 
-        $this->artisan('pixelkraft:prune-monitoring', ['--uptime-days' => 30, '--dry-run' => true])
+        $this->artisan('platform:prune-monitoring', ['--uptime-days' => 30, '--dry-run' => true])
             ->assertSuccessful()
             ->expectsOutputToContain('[dry-run]');
 
@@ -133,7 +133,7 @@ class PruneMonitoringDataTest extends TestCase
         $page = $this->makePage($site);
         $old = $this->makeAnalyticsEvent($site, $page, now()->subDays(120)->toDateTimeString());
 
-        $this->artisan('pixelkraft:prune-monitoring', ['--events-days' => 90, '--dry-run' => true])
+        $this->artisan('platform:prune-monitoring', ['--events-days' => 90, '--dry-run' => true])
             ->assertSuccessful();
 
         $this->assertDatabaseHas('analytics_events', ['id' => $old->id]);
@@ -143,7 +143,7 @@ class PruneMonitoringDataTest extends TestCase
 
     public function test_fails_when_retention_days_is_zero(): void
     {
-        $this->artisan('pixelkraft:prune-monitoring', ['--uptime-days' => 0])
+        $this->artisan('platform:prune-monitoring', ['--uptime-days' => 0])
             ->assertFailed();
     }
 
@@ -155,7 +155,7 @@ class PruneMonitoringDataTest extends TestCase
         $shouldDelete = $this->makeUptimeCheck($site, now()->subDays(8)->toDateTimeString());
         $shouldKeep = $this->makeUptimeCheck($site, now()->subDays(3)->toDateTimeString());
 
-        $this->artisan('pixelkraft:prune-monitoring', ['--uptime-days' => 7])
+        $this->artisan('platform:prune-monitoring', ['--uptime-days' => 7])
             ->assertSuccessful();
 
         $this->assertDatabaseMissing('uptime_checks', ['id' => $shouldDelete->id]);
@@ -166,6 +166,6 @@ class PruneMonitoringDataTest extends TestCase
 
     public function test_succeeds_when_nothing_to_prune(): void
     {
-        $this->artisan('pixelkraft:prune-monitoring')->assertSuccessful();
+        $this->artisan('platform:prune-monitoring')->assertSuccessful();
     }
 }

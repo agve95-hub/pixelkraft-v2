@@ -91,7 +91,7 @@ class DeployServiceEnvFilterTest extends TestCase
         $this->assertArrayHasKey('SAFE_VAR', $filtered);
     }
 
-    public function test_build_tool_cache_env_uses_pixelkraft_owned_storage(): void
+    public function test_build_tool_cache_env_uses_platform_owned_storage(): void
     {
         $site = new Site(['slug' => 'cache-demo']);
         $service = app(DeployService::class);

@@ -1,5 +1,5 @@
 <x-layouts.auth>
-    <x-slot:title>Reset password — pixelkraft</x-slot:title>
+    <x-slot:title>Reset password - Universal Tool</x-slot:title>
     <x-slot:subtitle>Set your new password</x-slot:subtitle>
 
     <form method="POST" action="{{ route('password.update') }}" class="space-y-6">

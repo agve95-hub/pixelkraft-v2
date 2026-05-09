@@ -63,7 +63,7 @@ class SiteProvisioningService
         return TrackingInstallation::query()->firstOrCreate(
             [
                 'site_id' => $site->id,
-                'provider' => 'pixelkraft',
+                'provider' => 'platform',
             ],
             [
                 'measurement_id' => $site->ga_property_id,
