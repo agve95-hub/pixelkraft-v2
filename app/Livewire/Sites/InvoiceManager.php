@@ -4,6 +4,7 @@ namespace App\Livewire\Sites;
 
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Site;
 use App\Support\SiteAccess;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -366,7 +367,7 @@ class InvoiceManager extends Component
     /**
      * @return array<string, mixed>
      */
-    protected function formRules(\App\Models\Site $site, ?Invoice $invoice = null): array
+    protected function formRules(Site $site, ?Invoice $invoice = null): array
     {
         return [
             'form_number' => [
@@ -395,9 +396,9 @@ class InvoiceManager extends Component
     }
 
     /**
-     * @param Collection<int, array{description: string, quantity: string, rate: string}> $lines
+     * @param  Collection<int, array{description: string, quantity: string, rate: string}>  $lines
      */
-    protected function persistFormInvoice(\App\Models\Site $site, Collection $lines, ?Invoice $invoice = null): Invoice
+    protected function persistFormInvoice(Site $site, Collection $lines, ?Invoice $invoice = null): Invoice
     {
         return DB::transaction(function () use ($site, $lines, $invoice) {
             $invoice ??= new Invoice([

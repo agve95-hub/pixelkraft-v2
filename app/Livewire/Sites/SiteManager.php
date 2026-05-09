@@ -6,8 +6,8 @@ use App\Jobs\CloneRepoJob;
 use App\Models\Site;
 use App\Rules\GitRemoteUrl;
 use Illuminate\Contracts\View\View;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class SiteManager extends Component
