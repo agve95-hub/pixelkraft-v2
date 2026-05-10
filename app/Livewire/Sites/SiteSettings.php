@@ -238,12 +238,42 @@ class SiteSettings extends Component
         $this->redirect(route('sites.index'), navigate: true);
     }
 
+    /**
+     * Surface integration health warnings shown in the settings view.
+     * These are informational — they do not block saving.
+     *
+     * @return list<string>
+     */
+    public function integrationWarnings(): array
+    {
+        $site = SiteAccess::findOrFail($this->siteId);
+        $warnings = [];
+
+        // GA4: property configured but server credentials missing.
+        if ($this->gaPropertyId && (
+            ! config('platform.google_analytics_credentials_path')
+            || ! \Illuminate\Support\Facades\File::isReadable(
+                (string) config('platform.google_analytics_credentials_path')
+            )
+        )) {
+            $warnings[] = 'GA4 Measurement ID is set but GOOGLE_ANALYTICS_CREDENTIALS_PATH is not configured or unreadable. Organic traffic sync will return zero until a service account JSON file is provided.';
+        }
+
+        // Cloudflare: zone ID without API token (or vice versa).
+        if (($site->cf_zone_id xor $site->cf_api_token)) {
+            $warnings[] = 'Cloudflare zone ID and API token must both be set for analytics sync to work.';
+        }
+
+        return $warnings;
+    }
+
     public function render(): View
     {
         $site = SiteAccess::findOrFail($this->siteId);
 
         return view('livewire.sites.site-settings', [
             'site' => $site,
+            'integrationWarnings' => $this->integrationWarnings(),
             'supportProfile' => app(SiteSupportService::class)->siteProfile($site),
             'hasInboxInboundSecret' => filled($site->getAttribute('inbox_inbound_secret')),
             'deploymentOptions' => $this->runtime()->supportedDeploymentModesForProjectType($this->projectType),

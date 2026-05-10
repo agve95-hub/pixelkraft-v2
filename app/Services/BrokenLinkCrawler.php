@@ -58,14 +58,12 @@ class BrokenLinkCrawler
 
     private function crawlPage(Site $site, Page $page, ?string $baseUrl): array
     {
-        $repoPath = $site->repo_path;
-        $filePath = "{$repoPath}/{$page->file_path}";
+        $html = $this->resolvePageHtml($site, $page);
 
-        if (! file_exists($filePath)) {
+        if ($html === null) {
             return ['total' => 0, 'broken' => [], 'redirects' => []];
         }
 
-        $html = file_get_contents($filePath);
         $crawler = new Crawler($html);
 
         $links = [];
@@ -158,6 +156,61 @@ class BrokenLinkCrawler
             'broken' => $broken,
             'redirects' => $redirects,
         ];
+    }
+
+    /**
+     * Resolve the HTML content to crawl for a page.
+     *
+     * Priority order:
+     *  1. Deployed HTML file from deploy_path — works for every static site type
+     *     regardless of what the source file format is (HTML, JSX, MDX, etc.).
+     *  2. Runtime site — fetch from the live Node.js server via SiteRuntimeService.
+     *  3. Source file fallback for plain static_html sites where deploy_path is absent.
+     *  4. null — skip this page (framework site with no built output or live server).
+     */
+    private function resolvePageHtml(Site $site, Page $page): ?string
+    {
+        $urlPath = trim($page->url_path ?? '/', '/');
+        $deployRoot = rtrim((string) ($site->deploy_path ?? ''), '/');
+
+        // ── 1. Deployed HTML in deploy_path ──────────────────────────────
+        if ($deployRoot !== '' && is_dir($deployRoot)) {
+            $candidates = [
+                "{$deployRoot}/".($urlPath ?: 'index').'.html',
+                "{$deployRoot}/{$urlPath}/index.html",
+                "{$deployRoot}/index.html", // root fallback for '/'
+            ];
+
+            foreach ($candidates as $path) {
+                if (file_exists($path)) {
+                    $content = file_get_contents($path);
+
+                    return $content !== false ? $content : null;
+                }
+            }
+        }
+
+        // ── 2. Runtime site (Next.js / Nuxt) ─────────────────────────────
+        if ($this->runtime->usesRuntimeServer($site) && $this->runtime->isReachable($site)) {
+            $response = $this->runtime->fetch($site, '/'.ltrim($page->url_path ?? '/', '/'));
+
+            if ($response && $response->status() === 200) {
+                return $response->body();
+            }
+        }
+
+        // ── 3. Source-file fallback for plain static_html only ───────────
+        if (in_array($site->project_type, ['static_html', 'php_site'], true)) {
+            $sourcePath = rtrim((string) ($site->repo_path ?? ''), '/').'/'.$page->file_path;
+            if (file_exists($sourcePath)) {
+                $content = file_get_contents($sourcePath);
+
+                return $content !== false ? $content : null;
+            }
+        }
+
+        // ── 4. No crawlable HTML available ───────────────────────────────
+        return null;
     }
 
     private function resolveUrl(string $link, ?string $baseUrl, string $pagePath): ?string

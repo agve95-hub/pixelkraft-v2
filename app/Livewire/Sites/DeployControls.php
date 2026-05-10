@@ -38,7 +38,16 @@ class DeployControls extends Component
         $site = SiteAccess::findOrFail($this->siteId);
 
         if (empty($site->domain) || empty($site->deploy_path)) {
-            session()->flash('error', 'Configure domain and deploy path in settings first.');
+            session()->flash('error', 'Configure domain and deploy path in site settings first.');
+
+            return;
+        }
+
+        // The site must have at least one successful deploy so the deploy_path
+        // directory exists. Certbot performs an HTTP challenge through Nginx —
+        // the directory must be present even if the site is otherwise empty.
+        if (! \Illuminate\Support\Facades\File::isDirectory($site->deploy_path)) {
+            session()->flash('error', "Deploy the site first — {$site->deploy_path} does not exist yet. Certbot cannot complete its HTTP challenge without a working Nginx vhost pointing to a real directory.");
 
             return;
         }
@@ -46,19 +55,16 @@ class DeployControls extends Component
         try {
             $nginx = app(NginxConfigService::class);
             $configPath = $nginx->generateConfig($site);
-
             $site->update(['nginx_conf_path' => $configPath]);
-
             $nginx->reloadNginx();
 
-            session()->flash('success', "Nginx configured for {$site->domain}. Setting up SSL...");
+            session()->flash('success', "Nginx configured for {$site->domain}. SSL provisioning running in background (10–30 s).");
 
-            // Provision SSL in background
             ProvisionSslJob::dispatch($site);
 
         } catch (\Throwable $e) {
             Log::error('Domain setup failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
-            session()->flash('error', 'Domain setup failed. Check application logs for details.');
+            session()->flash('error', 'Domain setup failed: '.$e->getMessage());
         }
     }
 

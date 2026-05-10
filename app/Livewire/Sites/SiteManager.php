@@ -172,9 +172,7 @@ class SiteManager extends Component
             'ssl_provider' => $this->sslProvider ?: null,
             'dns_provider' => $this->dnsProvider ?: null,
             'ga_property_id' => $this->gaPropertyId ?: null,
-            'gsc_property' => $this->gscProperty ?: null,
             'gtm_id' => $this->gtmId ?: null,
-            'google_ads_id' => $this->googleAdsId ?: null,
             'cf_api_token' => $this->cfApiToken ?: null,
             'cf_zone_id' => $this->cfZoneId ?: null,
             'smtp_host' => $this->smtpHost ?: null,
@@ -183,8 +181,8 @@ class SiteManager extends Component
             'smtp_password' => $this->smtpPassword ?: null,
             'hosting_provider' => $this->hostingProvider ?: null,
             'ssh_host' => $this->sshHost ?: null,
-            'ftp_ssh_user' => $this->ftpSshUser ?: null,
-            'ftp_ssh_password' => $this->ftpSshPassword ?: null,
+            // gsc_property, google_ads_id — reserved for future GSC / Ads API integrations.
+            // ftp_ssh_user, ftp_ssh_password — reserved for future remote SSH/FTP deployment.
         ]);
 
         if ($this->sourceType === 'github' && $this->repoUrl !== '') {

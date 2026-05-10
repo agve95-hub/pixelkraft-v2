@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsSnapshot;
+use App\Models\Notification;
 use App\Models\Page;
 use App\Models\Site;
 use Google\Analytics\Data\V1beta\Client\BetaAnalyticsDataClient;
@@ -449,6 +450,25 @@ class AnalyticsAggregator
 
         if (! $credentialsPath || ! File::isReadable($credentialsPath) || ! $propertyId) {
             Log::info("GA4 sync skipped for [{$site->slug}] — missing credentials or property ID");
+
+            // Only notify when a GA4 property IS configured but the credentials file
+            // is absent — this is a real misconfiguration, not an intentional opt-out.
+            if ($propertyId && (! $credentialsPath || ! File::isReadable((string) $credentialsPath))) {
+                $alreadyAlerted = Notification::query()
+                    ->where('site_id', $site->id)
+                    ->where('type', 'ga4_misconfigured')
+                    ->where('created_at', '>=', now()->subDays(7))
+                    ->exists();
+
+                if (! $alreadyAlerted) {
+                    Notification::createAlert(
+                        type: 'ga4_misconfigured',
+                        title: "GA4 credentials missing for {$site->name}",
+                        body: "The site has a GA4 property ID configured but GOOGLE_ANALYTICS_CREDENTIALS_PATH is not set or the file is not readable. Organic traffic data will remain zero until credentials are configured.",
+                        siteId: $site->id,
+                    );
+                }
+            }
 
             return 0;
         }
