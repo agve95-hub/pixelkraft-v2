@@ -28,16 +28,19 @@ class AnalyticsAggregator
      */
     public function syncAll(): int
     {
-        $sites = Site::where('is_active', true)->get();
         $synced = 0;
 
-        foreach ($sites as $site) {
-            try {
-                $synced += $this->syncSite($site);
-            } catch (\Throwable $e) {
-                Log::warning("Analytics sync failed for [{$site->slug}]", ['error' => $e->getMessage()]);
+        // Chunk instead of ->get() so all Site models (with encrypted fields) are
+        // not held in memory simultaneously for large agency installs.
+        Site::where('is_active', true)->chunkById(50, function ($sites) use (&$synced) {
+            foreach ($sites as $site) {
+                try {
+                    $synced += $this->syncSite($site);
+                } catch (\Throwable $e) {
+                    Log::warning("Analytics sync failed for [{$site->slug}]", ['error' => $e->getMessage()]);
+                }
             }
-        }
+        });
 
         return $synced;
     }

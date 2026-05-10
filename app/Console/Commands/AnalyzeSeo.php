@@ -73,7 +73,7 @@ class AnalyzeSeo extends Command
 
         foreach ($site->pages as $page) {
             try {
-                $analyzer->analyze($page->fresh());
+                $analyzer->analyze($page); // pages already loaded above — no ->fresh() N+1
             } catch (\Throwable $e) {
                 $this->error("  Failed page {$page->id}: {$e->getMessage()}");
             }

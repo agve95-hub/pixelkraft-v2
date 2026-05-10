@@ -51,7 +51,14 @@ class RunLighthouse extends Command
                 ->limit(10)
                 ->get();
 
-            foreach ($pages as $page) {
+            foreach ($pages as $index => $page) {
+                // Respect the PSI rate limit (~25 req/100 s without an API key).
+                // Wait 4 seconds between pages so a 10-page site takes ~40 s instead
+                // of hitting the limit and burning retries on 429 responses.
+                if ($index > 0) {
+                    sleep(4);
+                }
+
                 $scores = $this->auditPage($site, $page, $strategy);
 
                 if ($scores) {

@@ -21,7 +21,7 @@ use Symfony\Component\HttpFoundation\Response;
  * the nonce via the csp_nonce() helper.
  *
  * script-src uses the nonce exclusively — 'unsafe-inline' and 'unsafe-eval' are
- * intentionally absent.  Livewire 4 + Flux 2 are compatible with nonce-based CSP.
+ * absent.  Livewire 4 + Flux 2 are compatible with nonce-based CSP.
  *
  * style-src retains 'unsafe-inline' because Tailwind v4 JIT and Flux component
  * styles rely on inline <style> blocks that cannot be nonce-attributed at this
@@ -60,7 +60,7 @@ class SetSecurityHeaders
         if ($request->isSecure()) {
             $response->headers->set(
                 'Strict-Transport-Security',
-                'max-age=31536000; includeSubDomains'
+                'max-age=31536000'
             );
         }
 
@@ -72,7 +72,7 @@ class SetSecurityHeaders
                 'Content-Security-Policy',
                 implode('; ', [
                     "default-src 'self'",
-                    "script-src 'self' 'nonce-{$nonce}' 'unsafe-eval'",
+                    "script-src 'self' 'nonce-{$nonce}'",
                     "style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com",
                     "img-src 'self' data: https:",
                     "font-src 'self' data: https:",

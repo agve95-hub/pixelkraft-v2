@@ -23,6 +23,7 @@ return [
         'api/tracking/*/collect',
         'api/forms/*',
         'api/inbox/*',
+        'api/sites/*/active-campaigns',   // consumed by client-side JS on managed sites
     ],
 
     /*

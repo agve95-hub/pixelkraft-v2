@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Sites;
 
+use App\Services\NginxConfigService;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class MaintenanceMode extends Component
@@ -89,7 +91,22 @@ class MaintenanceMode extends Component
         ];
         $site->save();
 
-        session()->flash('success', 'Maintenance settings saved. Note: these are not yet enforced on live traffic — this is a preview only.');
+        // Apply or remove the Nginx maintenance override and reload.
+        try {
+            if (! empty($site->nginx_conf_path) || ! empty($site->domain)) {
+                app(NginxConfigService::class)->setMaintenanceMode($site, $this->enabled);
+                $status = $this->enabled
+                    ? 'Maintenance mode enabled — live traffic now sees the maintenance page.'
+                    : 'Maintenance mode disabled — site is back online.';
+            } else {
+                $status = 'Maintenance settings saved. Configure a domain and deploy the site first to enforce on live traffic.';
+            }
+        } catch (\Throwable $e) {
+            Log::error("MaintenanceMode: failed to update Nginx for [{$site->slug}]", ['error' => $e->getMessage()]);
+            $status = 'Settings saved, but the Nginx config could not be updated: '.$e->getMessage();
+        }
+
+        session()->flash('success', $status);
     }
 
     public function render(): View

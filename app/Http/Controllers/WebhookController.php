@@ -80,8 +80,15 @@ class WebhookController extends Controller
             return response()->json(['error' => 'Missing branch ref'], 400);
         }
 
+        // Use the indexed repo_slug column for an O(log n) lookup.
+        // The PHP normalisation filter is the authoritative check; the DB predicate
+        // only narrows the result set.
         $sites = Site::query()
             ->where('is_active', true)
+            ->where(function ($q) use ($repository) {
+                $q->where('repo_slug', $repository)
+                    ->orWhereNull('repo_slug');   // back-compat: rows without slug yet
+            })
             ->get()
             ->filter(fn (Site $site) => $site->normalizedGithubRepository() === $repository)
             ->values();
@@ -122,7 +129,7 @@ class WebhookController extends Controller
                 }
             }
 
-            SyncFromWebhookJob::dispatch($site, $payload, $deliveryId);
+            SyncFromWebhookJob::dispatch($site, $this->minimalJobPayload($payload), $deliveryId);
             $dispatched++;
 
             Log::info("Dispatched SyncFromWebhookJob for [{$site->slug}]");
@@ -183,6 +190,32 @@ class WebhookController extends Controller
 
             throw $e;
         }
+    }
+
+    /**
+     * Strip the payload down to the minimal fields the job actually reads.
+     * Prevents emails, commit author data, and diff blobs from being serialised
+     * into the queue payload and stored in Redis/DB job records.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function minimalJobPayload(array $payload): array
+    {
+        $head = is_array($payload['head_commit'] ?? null) ? $payload['head_commit'] : [];
+
+        return [
+            'head_commit' => [
+                'message' => isset($head['message']) && is_string($head['message'])
+                    ? mb_substr($head['message'], 0, 500)
+                    : null,
+            ],
+            'pusher' => [
+                'name' => is_array($payload['pusher'] ?? null)
+                    ? ($payload['pusher']['name'] ?? null)
+                    : null,
+            ],
+        ];
     }
 
     /**

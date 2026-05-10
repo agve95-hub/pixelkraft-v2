@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EditableRegion;
+use App\Models\Site;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\DomCrawler\Crawler;
@@ -151,15 +152,21 @@ class ContentPatcher
     /**
      * Apply multiple edits at once (batch save).
      *
+     * A $site must be provided so every region is verified to belong to that site
+     * before any file is written — prevents IDOR cross-tenant source-code writes.
+     *
      * @param  array<string, string>  $edits  [region_id => new_content]
      * @return string[] List of all changed files
      */
-    public function applyBatch(array $edits): array
+    public function applyBatch(array $edits, Site $site): array
     {
         $changedFiles = [];
 
         foreach ($edits as $regionId => $newContent) {
-            $region = EditableRegion::find($regionId);
+            $region = EditableRegion::query()
+                ->whereKey($regionId)
+                ->whereHas('page', fn ($q) => $q->where('site_id', $site->id))
+                ->first();
 
             if (! $region) {
                 continue;
@@ -178,7 +185,7 @@ class ContentPatcher
     {
         // Strategy 1: If region has a marker, replace content between markers
         if ($region->marker_id) {
-            $htmlWithMarkers = $this->ensurePkMarkers($html, $region);
+            $htmlWithMarkers = $this->ensureEditableMarkers($html, $region);
 
             return $this->patchByMarker($htmlWithMarkers, $region->marker_id, $newContent);
         }
@@ -684,17 +691,22 @@ class ContentPatcher
             return substr_replace($haystack, $replacement, $pos, strlen($needle));
         }
 
-        // Exact match failed. Try once with whitespace-normalized content.
-        // Replace in the normalized copy — $pos from the normalized string cannot
-        // be used as an offset into the original because extra whitespace before
-        // the needle shifts the positions and causes off-by-N corruption.
+        // Exact match failed. Build a regex from the needle that tolerates flexible
+        // whitespace between tokens and match it against the ORIGINAL haystack so
+        // indentation, newlines, and preformatted content in the rest of the document
+        // are never collapsed.
         $normalizedNeedle = trim((string) preg_replace('/\s+/', ' ', $needle));
-        $normalizedHaystack = (string) preg_replace('/\s+/', ' ', $haystack);
+        if ($normalizedNeedle !== '') {
+            $tokens = preg_split('/\s+/', $normalizedNeedle, -1, PREG_SPLIT_NO_EMPTY);
 
-        if ($normalizedNeedle !== '' && str_contains($normalizedHaystack, $normalizedNeedle)) {
-            $pos = strpos($normalizedHaystack, $normalizedNeedle);
+            if ($tokens) {
+                $pattern = '/'.implode('\s+', array_map(fn (string $t) => preg_quote($t, '/'), $tokens)).'/u';
+                $patched = preg_replace_callback($pattern, fn () => $replacement, $haystack, 1);
 
-            return substr_replace($normalizedHaystack, $replacement, $pos, strlen($normalizedNeedle));
+                if ($patched !== null && $patched !== $haystack) {
+                    return $patched;
+                }
+            }
         }
 
         Log::warning('ContentPatcher: could not find content to replace', [
@@ -704,7 +716,7 @@ class ContentPatcher
         return $haystack;
     }
 
-    private function ensurePkMarkers(string $html, EditableRegion $region): string
+    private function ensureEditableMarkers(string $html, EditableRegion $region): string
     {
         if (! $region->marker_id) {
             return $html;

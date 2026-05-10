@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Notification;
 use App\Models\Site;
 use App\Models\UptimeCheck;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
@@ -16,90 +17,85 @@ class CheckUptime extends Command
 
     public function handle(): int
     {
-        $sites = Site::where('is_active', true)
+        $checked = 0;
+
+        Site::where('is_active', true)
             ->whereNotNull('domain')
             ->where('deploy_status', 'live')
-            ->get();
+            ->chunkById(50, function ($sites) use (&$checked) {
+                foreach ($sites as $site) {
+                    $this->checkSite($site);
+                    $checked++;
+                }
+            });
 
-        foreach ($sites as $site) {
-            $startTime = microtime(true);
+        $this->info("Checked {$checked} sites.");
 
-            $degradedAfterMs = (int) config('platform.monitoring.uptime_degraded_after_ms', 3000);
+        return self::SUCCESS;
+    }
 
-            // SSRF guard: resolve the domain to an IP and reject requests to
-            // private / loopback / link-local ranges.  A user-configured domain
-            // could point to an internal service via DNS (rebinding attack).
-            $domain = (string) $site->domain;
-            $resolvedIp = gethostbyname($domain);
-            $isPublicIp = $resolvedIp !== $domain
-                && filter_var(
-                    $resolvedIp,
-                    FILTER_VALIDATE_IP,
-                    FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
-                );
+    private function checkSite(Site $site): void
+    {
+        $startTime = microtime(true);
+        $degradedAfterMs = (int) config('platform.monitoring.uptime_degraded_after_ms', 3000);
+        $domain = (string) $site->domain;
 
-            if (! $isPublicIp) {
-                // Record as "unknown" (status 0) rather than silently skipping so
-                // the dashboard still shows a check was attempted.
-                UptimeCheck::create([
-                    'site_id' => $site->id,
-                    'status_code' => 0,
-                    'response_time_ms' => 0,
-                    'is_up' => false,
-                    'is_degraded' => false,
-                    'checked_at' => now(),
-                ]);
+        // SSRF guard: reject requests to private/loopback/link-local IPs.
+        $resolvedIp = gethostbyname($domain);
+        $isPublicIp = $resolvedIp !== $domain
+            && filter_var($resolvedIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 
-                continue;
-            }
-
-            try {
-                $response = Http::timeout(15)->get("https://{$domain}");
-                $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
-                $isUp = $response->successful();
-                $statusCode = $response->status();
-            } catch (\Throwable $e) {
-                $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
-                $isUp = false;
-                $statusCode = 0;
-            }
-
-            $isDegraded = $isUp
-                && $responseTimeMs >= $degradedAfterMs
-                && $statusCode >= 200
-                && $statusCode < 300;
-
+        if (! $isPublicIp) {
             UptimeCheck::create([
                 'site_id' => $site->id,
-                'status_code' => $statusCode,
-                'response_time_ms' => $responseTimeMs,
-                'is_up' => $isUp,
-                'is_degraded' => $isDegraded,
+                'status_code' => 0,
+                'response_time_ms' => 0,
+                'is_up' => false,
+                'is_degraded' => false,
                 'checked_at' => now(),
             ]);
 
-            // Alert after 3 consecutive failures
-            if (! $isUp) {
-                $recentFailures = $site->uptimeChecks()
-                    ->latest('checked_at')
-                    ->limit(3)
-                    ->get()
-                    ->filter(fn ($c) => ! $c->is_up)
-                    ->count();
-
-                if ($recentFailures >= 3) {
-                    Notification::createAlert(
-                        type: 'uptime_down',
-                        title: "Site down: {$site->name}",
-                        body: "{$site->domain} has failed {$recentFailures} consecutive checks.",
-                        siteId: $site->id,
-                    );
-                }
-            }
+            return;
         }
 
-        $this->info("Checked {$sites->count()} sites.");
+        try {
+            $response = Http::timeout(15)->get("https://{$domain}");
+            $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
+            $isUp = $response->successful();
+            $statusCode = $response->status();
+        } catch (\Throwable) {
+            $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
+            $isUp = false;
+            $statusCode = 0;
+        }
 
-        return self::SUCCESS;
+        $isDegraded = $isUp && $responseTimeMs >= $degradedAfterMs && $statusCode >= 200 && $statusCode < 300;
+
+        UptimeCheck::create([
+            'site_id' => $site->id,
+            'status_code' => $statusCode,
+            'response_time_ms' => $responseTimeMs,
+            'is_up' => $isUp,
+            'is_degraded' => $isDegraded,
+            'checked_at' => now(),
+        ]);
+
+        if (! $isUp) {
+            $checkWindow = config('platform.monitoring.uptime_interval_minutes', 5);
+            $recentFailures = UptimeCheck::query()
+                ->where('site_id', $site->id)
+                ->where('is_up', false)
+                ->where('checked_at', '>=', now()->subMinutes($checkWindow * 3 + 1))
+                ->count();
+
+            if ($recentFailures >= 3) {
+                Notification::createAlert(
+                    type: 'uptime_down',
+                    title: "Site down: {$site->name}",
+                    body: "{$site->domain} has failed {$recentFailures} consecutive uptime checks.",
+                    siteId: $site->id,
+                );
+            }
+        }
     }
 }

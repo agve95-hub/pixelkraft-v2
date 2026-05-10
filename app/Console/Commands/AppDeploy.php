@@ -110,10 +110,20 @@ class AppDeploy extends Command
     private function clearCaches(): void
     {
         $this->info('Clearing caches...');
+
+        // Clear first so stale entries are never served between clear and rebuild.
         $this->call('view:clear');
         $this->call('config:clear');
         $this->call('route:clear');
         $this->call('event:clear');
+
+        // Rebuild immediately — the first HTTP request after a restart would do this
+        // on-demand (adding latency to the cold request) without pre-warming.
+        // Skip view:cache — Blade compiles on first render, pre-warming all views can
+        // surface template errors that are better caught at request time.
+        $this->call('config:cache');
+        $this->call('route:cache');
+        $this->call('event:cache');
     }
 
     private function restartWorkers(): void

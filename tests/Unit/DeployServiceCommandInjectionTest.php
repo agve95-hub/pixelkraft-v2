@@ -2,35 +2,27 @@
 
 namespace Tests\Unit;
 
-use App\Services\DeployService;
+use App\Services\BuildService;
 use Tests\TestCase;
 
 /**
- * Verify that the shell-injection guards in DeployService reject
- * dangerous build commands and Node.js version specifiers before
- * they are passed to `bash -c`.
- *
- * Both methods are private; tests invoke them via reflection.
+ * Verify that the shell-injection guards in BuildService reject dangerous
+ * build commands and Node.js version specifiers before they reach bash -c.
+ * Both methods are public on BuildService so no reflection is needed.
  */
 class DeployServiceCommandInjectionTest extends TestCase
 {
-    private \ReflectionClass $reflection;
-
-    private DeployService $service;
+    private BuildService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = app(DeployService::class);
-        $this->reflection = new \ReflectionClass($this->service);
+        $this->service = app(BuildService::class);
     }
 
     private function invoke(string $method, mixed ...$args): mixed
     {
-        $m = $this->reflection->getMethod($method);
-        $m->setAccessible(true);
-
-        return $m->invoke($this->service, ...$args);
+        return $this->service->$method(...$args);
     }
 
     // ── validateBuildCommand ───────────────────────────────────────────────

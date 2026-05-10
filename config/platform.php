@@ -46,6 +46,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Two-factor authentication enforcement
+    |--------------------------------------------------------------------------
+    |
+    | When true, admin users without a confirmed TOTP device are redirected to
+    | the settings page before they can access the dashboard.  Defaults to true
+    | in production, false elsewhere so development and test environments are
+    | not blocked.  Set ENFORCE_2FA=true to enable in any environment.
+    |
+    */
+    'enforce_two_factor' => env('ENFORCE_2FA', env('APP_ENV') === 'production'),
+
+    /*
+    |--------------------------------------------------------------------------
     | GitHub
     |--------------------------------------------------------------------------
     */
@@ -93,10 +106,12 @@ return [
         'pid_path' => env('SITE_RUNTIME_PID_PATH', storage_path('app/runtime-pids')),
         'log_path' => env('SITE_RUNTIME_LOG_PATH', storage_path('logs/runtime-sites')),
         'startup_timeout_seconds' => (int) env('SITE_RUNTIME_STARTUP_TIMEOUT_SECONDS', 30),
-        // Set to true to have platform write a Supervisor .conf file on every
-        // runtime deployment so the Node.js process survives server reboots.
-        // Requires supervisord to be installed and the web server user to have
-        // write access to SUPERVISOR_CONF_PATH.
+        // STRONGLY RECOMMENDED in production: set SITE_RUNTIME_SUPERVISOR_ENABLED=true
+        // so platform writes a Supervisor .conf on every runtime deploy and Node.js
+        // processes (Next.js, Nuxt) survive server reboots automatically.
+        // Without this, runtime sites return 502 after every reboot until redeployed.
+        // Requires supervisord + the web-server user to have write access to
+        // SUPERVISOR_CONF_PATH (default: /etc/supervisor/conf.d/).
         'supervisor_enabled' => env('SITE_RUNTIME_SUPERVISOR_ENABLED', false),
         'supervisor_conf_path' => env('SUPERVISOR_CONF_PATH', '/etc/supervisor/conf.d'),
     ],
@@ -125,6 +140,17 @@ return [
          * Webhook delivery audit rows (pruned weekly by `platform:prune-webhooks`).
          */
         'webhook_deliveries_retention_days' => (int) env('WEBHOOK_DELIVERIES_RETENTION_DAYS', 30),
+
+        /**
+         * Closed edit sessions, content revisions, git operations, read notifications,
+         * and snapshot-less deploy logs (all pruned weekly by `platform:prune-monitoring`).
+         */
+        // ?: rather than env(VAR, default) so an empty string in .env falls back to the default.
+        'sessions_retention_days' => (int) (env('SESSIONS_RETENTION_DAYS') ?: 60),
+        'revisions_retention_days' => (int) (env('REVISIONS_RETENTION_DAYS') ?: 90),
+        'git_ops_retention_days' => (int) (env('GIT_OPS_RETENTION_DAYS') ?: 60),
+        'notifications_retention_days' => (int) (env('NOTIFICATIONS_RETENTION_DAYS') ?: 30),
+        'deploy_logs_retention_days' => (int) (env('DEPLOY_LOGS_RETENTION_DAYS') ?: 90),
     ],
 
     /*

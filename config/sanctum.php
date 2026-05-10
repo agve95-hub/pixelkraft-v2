@@ -50,13 +50,13 @@ return [
     |
     */
 
-    // Number of minutes until an issued API token expires.
-    // null = never expires (legacy default).
-    // Recommended for production: 525600 (1 year) or 43200 (30 days).
-    // Set SANCTUM_TOKEN_EXPIRATION in .env to override.
+    // Minutes until an issued API token expires.  Defaults to 90 days (129 600 min).
+    // Tokens are used to control server deployments — indefinite tokens are a
+    // significant risk if a token is leaked.
+    // Override with SANCTUM_TOKEN_EXPIRATION=0 to disable expiry (not recommended).
     'expiration' => env('SANCTUM_TOKEN_EXPIRATION') !== null
-        ? (int) env('SANCTUM_TOKEN_EXPIRATION')
-        : null,
+        ? ((int) env('SANCTUM_TOKEN_EXPIRATION') ?: null)
+        : 129_600,
 
     /*
     |--------------------------------------------------------------------------

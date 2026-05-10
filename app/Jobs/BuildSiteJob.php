@@ -17,9 +17,11 @@ class BuildSiteJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 1;
+    public int $tries = 2;
 
-    public int $timeout = 900;
+    public int $timeout = 600;
+
+    public int $backoff = 30;
 
     public function __construct(
         public string $siteId,

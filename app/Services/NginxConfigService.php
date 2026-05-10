@@ -50,11 +50,113 @@ class NginxConfigService
     }
 
     /**
+     * Upgrade an existing HTTP vhost to HTTPS using a Let's Encrypt certificate.
+     *
+     * Generates a redirect-to-HTTPS server block on port 80 and a TLS-enabled
+     * block on port 443.  The certificate paths follow the standard certbot
+     * convention: /etc/letsencrypt/live/{domain}/fullchain.pem and privkey.pem.
+     *
+     * Call after `certbot certonly --nginx -d {domain}` has succeeded.
+     */
+    public function generateSslConfig(Site $site): string
+    {
+        if (empty($site->domain) || empty($site->deploy_path)) {
+            throw new \RuntimeException("Site [{$site->slug}] needs a domain and deploy path before an SSL config can be generated.");
+        }
+
+        $this->assertValidDomain((string) $site->domain);
+        $this->assertValidSlug((string) $site->slug);
+        $this->assertValidDeployPath((string) $site->deploy_path);
+
+        $certPath = "/etc/letsencrypt/live/{$site->domain}";
+        $redirects = $site->redirects()->where('is_active', true)->get();
+        $redirectBlock = '';
+
+        foreach ($redirects as $redirect) {
+            $from = preg_quote($this->assertValidRedirectFromPath((string) $redirect->from_path), '~');
+            $to = $this->sanitizeRedirectToPath($redirect->to_path);
+            $flag = $this->redirectFlag((int) ($redirect->status_code ?? 301));
+            $redirectBlock .= "    rewrite ^{$from}$ {$to} {$flag};\n";
+        }
+
+        $config = <<<NGINX
+server {
+    listen 80;
+    server_name {$site->domain};
+    return 301 https://\$host\$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name {$site->domain};
+    root {$site->deploy_path};
+    index index.html index.htm;
+
+    ssl_certificate     {$certPath}/fullchain.pem;
+    ssl_certificate_key {$certPath}/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript image/svg+xml;
+
+    # Redirects
+{$redirectBlock}
+    location ~* \.(css|js|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location / {
+        try_files \$uri \$uri/ \$uri.html /index.html =404;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+
+    error_page 404 /404.html;
+
+    access_log /var/log/nginx/{$site->slug}-access.log;
+    error_log /var/log/nginx/{$site->slug}-error.log;
+}
+NGINX;
+
+        $configPath = $this->getConfigPath($site);
+        File::ensureDirectoryExists(dirname($configPath), 0755, true);
+        File::put($configPath, $config);
+
+        $site->update([
+            'nginx_conf_path' => $configPath,
+            'ssl_status' => 'active',
+        ]);
+
+        Log::info("Generated SSL Nginx config for [{$site->slug}] at [{$configPath}]");
+
+        return $configPath;
+    }
+
+    /**
      * Remove Nginx config for a site.
      */
     public function removeConfig(Site $site): void
     {
         $configPath = $site->nginx_conf_path ?? $this->getConfigPath($site);
+
+        // Reject paths outside the platform-owned directory before touching anything.
+        $this->assertValidConfigPath($configPath);
+
         $enabledPath = $this->getEnabledPath($site);
 
         if (File::exists($enabledPath)) {
@@ -100,6 +202,142 @@ class NginxConfigService
         }
 
         Log::info('Nginx reloaded successfully.');
+    }
+
+    /**
+     * Write or remove a maintenance override config for a site and reload Nginx.
+     *
+     * When maintenance mode is enabled a supplementary server block with higher
+     * specificity intercepts all requests on the site's domain and returns a 503
+     * with the configured maintenance page HTML written to disk.
+     * When disabled the override config and its HTML are removed.
+     */
+    public function setMaintenanceMode(Site $site, bool $enabled): void
+    {
+        if (empty($site->domain)) {
+            throw new \RuntimeException("Site [{$site->slug}] has no domain configured.");
+        }
+
+        $this->assertValidDomain((string) $site->domain);
+        $this->assertValidSlug((string) $site->slug);
+
+        $overridePath = $this->maintenanceConfigPath($site);
+        $htmlPath = $this->maintenanceHtmlPath($site);
+        $enabledOverridePath = str_replace('sites-available', 'sites-enabled', $overridePath);
+
+        if ($enabled) {
+            $settings = is_array($site->maintenance_settings) ? $site->maintenance_settings : [];
+            $html = $this->renderMaintenanceHtml($settings);
+
+            File::ensureDirectoryExists(dirname($htmlPath), 0755, true);
+            File::put($htmlPath, $html);
+
+            $config = $this->renderMaintenanceNginxConfig($site, $htmlPath);
+            File::ensureDirectoryExists(dirname($overridePath), 0755, true);
+            File::put($overridePath, $config);
+
+            if (! File::exists($enabledOverridePath)) {
+                symlink($overridePath, $enabledOverridePath);
+            }
+        } else {
+            if (File::exists($enabledOverridePath)) {
+                File::delete($enabledOverridePath);
+            }
+            if (File::exists($overridePath)) {
+                File::delete($overridePath);
+            }
+            if (File::exists($htmlPath)) {
+                File::delete($htmlPath);
+            }
+        }
+
+        $this->reloadNginx();
+    }
+
+    private function maintenanceConfigPath(Site $site): string
+    {
+        return config('platform.nginx_sites_path')."/maintenance-{$site->slug}.conf";
+    }
+
+    private function maintenanceHtmlPath(Site $site): string
+    {
+        return storage_path("app/maintenance/{$site->slug}.html");
+    }
+
+    /**
+     * @param  array<string, mixed>  $settings
+     */
+    private function renderMaintenanceHtml(array $settings): string
+    {
+        $heading = e((string) ($settings['heading'] ?? "We'll be back soon"));
+        $message = e((string) ($settings['message'] ?? 'Scheduled maintenance in progress.'));
+        $bg = e((string) ($settings['bgColor'] ?? '#18181b'));
+        $fg = e((string) ($settings['textColor'] ?? '#ffffff'));
+        $accent = e((string) ($settings['accentColor'] ?? '#34d399'));
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maintenance</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{align-items:center;background:{$bg};color:{$fg};display:flex;font-family:system-ui,-apple-system,sans-serif;height:100vh;justify-content:center;padding:24px;text-align:center}
+  h1{font-size:2rem;margin-bottom:1rem}
+  p{color:{$accent};font-size:1.125rem;max-width:520px;line-height:1.6}
+</style>
+</head>
+<body>
+  <div>
+    <h1>{$heading}</h1>
+    <p>{$message}</p>
+  </div>
+</body>
+</html>
+HTML;
+    }
+
+    private function renderMaintenanceNginxConfig(Site $site, string $htmlPath): string
+    {
+        $settings = is_array($site->maintenance_settings) ? $site->maintenance_settings : [];
+        $allowedBlock = '';
+
+        $allowedIps = array_filter(
+            array_map('trim', explode(',', (string) ($settings['allowedIPs'] ?? $settings['allowedIps'] ?? ''))),
+            fn (string $ip) => filter_var($ip, FILTER_VALIDATE_IP) !== false
+        );
+
+        foreach ($allowedIps as $ip) {
+            $allowedBlock .= "    allow {$ip};\n";
+        }
+
+        if ($allowedBlock !== '') {
+            $allowedBlock .= "    deny all;\n";
+        }
+
+        $htmlDir = dirname($htmlPath);
+        $htmlFile = basename($htmlPath);
+
+        return <<<NGINX
+# platform maintenance override — auto-generated, do not edit.
+server {
+    listen 80;
+    server_name {$site->domain};
+
+{$allowedBlock}
+    return 503;
+
+    error_page 503 /{$htmlFile};
+    location = /{$htmlFile} {
+        root {$htmlDir};
+        internal;
+    }
+
+    access_log /var/log/nginx/{$site->slug}-maintenance.log;
+}
+NGINX;
     }
 
     /**
@@ -274,6 +512,8 @@ NGINX;
 
     private function renderStagingTemplate(Site $site, string $stagingDomain, string $root): string
     {
+        $htpasswdPath = '/etc/nginx/.htpasswd-staging';
+
         return <<<NGINX
 server {
     listen 80;
@@ -281,13 +521,18 @@ server {
     root {$root};
     index index.html index.htm;
 
+    # Protect staging previews with HTTP basic auth.
+    # Create credentials with: htpasswd -c {$htpasswdPath} <username>
+    auth_basic "Staging Preview";
+    auth_basic_user_file {$htpasswdPath};
+
     location / {
         try_files \$uri \$uri/ \$uri.html /index.html =404;
     }
 
-    # Basic auth for staging
-    # auth_basic "Staging Preview";
-    # auth_basic_user_file /etc/nginx/.htpasswd;
+    location ~ /\. {
+        deny all;
+    }
 
     access_log /var/log/nginx/staging-{$site->slug}-access.log;
     error_log /var/log/nginx/staging-{$site->slug}-error.log;
@@ -305,6 +550,23 @@ NGINX;
         $enabledDir = str_replace('sites-available', 'sites-enabled', config('platform.nginx_sites_path'));
 
         return "{$enabledDir}/{$site->slug}.conf";
+    }
+
+    /**
+     * Reject a `nginx_conf_path` value that sits outside the platform-owned
+     * sites-available directory.  A site record whose nginx_conf_path points to
+     * /etc/nginx/nginx.conf would let removeConfig() delete the server's main
+     * config and shouldReloadNginx() would silently accept the invalid path.
+     */
+    private function assertValidConfigPath(string $path): void
+    {
+        $nginxRoot = rtrim((string) config('platform.nginx_sites_path'), '/');
+
+        if (! str_starts_with($path, $nginxRoot.'/')) {
+            throw new \InvalidArgumentException(
+                "Config path [{$path}] is outside the platform-managed nginx directory [{$nginxRoot}]."
+            );
+        }
     }
 
     // ── Input validation ────────────────────────────────────────────────────

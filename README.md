@@ -292,18 +292,19 @@ echo "✅ Deployment complete"
 ┌─────────────── git QUEUE (Redis / Horizon) ─────────────────────┐
 │  SyncFromWebhookJob                                              │
 │  GitSyncService::pull()  ·  Redis distributed lock              │
-│  Conflict detection  ·  Rebase recovery                         │
+│  Fires SiteSynced event                                          │
 └──────┬───────────────────────────────────────────────────────────┘
-       │ dispatch
+       │ listeners
        ├────────────────────────────────┐
        ▼                                ▼
 ┌── parsing QUEUE ──┐       ┌── deploy QUEUE ──────────────────────┐
 │  ParseSiteJob     │       │  DeploySiteJob chain:                │
 │  Page discovery   │       │    ProvisionEnvironmentJob           │
-│  Metadata index   │       │    BuildSiteJob                      │
-│  SEO analysis     │       │    InjectTrackingJob                 │
-│  Region detect    │       │    ActivateReleaseJob                │
-└───────────────────┘       └──────────────────────────────────────┘
+│  Region detect    │       │    BuildSiteJob                      │
+│  → AnalyzeSeoJob  │       │    InjectTrackingJob                 │
+│    (per page)     │       │    ActivateReleaseJob                │
+└───────────────────┘       │    → fires SiteDeployed event        │
+                            └──────────────────────────────────────┘
 ```
 
 ### Queue Architecture
@@ -312,9 +313,9 @@ echo "✅ Deployment complete"
 |---|---|---|---|
 | `default` | 3 | 120s | Emails, notifications |
 | `git` | 2 | 300s | Clone, pull, push, tag |
-| `parsing` | 2 | 600s | Page discovery, SEO, regions |
-| `deploy` | 2 | 600s | Full build + activation |
-| `monitoring` | 3 | 300s | Uptime, crawl, analytics |
+| `parsing` | 2 | 600s | Page discovery, per-page SEO analysis |
+| `deploy` | 2 | 600s | Full build + activation chain |
+| `monitoring` | 3 | 300s | Uptime, runtime health, crawl, analytics |
 
 ### Supported Project Types
 
@@ -327,7 +328,7 @@ echo "✅ Deployment complete"
 | `svelte` | `npm run build` | Static |
 | `astro` | `npm run build` | Static |
 | `nextjs` | `npm run build` | Node.js runtime |
-| `nuxt` | `npm run build` | Node.js runtime |
+| `nuxt` | `npm run build` | Static or Node.js runtime |
 | `hugo` | `hugo` | Static |
 | `eleventy` | `npx @11ty/eleventy` | Static |
 | `custom` | Configurable | Configurable |
@@ -428,7 +429,7 @@ php artisan cache:clear && php artisan config:clear && php artisan route:clear &
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Run the test suite: `php artisan test` (990+ tests, 0 failures)
+3. Run the test suite: `php artisan test` (1 100+ tests, 0 failures)
 4. Run static analysis: `composer phpstan`
 5. Run code style: `vendor/bin/pint`
 6. Open a pull request

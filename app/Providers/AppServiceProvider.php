@@ -2,8 +2,17 @@
 
 namespace App\Providers;
 
+use App\Events\DeployFailed;
+use App\Events\SiteDeployed;
+use App\Events\SiteSynced;
+use App\Listeners\DeployOnSync;
+use App\Listeners\NotifyOnDeployFailed;
+use App\Listeners\ParseSiteOnDeploy;
+use App\Listeners\ParseSiteOnSync;
+use App\Listeners\VerifyRuntimeOnDeploy;
 use App\Models\BlogPost;
 use App\Models\Invoice;
+use App\Models\Notification;
 use App\Models\Page;
 use App\Models\Site;
 use App\Policies\BlogPostPolicy;
@@ -14,9 +23,12 @@ use App\Support\SchemaState;
 use App\Support\SiteAccess;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Backup\Events\BackupHasFailed;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -119,5 +131,34 @@ class AppServiceProvider extends ServiceProvider
         // @cspNonce attaches a CSP nonce attribute to a <script> or <style> tag.
         // Usage: <script @cspNonce></script>
         Blade::directive('cspNonce', fn () => '<?php echo \'nonce="\' . csp_nonce() . \'"\'; ?>');
+
+        // Domain events.
+        Event::listen(SiteSynced::class, ParseSiteOnSync::class);
+        Event::listen(SiteSynced::class, DeployOnSync::class);
+        Event::listen(SiteDeployed::class, ParseSiteOnDeploy::class);
+        Event::listen(SiteDeployed::class, VerifyRuntimeOnDeploy::class);
+        Event::listen(DeployFailed::class, NotifyOnDeployFailed::class);
+
+        // Backup failure monitoring.
+        // Alert the admin dashboard when Spatie Backup reports a failure so silent
+        // data loss is not discovered only when a restore is attempted.
+        if (class_exists(BackupHasFailed::class)) {
+            Event::listen(BackupHasFailed::class, function (BackupHasFailed $event): void {
+                $message = $event->exception->getMessage();
+                Log::error('Database backup failed', ['error' => $message]);
+
+                try {
+                    Notification::createAlert(
+                        type: 'deploy_failed',
+                        title: 'Database backup failed',
+                        body: 'The scheduled backup did not complete. Check storage credentials and available disk space. Error: '
+                            .mb_substr($message, 0, 300),
+                        siteId: null,
+                    );
+                } catch (\Throwable $e) {
+                    Log::error('Could not create backup failure notification', ['error' => $e->getMessage()]);
+                }
+            });
+        }
     }
 }

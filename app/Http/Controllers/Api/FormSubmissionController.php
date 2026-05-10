@@ -49,14 +49,15 @@ class FormSubmissionController extends Controller
             return response()->json(['error' => 'Site not found'], 404);
         }
 
-        // Rate limit: 10 submissions per minute per IP
-        $key = 'form-submit:'.$request->ip().':'.$slug;
+        // Per-IP global cap: 10 submissions per minute across ALL forms.
+        // A per-slug key would allow bots to send 10 × (number of sites) per minute.
+        $globalKey = 'form-submit:'.$request->ip();
 
-        if (RateLimiter::tooManyAttempts($key, 10)) {
+        if (RateLimiter::tooManyAttempts($globalKey, 10)) {
             return response()->json(['error' => 'Too many submissions'], 429);
         }
 
-        RateLimiter::hit($key, 60);
+        RateLimiter::hit($globalKey, 60);
 
         $validated = $request->validate([
             '_form_name' => ['nullable', 'string', 'max:100'],

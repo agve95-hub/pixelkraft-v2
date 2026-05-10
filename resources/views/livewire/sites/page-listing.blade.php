@@ -1,7 +1,7 @@
 <div wire:poll.5s>
-    <div class="mb-4 flex items-center justify-between gap-3">
-        <p class="text-sm font-medium text-zinc-300">Pages</p>
-        <flux:input wire:model.live.debounce.300ms="search" placeholder="Search pages..." icon="magnifying-glass" size="sm" class="max-w-xs" />
+    <div class="ui-list-toolbar">
+        <p class="ui-list-toolbar-title">Pages</p>
+        <flux:input wire:model.live.debounce.300ms="search" placeholder="Search pages..." icon="magnifying-glass" size="sm" class="ui-list-toolbar-control" />
     </div>
 
     <x-ui.table>

@@ -63,8 +63,15 @@ Schedule::command('platform:send-campaigns')
 
 // ── Data retention ──────────────────────────────
 
-// Prune old uptime_checks and analytics_events rows weekly (Sunday 1am).
-// Defaults: 30 days for uptime samples, 90 days for raw analytics events.
+// Prune monitoring, audit, and session tables weekly (Sunday 1am).
+// Retention windows (all configurable via CLI options):
+//   uptime_checks        30 days   (high-volume, ~288 rows/site/day)
+//   analytics_events     90 days   (raw events aggregated into snapshots nightly)
+//   edit_sessions        60 days   (closed/conflicted sessions only)
+//   content_revisions    90 days
+//   git_operations       60 days
+//   notifications (read) 30 days
+//   deploy_logs (no tag) 90 days   (snapshot-tagged deploys kept for rollback)
 Schedule::command('platform:prune-monitoring')
     ->weeklyOn(0, '01:00')
     ->withoutOverlapping();

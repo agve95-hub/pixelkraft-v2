@@ -99,8 +99,8 @@
     --control-h: 2.25rem;
     --control-h-lg: 2.5rem;
     --page-x: var(--space-9);
-    --page-y: var(--space-7);
-    --section-gap: var(--space-6);
+    --page-y: var(--space-8);
+    --section-gap: var(--space-7);
     --card-gap: var(--space-4);
     --control-gap: var(--space-3);
     --compact-gap: var(--space-2);
@@ -237,6 +237,14 @@ body {
     font-family: var(--font-mono);
 }
 
+.ui-app-shell .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: var(--space-5);
+}
+
+.ui-app-shell .space-y-5 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: var(--space-7);
+}
+
 .ui-logo-mark {
     border-radius: var(--radius-lg);
     background: linear-gradient(135deg, var(--accent-solid), hsl(var(--info)));
@@ -260,20 +268,43 @@ body {
     margin-bottom: var(--section-gap);
 }
 
+.ui-page-head > div {
+    min-width: 0;
+}
+
 .ui-page-title {
     color: var(--ui-text);
-    font-size: var(--font-size-xl);
+    font-size: 1.25rem;
     font-weight: 650;
     letter-spacing: 0;
-    line-height: 1.25;
+    line-height: 1.2;
 }
 
 .ui-page-sub,
 .ui-muted {
-    margin-top: 0.125rem;
+    margin-top: 0.375rem;
     color: var(--ui-text-muted);
     font-size: var(--font-size-md);
     line-height: 1.45;
+}
+
+.ui-list-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.ui-list-toolbar-title {
+    color: var(--ui-text);
+    font-size: var(--font-size-base);
+    font-weight: 650;
+}
+
+.ui-list-toolbar-control {
+    width: min(100%, 28rem);
 }
 
 @media (max-width: 640px) {
@@ -652,6 +683,22 @@ body {
     background: transparent;
 }
 
+.badge-count {
+    display: inline-flex;
+    min-width: 1.25rem;
+    min-height: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: hsl(var(--secondary));
+    padding: 0 0.375rem;
+    color: var(--ui-text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    font-weight: 650;
+    line-height: 1;
+}
+
 .ui-field,
 .ui-app-shell [data-flux-field] {
     display: grid;
@@ -739,6 +786,16 @@ body {
     box-shadow: none;
 }
 
+.ui-app-shell [data-flux-input] > input {
+    min-height: auto;
+    padding-inline: 0.75rem;
+    padding-block: 0.375rem;
+}
+
+.ui-app-shell [data-flux-input] > div + input {
+    padding-inline-start: 2.5rem;
+}
+
 .ui-check,
 .ui-switch {
     display: inline-flex;
@@ -816,7 +873,8 @@ body {
 .deploy-list,
 .thread-list,
 .reminder-list {
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius-lg);
     background: hsl(var(--card));
@@ -834,6 +892,7 @@ body {
 .ui-app-shell th {
     height: 2.375rem;
     border-bottom: 1px solid hsl(var(--border));
+    padding: 0.625rem 1rem;
     color: var(--ui-text-muted);
     font-size: var(--font-size-xs);
     font-weight: 650;
@@ -844,10 +903,27 @@ body {
 
 .ui-table td,
 .ui-app-shell td {
-    height: 2.75rem;
+    height: 3.125rem;
     border-top: 1px solid var(--border-soft);
+    padding: 0.75rem 1rem;
     color: hsl(var(--foreground) / 0.78);
     font-size: var(--font-size-md);
+    line-height: 1.4;
+    vertical-align: middle;
+}
+
+.ui-table th:first-child,
+.ui-table td:first-child,
+.ui-app-shell th:first-child,
+.ui-app-shell td:first-child {
+    padding-left: 1.125rem;
+}
+
+.ui-table th:last-child,
+.ui-table td:last-child,
+.ui-app-shell th:last-child,
+.ui-app-shell td:last-child {
+    padding-right: 1.125rem;
 }
 
 .ui-app-shell tbody tr:first-child td {
@@ -1453,13 +1529,14 @@ body {
 
 .deploy-item {
     display: grid;
-    grid-template-columns: 5.75rem 5.625rem 4rem 1fr auto;
+    grid-template-columns: minmax(5.75rem, auto) minmax(5.625rem, auto) 4rem minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--space-3);
-    padding: 0.625rem var(--space-4);
+    padding: 0.75rem var(--space-4);
     border-bottom: 1px solid var(--border-soft);
     color: hsl(var(--foreground) / 0.75);
     font-size: var(--font-size-md);
+    line-height: 1.4;
     transition: background-color 80ms;
 }
 
@@ -1473,8 +1550,9 @@ body {
 
 @media (max-width: 900px) {
     .deploy-item {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
         align-items: start;
+        gap: var(--space-2);
     }
 }
 
@@ -1519,6 +1597,39 @@ body {
 .issue-icon-blue {
     background: var(--tint-info);
     color: var(--info-solid);
+}
+
+.issue-item {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: 0.625rem 0;
+    border-bottom: 1px solid var(--border-soft);
+    color: hsl(var(--foreground) / 0.75);
+    text-decoration: none;
+}
+
+.issue-item:last-child {
+    border-bottom: 0;
+}
+
+.issue-item > :not(.issue-icon) {
+    min-width: 0;
+}
+
+.issue-text {
+    color: hsl(var(--foreground) / 0.82);
+    font-size: 0.8125rem;
+    font-weight: 550;
+    line-height: 1.4;
+}
+
+.issue-meta {
+    margin-top: 0.125rem;
+    color: var(--ui-text-muted);
+    font-size: 0.71875rem;
+    line-height: 1.4;
 }
 
 .site-name {
@@ -1692,7 +1803,7 @@ body {
     min-height: 2.625rem;
     align-items: center;
     gap: 0.625rem;
-    margin-bottom: 0.875rem;
+    margin-bottom: 1.25rem;
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius-lg);
     background: hsl(var(--foreground) / 0.025);
@@ -1721,7 +1832,7 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 0.625rem;
-    padding: var(--space-2) 0;
+    padding: 0.625rem 0;
     border-bottom: 1px solid var(--border-soft);
 }
 

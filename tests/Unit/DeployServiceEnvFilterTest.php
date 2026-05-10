@@ -3,25 +3,20 @@
 namespace Tests\Unit;
 
 use App\Models\Site;
-use App\Services\DeployService;
+use App\Services\BuildService;
 use Illuminate\Support\Facades\File;
-use ReflectionClass;
 use Tests\TestCase;
 
 /**
- * Verify that DeployService::DANGEROUS_ENV_VARS are stripped from site env_variables
- * before they reach the build process shell.
- *
- * Because runCommand() is private, we test the observable effect via the
- * constant itself: any key listed there must be removed from the merged env,
- * which we verify by reflection on the constant and checking array_filter logic.
+ * Verify that BuildService::DANGEROUS_ENV_VARS are stripped from site
+ * env_variables before they reach the build process shell.
  */
 class DeployServiceEnvFilterTest extends TestCase
 {
     /** @return list<string> */
     private function dangerousKeys(): array
     {
-        return DeployService::DANGEROUS_ENV_VARS;
+        return BuildService::DANGEROUS_ENV_VARS;
     }
 
     public function test_dangerous_env_var_constant_is_non_empty(): void
@@ -94,8 +89,8 @@ class DeployServiceEnvFilterTest extends TestCase
     public function test_build_tool_cache_env_uses_platform_owned_storage(): void
     {
         $site = new Site(['slug' => 'cache-demo']);
-        $service = app(DeployService::class);
-        $method = (new ReflectionClass($service))->getMethod('buildToolCacheEnv');
+        $service = app(BuildService::class);
+        $method = (new \ReflectionClass($service))->getMethod('buildToolCacheEnv');
         $method->setAccessible(true);
 
         /** @var array<string, string> $env */

@@ -273,7 +273,7 @@
                     </span>
                     <div>
                         <p class="issue-text">{{ ucfirst($release->status) }} &middot; {{ $release->source_commit_sha ? \Illuminate\Support\Str::limit($release->source_commit_sha, 12, '') : 'pending commit' }}</p>
-                        <p class="issue-meta">{{ $release->activated_at?->diffForHumans() ?? 'waiting' }} &middot; {{ $release->tracking_version ?: 'tracking pending' }}</p>
+                        <p class="issue-meta">{{ $release->activated_at?->diffForHumans() ?? 'waiting' }} &middot; {{ $release->trackingVersionLabel() }}</p>
                     </div>
                 </div>
             @empty

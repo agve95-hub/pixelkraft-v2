@@ -2,10 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Events\SiteSynced;
 use App\Models\Notification;
 use App\Models\Site;
 use App\Models\WebhookDelivery;
-use App\Services\DeployDispatcher;
 use App\Services\GitConflictException;
 use App\Services\GitSyncService;
 use Illuminate\Bus\Queueable;
@@ -53,16 +53,8 @@ class SyncFromWebhookJob implements ShouldQueue
 
             Log::info("SyncFromWebhookJob: pulled new changes for [{$this->site->slug}]");
 
-            // Re-parse affected pages
-            ParseSiteJob::dispatch($this->site);
-
-            if ($this->site->deploy_on_webhook) {
-                if (app(DeployDispatcher::class)->dispatch($this->site, 'webhook')) {
-                    Log::info("SyncFromWebhookJob: dispatched deploy for [{$this->site->slug}]");
-                } else {
-                    Log::info("SyncFromWebhookJob: deploy already active for [{$this->site->slug}]");
-                }
-            }
+            // Fire SiteSynced — listeners handle ParseSiteJob dispatch and conditional deploy.
+            event(new SiteSynced($this->site, hasChanges: true, triggeredBy: 'webhook'));
 
             $this->markDeliveryProcessed('processed');
 
@@ -94,7 +86,11 @@ class SyncFromWebhookJob implements ShouldQueue
                 body: self::scrubGitMessage($e->getMessage()),
                 siteId: $this->site->id,
             );
-            $this->markDeliveryProcessed('failed');
+            // Mark the delivery only on the FINAL attempt so a successful retry
+            // does not leave a permanently "failed" audit record.
+            if ($this->attempts() >= $this->tries) {
+                $this->markDeliveryProcessed('failed');
+            }
 
             throw $e;
         }

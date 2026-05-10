@@ -49,6 +49,7 @@ class DeployLogAppendCapTest extends TestCase
 
         $log->appendLog('Step 1: started');
         $log->appendLog('Step 2: done');
+        $log->flushLog(); // flush buffer before reading from DB
 
         $stored = DeployLog::query()->findOrFail($log->id);
         $this->assertStringContainsString('Step 1: started', $stored->output_log);
@@ -65,11 +66,9 @@ class DeployLogAppendCapTest extends TestCase
             'created_at' => now(),
         ]);
 
-        // Fill with ~600 KB of output (well beyond the 512 KB cap)
-        $chunk = str_repeat('x', 1024); // 1 KB per line
-        for ($i = 0; $i < 620; $i++) {
-            $log->appendLog($chunk);
-        }
+        // Fill with ~600 KB in one append so the buffer flushes at the cap threshold.
+        $log->appendLog(str_repeat('x', 620 * 1024));
+        $log->flushLog();
 
         $stored = DeployLog::query()->findOrFail($log->id);
 
@@ -89,14 +88,11 @@ class DeployLogAppendCapTest extends TestCase
             'created_at' => now(),
         ]);
 
-        // Fill most of the cap with filler
-        $filler = str_repeat('a', 1020); // slightly under 1 KB
-        for ($i = 0; $i < 520; $i++) {
-            $log->appendLog($filler);
-        }
+        $log->appendLog(str_repeat('a', 520 * 1024));
+        $log->flushLog();
 
-        // The last line should always survive truncation
         $log->appendLog('SENTINEL_LAST_LINE');
+        $log->flushLog();
 
         $stored = DeployLog::query()->findOrFail($log->id);
         $this->assertStringContainsString('SENTINEL_LAST_LINE', (string) $stored->output_log);

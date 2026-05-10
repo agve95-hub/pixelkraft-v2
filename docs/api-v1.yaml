@@ -1,0 +1,359 @@
+openapi: 3.1.0
+info:
+  title: platform API v1
+  version: "1"
+  description: |
+    Machine-client API for the platform site-operations dashboard.
+
+    ## Authentication
+    All `/api/v1` endpoints require a **Sanctum personal access token** passed as a
+    Bearer token in the `Authorization` header.  Tokens are created in the dashboard
+    under Settings → API Tokens.  Each token carries one or more *abilities* that
+    restrict which operations it may perform.
+
+    First-party browser sessions (same-origin dashboard requests) authenticate via
+    session cookie and are not affected by token abilities.
+
+    ## Rate limits
+    - `sync`: 10 req/min per user
+    - `deploy` and `rollback`: 5 req/min per user
+    - All other endpoints: no per-endpoint limit (application-level rate limiting applies)
+
+    ## Token abilities
+    | Ability | Grants access to |
+    |---|---|
+    | `platform:sites:read` | GET sites, pages, deploys, analytics, releases, git-operations |
+    | `platform:sites:sync` | POST sync |
+    | `platform:sites:deploy` | POST deploy |
+    | `platform:sites:rollback` | POST rollback |
+    | `platform:notifications:read` | GET notifications |
+    | `platform:notifications:write` | POST notifications/read |
+
+servers:
+  - url: https://your-dashboard.example.com/api/v1
+    description: Production
+
+security:
+  - BearerToken: []
+
+paths:
+  /sites:
+    get:
+      operationId: listSites
+      summary: List all sites
+      description: Returns all sites visible to the authenticated user (admins see all; editors see their own).
+      tags: [Sites]
+      security:
+        - BearerToken: [platform:sites:read]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SiteSummary"
+
+  /sites/{site}:
+    get:
+      operationId: getSite
+      summary: Get a single site
+      tags: [Sites]
+      security:
+        - BearerToken: [platform:sites:read]
+      parameters:
+        - $ref: "#/components/parameters/SiteId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/SiteDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sites/{site}/sync:
+    post:
+      operationId: syncSite
+      summary: Trigger a git sync
+      description: |
+        Pulls latest commits from the configured branch.  If the repository has not
+        been cloned yet a clone job is dispatched instead.  Returns immediately;
+        the actual sync runs asynchronously on the `git` queue.
+      tags: [Sites]
+      security:
+        - BearerToken: [platform:sites:sync]
+      parameters:
+        - $ref: "#/components/parameters/SiteId"
+      responses:
+        "200":
+          description: Job dispatched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DispatchedResponse"
+        "409":
+          description: A deploy is currently in progress
+
+  /sites/{site}/deploy:
+    post:
+      operationId: deploySite
+      summary: Trigger a full deploy
+      description: |
+        Queues the full deploy chain: provision → build → inject tracking → activate.
+        Returns immediately; progress is visible in the deploy log.
+      tags: [Sites]
+      security:
+        - BearerToken: [platform:sites:deploy]
+      parameters:
+        - $ref: "#/components/parameters/SiteId"
+      responses:
+        "200":
+          description: Deploy dispatched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DispatchedResponse"
+        "409":
+          description: A deploy is already in progress
+
+  /sites/{site}/rollback/{logId}:
+    post:
+      operationId: rollbackSite
+      summary: Roll back to a previous deploy
+      description: |
+        Checks out the git snapshot tag associated with the given deploy log, rebuilds
+        from source, and activates the result.  Only deploys that have a `snapshot_tag`
+        and whose tag still exists in the repository can be rolled back to.
+      tags: [Sites]
+      security:
+        - BearerToken: [platform:sites:rollback]
+      parameters:
+        - $ref: "#/components/parameters/SiteId"
+        - name: logId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Rollback completed
+        "400":
+          description: No snapshot available or tag no longer exists
+
+  /sites/{site}/pages:
+    get:
+      operationId: listPages
+      summary: List pages for a site
+      tags: [Sites]
+      security:
+        - BearerToken: [platform:sites:read]
+      parameters:
+        - $ref: "#/components/parameters/SiteId"
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 10
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedPages"
+
+  /sites/{site}/deploys:
+    get:
+      operationId: listDeploys
+      summary: List deploy logs for a site
+      tags: [Sites]
+      security:
+        - BearerToken: [platform:sites:read]
+      parameters:
+        - $ref: "#/components/parameters/SiteId"
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 10
+            maximum: 50
+            default: 25
+      responses:
+        "200":
+          description: OK
+
+  /sites/{site}/analytics:
+    get:
+      operationId: getSiteAnalytics
+      summary: Get analytics summary for a site
+      tags: [Sites]
+      security:
+        - BearerToken: [platform:sites:read]
+      parameters:
+        - $ref: "#/components/parameters/SiteId"
+        - name: days
+          in: query
+          schema:
+            type: integer
+            enum: [7, 30, 90]
+            default: 30
+      responses:
+        "200":
+          description: OK
+
+  /sites/{site}/releases:
+    get:
+      operationId: listReleases
+      summary: List deployment releases for a site
+      tags: [Sites]
+      security:
+        - BearerToken: [platform:sites:read]
+      parameters:
+        - $ref: "#/components/parameters/SiteId"
+      responses:
+        "200":
+          description: OK
+
+  /sites/{site}/git-operations:
+    get:
+      operationId: listGitOperations
+      summary: List git operation history for a site
+      tags: [Sites]
+      security:
+        - BearerToken: [platform:sites:read]
+      parameters:
+        - $ref: "#/components/parameters/SiteId"
+      responses:
+        "200":
+          description: OK
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      summary: List notifications for the authenticated user
+      tags: [Notifications]
+      security:
+        - BearerToken: [platform:notifications:read]
+      responses:
+        "200":
+          description: OK
+
+  /notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      summary: Mark a notification as read
+      tags: [Notifications]
+      security:
+        - BearerToken: [platform:notifications:write]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      summary: Mark all notifications as read
+      tags: [Notifications]
+      security:
+        - BearerToken: [platform:notifications:write]
+      responses:
+        "200":
+          description: OK
+
+components:
+  securitySchemes:
+    BearerToken:
+      type: http
+      scheme: bearer
+      description: Sanctum personal access token
+
+  parameters:
+    SiteId:
+      name: site
+      in: path
+      required: true
+      description: Site UUID
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NotFound:
+      description: Resource not found
+
+  schemas:
+    SiteSummary:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        domain: { type: string, nullable: true }
+        project_type: { type: string }
+        deployment_mode: { type: string, enum: [static, runtime] }
+        deploy_status: { type: string, nullable: true }
+        ssl_status: { type: string, nullable: true }
+        is_active: { type: boolean }
+        pages_count: { type: integer }
+        last_deployed_at: { type: string, format: date-time, nullable: true }
+        last_synced_at: { type: string, format: date-time, nullable: true }
+
+    SiteDetail:
+      allOf:
+        - $ref: "#/components/schemas/SiteSummary"
+        - type: object
+          properties:
+            repo_url: { type: string, nullable: true }
+            branch: { type: string, nullable: true }
+            build_command: { type: string, nullable: true }
+            build_output_dir: { type: string, nullable: true }
+
+    DispatchedResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: dispatched
+        message:
+          type: string
+
+    PaginatedPages:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              file_path: { type: string }
+              url_path: { type: string }
+              title: { type: string, nullable: true }
+              seo_score: { type: integer, nullable: true }
+              is_published: { type: boolean }
+              updated_at: { type: string, format: date-time, nullable: true }
+        meta:
+          type: object
+          properties:
+            current_page: { type: integer }
+            last_page: { type: integer }
+            per_page: { type: integer }
+            total: { type: integer }

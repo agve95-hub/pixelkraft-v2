@@ -382,16 +382,8 @@ class VisualEditor extends Component
     public function save(): void
     {
         $this->isSaving = true;
-        $this->debugTelemetry['last_action'] = 'save';
-        $this->debugTelemetry['last_error'] = null;
-        $this->debugTelemetry['save_started_at'] = now()->toIso8601String();
-        $this->debugTelemetry['mode'] = $this->mode;
-        $this->debugTelemetry['deploy_after_save'] = $this->deployAfterSave;
-        $this->debugTelemetry['patch'] = [];
-        $this->debugTelemetry['changed_files'] = [];
-        $this->debugTelemetry['changed_file_count'] = 0;
-        $this->debugTelemetry['commit_sha'] = null;
-        $this->debugTelemetry['deploy_queued'] = null;
+        $this->resetSaveTelemetry();
+
         $patcher = app(ContentPatcher::class);
         $sourceBackups = [];
         $regionSnapshot = null;
@@ -400,97 +392,18 @@ class VisualEditor extends Component
         try {
             $site = $this->resolveSite();
             $page = $this->resolvePage();
-            $git = app(GitSyncService::class);
             $editSession = $this->resolveEditSession();
-            $this->debugTelemetry['site_id'] = $site->id;
-            $this->debugTelemetry['page_id'] = $page->id;
-            $this->debugTelemetry['page_file_path'] = $page->file_path;
-            $this->debugTelemetry['edit_session_id'] = $editSession?->id;
-            $this->debugTelemetry['working_branch'] = $editSession?->working_branch;
+            $this->recordSessionTelemetry($site, $page, $editSession);
 
-            $changedFiles = [];
-
-            if ($this->mode === 'code') {
-                $fullPath = $this->resolveCodePath($site);
-                File::ensureDirectoryExists(dirname($fullPath));
-                $sourceBackups[$fullPath] = File::exists($fullPath) ? File::get($fullPath) : null;
-                File::put($fullPath, $this->codeContent);
-                $changedFiles[] = $this->codeFilePath;
-                $this->debugTelemetry['code_file_path'] = $this->codeFilePath;
-                $this->debugTelemetry['code_content_length'] = strlen($this->codeContent);
-            } elseif ($this->selectedRegionId) {
-                if (! $this->selectedRegionCanBeEdited()) {
-                    throw new \RuntimeException($this->visualSaveErrorMessage());
-                }
-
-                // Save visual editor edit via ContentPatcher
-                $region = $this->resolveRegion($this->selectedRegionId);
-                $targetFile = (string) ($region->source_location['file'] ?? $page->file_path);
-                $fullPath = rtrim((string) $site->repo_path, '/\\').'/'.$targetFile;
-                if (File::exists($fullPath)) {
-                    $sourceBackups[$fullPath] = File::get($fullPath);
-                }
-                $regionSnapshot = [
-                    'region' => $region,
-                    'current_content' => $region->current_content,
-                ];
-
-                // Create revision
-                $revision = ContentRevision::create([
-                    'region_id' => $region->id,
-                    'user_id' => auth()->id(),
-                    'content_before' => $region->current_content,
-                    'content_after' => $this->editContent,
-                    'created_at' => now(),
-                ]);
-                $createdRevisionIds[] = $revision->id;
-
-                $changedFiles = $patcher->applyEdit($region, $this->editContent);
-                $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
-            }
+            $changedFiles = $this->mode === 'code'
+                ? $this->applyCodeEdit($site, $sourceBackups)
+                : $this->applyVisualEdit($site, $page, $patcher, $sourceBackups, $regionSnapshot, $createdRevisionIds);
 
             $this->debugTelemetry['changed_files'] = $changedFiles;
             $this->debugTelemetry['changed_file_count'] = count($changedFiles);
 
             if (! empty($changedFiles)) {
-                $message = $this->commitMessage ?: $this->generateCommitMessage();
-                $this->debugTelemetry['commit_message'] = $message;
-
-                $sha = $git->commitAndPush($site, $changedFiles, $message, $editSession);
-                $this->debugTelemetry['commit_sha'] = $sha;
-                if ($editSession) {
-                    $editSession->update([
-                        'base_commit_sha' => $sha,
-                        'metadata' => array_merge($editSession->metadata ?? [], [
-                            'last_commit_sha' => $sha,
-                            'last_saved_at' => now()->toIso8601String(),
-                        ]),
-                    ]);
-                }
-
-                $site->update(['last_synced_at' => now()]);
-                app(ParserService::class)->parseSinglePage($site, $page->file_path);
-
-                if ($this->deployAfterSave) {
-                    $deployQueued = app(DeployDispatcher::class)->dispatch($site->fresh(), 'editor');
-                    $this->debugTelemetry['deploy_queued'] = $deployQueued;
-                    $this->debugTelemetry['deploy_trigger'] = $deployQueued ? 'editor' : 'already_active';
-                } else {
-                    $this->debugTelemetry['deploy_queued'] = false;
-                }
-
-                // Refresh code content if in code mode
-                if ($this->mode === 'code') {
-                    $this->loadCodeContent();
-                }
-
-                session()->flash(
-                    'success',
-                    $this->saveSuccessMessage($site)
-                );
-
-                // Dispatch event to refresh iframe
-                $this->dispatch('reload-iframe');
+                $this->commitChanges($site, $page, $changedFiles, $editSession);
             } else {
                 $this->debugTelemetry['last_save_success'] = false;
                 $this->debugTelemetry['last_error'] = 'No source changes detected';
@@ -510,28 +423,164 @@ class VisualEditor extends Component
                     'at' => now()->toIso8601String(),
                 ]);
             }
-            $this->debugTelemetry['last_save_success'] = false;
-            $this->debugTelemetry['last_error'] = $e->getMessage();
-            $this->debugTelemetry['exception_class'] = $e::class;
-            if (empty($this->debugTelemetry['patch'])) {
-                $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
-            }
+            $this->recordSaveError($e, $patcher);
             Log::error('Editor save conflict', ['error' => $e->getMessage()]);
             session()->flash('error', 'Save blocked by newer repo changes. Your edit session was marked as conflicted for developer review.');
         } catch (\Throwable $e) {
             $this->restoreEditedSources($sourceBackups, $regionSnapshot);
             $this->deleteCreatedRevisions($createdRevisionIds);
-            $this->debugTelemetry['last_save_success'] = false;
-            $this->debugTelemetry['last_error'] = $e->getMessage();
-            $this->debugTelemetry['exception_class'] = $e::class;
-            if (empty($this->debugTelemetry['patch'])) {
-                $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
-            }
+            $this->recordSaveError($e, $patcher);
             Log::error('Editor save failed', ['site_id' => $this->siteId, 'error' => $e->getMessage()]);
             session()->flash('error', 'Save failed and local edits were restored: '.Str::limit($e->getMessage(), 220));
         } finally {
             $this->debugTelemetry['save_finished_at'] = now()->toIso8601String();
             $this->isSaving = false;
+        }
+    }
+
+    private function resetSaveTelemetry(): void
+    {
+        $this->debugTelemetry = array_merge($this->debugTelemetry, [
+            'last_action' => 'save',
+            'last_error' => null,
+            'save_started_at' => now()->toIso8601String(),
+            'mode' => $this->mode,
+            'deploy_after_save' => $this->deployAfterSave,
+            'patch' => [],
+            'changed_files' => [],
+            'changed_file_count' => 0,
+            'commit_sha' => null,
+            'deploy_queued' => null,
+        ]);
+    }
+
+    private function recordSessionTelemetry(Site $site, Page $page, ?EditSession $editSession): void
+    {
+        $this->debugTelemetry['site_id'] = $site->id;
+        $this->debugTelemetry['page_id'] = $page->id;
+        $this->debugTelemetry['page_file_path'] = $page->file_path;
+        $this->debugTelemetry['edit_session_id'] = $editSession?->id;
+        $this->debugTelemetry['working_branch'] = $editSession?->working_branch;
+    }
+
+    /**
+     * Write the code editor content to disk and return the list of changed files.
+     *
+     * @param  array<string, string|null>  $sourceBackups
+     * @return list<string>
+     */
+    private function applyCodeEdit(Site $site, array &$sourceBackups): array
+    {
+        $fullPath = $this->resolveCodePath($site);
+        File::ensureDirectoryExists(dirname($fullPath));
+        $sourceBackups[$fullPath] = File::exists($fullPath) ? File::get($fullPath) : null;
+        File::put($fullPath, $this->codeContent);
+        $this->debugTelemetry['code_file_path'] = $this->codeFilePath;
+        $this->debugTelemetry['code_content_length'] = strlen($this->codeContent);
+
+        return [$this->codeFilePath];
+    }
+
+    /**
+     * Apply a visual-mode region edit via ContentPatcher and return changed files.
+     *
+     * @param  array<string, string|null>  $sourceBackups
+     * @param  array<string, mixed>|null   $regionSnapshot
+     * @param  list<string>                $createdRevisionIds
+     * @return list<string>
+     */
+    private function applyVisualEdit(
+        Site $site,
+        Page $page,
+        ContentPatcher $patcher,
+        array &$sourceBackups,
+        ?array &$regionSnapshot,
+        array &$createdRevisionIds,
+    ): array {
+        if (! $this->selectedRegionId) {
+            return [];
+        }
+
+        if (! $this->selectedRegionCanBeEdited()) {
+            throw new \RuntimeException($this->visualSaveErrorMessage());
+        }
+
+        $region = $this->resolveRegion($this->selectedRegionId);
+        $targetFile = (string) ($region->source_location['file'] ?? $page->file_path);
+        $fullPath = rtrim((string) $site->repo_path, '/\\').'/'.$targetFile;
+
+        if (File::exists($fullPath)) {
+            $sourceBackups[$fullPath] = File::get($fullPath);
+        }
+
+        $regionSnapshot = ['region' => $region, 'current_content' => $region->current_content];
+
+        $revision = ContentRevision::create([
+            'region_id' => $region->id,
+            'user_id' => auth()->id(),
+            'content_before' => $region->current_content,
+            'content_after' => $this->editContent,
+            'created_at' => now(),
+        ]);
+        $createdRevisionIds[] = $revision->id;
+
+        $changedFiles = $patcher->applyEdit($region, $this->editContent);
+        $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
+
+        return $changedFiles;
+    }
+
+    /**
+     * Commit changed files, push, update session, re-parse the page, and dispatch a deploy.
+     *
+     * @param  list<string>  $changedFiles
+     */
+    private function commitChanges(Site $site, Page $page, array $changedFiles, ?EditSession $editSession): void
+    {
+        $git = app(GitSyncService::class);
+        $message = $this->commitMessage ?: $this->generateCommitMessage();
+        $this->debugTelemetry['commit_message'] = $message;
+
+        $sha = $git->commitAndPush($site, $changedFiles, $message, $editSession);
+        $this->debugTelemetry['commit_sha'] = $sha;
+
+        if ($editSession) {
+            $editSession->update([
+                'base_commit_sha' => $sha,
+                'metadata' => array_merge($editSession->metadata ?? [], [
+                    'last_commit_sha' => $sha,
+                    'last_saved_at' => now()->toIso8601String(),
+                ]),
+            ]);
+        }
+
+        $site->update(['last_synced_at' => now()]);
+        app(ParserService::class)->parseSinglePage($site, $page->file_path);
+
+        if ($this->deployAfterSave) {
+            $deployQueued = app(DeployDispatcher::class)->dispatch($site->fresh(), 'editor');
+            $this->debugTelemetry['deploy_queued'] = $deployQueued;
+            $this->debugTelemetry['deploy_trigger'] = $deployQueued ? 'editor' : 'already_active';
+        } else {
+            $this->debugTelemetry['deploy_queued'] = false;
+        }
+
+        if ($this->mode === 'code') {
+            $this->loadCodeContent();
+        }
+
+        session()->flash('success', $this->saveSuccessMessage($site));
+        $this->dispatch('reload-iframe');
+    }
+
+    private function recordSaveError(\Throwable $e, ContentPatcher $patcher): void
+    {
+        $this->debugTelemetry['last_save_success'] = false;
+        $this->debugTelemetry['last_error'] = $e->getMessage();
+        $this->debugTelemetry['exception_class'] = $e::class;
+
+        if (empty($this->debugTelemetry['patch'])) {
+            $this->debugTelemetry['patch'] = $patcher->lastPatchTelemetry();
         }
     }
 

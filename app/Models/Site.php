@@ -89,70 +89,51 @@ class Site extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $fillable = [
-        'user_id',
-        'name',
-        'client_name',
-        'slug',
-        'client_first_name',
-        'client_last_name',
-        'client_email',
-        'client_phone',
-        'client_company',
-        'client_address',
-        'client_notes',
-        'repo_url',
-        'branch',
-        'deploy_on_webhook',
-        'github_token',
-        'webhook_secret',
-        'inbox_inbound_secret',
-        'project_type',
-        'source_type',
-        'billing_cycle',
-        'monthly_retainer',
-        'deployment_mode',
-        'build_command',
-        'build_output_dir',
-        'node_version',
-        'env_variables',
-        'domain',
-        'ssl_provider',
-        'dns_provider',
-        'ssl_status',
-        'uptime_percent',
-        'response_avg_ms',
-        'response_p95_ms',
-        'downtime_minutes',
-        'visitors_today',
-        'visitors_change_percent',
-        'ssl_expires_at',
-        'deploy_status',
-        'last_deployed_at',
-        'last_synced_at',
-        'ga_property_id',
-        'gtm_id',
-        'google_ads_id',
+    // ── Field groups ─────────────────────────────────────────────────────────
+    // Fields are grouped by who may write them so that mass-assignment blast
+    // radius stays legible.  Use the typed update helpers below (updateSettings,
+    // updateBuildConfig, etc.) instead of direct ->update() calls where possible.
+
+    /** Fields any authenticated owner may change via the dashboard. */
+    public const OWNER_FILLABLE = [
+        'name', 'slug', 'domain', 'is_active', 'maintenance_settings',
+        'deploy_on_webhook', 'deployment_mode', 'project_type', 'source_type',
+        'branch', 'deploy_path', 'repo_path', 'nginx_conf_path',
+        'ga_property_id', 'gtm_id', 'google_ads_id', 'gsc_property',
+        'hosting_provider', 'ssh_host', 'ftp_ssh_user', 'r2_bucket_prefix',
+        'billing_cycle', 'monthly_retainer',
+        'client_name', 'client_first_name', 'client_last_name',
+        'client_email', 'client_phone', 'client_company',
+        'client_address', 'client_notes',
+        'smtp_host', 'smtp_port', 'smtp_username',
+    ];
+
+    /** Fields that execute shell code on the server — admin only. */
+    public const BUILD_FILLABLE = [
+        'build_command', 'build_output_dir', 'node_version', 'env_variables',
+    ];
+
+    /** Encrypted secrets — written via explicit setters, never mass-assigned. */
+    public const SECRET_FILLABLE = [
+        'github_token', 'webhook_secret', 'inbox_inbound_secret',
+        'cf_api_token', 'smtp_password', 'ftp_ssh_password',
+    ];
+
+    /** System-managed fields written by queue jobs / services, not user input. */
+    public const SYSTEM_FILLABLE = [
+        'user_id', 'repo_url', 'repo_slug',
+        'ssl_provider', 'dns_provider', 'ssl_status', 'ssl_expires_at',
+        'uptime_percent', 'response_avg_ms', 'response_p95_ms', 'downtime_minutes',
+        'visitors_today', 'visitors_change_percent',
+        'deploy_status', 'last_deployed_at', 'last_synced_at',
         'cf_zone_id',
-        'cf_api_token',
-        'gsc_property',
-        'smtp_host',
-        'smtp_port',
-        'smtp_username',
-        'smtp_password',
-        'hosting_provider',
-        'ssh_host',
-        'ftp_ssh_user',
-        'ftp_ssh_password',
-        'r2_bucket_prefix',
-        'nginx_conf_path',
-        'deploy_path',
-        'repo_path',
-        // pre_deploy_hook and post_deploy_hook are intentionally excluded from $fillable.
-        // They are shell command strings that are not yet executed — keeping them out of
-        // $fillable prevents any accidental mass-assignment from API or Livewire requests.
-        'maintenance_settings',
-        'is_active',
+    ];
+
+    protected $fillable = [
+        ...self::OWNER_FILLABLE,
+        ...self::BUILD_FILLABLE,
+        ...self::SECRET_FILLABLE,
+        ...self::SYSTEM_FILLABLE,
     ];
 
     protected function casts(): array
@@ -256,6 +237,29 @@ class Site extends Model
         });
     }
 
+    // ── Typed update helpers ─────────────────────
+    // Use these instead of raw ->update(['field' => $value]) so the intent is
+    // clear at the call site and accidental mass-assignment of wrong field groups
+    // is caught at review time.
+
+    /** @param  array<string, mixed>  $data */
+    public function updateSettings(array $data): bool
+    {
+        return $this->update(array_intersect_key($data, array_flip(self::OWNER_FILLABLE)));
+    }
+
+    /** @param  array<string, mixed>  $data  Admin only — validated by SitePolicy::configureBuild(). */
+    public function updateBuildConfig(array $data): bool
+    {
+        return $this->update(array_intersect_key($data, array_flip(self::BUILD_FILLABLE)));
+    }
+
+    /** Written by queue jobs after deploy/sync — no user input. */
+    public function updateSystemFields(array $data): bool
+    {
+        return $this->update(array_intersect_key($data, array_flip(self::SYSTEM_FILLABLE)));
+    }
+
     // ── Boot ────────────────────────────────────
 
     protected static function booted(): void
@@ -267,6 +271,9 @@ class Site extends Model
             if (empty($site->slug)) {
                 $site->slug = Str::slug($site->name);
             }
+            if (empty($site->repo_slug) && ! empty($site->repo_url)) {
+                $site->repo_slug = self::normalizeGithubRepository($site->repo_url);
+            }
             if (empty($site->r2_bucket_prefix)) {
                 $site->r2_bucket_prefix = 'sites/'.$site->slug.'/media';
             }
@@ -275,6 +282,12 @@ class Site extends Model
             }
             if (empty($site->deploy_path)) {
                 $site->deploy_path = config('platform.sites_deploy_path').'/'.$site->slug;
+            }
+        });
+
+        static::saving(function (Site $site) {
+            if ($site->isDirty('repo_url')) {
+                $site->repo_slug = self::normalizeGithubRepository($site->repo_url);
             }
         });
 

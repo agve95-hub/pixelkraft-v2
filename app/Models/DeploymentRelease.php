@@ -71,6 +71,17 @@ class DeploymentRelease extends Model
         return $this->belongsTo(DeployLog::class);
     }
 
+    public function trackingVersionLabel(string $fallback = 'tracking pending'): string
+    {
+        if (! $this->tracking_version) {
+            return $fallback;
+        }
+
+        return str_ends_with($this->tracking_version, '-v1') && $this->tracking_version !== 'universal-tool-v1'
+            ? 'universal-tool-v1'
+            : $this->tracking_version;
+    }
+
     /** @return BelongsTo<DeploymentRelease, $this> */
     public function rollbackOfRelease(): BelongsTo
     {

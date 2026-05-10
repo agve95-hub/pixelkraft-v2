@@ -22,18 +22,20 @@ class BrokenLinkCrawler
      */
     public function crawl(Site $site): array
     {
-        $pages = $site->pages()->where('is_published', true)->get();
         $baseUrl = $site->domain ? "https://{$site->domain}" : null;
         $allBroken = [];
         $allRedirects = [];
         $totalLinks = 0;
 
-        foreach ($pages as $page) {
-            $result = $this->crawlPage($site, $page, $baseUrl);
-            $totalLinks += $result['total'];
-            $allBroken = array_merge($allBroken, $result['broken']);
-            $allRedirects = array_merge($allRedirects, $result['redirects']);
-        }
+        // Chunk pages to avoid loading thousands of Page models into memory at once.
+        $site->pages()->where('is_published', true)->chunkById(100, function ($pages) use ($site, $baseUrl, &$allBroken, &$allRedirects, &$totalLinks) {
+            foreach ($pages as $page) {
+                $result = $this->crawlPage($site, $page, $baseUrl);
+                $totalLinks += $result['total'];
+                $allBroken = array_merge($allBroken, $result['broken']);
+                $allRedirects = array_merge($allRedirects, $result['redirects']);
+            }
+        });
 
         if (! empty($allBroken)) {
             Notification::createAlert(
@@ -86,25 +88,19 @@ class BrokenLinkCrawler
             }
         });
 
+        $externalLinks = [];
+
         foreach ($links as $link) {
-            // Skip anchors, mailto, tel, javascript
-            if (preg_match('/^(#|mailto:|tel:|javascript:)/', $link)) {
+            if (preg_match('/^(#|mailto:|tel:|javascript:)/', $link) || str_starts_with($link, 'data:')) {
                 continue;
             }
 
-            // Skip data URIs
-            if (str_starts_with($link, 'data:')) {
-                continue;
-            }
-
-            // Resolve relative URLs
             $resolvedUrl = $this->resolveUrl($link, $baseUrl, $page->url_path ?? '/');
 
             if (! $resolvedUrl) {
                 continue;
             }
 
-            // Check if it's an internal link that should exist as a page
             if ($this->isInternalLink($link, $baseUrl)) {
                 $internalPath = parse_url($resolvedUrl, PHP_URL_PATH) ?? '/';
                 $exists = $site->pages()
@@ -124,10 +120,21 @@ class BrokenLinkCrawler
                 continue;
             }
 
-            // Check external links (with timeout and rate limiting)
             if (str_starts_with($resolvedUrl, 'http')) {
-                $result = $this->checkExternalLink($resolvedUrl);
+                $externalLinks[$link] = $resolvedUrl;
+            }
+        }
 
+        // Check external links in parallel batches of 10 to avoid sequential
+        // HTTP round-trips (previously 1 request per link = up to N×timeout seconds).
+        // Cap at 100 external links per page to keep the crawl bounded.
+        $externalLinks = array_slice($externalLinks, 0, 100, true);
+        $chunks = array_chunk($externalLinks, 10, true);
+
+        foreach ($chunks as $chunk) {
+            $results = $this->checkExternalLinksBatch($chunk);
+
+            foreach ($results as $link => $result) {
                 if ($result['status'] >= 400) {
                     $broken[] = [
                         'url' => $link,
@@ -135,7 +142,7 @@ class BrokenLinkCrawler
                         'type' => 'external_'.$result['status'],
                         'status' => $result['status'],
                     ];
-                } elseif ($result['status'] >= 300 && $result['status'] < 400) {
+                } elseif ($result['status'] >= 300) {
                     $redirects[] = [
                         'url' => $link,
                         'page' => $page->url_path,
@@ -218,6 +225,58 @@ class BrokenLinkCrawler
         }
 
         return false;
+    }
+
+    /**
+     * Check a batch of external URLs in parallel using Http::pool().
+     *
+     * Returns an array keyed by the original link text (not resolved URL) so
+     * results can be matched back to the page source.
+     *
+     * @param  array<string, string>  $links  [link => resolvedUrl]
+     * @return array<string, array{status: int, redirect_to: string|null}>
+     */
+    private function checkExternalLinksBatch(array $links): array
+    {
+        if (empty($links)) {
+            return [];
+        }
+
+        $results = [];
+
+        $responses = Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($links) {
+            foreach ($links as $link => $url) {
+                if (! $this->isPublicUrl($url)) {
+                    continue;
+                }
+
+                $pool->as($link)
+                    ->timeout(10)
+                    ->withOptions(['allow_redirects' => false])
+                    ->head($url);
+            }
+        });
+
+        foreach ($links as $link => $url) {
+            if (! $this->isPublicUrl($url)) {
+                continue;
+            }
+
+            $response = $responses[$link] ?? null;
+
+            if ($response instanceof \Throwable || $response === null) {
+                $results[$link] = ['status' => 0, 'redirect_to' => null];
+
+                continue;
+            }
+
+            $results[$link] = [
+                'status' => $response->status(),
+                'redirect_to' => $response->header('Location') ?: null,
+            ];
+        }
+
+        return $results;
     }
 
     private function checkExternalLink(string $url): array

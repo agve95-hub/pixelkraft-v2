@@ -142,8 +142,6 @@ class SiteSettings extends Component
             'name' => $this->name,
             'domain' => $this->domain ?: null,
             'deployment_mode' => $this->deploymentMode,
-            'build_command' => $this->buildCommand ?: null,
-            'build_output_dir' => $this->buildOutputDir ?: null,
             'branch' => $this->branch,
             'project_type' => $this->projectType,
             'deploy_path' => $this->deployPath ?: null,
@@ -152,6 +150,12 @@ class SiteSettings extends Component
             'ga_property_id' => $this->gaPropertyId ?: null,
             'gtm_id' => $this->gtmId ?: null,
         ];
+
+        // Build command and output dir execute shell code on the server — admin only.
+        if (auth()->user()?->can('configureBuild', $site)) {
+            $updatePayload['build_command'] = $this->buildCommand ?: null;
+            $updatePayload['build_output_dir'] = $this->buildOutputDir ?: null;
+        }
 
         // Only update the webhook secret when the operator explicitly types a new one.
         // An empty submission leaves the existing encrypted value untouched.

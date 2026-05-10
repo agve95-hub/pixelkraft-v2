@@ -96,6 +96,7 @@ class DeployLogModelTest extends TestCase
         $log = $this->makeLog();
         $log->appendLog('Step 1');
         $log->appendLog('Step 2');
+        $log->flushLog(); // buffer must be flushed before reading from DB
 
         $this->assertStringContainsString('Step 1', $log->fresh()->output_log);
         $this->assertStringContainsString('Step 2', $log->fresh()->output_log);
@@ -105,11 +106,10 @@ class DeployLogModelTest extends TestCase
     {
         $log = $this->makeLog();
 
-        // Write more than 512 KB
-        $bigLine = str_repeat('x', 1024); // 1 KB per line
-        for ($i = 0; $i < 520; $i++) {
-            $log->appendLog($bigLine);
-        }
+        // Write more than 512 KB in one flush (single line > threshold triggers truncation in flushLog)
+        $bigLine = str_repeat('x', 520 * 1024);
+        $log->appendLog($bigLine);
+        $log->flushLog();
 
         $fresh = $log->fresh();
         $this->assertLessThanOrEqual(512 * 1024 + 200, strlen($fresh->output_log));
@@ -120,13 +120,13 @@ class DeployLogModelTest extends TestCase
     {
         $log = $this->makeLog();
 
-        $bigLine = str_repeat('a', 1024);
-        for ($i = 0; $i < 520; $i++) {
-            $log->appendLog($bigLine);
-        }
+        $bigLine = str_repeat('a', 520 * 1024);
+        $log->appendLog($bigLine);
+        $log->flushLog();
 
-        // After truncation, the newest content should be at the end
         $log->appendLog('LAST LINE');
+        $log->flushLog();
+
         $this->assertStringContainsString('LAST LINE', $log->fresh()->output_log);
     }
 }

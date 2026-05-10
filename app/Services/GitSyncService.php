@@ -104,6 +104,15 @@ class GitSyncService
                     );
                 }
 
+                if ($this->isFastForwardFailed($e)) {
+                    $this->finishOperation($operation, 'conflict', error: $this->scrubSecrets($e->getMessage()));
+
+                    throw new GitConflictException(
+                        "Branch has diverged for site [{$site->slug}]. The remote branch and local edits have different histories — manual resolution required.",
+                        previous: $e
+                    );
+                }
+
                 $this->finishOperation($operation, 'failed', error: $this->scrubSecrets($e->getMessage()));
                 throw $e;
             }
@@ -297,6 +306,32 @@ class GitSyncService
         });
     }
 
+    public function tagExists(Site $site, string $tagName): bool
+    {
+        try {
+            $repo = $this->openRepo($site);
+            $output = $repo->execute('tag', '-l', $tagName);
+
+            return trim(implode('', array_map('strval', $output))) === $tagName;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function deleteTag(Site $site, string $tagName): void
+    {
+        $this->locks->block($site, 'git', function () use ($site, $tagName) {
+            $repo = $this->openRepo($site);
+
+            try {
+                $repo->execute('tag', '-d', $tagName);
+            } catch (\Throwable $e) {
+                // Tag may not exist locally (e.g. shallow clone), treat as no-op.
+                Log::info("deleteTag: could not delete local tag [{$tagName}] for [{$site->slug}]: {$e->getMessage()}");
+            }
+        });
+    }
+
     public function checkout(Site $site, string $ref, ?EditSession $session = null): void
     {
         $this->locks->block($site, 'git', function () use ($site, $ref, $session) {
@@ -380,6 +415,13 @@ class GitSyncService
     private function configureAuth(GitRepository $repo, Site $site): void
     {
         if (empty($site->github_token)) {
+            // Remove any stale credential file left from a previous token so git
+            // falls back to system-level auth rather than an expired/revoked token.
+            $credFile = $this->credentialFilePath($site);
+            if (file_exists($credFile)) {
+                @unlink($credFile);
+            }
+
             return;
         }
 
@@ -465,8 +507,17 @@ class GitSyncService
         $message = strtolower($e->getMessage());
 
         return str_contains($message, 'conflict')
-            || str_contains($message, 'merge')
-            || str_contains($message, 'not possible');
+            || str_contains($message, 'automatic merge failed')
+            || str_contains($message, 'cannot merge');
+    }
+
+    private function isFastForwardFailed(GitException $e): bool
+    {
+        $message = strtolower($e->getMessage());
+
+        return str_contains($message, 'not possible to fast-forward')
+            || str_contains($message, 'unable to fast-forward')
+            || (str_contains($message, 'not possible') && str_contains($message, 'fast'));
     }
 
     private function isPushRejected(GitException $e): bool

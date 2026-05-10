@@ -65,9 +65,16 @@ class FortifyServiceProvider extends ServiceProvider
 
         // ── Rate Limiting ───────────────────────
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            // Two-layer brute-force protection:
+            // 1. Per email+IP: 5 req/min — standard Fortify default
+            // 2. Per IP only: 20 req/min — catches credential stuffing where
+            //    an attacker rotates through many email addresses from one IP
+            $emailIpKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
-            return Limit::perMinute(5)->by($throttleKey);
+            return [
+                Limit::perMinute(5)->by($emailIpKey),
+                Limit::perMinute(20)->by('login|ip|'.$request->ip()),
+            ];
         });
 
         RateLimiter::for('two-factor', function (Request $request) {

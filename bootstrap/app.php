@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureSanctumApiTokenCan;
 use App\Http\Middleware\EnsureSiteAccess;
 use App\Http\Middleware\RememberExpandedSite;
+use App\Http\Middleware\RequireTwoFactor;
 use App\Http\Middleware\SetSecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SetSecurityHeaders::class);
         $middleware->web(append: [
             ConvertEmptyStringsToNull::class,
+            RequireTwoFactor::class,
         ]);
 
         // Prepend CORS handling to the API group so preflight OPTIONS requests

@@ -97,7 +97,7 @@
                     </div>
                     <div class="stat">
                         <p class="stat-label">Tracking</p>
-                        <p class="stat-val-sm">{{ $currentRelease?->tracking_version ?: 'Pending' }}</p>
+                        <p class="stat-val-sm">{{ $currentRelease?->trackingVersionLabel('Pending') ?? 'Pending' }}</p>
                         <p class="stat-note">{{ $currentRelease?->artifact_path ? 'artifact ready' : 'no artifact recorded' }}</p>
                     </div>
                 </div>

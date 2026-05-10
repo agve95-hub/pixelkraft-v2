@@ -75,7 +75,7 @@ class SiteRuntimeService
 
     public function supportsRuntimeModeForProjectType(string $projectType): bool
     {
-        return in_array($projectType, ['nextjs'], true);
+        return in_array($projectType, ['nextjs', 'nuxt'], true);
     }
 
     public function usesRuntimeServer(Site $site): bool
@@ -153,9 +153,9 @@ class SiteRuntimeService
             throw new \RuntimeException("Runtime deployment is not supported for {$site->project_type} projects.");
         }
 
-        if ($site->project_type === 'nextjs' && $this->inferredDeploymentMode($site) === self::MODE_STATIC) {
+        if (in_array($site->project_type, ['nextjs', 'nuxt'], true) && $this->inferredDeploymentMode($site) === self::MODE_STATIC) {
             throw new \RuntimeException(
-                'This Next.js repository is configured for static export. '
+                "This {$site->project_type} repository is configured for static export. "
                 .'Switch the site deployment mode to static, or remove the export configuration before using runtime mode.'
             );
         }
@@ -169,7 +169,7 @@ class SiteRuntimeService
 
         $this->stopShellProcess($site);
         $this->startShellProcess($site, $execution);
-        $this->waitUntilHealthy($site, $log, $port);
+        $this->quickHealthProbe($site, $log, $port);
 
         // Persist the allocated port so Nginx config generation and port
         // rediscovery always agree with the port the process is actually on.
@@ -382,9 +382,17 @@ class SiteRuntimeService
             return;
         }
 
+        // Kill the process and all its children (e.g. Node.js workers spawned by
+        // nohup bash → next → node) before removing the pid file.
         $script = 'if [ -f '.escapeshellarg($pidFile).' ]; then '
             .'PID=$(cat '.escapeshellarg($pidFile).'); '
-            .'if kill -0 "$PID" 2>/dev/null; then kill "$PID" || true; sleep 1; fi; '
+            .'if kill -0 "$PID" 2>/dev/null; then '
+            .'  pkill -TERM -P "$PID" 2>/dev/null || true; '
+            .'  kill -TERM "$PID" 2>/dev/null || true; '
+            .'  sleep 1; '
+            .'  pkill -KILL -P "$PID" 2>/dev/null || true; '
+            .'  kill -KILL "$PID" 2>/dev/null || true; '
+            .'fi; '
             .'rm -f '.escapeshellarg($pidFile).'; '
             .'fi';
 
@@ -396,27 +404,29 @@ class SiteRuntimeService
         unset($this->activePortCache[(string) $site->id]);
     }
 
-    private function waitUntilHealthy(Site $site, DeployLog $log, int $port): void
+    /**
+     * Quick 5-second synchronous probe run inside the deploy worker.
+     * If the server is already up (common case), we confirm immediately
+     * and avoid dispatching a background job.  If not yet ready we return
+     * and the caller dispatches VerifyRuntimeHealthJob to poll asynchronously
+     * so the worker is not blocked for up to 30 seconds.
+     */
+    private function quickHealthProbe(Site $site, DeployLog $log, int $port): void
     {
-        $timeout = max(5, (int) config('platform.runtime.startup_timeout_seconds', 30));
-        $deadline = microtime(true) + $timeout;
-        $desiredPort = $port;
+        $deadline = microtime(true) + 5;
 
         while (microtime(true) < $deadline) {
-            if ($this->isReachableOnPort($desiredPort, '/')) {
+            if ($this->isReachableOnPort($port, '/')) {
                 unset($this->activePortCache[(string) $site->id]);
-                $log->appendLog('  Runtime server is responding on '.$this->baseUrl($site));
+                $log->appendLog('  Runtime server is responding on port '.$port.' (fast probe).');
 
                 return;
             }
 
-            usleep(500000);
+            usleep(500_000);
         }
 
-        $logFile = $this->logFile($site);
-        $tail = File::exists($logFile) ? implode("\n", array_slice(file($logFile, FILE_IGNORE_NEW_LINES), -20)) : 'No runtime log captured.';
-
-        throw new \RuntimeException("Runtime server did not become healthy. Recent runtime log:\n{$tail}");
+        $log->appendLog('  Runtime server not yet responding — health verification delegated to background job.');
     }
 
     private function runtimeRoot(Site $site): string
@@ -498,7 +508,18 @@ class SiteRuntimeService
             }
 
             $config = File::get($path);
-            if (preg_match('/'.preg_quote($key, '/').'\s*:\s*[\'"]'.preg_quote($expectedValue, '/').'[\'"]/', $config)) {
+
+            // Strip single-line comments so `// output: 'export'` is not matched.
+            $config = (string) preg_replace('#(?<!:)//[^\n]*#', '', $config);
+            // Strip block comments.
+            $config = (string) preg_replace('#/\*.*?\*/#s', '', $config);
+
+            // Only match a hard-coded string literal — skip dynamic values like
+            // `process.env.DEPLOY_TARGET` which cannot be evaluated at parse time.
+            if (preg_match(
+                '/\b'.preg_quote($key, '/').'\s*:\s*[\'"]'.preg_quote($expectedValue, '/').'\s*[\'"]/',
+                $config
+            )) {
                 return true;
             }
         }

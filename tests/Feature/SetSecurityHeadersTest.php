@@ -97,7 +97,9 @@ class SetSecurityHeadersTest extends TestCase
 
         $this->assertNotNull($hsts);
         $this->assertStringContainsString('max-age=31536000', $hsts);
-        $this->assertStringContainsString('includeSubDomains', $hsts);
+        // includeSubDomains deliberately absent — client sites on subdomains may
+        // still run HTTP and would break if forced to HTTPS by the dashboard HSTS.
+        $this->assertStringNotContainsString('includeSubDomains', $hsts);
     }
 
     public function test_nonce_is_unique_per_request(): void

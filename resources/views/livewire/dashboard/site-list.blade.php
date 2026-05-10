@@ -1,6 +1,6 @@
 <div class="space-y-4">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <flux:input wire:model.live.debounce.300ms="search" placeholder="Search projects..." icon="magnifying-glass" class="max-w-xs" />
+    <div class="ui-list-toolbar">
+        <flux:input wire:model.live.debounce.300ms="search" placeholder="Search projects..." icon="magnifying-glass" class="ui-list-toolbar-control" />
         <x-ui.button href="{{ route('sites.create') }}" size="sm" variant="outline" icon="plus">New project</x-ui.button>
     </div>
 

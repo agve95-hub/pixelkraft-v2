@@ -12,6 +12,7 @@ use App\Services\DeployDispatcher;
 use App\Services\DeployService;
 use App\Services\GitSyncService;
 use App\Services\SiteRuntimeService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -89,6 +90,24 @@ class SiteController extends Controller
 
         if (empty($log->snapshot_tag)) {
             return response()->json(['error' => 'No snapshot available for this deploy'], 400);
+        }
+
+        // Verify the git tag still exists in the repository before starting the
+        // rollback.  cleanOldSnapshots() prunes tags beyond the retention window,
+        // so a deploy may have a snapshot_tag DB record but no matching git tag.
+        $git = app(GitSyncService::class);
+        if ($git->isCloned($site)) {
+            try {
+                if (! $git->tagExists($site, $log->snapshot_tag)) {
+                    return response()->json([
+                        'error' => 'Snapshot tag no longer exists in the repository. This deploy is outside the rollback retention window.',
+                    ], 400);
+                }
+            } catch (\Throwable $e) {
+                Log::warning("rollback: could not verify tag [{$log->snapshot_tag}] for [{$site->slug}]", [
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         try {

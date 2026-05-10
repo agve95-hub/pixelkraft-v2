@@ -100,14 +100,46 @@ class DeployLog extends Model
     /** Maximum bytes stored in output_log before the oldest lines are dropped. */
     private const MAX_LOG_BYTES = 512 * 1024; // 512 KB
 
+    /** Buffer up to this many lines before flushing to DB. */
+    private const LOG_FLUSH_BATCH = 8;
+
+    /** @var list<string> */
+    private array $logBuffer = [];
+
+    /**
+     * Append a line to the deploy log.  Lines are buffered in memory and
+     * flushed to the database every LOG_FLUSH_BATCH lines to reduce the
+     * number of UPDATE queries during a deploy (previously one per call).
+     * Call flushLog() at the end of each deploy step to ensure lines are
+     * persisted before the next step's job picks up the model.
+     */
     public function appendLog(string $line): void
     {
-        $current = ($this->output_log ?? '').$line."\n";
+        $this->logBuffer[] = $line;
+
+        if (count($this->logBuffer) >= self::LOG_FLUSH_BATCH) {
+            $this->flushLog();
+        }
+    }
+
+    /**
+     * Write any buffered log lines to the database immediately.
+     * Must be called at the end of each deploy step (before ->fresh() or
+     * model hand-off between queue jobs).
+     */
+    public function flushLog(): void
+    {
+        if (empty($this->logBuffer)) {
+            return;
+        }
+
+        $lines = implode("\n", $this->logBuffer)."\n";
+        $this->logBuffer = [];
+
+        $current = ($this->output_log ?? '').$lines;
 
         if (strlen($current) > self::MAX_LOG_BYTES) {
-            // Keep the newest MAX_LOG_BYTES worth of content; prepend a notice.
             $truncated = substr($current, -self::MAX_LOG_BYTES);
-            // Trim to next newline so we don't start mid-line.
             $nl = strpos($truncated, "\n");
             $truncated = $nl !== false ? substr($truncated, $nl + 1) : $truncated;
             $current = "[...log truncated to last 512 KB...]\n".$truncated;

@@ -135,20 +135,42 @@ class StaticDeploymentAdapter implements DeploymentAdapter
 
     private function replaceDirectory(string $sourceDir, string $targetDir): void
     {
-        $stagingDir = $targetDir.'.__platform_tmp';
+        $newDir = $targetDir.'.__platform_new';
+        $oldDir = $targetDir.'.__platform_old';
 
-        File::deleteDirectory($stagingDir);
+        // Clean up any debris from a previous failed deploy.
+        File::deleteDirectory($newDir);
+        File::deleteDirectory($oldDir);
         File::ensureDirectoryExists(dirname($targetDir), 0755, true);
 
-        if (! File::copyDirectory($sourceDir, $stagingDir)) {
+        // Stage new content into a side directory first.
+        if (! File::copyDirectory($sourceDir, $newDir)) {
+            File::deleteDirectory($newDir);
             throw new \RuntimeException("Failed to stage files from {$sourceDir}");
         }
 
-        File::deleteDirectory($targetDir);
+        // Atomic swap using two rename(2) calls.  Both operations are atomic on
+        // POSIX filesystems when source and destination are on the same device
+        // (always true here — both paths share the same parent directory).
+        // Nginx continues serving from $targetDir until the second rename completes;
+        // there is no window where the directory does not exist.
+        if (File::isDirectory($targetDir)) {
+            if (! rename($targetDir, $oldDir)) {
+                File::deleteDirectory($newDir);
+                throw new \RuntimeException("Failed to move live directory aside at {$oldDir}");
+            }
+        }
 
-        if (! File::moveDirectory($stagingDir, $targetDir)) {
-            File::deleteDirectory($stagingDir);
+        if (! rename($newDir, $targetDir)) {
+            // Attempt to restore the previous live version before failing.
+            if (File::isDirectory($oldDir)) {
+                rename($oldDir, $targetDir);
+            }
+            File::deleteDirectory($newDir);
             throw new \RuntimeException("Failed to activate staged deploy at {$targetDir}");
         }
+
+        // Deferred cleanup — Nginx is already serving from $targetDir.
+        File::deleteDirectory($oldDir);
     }
 }

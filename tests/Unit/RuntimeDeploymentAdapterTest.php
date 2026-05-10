@@ -106,6 +106,7 @@ class RuntimeDeploymentAdapterTest extends TestCase
         $runtime->shouldReceive('baseUrl')->andReturn('http://127.0.0.1:4100');
 
         $this->makeAdapter($runtime)->activate($site, $log);
+        $log->flushLog(); // flush buffer before reading from DB
 
         $log->refresh();
         $this->assertStringContainsString('127.0.0.1:4100', $log->output_log ?? '');

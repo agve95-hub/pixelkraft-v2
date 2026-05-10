@@ -45,6 +45,16 @@ class SendCampaigns extends Command
 
     private function sendCampaign(NewsletterCampaign $campaign): void
     {
+        if (empty($campaign->body_html)) {
+            Log::warning("Campaign [{$campaign->id}] has no body HTML — marking failed.");
+            $campaign->update([
+                'status' => 'failed',
+                'stats' => ['error' => 'Campaign body is empty.'],
+            ]);
+
+            return;
+        }
+
         $apiKey = config('services.resend.key');
 
         if (! $apiKey) {
