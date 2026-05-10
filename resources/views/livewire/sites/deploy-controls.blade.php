@@ -11,7 +11,7 @@
         : null;
 @endphp
 
-<div wire:poll.5s class="space-y-4">
+<div wire:poll="{{ $isDeploying ? '3s' : '30s' }}" class="space-y-4">
     {{-- Deploy controls card --}}
     <x-ui.card>
         <x-ui.card-header>
@@ -26,14 +26,27 @@
                         <span wire:loading wire:target="setupDomain">Setting up...</span>
                     </x-ui.button>
                 @endif
-                <x-ui.button type="button" wire:click="deploy" wire:target="deploy" wire:loading.attr="disabled" :disabled="$isDeploying" variant="primary" size="sm" icon="bolt">
-                    @if ($isDeploying)
+                @if ($isDeploying)
+                    <x-ui.button type="button" variant="primary" size="sm" icon="bolt" disabled>
                         {{ $statusLabel }}...
-                    @else
-                        <span wire:loading.remove wire:target="deploy">Deploy now</span>
-                        <span wire:loading wire:target="deploy">Starting...</span>
-                    @endif
-                </x-ui.button>
+                    </x-ui.button>
+                @else
+                    <div x-data="{ confirming: false }" class="flex items-center gap-2">
+                        <x-ui.button type="button" x-show="!confirming" x-on:click="confirming = true"
+                            variant="primary" size="sm" icon="bolt">
+                            Deploy now
+                        </x-ui.button>
+                        <div x-show="confirming" x-cloak class="flex items-center gap-2">
+                            <span class="text-xs text-zinc-400">Deploy to live?</span>
+                            <x-ui.button type="button" wire:click="deploy" wire:target="deploy"
+                                wire:loading.attr="disabled" variant="primary" size="sm">
+                                <span wire:loading.remove wire:target="deploy">Yes, deploy</span>
+                                <span wire:loading wire:target="deploy">Starting…</span>
+                            </x-ui.button>
+                            <x-ui.button type="button" x-on:click="confirming = false" variant="outline" size="sm">Cancel</x-ui.button>
+                        </div>
+                    </div>
+                @endif
             </div>
         </x-ui.card-header>
 
@@ -66,9 +79,10 @@
                 <p class="stat-note">{{ $site->branch ?: 'No branch set' }}</p>
             </div>
             <div class="stat">
-                <p class="stat-label">Deploy path</p>
-                <p class="stat-val-sm mt-1 font-mono text-xs">{{ $productionTarget?->deploy_path ?: $site->deploy_path ?: 'Not configured' }}</p>
-                <p class="stat-note">{{ $productionTarget?->release_strategy ? strtoupper($productionTarget->release_strategy) . ' releases' : ($site->repo_url ? 'Git connected' : 'Repo missing') }}</p>
+                <p class="stat-label">Infrastructure</p>
+                @php $hasPath = ($productionTarget?->deploy_path ?: $site->deploy_path); @endphp
+                <div class="mt-1"><x-ui.badge variant="{{ $hasPath ? 'success' : 'warning' }}" dot>{{ $hasPath ? 'Configured' : 'Not configured' }}</x-ui.badge></div>
+                <p class="stat-note">{{ $productionTarget?->release_strategy ? ucfirst($productionTarget->release_strategy).' releases' : ($site->repo_url ? 'Git connected' : 'No repo') }}</p>
             </div>
         </div>
 

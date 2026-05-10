@@ -27,9 +27,8 @@
                 <button type="button" wire:click="startFreshSession" class="text-zinc-400 hover:text-zinc-200">Dismiss</button>
             @endif
         @endif
-        <span class="ml-auto hidden items-center gap-2 sm:flex">
-            <span class="flex size-6 items-center justify-center rounded-md bg-gradient-to-br from-emerald-400 to-cyan-500 text-[10px] font-bold text-black">U</span>
-            <span class="text-zinc-500">Universal Tool</span>
+        <span class="ml-auto hidden items-center gap-1.5 sm:flex text-[11px] text-zinc-500">
+            {{ config('app.name') }}
         </span>
     </div>
 
@@ -114,26 +113,8 @@
             @endif
         </div>
 
-        {{-- RIGHT: undo/redo + schedule + save draft + publish + avatar --}}
+        {{-- RIGHT: save draft + publish + avatar --}}
         <div class="flex shrink-0 items-center gap-1">
-            <button type="button" wire:click="undo"
-                    class="rounded-md border border-transparent p-1.5 text-zinc-400 transition hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30"
-                    title="Undo (⌘Z)" @disabled(! $canUndo)>
-                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 6 6v0"/></svg>
-            </button>
-            <button type="button" wire:click="redo"
-                    class="rounded-md border border-transparent p-1.5 text-zinc-400 transition hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30"
-                    title="Redo (⌘⇧Z)" @disabled(! $canRedo)>
-                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 9 6 6m0 0-6 6m6-6H9a6 6 0 0 0-6 6v0"/></svg>
-            </button>
-
-            <div class="mx-1 h-5 w-px bg-zinc-800 hidden sm:block"></div>
-
-            <button type="button" disabled
-                    class="rounded-md border border-transparent p-1.5 text-zinc-600 cursor-not-allowed"
-                    title="Schedule publishing (coming soon)">
-                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </button>
 
             <button type="button" wire:click="saveDraft"
                     class="hidden sm:inline-flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-zinc-500"

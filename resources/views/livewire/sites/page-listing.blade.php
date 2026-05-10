@@ -1,4 +1,4 @@
-<div wire:poll.5s>
+<div wire:poll.30s>
     <div class="ui-list-toolbar">
         <p class="ui-list-toolbar-title">Pages</p>
         <flux:input wire:model.live.debounce.300ms="search" placeholder="Search pages..." icon="magnifying-glass" size="sm" class="ui-list-toolbar-control" />

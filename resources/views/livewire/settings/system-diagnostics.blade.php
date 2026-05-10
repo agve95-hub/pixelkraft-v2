@@ -1,4 +1,4 @@
-<div class="space-y-6" wire:poll.10s>
+<div class="space-y-6">
     <div class="ui-page-head">
         <div>
             <h1 class="ui-page-title">System diagnostics</h1>

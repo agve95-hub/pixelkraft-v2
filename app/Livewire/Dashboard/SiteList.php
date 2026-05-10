@@ -5,10 +5,18 @@ namespace App\Livewire\Dashboard;
 use App\Support\SiteAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class SiteList extends Component
 {
+    use WithPagination;
+
     public string $search = '';
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
 
     public function render(): View
     {
@@ -17,7 +25,7 @@ class SiteList extends Component
             ->withCount('pages')
             ->with('latestDeploy', 'latestUptimeCheck')
             ->orderBy('name')
-            ->get();
+            ->paginate(25);
 
         return view('livewire.dashboard.site-list', [
             'sites' => $sites,

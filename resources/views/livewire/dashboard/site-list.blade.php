@@ -26,15 +26,15 @@
                             : ($site->deploy_status === \App\Enums\DeployStatus::Failed ? 'destructive' : 'warning');
                         $sslVariant = $site->ssl_status === 'active' ? 'success' : 'warning';
                     @endphp
-                    <tr class="clickable" onclick="window.location='{{ route('sites.show', $site) }}'">
+                    <tr>
                         <td>
-                            <div class="site-name">
+                            <a href="{{ route('sites.show', $site) }}" class="site-name group">
                                 <span class="site-dot {{ $dot }}"></span>
                                 <div class="min-w-0">
-                                    <div class="truncate font-medium text-zinc-100">{{ $site->name }}</div>
+                                    <div class="truncate font-medium text-zinc-100 group-hover:text-white transition-colors">{{ $site->name }}</div>
                                     <div class="truncate font-mono text-[11px] text-zinc-500">{{ $site->domain ?: $site->repo_url ?: 'Draft project' }}</div>
                                 </div>
-                            </div>
+                            </a>
                         </td>
                         <td class="text-sm text-zinc-400">{{ $site->clientDisplayName() }}</td>
                         <td><span class="tag">{{ $site->project_type_label }}</span></td>
@@ -54,4 +54,8 @@
                 @endforelse
             </tbody>
     </x-ui.table>
+
+    @if ($sites->hasPages())
+        <div class="mt-4 px-1">{{ $sites->links() }}</div>
+    @endif
 </div>

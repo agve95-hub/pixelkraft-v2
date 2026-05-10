@@ -19,7 +19,7 @@
                 <h1 class="ui-page-title">Analytics</h1>
                 <p class="ui-page-sub">Traffic, uptime, and performance — last 30 days</p>
             </div>
-            <x-ui.button variant="outline" size="sm" disabled class="opacity-50 cursor-not-allowed">Last 30 days</x-ui.button>
+            {{-- Date range switcher: implemented when analytics service supports variable windows --}}
         </div>
 
         {{-- Top-level stats --}}
@@ -191,7 +191,9 @@
                             <td class="font-mono text-xs">{{ $deploy->hash ?: 'snapshot' }}</td>
                             <td class="hidden sm:table-cell text-xs">{{ $deploy->duration }}</td>
                             <td class="text-xs">{{ $deploy->created_at?->diffForHumans() ?? 'recently' }}</td>
-                            <td><x-ui.button size="xs" variant="ghost" disabled>Log</x-ui.button></td>
+                            <td>
+                                <x-ui.button size="xs" variant="ghost" href="{{ route('sites.show', $site) }}#deploy-controls">Log</x-ui.button>
+                            </td>
                         </tr>
                     @empty
                         <tr><td colspan="5"><x-ui.empty icon="bolt" title="No deploy history yet" /></td></tr>

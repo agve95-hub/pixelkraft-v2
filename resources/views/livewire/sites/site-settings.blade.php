@@ -8,21 +8,27 @@
         <x-ui.alert variant="success" icon="check-circle">{{ session('success') }}</x-ui.alert>
     @endif
 
-    {{-- Support mode summary --}}
-    <x-ui.card>
-        <x-ui.card-header>
-            <x-ui.card-title><x-icons.shield /> Current support mode</x-ui.card-title>
-            <div class="flex flex-wrap gap-2">
-                <x-ui.badge variant="info">{{ strtoupper((string) ($supportProfile['deployment_mode'] ?? 'static')) }}</x-ui.badge>
-                <x-ui.badge variant="{{ $modeSource === 'Auto' ? 'warning' : 'success' }}">{{ strtoupper($modeSource) }}</x-ui.badge>
-                <x-ui.badge variant="success">{{ strtoupper($workflowLabel) }}</x-ui.badge>
-            </div>
-        </x-ui.card-header>
-        <div class="space-y-1 text-sm">
-            <p>{{ $supportProfile['summary'] ?? 'No support profile available.' }}</p>
-            <p class="text-zinc-500">{{ $supportProfile['detail'] ?? '' }}</p>
+    {{-- Integration warnings (GA4 credentials missing, Cloudflare mismatch, etc.) --}}
+    @foreach ($integrationWarnings as $warning)
+        <x-ui.alert variant="warning" icon="exclamation-triangle">{{ $warning }}</x-ui.alert>
+    @endforeach
+
+    {{-- Support mode — collapsed by default; useful for developers debugging deploy mode inference --}}
+    <details class="group">
+        <summary class="flex cursor-pointer items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 select-none list-none">
+            <flux:icon name="chevron-right" class="size-3.5 transition group-open:rotate-90" />
+            Deployment mode:
+            <x-ui.badge variant="info" class="text-[10px]">{{ strtoupper((string) ($supportProfile['deployment_mode'] ?? 'static')) }}</x-ui.badge>
+            <x-ui.badge variant="{{ $modeSource === 'Auto' ? 'warning' : 'success' }}" class="text-[10px]">{{ strtoupper($modeSource) }}</x-ui.badge>
+            <x-ui.badge variant="success" class="text-[10px]">{{ strtoupper($workflowLabel) }}</x-ui.badge>
+        </summary>
+        <div class="mt-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-400">
+            {{ $supportProfile['summary'] ?? '' }}
+            @if ($supportProfile['detail'] ?? '')
+                <p class="mt-1 text-zinc-500">{{ $supportProfile['detail'] }}</p>
+            @endif
         </div>
-    </x-ui.card>
+    </details>
 
     {{-- Stats strip --}}
     <div class="stats stats-4">
@@ -77,7 +83,8 @@
                         <flux:label>Project type</flux:label>
                         <flux:select wire:model.live="projectType">
                             @foreach (config('platform.project_types') as $type)
-                                <flux:select.option value="{{ $type }}">{{ $type }}</flux:select.option>
+                                @php $label = (new \App\Models\Site(['project_type' => $type]))->project_type_label @endphp
+                                <flux:select.option value="{{ $type }}">{{ $label }}</flux:select.option>
                             @endforeach
                         </flux:select>
                         <flux:error name="projectType" />
@@ -145,18 +152,12 @@
                     <flux:error name="buildOutputDir" />
                 </flux:field>
 
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <flux:field>
-                        <flux:label>Deploy path</flux:label>
-                        <flux:input wire:model="deployPath" placeholder="/var/www/site" class="font-mono" />
-                        <flux:error name="deployPath" />
-                    </flux:field>
-                    <flux:field>
-                        <flux:label>SSH / target host</flux:label>
-                        <flux:input wire:model="sshHost" placeholder="server.example.com" class="font-mono" />
-                        <flux:error name="sshHost" />
-                    </flux:field>
-                </div>
+                <flux:field>
+                    <flux:label>Deploy path</flux:label>
+                    <flux:input wire:model="deployPath" placeholder="/var/www/site" class="font-mono" />
+                    <flux:description>Absolute path on the server where Nginx serves the built site.</flux:description>
+                    <flux:error name="deployPath" />
+                </flux:field>
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <flux:field>
@@ -221,79 +222,80 @@
         </div>
     </form>
 
-    {{-- Git & webhook history --}}
-    <div class="grid gap-4 lg:grid-cols-2">
-        <x-ui.card>
-            <x-ui.card-header>
-                <x-ui.card-title><x-icons.report /> Recent Git operations</x-ui.card-title>
-            </x-ui.card-header>
-            @forelse ($recentGitOperations as $operation)
-                <div class="activity-item">
-                    <span class="activity-dot activity-dot-success"></span>
-                    <div class="flex-1 min-w-0">
-                        <p class="activity-text">{{ ucfirst($operation->operation) }} &middot; {{ ucfirst($operation->status) }}</p>
-                        <p class="activity-time">{{ $operation->working_branch ?: $operation->branch ?: $branch }}</p>
-                    </div>
-                    <span class="activity-time">{{ $operation->started_at?->diffForHumans() ?? 'recently' }}</span>
-                </div>
-            @empty
-                <x-ui.empty icon="arrow-path" title="No Git operations recorded yet" />
-            @endforelse
-        </x-ui.card>
-
-        <x-ui.card>
-            <x-ui.card-header>
-                <x-ui.card-title><x-icons.globe /> Recent webhooks</x-ui.card-title>
-            </x-ui.card-header>
-            @forelse ($recentWebhookDeliveries as $delivery)
-                <div class="activity-item">
-                    <span class="activity-dot activity-dot-info"></span>
-                    <div class="flex-1 min-w-0">
-                        <p class="activity-text">{{ $delivery->event ?: 'push' }} &middot; {{ $delivery->status ?: 'received' }}</p>
-                        <p class="activity-time">{{ $delivery->repository ?: 'GitHub delivery' }}</p>
-                    </div>
-                    <span class="activity-time">{{ $delivery->received_at?->diffForHumans() ?? 'recently' }}</span>
-                </div>
-            @empty
-                <x-ui.empty icon="globe-alt" title="No webhook deliveries recorded yet" />
-            @endforelse
-        </x-ui.card>
-    </div>
-
-    {{-- Release history + Danger zone --}}
-    <div class="grid gap-4 lg:grid-cols-2">
-        <x-ui.card>
-            <x-ui.card-header>
-                <x-ui.card-title><x-icons.file /> Release history</x-ui.card-title>
-            </x-ui.card-header>
-            @forelse ($recentReleases as $release)
-                <div class="issue-item">
-                    <span class="issue-icon {{ $release->is_current ? 'issue-icon-green' : 'issue-icon-blue' }}">
-                        @if ($release->is_current) <x-icons.check /> @else <x-icons.clock /> @endif
-                    </span>
-                    <div>
-                        <p class="issue-text">{{ ucfirst($release->status) }} &middot; {{ $release->source_commit_sha ? \Illuminate\Support\Str::limit($release->source_commit_sha, 12, '') : 'pending commit' }}</p>
-                        <p class="issue-meta">{{ $release->activated_at?->diffForHumans() ?? 'waiting' }} &middot; {{ $release->trackingVersionLabel() }}</p>
-                    </div>
-                </div>
-            @empty
-                <x-ui.empty icon="clock" title="No releases recorded yet" />
-            @endforelse
-        </x-ui.card>
-
-        <x-ui.card class="border-red-500/20">
-            <x-ui.card-header>
-                <x-ui.card-title class="text-red-400"><x-icons.alert /> Danger zone</x-ui.card-title>
-            </x-ui.card-header>
-            <x-ui.card-description>Permanently delete this site and all associated data.</x-ui.card-description>
-            <div class="mt-4" x-data="{ confirm: false }">
-                <x-ui.button type="button" x-show="!confirm" x-on:click="confirm = true" variant="destructive" size="sm">Delete site</x-ui.button>
-                <div x-show="confirm" x-cloak class="flex flex-wrap items-center gap-3">
-                    <p class="text-xs text-red-400">Are you sure? This cannot be undone.</p>
-                    <x-ui.button type="button" wire:click="deleteSite" variant="destructive" size="sm">Yes, delete</x-ui.button>
-                    <x-ui.button type="button" x-on:click="confirm = false" variant="outline" size="sm">Cancel</x-ui.button>
-                </div>
+    {{-- Danger zone — standalone, clearly separated from the form --}}
+    <x-ui.card class="border-red-500/20">
+        <x-ui.card-header>
+            <x-ui.card-title class="text-red-400"><x-icons.alert /> Danger zone</x-ui.card-title>
+        </x-ui.card-header>
+        <x-ui.card-description>Permanently delete this site and all associated data including pages, deploys, invoices, and subscribers.</x-ui.card-description>
+        <div class="mt-4" x-data="{ confirm: false }">
+            <x-ui.button type="button" x-show="!confirm" x-on:click="confirm = true" variant="destructive" size="sm">Delete site</x-ui.button>
+            <div x-show="confirm" x-cloak class="flex flex-wrap items-center gap-3">
+                <p class="text-xs text-red-400">Are you sure? This cannot be undone.</p>
+                <x-ui.button type="button" wire:click="deleteSite" variant="destructive" size="sm">Yes, delete</x-ui.button>
+                <x-ui.button type="button" x-on:click="confirm = false" variant="outline" size="sm">Cancel</x-ui.button>
             </div>
-        </x-ui.card>
+        </div>
+    </x-ui.card>
+
+    {{-- Activity audit — read-only, below the fold --}}
+    <div>
+        <p class="mb-3 text-xs font-medium uppercase tracking-wider text-zinc-500">Activity</p>
+        <div class="grid gap-4 lg:grid-cols-3">
+            <x-ui.card>
+                <x-ui.card-header>
+                    <x-ui.card-title><x-icons.report /> Git operations</x-ui.card-title>
+                </x-ui.card-header>
+                @forelse ($recentGitOperations as $operation)
+                    <div class="activity-item">
+                        <span class="activity-dot activity-dot-success"></span>
+                        <div class="flex-1 min-w-0">
+                            <p class="activity-text">{{ ucfirst($operation->operation) }} · {{ ucfirst($operation->status) }}</p>
+                            <p class="activity-time">{{ $operation->working_branch ?: $operation->branch ?: $branch }}</p>
+                        </div>
+                        <span class="activity-time">{{ $operation->started_at?->diffForHumans() ?? 'recently' }}</span>
+                    </div>
+                @empty
+                    <x-ui.empty icon="arrow-path" title="No Git operations yet" />
+                @endforelse
+            </x-ui.card>
+
+            <x-ui.card>
+                <x-ui.card-header>
+                    <x-ui.card-title><x-icons.globe /> Webhooks</x-ui.card-title>
+                </x-ui.card-header>
+                @forelse ($recentWebhookDeliveries as $delivery)
+                    <div class="activity-item">
+                        <span class="activity-dot activity-dot-info"></span>
+                        <div class="flex-1 min-w-0">
+                            <p class="activity-text">{{ $delivery->event ?: 'push' }} · {{ $delivery->status ?: 'received' }}</p>
+                            <p class="activity-time">{{ $delivery->repository ?: 'GitHub delivery' }}</p>
+                        </div>
+                        <span class="activity-time">{{ $delivery->received_at?->diffForHumans() ?? 'recently' }}</span>
+                    </div>
+                @empty
+                    <x-ui.empty icon="globe-alt" title="No webhook deliveries yet" />
+                @endforelse
+            </x-ui.card>
+
+            <x-ui.card>
+                <x-ui.card-header>
+                    <x-ui.card-title><x-icons.file /> Releases</x-ui.card-title>
+                </x-ui.card-header>
+                @forelse ($recentReleases as $release)
+                    <div class="issue-item">
+                        <span class="issue-icon {{ $release->is_current ? 'issue-icon-green' : 'issue-icon-blue' }}">
+                            @if ($release->is_current) <x-icons.check /> @else <x-icons.clock /> @endif
+                        </span>
+                        <div>
+                            <p class="issue-text">{{ ucfirst($release->status) }} · {{ $release->source_commit_sha ? \Illuminate\Support\Str::limit($release->source_commit_sha, 10, '') : '—' }}</p>
+                            <p class="issue-meta">{{ $release->activated_at?->diffForHumans() ?? 'pending' }}</p>
+                        </div>
+                    </div>
+                @empty
+                    <x-ui.empty icon="clock" title="No releases yet" />
+                @endforelse
+            </x-ui.card>
+        </div>
     </div>
 </div>
