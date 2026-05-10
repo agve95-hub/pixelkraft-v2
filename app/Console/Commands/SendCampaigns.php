@@ -97,6 +97,12 @@ class SendCampaigns extends Command
                             'to' => [$subscriber->email],
                             'subject' => $campaign->subject,
                             'html' => $this->personalizeHtml($campaign->body_html, $subscriber),
+                            // Embed the campaign ID as a tag so the inbound Resend webhook
+                            // (/api/webhooks/resend) can attribute bounces, opens, and
+                            // clicks back to the correct campaign record.
+                            'tags' => [
+                                ['name' => 'campaign_id', 'value' => (string) $campaign->id],
+                            ],
                         ]);
 
                         if ($response->successful()) {

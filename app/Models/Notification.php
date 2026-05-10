@@ -83,7 +83,7 @@ class Notification extends Model
         ?string $siteId = null,
         ?array $data = null,
     ): static {
-        return static::create([
+        $notification = static::create([
             'type' => $type,
             'title' => $title,
             'body' => $body,
@@ -91,5 +91,18 @@ class Notification extends Model
             'data' => $data,
             'created_at' => now(),
         ]);
+
+        // Forward to Discord for any user who has a webhook configured.
+        // This is fire-and-forget — a Discord failure must never abort the caller.
+        try {
+            app(\App\Services\DiscordNotifier::class)->send($notification);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Discord notification dispatch failed', [
+                'notification_id' => $notification->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $notification;
     }
 }

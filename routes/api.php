@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\InboxInboundController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\TrackingController;
+use App\Http\Controllers\Api\ResendWebhookController;
 use App\Http\Controllers\WebhookController;
 use App\Models\NewsletterSubscriber;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,11 @@ use Illuminate\Support\Facades\Route;
 // GitHub webhook receiver
 // Rate limited to 120/min per IP — well above GitHub's realistic delivery rate but
 // prevents blind flood attacks before the HMAC signature check runs.
+// Resend email lifecycle webhook (bounce, complaint, open, click)
+Route::post('/webhooks/resend', [ResendWebhookController::class, 'handle'])
+    ->middleware('throttle:300,1')
+    ->name('webhooks.resend');
+
 Route::post('/webhooks/github', [WebhookController::class, 'github'])
     ->middleware('throttle:120,1')
     ->name('webhooks.github');

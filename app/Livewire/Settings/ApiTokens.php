@@ -58,11 +58,23 @@ class ApiTokens extends Component
 
     public function render(): View
     {
-        $tokens = auth()->user()->tokens()->orderBy('created_at', 'desc')->get();
+        $tokens = auth()->user()->tokens()->orderBy('created_at', 'desc')->get()
+            ->each(function ($token) {
+                // Attach computed expiry flags as dynamic properties so the view
+                // can use $token->is_expired and $token->expires_soon without
+                // breaking the existing $token->name / $token->abilities access.
+                $token->is_expired = $token->expires_at && $token->expires_at->isPast();
+                $token->expires_soon = $token->expires_at
+                    && ! $token->expires_at->isPast()
+                    && $token->expires_at->diffInDays(now()) <= 14;
+            });
 
         return view('livewire.settings.api-tokens', [
             'tokens' => $tokens,
             'abilities' => self::ABILITIES,
+            'defaultExpiryDays' => config('sanctum.expiration')
+                ? (int) round(config('sanctum.expiration') / 1440)
+                : null,
         ]);
     }
 }

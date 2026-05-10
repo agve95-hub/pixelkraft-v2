@@ -302,23 +302,31 @@ HTML;
     private function renderMaintenanceNginxConfig(Site $site, string $htmlPath): string
     {
         $settings = is_array($site->maintenance_settings) ? $site->maintenance_settings : [];
-        $allowedBlock = '';
 
         $allowedIps = array_filter(
             array_map('trim', explode(',', (string) ($settings['allowedIPs'] ?? $settings['allowedIps'] ?? ''))),
             fn (string $ip) => filter_var($ip, FILTER_VALIDATE_IP) !== false
         );
 
-        foreach ($allowedIps as $ip) {
-            $allowedBlock .= "    allow {$ip};\n";
-        }
-
-        if ($allowedBlock !== '') {
-            $allowedBlock .= "    deny all;\n";
-        }
-
         $htmlDir = dirname($htmlPath);
         $htmlFile = basename($htmlPath);
+        $deployRoot = rtrim((string) ($site->deploy_path ?: '/var/www/sites/'.$site->slug), '/');
+
+        // Build per-IP bypass variables. Each `if` block at server level sets
+        // $bypass = 1 for that IP; the aggregated variable is checked once below.
+        // This avoids the broken `allow/deny; return 503` pattern which applies
+        // 503 to allowed IPs as well (allow/deny only gates access, not the return).
+        $bypassBlock = '';
+        if (! empty($allowedIps)) {
+            $bypassBlock = "    set \$maintenance_bypass 0;\n";
+            foreach ($allowedIps as $ip) {
+                $bypassBlock .= "    if (\$remote_addr = \"{$ip}\") { set \$maintenance_bypass 1; }\n";
+            }
+            $bypassBlock .= "\n    # Return 503 only for IPs not in the bypass list.\n";
+            $bypassBlock .= "    if (\$maintenance_bypass = 0) { return 503; }\n";
+        } else {
+            $bypassBlock = "    return 503;\n";
+        }
 
         return <<<NGINX
 # platform maintenance override — auto-generated, do not edit.
@@ -326,14 +334,22 @@ server {
     listen 80;
     server_name {$site->domain};
 
-{$allowedBlock}
-    return 503;
+{$bypassBlock}
+    # Bypass IPs reach here and are served the live site content.
+    root {$deployRoot};
+    index index.html index.htm;
 
     error_page 503 /{$htmlFile};
     location = /{$htmlFile} {
         root {$htmlDir};
         internal;
     }
+
+    location / {
+        try_files \$uri \$uri/ \$uri.html /index.html =404;
+    }
+
+    location ~ /\. { deny all; }
 
     access_log /var/log/nginx/{$site->slug}-maintenance.log;
 }

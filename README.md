@@ -381,6 +381,50 @@ Anonymous form submissions from marketing pages. Rate-limited to 10 requests/min
 
 ---
 
+## Server Setup Requirements
+
+These must be configured on the VPS before the first deploy will succeed.
+
+### Nginx path
+
+The default `NGINX_SITES_PATH` is `/etc/nginx/sites-available` (Debian/Ubuntu convention).
+On **RHEL, AlmaLinux, or CentOS** set the correct path in `.env`:
+
+```env
+NGINX_SITES_PATH=/etc/nginx/conf.d
+```
+
+### Passwordless sudo for Nginx and Certbot
+
+platform calls `sudo nginx -t` and `sudo systemctl reload nginx` from PHP-FPM (running as `www-data`).
+Add this sudoers entry — without it every deploy activation fails silently:
+
+```
+# /etc/sudoers.d/platform-nginx
+www-data ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl reload nginx, /bin/systemctl reload nginx.service
+www-data ALL=(ALL) NOPASSWD: /usr/bin/certbot
+```
+
+### nvm
+
+Builds use nvm to select the correct Node.js version. Install nvm for the web-server user:
+
+```bash
+sudo -u www-data bash -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash'
+```
+
+### Supervisor for runtime sites (Next.js / Nuxt)
+
+Set in `.env` so Node.js processes survive reboots:
+
+```env
+SITE_RUNTIME_SUPERVISOR_ENABLED=true
+```
+
+Run System Diagnostics (`/system`) after deploy to verify all four requirements pass.
+
+---
+
 ## Security Checklist
 
 Before going live:
@@ -397,6 +441,8 @@ Before going live:
 - [ ] MariaDB user: no `SUPER`; only `SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER`
 - [ ] Redis bound to `127.0.0.1` only
 - [ ] SSH key-based auth only; firewall allows only 80, 443, SSH
+- [ ] sudoers entry for `nginx` and `certbot` (see Server Setup Requirements above)
+- [ ] `NGINX_SITES_PATH` matches actual Nginx config directory for your Linux distro
 
 ---
 

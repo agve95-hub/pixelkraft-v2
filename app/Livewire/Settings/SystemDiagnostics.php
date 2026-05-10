@@ -7,6 +7,8 @@ use App\Support\SiteAccess;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Schema;
@@ -38,13 +40,17 @@ class SystemDiagnostics extends Component
         $recentFailureCount = $failureMetrics['count_24h'];
         $missingQueues = array_values(array_diff($expectedQueues, $configuredQueues));
         $workerHealth = $this->workerHealth($queueDriver, $redisStatus, $totalPendingJobs, $recentFailureCount, $stuckSites);
-        $checks = $this->checks(
-            queueDriver: $queueDriver,
-            redisStatus: $redisStatus,
-            missingQueues: $missingQueues,
-            totalPendingJobs: $totalPendingJobs,
-            recentFailureCount: $recentFailureCount,
-            stuckSites: $stuckSites,
+        $serverChecks = $this->serverChecks();
+        $checks = array_merge(
+            $this->checks(
+                queueDriver: $queueDriver,
+                redisStatus: $redisStatus,
+                missingQueues: $missingQueues,
+                totalPendingJobs: $totalPendingJobs,
+                recentFailureCount: $recentFailureCount,
+                stuckSites: $stuckSites,
+            ),
+            $serverChecks,
         );
 
         return [
@@ -425,5 +431,71 @@ class SystemDiagnostics extends Component
         $line = trim(strtok($exception, "\n")) ?: 'No exception details available.';
 
         return mb_strimwidth($line, 0, 180, '...');
+    }
+
+    /**
+     * Server-level infrastructure checks that commonly break fresh installs.
+     * These are intentionally skipped in local/testing environments.
+     *
+     * @return list<array{title: string, status: string, message: string}>
+     */
+    private function serverChecks(): array
+    {
+        if (app()->isLocal() || app()->runningUnitTests()) {
+            return [];
+        }
+
+        $checks = [];
+
+        // ── sudo nginx -t ────────────────────────────────────────────────
+        try {
+            $result = Process::timeout(5)->run('sudo -n nginx -t 2>&1');
+            $checks[] = [
+                'title' => 'sudo nginx -t (passwordless)',
+                'status' => $result->successful() ? 'pass' : 'fail',
+                'message' => $result->successful()
+                    ? 'The web server user can run `sudo nginx -t` without a password prompt.'
+                    : 'Cannot run `sudo nginx -t`. Add a sudoers entry: `www-data ALL=(ALL) NOPASSWD: /usr/sbin/nginx`. Deploy activation will fail without it.',
+            ];
+        } catch (\Throwable $e) {
+            $checks[] = [
+                'title' => 'sudo nginx -t (passwordless)',
+                'status' => 'fail',
+                'message' => 'Could not check sudo access: '.$e->getMessage(),
+            ];
+        }
+
+        // ── Nginx sites directory exists ─────────────────────────────────
+        $nginxPath = (string) config('platform.nginx_sites_path', '/etc/nginx/sites-available');
+        $checks[] = [
+            'title' => 'Nginx sites directory exists',
+            'status' => File::isDirectory($nginxPath) ? 'pass' : 'fail',
+            'message' => File::isDirectory($nginxPath)
+                ? "Nginx config directory found at {$nginxPath}."
+                : "Directory {$nginxPath} does not exist. On RHEL/AlmaLinux/CentOS set NGINX_SITES_PATH=/etc/nginx/conf.d in .env. On Debian/Ubuntu the default is correct.",
+        ];
+
+        // ── nvm is available ─────────────────────────────────────────────
+        $nvmResult = Process::timeout(5)->run('bash -lc \'[ -s "$HOME/.nvm/nvm.sh" ] && echo ok || echo missing\'');
+        $nvmOk = trim($nvmResult->output()) === 'ok';
+        $checks[] = [
+            'title' => 'nvm installed',
+            'status' => $nvmOk ? 'pass' : 'warn',
+            'message' => $nvmOk
+                ? 'nvm found at $HOME/.nvm. Node.js version switching will work during builds.'
+                : 'nvm not found. Builds will use the system Node.js regardless of the site\'s node_version setting. Install nvm for the web server user or configure Node.js globally.',
+        ];
+
+        // ── Supervisor enabled for runtime sites ─────────────────────────
+        $supervisorEnabled = (bool) config('platform.runtime.supervisor_enabled', false);
+        $checks[] = [
+            'title' => 'Supervisor enabled for runtime sites',
+            'status' => $supervisorEnabled ? 'pass' : 'warn',
+            'message' => $supervisorEnabled
+                ? 'SITE_RUNTIME_SUPERVISOR_ENABLED=true — Next.js/Nuxt runtime processes will survive server reboots.'
+                : 'SITE_RUNTIME_SUPERVISOR_ENABLED is false. Runtime sites (Next.js, Nuxt) will go down after every reboot until manually redeployed. Set SITE_RUNTIME_SUPERVISOR_ENABLED=true in .env.',
+        ];
+
+        return $checks;
     }
 }
