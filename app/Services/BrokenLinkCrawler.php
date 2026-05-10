@@ -18,7 +18,7 @@ class BrokenLinkCrawler
     /**
      * Crawl all pages of a site and find broken links.
      *
-     * @return array{total_links: int, broken: array, redirects: array}
+     * @return array{total_links: int, broken: array, redirects: array, skipped_pages: list<string>}
      */
     public function crawl(Site $site): array
     {
@@ -26,11 +26,18 @@ class BrokenLinkCrawler
         $allBroken = [];
         $allRedirects = [];
         $totalLinks = 0;
+        $skippedPages = [];
 
         // Chunk pages to avoid loading thousands of Page models into memory at once.
-        $site->pages()->where('is_published', true)->chunkById(100, function ($pages) use ($site, $baseUrl, &$allBroken, &$allRedirects, &$totalLinks) {
+        $site->pages()->where('is_published', true)->chunkById(100, function ($pages) use ($site, $baseUrl, &$allBroken, &$allRedirects, &$totalLinks, &$skippedPages) {
             foreach ($pages as $page) {
                 $result = $this->crawlPage($site, $page, $baseUrl);
+
+                if ($result['skipped'] ?? false) {
+                    $skippedPages[] = $page->url_path;
+                    continue;
+                }
+
                 $totalLinks += $result['total'];
                 $allBroken = array_merge($allBroken, $result['broken']);
                 $allRedirects = array_merge($allRedirects, $result['redirects']);
@@ -47,12 +54,19 @@ class BrokenLinkCrawler
             );
         }
 
-        Log::info("Link crawl for [{$site->slug}]: {$totalLinks} links, ".count($allBroken).' broken, '.count($allRedirects).' redirects');
+        if (! empty($skippedPages)) {
+            Log::warning("Link crawl skipped ".count($skippedPages)." pages for [{$site->slug}] — no crawlable HTML (deploy pending or runtime server down)", [
+                'skipped' => $skippedPages,
+            ]);
+        }
+
+        Log::info("Link crawl for [{$site->slug}]: {$totalLinks} links, ".count($allBroken).' broken, '.count($allRedirects).' redirects, '.count($skippedPages).' skipped');
 
         return [
             'total_links' => $totalLinks,
             'broken' => $allBroken,
             'redirects' => $allRedirects,
+            'skipped_pages' => $skippedPages,
         ];
     }
 
@@ -61,7 +75,7 @@ class BrokenLinkCrawler
         $html = $this->resolvePageHtml($site, $page);
 
         if ($html === null) {
-            return ['total' => 0, 'broken' => [], 'redirects' => []];
+            return ['total' => 0, 'broken' => [], 'redirects' => [], 'skipped' => true];
         }
 
         $crawler = new Crawler($html);
@@ -155,6 +169,7 @@ class BrokenLinkCrawler
             'total' => count($links),
             'broken' => $broken,
             'redirects' => $redirects,
+            'skipped' => false,
         ];
     }
 

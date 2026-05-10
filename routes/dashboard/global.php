@@ -10,6 +10,11 @@ Route::get('/inbox', fn () => view('dashboard.email.inbox'))->name('inbox');
 Route::get('/subscribers', fn () => view('dashboard.email.subscribers'))->name('subscribers');
 Route::get('/newsletters', fn () => view('dashboard.email.campaigns'))->name('newsletters');
 
+// Integrations
+Route::get('/settings/integrations/google', fn () => view('dashboard.settings.google-integrations'))
+    ->name('settings.google-integrations')
+    ->middleware('can:viewHorizon'); // admin-only
+
 // Settings
 Route::get('/settings', function () {
     $user = auth()->user();

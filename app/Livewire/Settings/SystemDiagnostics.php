@@ -496,6 +496,31 @@ class SystemDiagnostics extends Component
                 : 'SITE_RUNTIME_SUPERVISOR_ENABLED is false. Runtime sites (Next.js, Nuxt) will go down after every reboot until manually redeployed. Set SITE_RUNTIME_SUPERVISOR_ENABLED=true in .env.',
         ];
 
+        // ── Resend webhook secret ─────────────────────────────────────────
+        $resendSecret = config('services.resend.webhook_secret');
+        $resendKey = config('services.resend.key');
+        if ($resendKey) {
+            $checks[] = [
+                'title' => 'Resend webhook signing secret',
+                'status' => $resendSecret ? 'pass' : 'fail',
+                'message' => $resendSecret
+                    ? 'RESEND_WEBHOOK_SECRET is configured. Inbound webhook events (bounces, complaints, opens) are signature-verified.'
+                    : 'RESEND_WEBHOOK_SECRET is not set. Anyone can POST fake bounce events to /api/webhooks/resend and silently unsubscribe real subscribers. Copy the signing secret from Resend dashboard → Webhooks and set RESEND_WEBHOOK_SECRET in .env.',
+            ];
+        }
+
+        // ── GA4 credentials ───────────────────────────────────────────────
+        $gaCredPath = config('platform.google_analytics_credentials_path');
+        if ($gaCredPath) {
+            $checks[] = [
+                'title' => 'GA4 service account credentials',
+                'status' => File::isReadable($gaCredPath) ? 'pass' : 'warn',
+                'message' => File::isReadable($gaCredPath)
+                    ? "GA4 credentials file found at {$gaCredPath}. Organic traffic sync is available."
+                    : "GA4 credentials file not found at {$gaCredPath}. Upload a service account JSON via Settings → Integrations or place the file there manually. Sites with ga_property_id set will show zero organic traffic.",
+            ];
+        }
+
         return $checks;
     }
 }

@@ -443,6 +443,8 @@ Before going live:
 - [ ] SSH key-based auth only; firewall allows only 80, 443, SSH
 - [ ] sudoers entry for `nginx` and `certbot` (see Server Setup Requirements above)
 - [ ] `NGINX_SITES_PATH` matches actual Nginx config directory for your Linux distro
+- [ ] `RESEND_WEBHOOK_SECRET` set (Resend dashboard → Webhooks → signing secret) — required for bounce/complaint tracking
+- [ ] GA4 service account JSON uploaded via **Settings → Google integrations** (optional; enables organic traffic sync)
 
 ---
 
