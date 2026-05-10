@@ -16,12 +16,21 @@ use Illuminate\Support\Facades\Log;
  *   URL: https://your-dashboard.example.com/api/webhooks/resend
  *   Events: email.bounced, email.complained, email.opened, email.clicked, email.delivered
  *
- * Optionally set RESEND_WEBHOOK_SECRET and enable signature verification below.
+ * Copy the signing secret from the Resend dashboard and set in .env:
+ *   RESEND_WEBHOOK_SECRET=whsec_...
+ *
+ * Without the secret, any IP can POST fake bounce/complaint events and silently
+ * unsubscribe real subscribers.  The endpoint rejects all requests when no
+ * secret is configured in production.
  */
 class ResendWebhookController extends Controller
 {
     public function handle(Request $request): JsonResponse
     {
+        if (! $this->verifySignature($request)) {
+            return response()->json(['error' => 'Invalid signature'], 401);
+        }
+
         $event = $request->input('type');
         $data = $request->input('data', []);
 
@@ -111,6 +120,58 @@ class ResendWebhookController extends Controller
         $stats[$stat] = ($stats[$stat] ?? 0) + 1;
 
         $campaign->update(['stats' => $stats]);
+    }
+
+    /**
+     * Verify the Svix webhook signature that Resend attaches to every delivery.
+     *
+     * Resend uses Svix under the hood. The three required headers are:
+     *   svix-id        — unique message ID
+     *   svix-timestamp — Unix timestamp (seconds)
+     *   svix-signature — base64-encoded HMAC-SHA256 of "{id}.{timestamp}.{body}"
+     *
+     * Rejects when RESEND_WEBHOOK_SECRET is not set in production, so operators
+     * cannot forget to configure it and accidentally leave the endpoint open.
+     */
+    private function verifySignature(Request $request): bool
+    {
+        $secret = config('services.resend.webhook_secret');
+
+        // In local/test environments allow unsigned requests so developers can
+        // POST test payloads without generating valid signatures.
+        if (! $secret) {
+            return app()->isLocal() || app()->runningUnitTests();
+        }
+
+        $msgId = $request->header('svix-id');
+        $msgTs = $request->header('svix-timestamp');
+        $msgSig = $request->header('svix-signature');
+
+        if (! $msgId || ! $msgTs || ! $msgSig) {
+            return false;
+        }
+
+        // Reject timestamps more than 5 minutes old (replay attack protection).
+        if (abs(time() - (int) $msgTs) > 300) {
+            return false;
+        }
+
+        $toSign = "{$msgId}.{$msgTs}.".$request->getContent();
+
+        // The secret is prefixed with "whsec_"; strip it before base64-decoding.
+        $rawSecret = base64_decode(str_replace('whsec_', '', $secret));
+        $expected = base64_encode(hash_hmac('sha256', $toSign, $rawSecret, true));
+
+        // The svix-signature header may contain multiple signatures (e.g. during
+        // secret rotation).  Accept if any of them matches.
+        foreach (explode(' ', $msgSig) as $sig) {
+            $parts = explode(',', $sig, 2);
+            if (count($parts) === 2 && hash_equals($expected, $parts[1])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function extractEmail(array $data): ?string

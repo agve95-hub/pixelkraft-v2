@@ -58,6 +58,12 @@ class User extends Authenticatable
         return $this->role === Role::Admin;
     }
 
+    /** @return HasMany<Site, $this> */
+    public function sites(): HasMany
+    {
+        return $this->hasMany(Site::class);
+    }
+
     /** @return HasMany<ContentRevision, $this> */
     public function contentRevisions(): HasMany
     {

@@ -30,8 +30,8 @@ class SiteFieldGroupsTest extends TestCase
         $this->assertContains('github_token', Site::SECRET_FILLABLE);
         $this->assertContains('webhook_secret', Site::SECRET_FILLABLE);
         $this->assertContains('smtp_password', Site::SECRET_FILLABLE);
-        $this->assertContains('ftp_ssh_password', Site::SECRET_FILLABLE);
         $this->assertContains('cf_api_token', Site::SECRET_FILLABLE);
+        // ftp_ssh_password removed — SSH/FTP deployment adapter not implemented.
     }
 
     public function test_system_fillable_contains_deploy_status_fields(): void

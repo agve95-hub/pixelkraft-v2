@@ -99,8 +99,8 @@ class Site extends Model
         'name', 'slug', 'domain', 'is_active', 'maintenance_settings',
         'deploy_on_webhook', 'deployment_mode', 'project_type', 'source_type',
         'branch', 'deploy_path', 'repo_path', 'nginx_conf_path',
-        'ga_property_id', 'gtm_id', 'google_ads_id', 'gsc_property',
-        'hosting_provider', 'ssh_host', 'ftp_ssh_user', 'r2_bucket_prefix',
+        'ga_property_id', 'gtm_id',
+        'hosting_provider', 'ssh_host', 'r2_bucket_prefix',
         'billing_cycle', 'monthly_retainer',
         'client_name', 'client_first_name', 'client_last_name',
         'client_email', 'client_phone', 'client_company',
@@ -116,7 +116,7 @@ class Site extends Model
     /** Encrypted secrets — written via explicit setters, never mass-assigned. */
     public const SECRET_FILLABLE = [
         'github_token', 'webhook_secret', 'inbox_inbound_secret',
-        'cf_api_token', 'smtp_password', 'ftp_ssh_password',
+        'cf_api_token', 'smtp_password',
     ];
 
     /** System-managed fields written by queue jobs / services, not user input. */
@@ -144,7 +144,6 @@ class Site extends Model
             'inbox_inbound_secret' => 'encrypted',
             'cf_api_token' => 'encrypted',
             'smtp_password' => 'encrypted',
-            'ftp_ssh_password' => 'encrypted',
             'env_variables' => 'array',
             'monthly_retainer' => 'decimal:2',
             'uptime_percent' => 'decimal:2',

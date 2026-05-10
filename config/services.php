@@ -20,6 +20,10 @@ return [
 
     'resend' => [
         'key' => env('RESEND_API_KEY'),
+        // Signing secret from the Resend dashboard (Webhooks → signing secret).
+        // Required for /api/webhooks/resend signature verification.
+        // Without this, bounce/complaint webhooks are rejected in production.
+        'webhook_secret' => env('RESEND_WEBHOOK_SECRET'),
     ],
 
     'ses' => [

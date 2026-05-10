@@ -246,31 +246,36 @@ class BrokenLinkCrawler
         return false;
     }
 
+    /**
+     * Check whether an internal URL path resolves to a real file.
+     *
+     * Checks deploy_path first (consistent with resolvePageHtml) so the
+     * existence check and the HTML source both use the same directory.
+     */
     private function fileExistsInRepo(Site $site, string $urlPath): bool
     {
-        $repoPath = $site->repo_path;
+        $deployRoot = rtrim((string) ($site->deploy_path ?? ''), '/');
+        $repoPath = rtrim((string) ($site->repo_path ?? ''), '/');
+
         $basePaths = [];
 
-        if ($this->runtime->usesRuntimeServer($site)) {
-            $basePaths[] = "{$repoPath}/public";
-            $basePaths[] = $repoPath;
-        } else {
-            $outputDir = $site->build_output_dir;
-            $basePaths[] = $outputDir ? "{$repoPath}/{$outputDir}" : $repoPath;
+        // Deployed files are the canonical truth — check first.
+        if ($deployRoot !== '' && is_dir($deployRoot)) {
+            $basePaths[] = $deployRoot;
+        }
 
-            if (($outputDir ? "{$repoPath}/{$outputDir}" : $repoPath) !== $repoPath) {
-                $basePaths[] = $repoPath;
+        // Repo fallback for sites not yet fully deployed.
+        if ($repoPath !== '') {
+            if ($this->runtime->usesRuntimeServer($site)) {
+                $basePaths[] = "{$repoPath}/public";
+            } else {
+                $outputDir = $site->build_output_dir;
+                $basePaths[] = $outputDir ? "{$repoPath}/{$outputDir}" : $repoPath;
             }
         }
 
-        foreach (array_unique($basePaths) as $basePath) {
-            $candidates = [
-                "{$basePath}{$urlPath}",
-                "{$basePath}{$urlPath}.html",
-                "{$basePath}{$urlPath}/index.html",
-            ];
-
-            foreach ($candidates as $path) {
+        foreach (array_unique(array_filter($basePaths)) as $basePath) {
+            foreach (["{$basePath}{$urlPath}", "{$basePath}{$urlPath}.html", "{$basePath}{$urlPath}/index.html"] as $path) {
                 if (file_exists($path)) {
                     return true;
                 }
